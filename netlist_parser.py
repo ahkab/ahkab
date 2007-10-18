@@ -848,7 +848,7 @@ def convert_units(string_value):
 	return numeric_value
 
 def parse_analysis(circ, directives):
-	"""Parses the analysis.
+	"""Parses the analyses.
 
 	Parameters:
 	circ: a circuit class instance that descirbes the circuit.
