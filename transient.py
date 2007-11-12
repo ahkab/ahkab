@@ -110,11 +110,13 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 		x0 = numpy.matrix(numpy.zeros((mna.shape[0], 1)))
 	else:
 		if verbose > 4 and fdata is not sys.stdout:
-			print "Using the result of op as x(t="+str(tstart)+")."
+			print "Using the supplied op as x(t="+str(tstart)+")."
 
 	if verbose > 4 and fdata is not sys.stdout:
 		print "x0:"
-		print x0
+		printing.print_results_header(circ, sys.stdout, print_int_nodes=True, print_time=False)
+		printing.print_results_on_a_line(None, x0, sys.stdout, circ, print_int_nodes=True, iter_n=10)
+		#print x0
 	
 	# setup the df method
 	if verbose > 4: 
