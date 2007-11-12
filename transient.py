@@ -46,7 +46,7 @@ GEAR6 = "GEAR6"
 
 def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=None, N=None, \
 	data_filename="stdout", use_step_control=True,  \
-	print_step_and_lte=True, verbose=3):
+	print_step_and_lte=False, verbose=3):
 	"""Performs a transient analysis of the circuit described by circ.
 	
 	Important parameters:
@@ -271,7 +271,8 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 				else:
 					#print "LTE not calculated."
 					lte = None
-			if print_step_and_lte and lte is not None: # if you wish to look at tha step. We print just a lte
+			if print_step_and_lte and lte is not None: 
+				#if you wish to look at the step. We print just a lte
 				flte.write(str(time)+"\t"+str(old_step)+"\t"+str(lte.max())+"\n")
 			# if we get here, or aposteriori_step_control is disabled, or it's enabled and the error is small
 			# enough. Anyway, the result is GOOD, STORE IT.
