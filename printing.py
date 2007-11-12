@@ -207,7 +207,7 @@ def print_result_check(x2, x1, circ, verbose=2): #fixme I don't like it!
 	nv_1 = len(circ.nodes_dict) - 1
 	
 	# descrizioni dei componenti non definibili in tensione
-	idescr = [ (elem.__class__.__name__[0].upper() + elem.descr) \
+	idescr = [ (elem.letter_id.upper() + elem.descr) \
 		for elem in circ.elements if circuit.is_elem_voltage_defined(elem) ] #cleaner ??
 	
 	dxg = x2 - x1
@@ -251,9 +251,7 @@ def print_results_header(circ, fp, print_int_nodes=False, print_time=False):
 		for n in range(1, len(circ.nodes_dict)) \
 		if (print_int_nodes or not circ.is_int_node_internal_only(n)) ]
 	
-	#vd_sources = filter(circuit.is_elem_voltage_defined, circ.elements)
-	#current_labels = map(lambda elem: "I("+elem.__class__.__name__[0].upper()+elem.descr+")", vd_sources)
-	current_labels = [ "I("+elem.__class__.__name__[0].upper()+elem.descr+")" \
+	current_labels = [ "I("+elem.letter_id.upper()+elem.descr+")" \
 			for elem in circ.elements \
 			if circuit.is_elem_voltage_defined(elem)]
 	labels = voltage_labels + current_labels
