@@ -22,6 +22,7 @@
 
 import sys
 import numpy, numpy.linalg
+from scipy import factorial
 import circuit, utilities, options
 
 def get_dc_guess(circ, find_all=False, verbose=3):
@@ -171,7 +172,7 @@ def get_dc_guess(circ, find_all=False, verbose=3):
 	
 	Rp_list = [] # to hold the results
 	if M.shape[0] > M.shape[1]:
-		tot_count = utilities.fact(M.shape[0])/(utilities.fact(M.shape[1])*utilities.fact(M.shape[0]-M.shape[1]))
+		tot_count = factorial(M.shape[0])/(factorial(M.shape[1])*factorial(M.shape[0]-M.shape[1]))
 		if verbose > 3:
 			print "DBG: get_dc_guess(): There are", tot_count, "possible combinations."
 			count = 0

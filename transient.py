@@ -144,24 +144,23 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 		import gear as df
 		df.order = 6
 	else:
-		try:
-			df = imp.load_module(imp.find_module(method.lower()))
-		except:
-			printing.print_general_error("Unrecognized method: "+method.lower()+".")
-			sys.exit(0)
-		if verbose > 2:
-			print "Custom df module "+method.lower()+" loaded."
+		df = import_custom_df_module(method, print_out=(fdata != stdout))
+		# df is none if module is not found
+	
+	if df is None:
+		sys.exit(23)
+		
 	if not df.has_ff() and use_step_control:
 		printing.print_warning("The chosen DF does not support step control. Turning off the feature.")
 		use_step_control = False
 		#use_aposteriori_step_control = False
-	elif verbose > 4: 
+	elif verbose > 4:
 		sys.stdout.write("done\n")
 	
 	# setup the data buffer
 	# if you use the step control, the buffer has to be one point longer.
 	# That's because the excess point is used by a FF in the df module to predict the next value.
-	if verbose > 4: 
+	if verbose > 4:
 		sys.stdout.write("Setting up the buffer... ")
 	((max_x, max_dx), (pmax_x, pmax_dx)) = df.get_required_values()
 	if max_x is None and max_dx is None:
@@ -177,12 +176,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	
 	# import implicit_euler to be used in the first iterations
 	# this is because we don't have any dx when we start, nor any past point value
-	if max_x is not None and max_x > 0:
-		import implicit_euler
-		#implicit_euler.order = 1
-	elif max_dx is not None:
-		#import gear as implicit_euler
-		#implicit_euler.order = 1
+	if (max_x is not None and max_x > 0) or max_dx is not None:
 		import implicit_euler
 	
 	if verbose > 4:
@@ -199,7 +193,8 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	if use_step_control:
 		#tstep = min((tstop-tstart)/9999.0, HMAX, 100.0 * options.hmin)
 		tstep = min((tstop-tstart)/9999.0, HMAX)
-		if verbose > 4: print "Initial step:", tstep
+		if verbose > 4:
+			print "Initial step:", tstep
 	#else:
 		#tstep = HMAX #should already be so, but, ynk
 	if max_dx is None:
@@ -423,3 +418,22 @@ class dfbuffer:
 			return True
 		else:
 			return False
+
+def import_custom_df_module(method, print_out):
+	"""Imports a module that implements differentiation formula through imp.load_module
+	Parameters:
+	method: a string, the name of the df method module
+	print_out: print to stdout some verbose messages
+	
+	Returns:
+	The df module or None if the module is not found.
+	"""
+	try:
+		df = imp.load_module(imp.find_module(method.lower()))
+		if print_out:
+			print "Custom df module "+method.lower()+" loaded."
+	except:
+		printing.print_general_error("Unrecognized method: "+method.lower()+".")
+		df = None
+	
+	return df

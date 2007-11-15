@@ -90,6 +90,7 @@ def check_file(filename):
 		ret = True
 	return ret
 	
+# Use scipy.factorial
 def fact(num): 
 	"""Returns: num!"""
 	return reduce(operator.mul, xrange(2, num+1))
