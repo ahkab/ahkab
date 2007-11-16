@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: iso-8859-1 -*-
-# ahkab.py: the frontend of the simulator
+# ahkab.py
+# The frontend of the simulator
 # Copyright 2006 Giuseppe Venturini
 
 # This file is part of the ahkab simulator.

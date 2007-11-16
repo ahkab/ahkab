@@ -1,7 +1,7 @@
 # -*- coding: iso-8859-1 -*-
 # netlist_parser.py
+# Netlist parser module
 # Copyright 2006 Giuseppe Venturini
-# spice-parser.py
 
 # This file is part of the ahkab simulator.
 #
