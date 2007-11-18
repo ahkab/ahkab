@@ -93,6 +93,8 @@ def check_file(filename):
 # Use scipy.factorial
 def fact(num): 
 	"""Returns: num!"""
+	if num == 1:
+		return 1
 	return reduce(operator.mul, xrange(2, num+1))
 
 
