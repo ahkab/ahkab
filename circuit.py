@@ -286,7 +286,7 @@ class resistor:
 		self.n1 = n1
 		self.n2 = n2
 	def __str__(self):
-		return "R=" + str(self.R) + " ohm"
+		return str(self.R)
 	def g(self, v, time=0):
 		return 1.0/self.R
 	def i(self, v, time=0):
@@ -300,7 +300,7 @@ class capacitor:
 		self.n2 = n2
 		self.ic = ic
 	def __str__(self):
-		return "C=" + str(self.C) + "F"
+		return str(self.C)
 	def g(self, v, time=0):
 		return 0
 	def i(self, v, time=0):
@@ -316,7 +316,7 @@ class inductor:
 		self.n2 = n2
 		self.ic = ic
 	def __str__(self):
-		return "L=" + str(self.L) + "H"
+		return str(self.L)
 
 
 #########################
@@ -344,11 +344,14 @@ class diode:
 			self.T = T
 		else:
 			self.T = constants.T
+		
+		if self.ic is not None: #fixme
+			print "(W): ic is ignored in diodes."
 		self.ic = ic #per ora inutilizzato
 	def __str__(self):
-		rep = "Is="+str(self.Io)+"A m="+str(self.m)+" T="+str(self.T)+u" \N{DEGREE SIGN}K"
+		rep = "Is="+str(self.Io)+" m="+str(self.m)+" T="+str(self.T)
 		if self.ic is not None:
-			rep = rep + " IC="+str(self.ic) + " V"
+			rep = rep + " ic="+str(self.ic)
 		return rep
 	def get_ports(self):
 		return self.ports
@@ -358,7 +361,7 @@ class diode:
 	def g(self, ports_v, port_index, time=0):
 		if not port_index == 0: 
 			raise Exception, "Attepted to evaluate a diode's gm on a unknown port."
-		return (self.i(ports_v)*constants.e)/(self.m*constants.k*self.T)+1e-12
+		return (self.i(ports_v)*constants.e)/(self.m*constants.k*self.T) + options.gmin
 
 class mosq:
 	"""Square law MOS model
@@ -378,8 +381,10 @@ class mosq:
 	letter_id = "m"
 	is_nonlinear = True
 	dc_guess = None #defined in init
+	descr = None
+	
 	_debug = False
-	descr = "BUG_UNSET"
+	
 	def __init__(self, nd, ng, ns, kp, w, l, vt, lambd=0, mos_type='n'):
 		self.ng = ng
 		self.n2 = ns
@@ -402,15 +407,11 @@ class mosq:
 		return self.ports
 	
 	def __str__(self):
-		rep = ""
-		if self.mos_type == 'n':
-			rep = rep + "Nmos "
-		elif self.mos_type == 'p':
-			rep = rep + "Pmos "
-		else:
+		rep = "type=" + self.mos_type + " "
+		if not self.mos_type == 'n' or self.mos_type == 'p':
 			raise Exception, "Unknown mos type:", str(self.mos_type)
-		rep = rep + "kp= " + str(self.kp)+ " vt= "+ str(self.vt)+ " w= "+ str(self.w)+ " l= " + str(self.l) + \
-		" lambda= "+ str(self.lambd)
+		rep = rep + "kp=" + str(self.kp)+ " vt="+ str(self.vt)+ " w="+ str(self.w)+ " l=" + str(self.l) + \
+		" lambda="+ str(self.lambd)
 		return rep
 	
 
@@ -568,24 +569,9 @@ class isource:
 	def __str__(self):
 		rep = ""
 		if self.idc is not None:
-			rep = rep + "type=idc idc="+str(self.idc)+"A "
+			rep = rep + "type=idc idc="+str(self.idc) + " "
 		if self.is_timedependent:
-			if isinstance(self._time_function, pulse):
-				rep = rep + "type=pulse i1="+str(self._time_function.v1)+ \
-				" i2=" + str(self._time_function.v2) + " td=" + str(self._time_function.td) + \
-				" per=" + str(self._time_function.per) + " tr=" + str(self._time_function.tr) + \
-				" tf=" + str(self._time_function.tf) + " pw=" + str(self._time_function.pw)
-			elif isinstance(self._time_function, sin):
-				rep = rep + "type=sin io=" + str(self._time_function.vo) + \
-				" ia=" + str(self._time_function.va) + " freq=" + str(self._time_function.freq) + \
-				" theta=" + str(self._time_function.theta) + " td=" + str(self._time_function.td)
-			elif isinstance(self._time_function, exp):
-				rep = rep + "type=exp i1=" + str(self._time_function.v1) + \
-				" i2=" + str(self._time_function.v2) + " td1="+str(self._time_function.td1) + \
-				" tau1=" + str(self._time_function.tau1) + " td2=" + str(self._time_function.td2) + \
-				" tau2=" + str(self._time_function.tau2)
-			else:
-				raise Exception, "Bug: unknown _time_function."
+			rep = rep + str(self._time_function)
 		return rep
 
 	def I(self, time=None):
@@ -628,24 +614,9 @@ class vsource:
 	def __str__(self):
 		rep = ""
 		if self.vdc is not None:
-			rep = rep + "type=vdc vdc="+str(self.vdc)+"A "
+			rep = rep + "type=vdc vdc="+str(self.vdc) + " "
 		if self.is_timedependent:
-			if isinstance(self._time_function, pulse):
-				rep = rep + "type=pulse i1="+str(self._time_function.v1)+ \
-				" i2=" + str(self._time_function.v2) + " td=" + str(self._time_function.td) + \
-				" per=" + str(self._time_function.per) + " tr=" + str(self._time_function.tr) + \
-				" tf=" + str(self._time_function.tf) + " pw=" + str(self._time_function.pw)
-			elif isinstance(self._time_function, sin):
-				rep = rep + "type=sin io=" + str(self._time_function.vo) + \
-				" ia=" + str(self._time_function.va) + " freq=" + str(self._time_function.freq) + \
-				" theta=" + str(self._time_function.theta) + " td=" + str(self._time_function.td)
-			elif isinstance(self._time_function, exp):
-				rep = rep + "type=exp i1=" + str(self._time_function.v1) + \
-				" i2=" + str(self._time_function.v2) + " td1="+str(self._time_function.td1) + \
-				" tau1=" + str(self._time_function.tau1) + " td2=" + str(self._time_function.td2) + \
-				" tau2=" + str(self._time_function.tau2)
-			else:
-				raise Exception, "Bug: unknown _time_function."
+			rep = rep + str(self._time_function)
 		return rep
 	
 	def V(self, time=None):
@@ -738,6 +709,7 @@ class hvsource: #fixme
 
 class pulse:
 	#PULSE(V1 V2 TD TR TF PW PER)
+	_type = "V"
 	v1 = None
 	v2 = None
 	td = None
@@ -773,6 +745,13 @@ class pulse:
 			return False
 		else:
 			return True
+	def __str__(self):
+		return "type=pulse " + \
+		self._type.lower() + "1="+str(self.v1) + " " + \
+		self._type.lower() + "2=" + str(self.v2) + \
+		" td=" + str(self.td) + " per=" + str(self.per) + \
+		" tr=" + str(self.tr) + " tf=" + str(self.tf) + \
+		" pw=" + str(self.pw)
 class sin:
 	#SIN(VO VA FREQ TD THETA)
 	td = None
@@ -780,6 +759,7 @@ class sin:
 	va  = None
 	freq  = None
 	theta = None
+	_type = "V"
 	def __init__(self, vo=None, va=None, freq=None, td=None, theta=None):
 		self.vo = vo
 		self.va = va
@@ -800,6 +780,14 @@ class sin:
 			return False
 		else:
 			return True
+	def __str__(self):
+		return "type=sin " + \
+		self._type.lower() + "o=" + str(self.vo) + " " + \
+		self._type.lower() +"a=" + str(self.va) + \
+		" freq=" + str(self.freq) + " theta=" + str(self.theta) + \
+		" td=" + str(self.td)
+	
+
 class exp:
 	# EXP(V1 V2 TD1 TAU1 TD2 TAU2)
 	v1 = None
@@ -808,6 +796,7 @@ class exp:
 	tau1  = None
 	td2 = None
 	tau2 = None
+	_type = "V"
 	def __init__(self, v1=None, v2=None, td1=None, tau1=None, td2=None, tau2=None):
 		self.v1 = v1
 		self.v2 = v2
@@ -829,6 +818,13 @@ class exp:
 		or self.tau2 == None:
 			return False
 		return True
+	def __str__(self):
+		return "type=exp " + \
+		self._type.lower() + "1=" + str(self.v1) + " " + \
+		self._type.lower() + "2=" + str(self.v2) + \
+		" td1="+str(self.td1) + " td2=" + str(self.td2) + \
+		" tau1=" + str(self.tau1) + " tau2=" + str(self.tau2)
+														
 
 # STATIC METHODS
 def is_elem_voltage_defined(elem):

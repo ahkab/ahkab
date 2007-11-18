@@ -696,6 +696,8 @@ def parse_time_function(ftype, line_elements, stype):
 		function = parse_sin_time_function(line_elements, stype)
 	else:
 		raise NetlistParseError, "unknown signal type."
+	# This way it knows if it is a v/i source in __str__
+	function._type = "V"*(stype.lower()=="voltage") + "I"*(stype.lower()=="current")
 	return function
 
 def parse_pulse_time_function(line_elements, stype):
