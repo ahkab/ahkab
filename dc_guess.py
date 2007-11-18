@@ -22,8 +22,12 @@
 
 import sys
 import numpy, numpy.linalg
-from scipy import factorial
 import circuit, utilities, options
+
+try:
+	from scipy import factorial
+except ImportError:
+	from utilities import fact as factorial
 
 def get_dc_guess(circ, find_all=False, verbose=3):
 	"""This method tries to build a DC guess, according to what the elements suggest.
