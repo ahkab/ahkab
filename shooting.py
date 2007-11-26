@@ -74,7 +74,8 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 	#nv = len(circ.nodes_dict)	
 	n_of_var = mna.shape[0]
 	locked_nodes = circ.get_locked_nodes()
-	if verbose > 2: tick = ticker.ticker(increments_for_step=1)
+	if verbose > 2: 
+		tick = ticker.ticker(increments_for_step=1)
 
 	CMAT = build_CMAT(mna, D, step, points, tick, n_of_var=n_of_var, \
 		print_out=(data_filename!="stdout"), verbose=verbose)
@@ -96,6 +97,7 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 		tick.display()
 	J = numpy.mat(numpy.zeros(CMAT.shape))
 	T = numpy.mat(numpy.zeros((CMAT.shape[0], 1)))
+	# td is a numpy matrix that will hold the damping factors
 	td = numpy.mat(numpy.zeros((points, 1)))
 	iteration = 0 # newton iteration counter
 	

@@ -345,7 +345,7 @@ class diode:
 		else:
 			self.T = constants.T
 		
-		if self.ic is not None: #fixme
+		if ic is not None: #fixme
 			print "(W): ic is ignored in diodes."
 		self.ic = ic #per ora inutilizzato
 	def __str__(self):
