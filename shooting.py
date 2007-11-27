@@ -40,26 +40,28 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 	- if step is specified, the number of points will be automatically determined 
 	- if points is set, the step will be automatically determined
 	- if none of them is set, options.shooting_default_points will be used as points
-	autonomous has to be False, not autonomous circuits are not supported
+	autonomous has to be False, autonomous circuits are not supported
 	x0 is the initial guess to be used. Needs work.
-	datafilename is the output filename. Defaults to stdout.
-	
+	data_filename is the output filename. Defaults to stdout.
+	verbose is set to zero (print errors only) if datafilename == 'stdout'.
+
 	Returns: nothing
 	"""
-	if data_filename != "stdout" and verbose > 2:
-		print "Starting shooting analysis:"
-	
 	if data_filename != "stdout":
 		fdata = open(data_filename, "w")
 	else:
 		fdata = sys.stdout
+		verbose = 0
+	
+	if verbose > 2:
+		print "Starting shooting analysis:"
 	
 	if mna is None or Tf is None:
 		(mna, Tf) = dc_analysis.generate_mna_and_N(circ)
 		mna = utilities.remove_row_and_col(mna)
 		Tf = utilities.remove_row(Tf, rrow=0)
-	elif not mna.shape[1] == Tf.shape[1]:
-		printing.print_general_error("mna matrix and N vector have different number of columns.")
+	elif not mna.shape[0] == Tf.shape[0]:
+		printing.print_general_error("mna matrix and N vector have different number of rows.")
 		sys.exit(0)
 	
 	if D is None:
@@ -71,28 +73,26 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 	
 	(points, step) = check_step_and_points(step, points, period)
 	
-	#nv = len(circ.nodes_dict)	
 	n_of_var = mna.shape[0]
 	locked_nodes = circ.get_locked_nodes()
 	if verbose > 2: 
 		tick = ticker.ticker(increments_for_step=1)
 
 	CMAT = build_CMAT(mna, D, step, points, tick, n_of_var=n_of_var, \
-		print_out=(data_filename!="stdout"), verbose=verbose)
+		verbose=verbose)
 
 	x = build_x(mna, step, points, tick, x0=x0, n_of_var=n_of_var, \
-		print_out=(data_filename!="stdout"), verbose=verbose)
+		verbose=verbose)
 
-	Tf = build_Tf(Tf, points, tick, n_of_var=n_of_var, print_out=(data_filename!="stdout"), verbose=verbose)
+	Tf = build_Tf(Tf, points, tick, n_of_var=n_of_var, verbose=verbose)
 	
 	# time variable component: Tt this is always the same in each iter. So we build it once for all
 	# this holds all time-dependent sources (both V/I).
-	Tt = build_Tt(circ, points, step, tick, n_of_var=n_of_var, print_out=(data_filename!="stdout"), verbose=verbose)
+	Tt = build_Tt(circ, points, step, tick, n_of_var=n_of_var, verbose=verbose)
 	
 	converged = False
 	if verbose > 2: 
-		if data_filename != "stdout": 
-			sys.stdout.write("Solving... ")
+		sys.stdout.write("Solving... ")
 		tick.reset()
 		tick.display()
 	J = numpy.mat(numpy.zeros(CMAT.shape))
@@ -141,7 +141,7 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 
 		J = J + CMAT
 		residuo = CMAT*x + T + Tf + Tt
-		dx = numpy.linalg.inv(J) * (-1 * residuo)
+		dx = -1 * (numpy.linalg.inv(J) *  residuo)
 		#td
 		for index in xrange(points):
 			td[index, 0] = dc_analysis.get_td(dx[index*n_of_var:(index+1)*n_of_var, 0], locked_nodes, n=-1)
@@ -168,10 +168,9 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 	if verbose > 2: 
 		tick.hide()
 	if converged:
-		if verbose > 2 and data_filename != "stdout": 
+		if verbose > 2: 
 			print "done."
 		printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_time=True)
-		
 
 		for index in xrange(points):
 			printing.print_results_on_a_line(time=index*step, x=x[index*n_of_var:(index+1)*n_of_var, 0], fdata=fdata, circ=circ, print_int_nodes=options.print_int_nodes, iter_n=0)
@@ -231,9 +230,10 @@ def check_step_and_points(step, points, period):
 	
 	return (points, step)
 
-def build_CMAT(mna, D, step, points, tick, n_of_var=None, print_out=True, verbose=3):
-	if n_of_var is None: n_of_var = mna.shape[0]
-	if verbose > 4 and print_out: 
+def build_CMAT(mna, D, step, points, tick, n_of_var=None, verbose=3):
+	if n_of_var is None: 
+		n_of_var = mna.shape[0]
+	if verbose > 4: 
 		sys.stdout.write("Building the CMAT ("+str(n_of_var*points)+"x"+str(n_of_var*points)+")... ")
 	if verbose > 2: 
 		tick.reset()
@@ -261,48 +261,61 @@ def build_CMAT(mna, D, step, points, tick, n_of_var=None, print_out=True, verbos
 				else:
 					continue #temp = Z
 			CMAT = set_submatrix(row=li*n_of_var, col=ci*n_of_var, dest_matrix=CMAT, source_matrix=temp)
-		if verbose > 2: tick.step()
-	if verbose > 2: tick.hide()
-	if verbose > 4 and print_out: print "done."
+		if verbose > 2: 
+			tick.step()
+	if verbose > 2: 
+		tick.hide()
+		if verbose > 4: 
+			print "done."
 	#print CMAT
 	return CMAT
 	
-def build_x(mna, step, points, tick, x0=None, n_of_var=None, print_out=True, verbose=3):
-	if n_of_var is None: n_of_var = mna.shape[0]
-	if verbose > 4 and print_out: sys.stdout.write("Building x...")
+def build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
+	if n_of_var is None: 
+		n_of_var = mna.shape[0]
+	if verbose > 4: 
+		sys.stdout.write("Building x...")
 	if verbose > 2: 
 		tick.reset()
 		tick.display()
 	x = numpy.mat(numpy.zeros((points*n_of_var, 1)))
 	if x0 is not None:
 		if x0.shape[0] != n_of_var:
-			print "Warning x0 has the wrong dimensions. Using all-0."
+			print "Warning x0 has the wrong dimensions. Using all 0s."
 		else:
 			for index in xrange(points):
 				x = set_submatrix(row=index*n_of_var, col=0, dest_matrix=x, source_matrix=x0)
-				if verbose > 2: tick.step()
-	if verbose > 2: tick.hide()
-	if verbose > 4 and print_out: print "done."
+				if verbose > 2: 
+					tick.step()
+	if verbose > 2: 
+		tick.hide()
+		if verbose > 4: 
+			print "done."
 	
 	return x
 	
-def build_Tf(sTf, points, tick, n_of_var, print_out=True, verbose=3):
-	if verbose > 4 and print_out: sys.stdout.write("Building Tf... ")
+def build_Tf(sTf, points, tick, n_of_var, verbose=3):
+	if verbose > 4: 
+		sys.stdout.write("Building Tf... ")
 	if verbose > 2: 
 		tick.reset()
 		tick.display()
 	Tf = numpy.mat(numpy.zeros((points*n_of_var, 1)))
 	for index in xrange(points):
 		Tf = set_submatrix(row=index*n_of_var, col=0, dest_matrix=Tf, source_matrix=sTf)
-		if verbose > 2: tick.step()
-	if verbose > 2: tick.hide()
-	if verbose > 4 and print_out: print "done."
+		if verbose > 2: 
+			tick.step()
+	if verbose > 2: 
+		tick.hide()
+		if verbose > 4: 
+			print "done."
 	
 	return Tf
 	
-def build_Tt(circ, points, step, tick, n_of_var, print_out=True, verbose=3):
+def build_Tt(circ, points, step, tick, n_of_var, verbose=3):
 	nv = len(circ.nodes_dict)
-	if verbose > 4 and print_out: sys.stdout.write("Building Tt... ")
+	if verbose > 4: 
+		sys.stdout.write("Building Tt... ")
 	if verbose > 2: 
 		tick.reset()
 		tick.display()	
@@ -324,8 +337,11 @@ def build_Tt(circ, points, step, tick, n_of_var, print_out=True, verbose=3):
 			if circuit.is_elem_voltage_defined(elem):
 				v_eq = v_eq +1
 			#print Tt[index*n_of_var:(index+1)*n_of_var]
-		if verbose > 2: tick.step()
-	if verbose > 2: tick.hide()
-	if verbose > 4 and print_out: print "done."
+		if verbose > 2: 
+			tick.step()
+	if verbose > 2: 
+		tick.hide()
+		if verbose > 4: 
+			print "done."
 	
 	return Tt
