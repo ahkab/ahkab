@@ -106,7 +106,7 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 			J[:, :] = 0
 			T[:, 0] = 0
 			td[:, 0] = 0
-		for index in xrange(points):
+		for index in xrange(1, points):
 			for elem in circ.elements:
 				# build all dT(xn)/dxn (stored in J) and T(x)
 				if elem.is_nonlinear:
@@ -301,10 +301,12 @@ def build_Tf(sTf, points, tick, n_of_var, verbose=3):
 		tick.reset()
 		tick.display()
 	Tf = numpy.mat(numpy.zeros((points*n_of_var, 1)))
-	for index in xrange(points):
+	
+	for index in xrange(1, points):
 		Tf = set_submatrix(row=index*n_of_var, col=0, dest_matrix=Tf, source_matrix=sTf)
 		if verbose > 2: 
 			tick.step()
+	
 	if verbose > 2: 
 		tick.hide()
 		if verbose > 4: 
@@ -320,7 +322,7 @@ def build_Tt(circ, points, step, tick, n_of_var, verbose=3):
 		tick.reset()
 		tick.display()	
 	Tt = numpy.zeros((points*n_of_var, 1))
-	for index in xrange(points):
+	for index in xrange(1, points):
 		v_eq = 0
 		time = index * step
 		for elem in circ.elements:
