@@ -385,13 +385,14 @@ class dfbuffer:
 	Newer entries are added on top of the buffer.
 	It checks the size of the added elements, to be sure they are of the same size.
 	"""
-	_the_real_buffer = []
+	_the_real_buffer = None
 	_length = 0
 	_width  = 0
 	
 	def __init__(self, length, width):
 		self._length = length
 		self._width = width
+		self._the_real_buffer = []
 	
 	def add(self, atuple):
 		if not len(atuple) == self._width:
