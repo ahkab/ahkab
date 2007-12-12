@@ -144,7 +144,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 		import gear as df
 		df.order = 6
 	else:
-		df = import_custom_df_module(method, print_out=(fdata != stdout))
+		df = import_custom_df_module(method, print_out=(fdata != 'stdout'))
 		# df is none if module is not found
 	
 	if df is None:
