@@ -450,7 +450,7 @@ def get_td(dx, locked_nodes, n=-1):
 	"""
 	
 	# questo è per evitare sovraoscillazioni iniziali
-	if not options.nr_dump_first_iters or n < 0:
+	if not options.nr_damp_first_iters or n < 0:
 		td = 1
 	else:
 		if n < 10:

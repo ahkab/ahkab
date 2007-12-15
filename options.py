@@ -30,7 +30,7 @@ gmin = 1e-12
 print_int_nodes = True
 
 # global: solving
-nr_dump_first_iters = False  	# the first iterations will be dumped see dc_analysis.get_td()
+nr_damp_first_iters = False  	# the first iterations will be damped see dc_analysis.get_td()
 nl_voltages_lock = True 	# Apply damping - slows down solution.
 nl_voltages_lock_factor = 4  	# if we allow the voltage on controlling ports to change too much,
 				# we may have current overflows. Think about a diode (exp).
