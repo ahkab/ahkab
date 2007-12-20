@@ -355,7 +355,7 @@ def mdn_solver(x, mna, element_list, Tf, Tt, MAXIT, nv, locked_nodes, time=None,
 	# H(x) = N + T(x)
 	# lets say: J = dF/dx = mna + dT(x)/dx 
 	# J*dx = -1*(mna*x+N+T(x))
-	# dT/dx è lo jacobiano -> g_eq (o gm)
+	# dT/dx ï¿½ lo jacobiano -> g_eq (o gm)
 	#print_steps = False
 	#locked_nodes = get_locked_nodes(element_list)
 	mna_size = mna.shape[0]
@@ -417,8 +417,9 @@ def mdn_solver(x, mna, element_list, Tf, Tt, MAXIT, nv, locked_nodes, time=None,
 		dx = numpy.linalg.inv(J) * (-1 * residuo)
 		x = x + get_td(dx, locked_nodes, n=iteration)*dx
 		# convergence and maxit test FIXME: check the residual
-		if (vector_norm(dx[:nv-1, 0]) < options.ver*vector_norm(x[:nv-1, 0]) + options.vea) and \
-			(mna_size == nv-1 or vector_norm(dx[nv-1:, 0]) < options.ier*vector_norm(x[nv-1:, 0]) + options.iea):
+		if convergence_check(x, dx, residuo, nv-1):
+		#(vector_norm(dx[:nv-1, 0]) < options.ver*vector_norm(x[:nv-1, 0]) + options.vea) and \
+			#(mna_size == nv-1 or vector_norm(dx[nv-1:, 0]) < options.ier*vector_norm(x[nv-1:, 0]) + options.iea):
 			#and vector_norm(residuo) < options.iea: fixme!
 			converged = True
 			break
@@ -449,8 +450,8 @@ def get_td(dx, locked_nodes, n=-1):
 	Returns: a float, the damping coefficient (td)
 	"""
 	
-	# questo è per evitare sovraoscillazioni iniziali
-	if not options.nr_damp_first_iters or n < 0:
+	# questo ï¿½ per evitare sovraoscillazioni iniziali
+	if not options.nr_dump_first_iters or n < 0:
 		td = 1
 	else:
 		if n < 10:
@@ -484,15 +485,15 @@ def generate_mna_and_N(circ):
 	MNA e N vengono creati direttamente della dimensione det. dal numero dei nodi, poi se 
 	ci sono voltage sources vengono allargate.
 	
-	Il vettore incognita è fatto così:
+	Il vettore incognita ï¿½ fatto cosï¿½:
 	x vettore colonna di lunghezza (N_nodi - 1) + N_vsources, i primi N_nodi valori di x, corrispondono
 	alle tensioni ai nodi, gli altri alle correnti nei generatori di tensione.
 	Le tensioni nodali sono ordinate tramite i numeri interni dei nodi, in ordine CRESCENTE, saltando
 	il nodo 0, preso a riferimento.
-	L'ordine delle correnti nei gen di tensione è det. dall'ordine in cui essi vengono incontrati 
+	L'ordine delle correnti nei gen di tensione ï¿½ det. dall'ordine in cui essi vengono incontrati 
 	scorrendo circ.elements. Viene sempre usata la convenzione normale.
 	
-	Il sistema è così fatto: MNA*x + N = 0
+	Il sistema ï¿½ cosï¿½ fatto: MNA*x + N = 0
 	
 	Richiede in ingresso la descrizione del circuito, circ.
 	Restituisce: (MNA, N)
@@ -527,7 +528,7 @@ def generate_mna_and_N(circ):
 		else:
 			print "dc_analysis.py: BUG - Unknown linear element. Ref. #28934"
 	#process vsources
-	# i generatori di tensione non sono pilotabili in tensione: g è infinita
+	# i generatori di tensione non sono pilotabili in tensione: g ï¿½ infinita
 	# for each vsource, introduce a new variable: the current flowing through it.
 	# then we introduce a KVL equation to be able to solve the circuit
 	for elem in circ.elements:
@@ -542,7 +543,7 @@ def generate_mna_and_N(circ):
 			mna[index, elem.n1] = +1.0
 			mna[index, elem.n2] = -1.0
 			if isinstance(elem, circuit.vsource) and not elem.is_timedependent:
-				# corretto, se è def una parte tempo-variabile ci pensa
+				# corretto, se ï¿½ def una parte tempo-variabile ci pensa
 				# mdn_solver a scegliere quella giusta da usare.
 				N[index, 0] = -1.0*elem.V()
 			elif isinstance(elem, circuit.evsource):
@@ -627,3 +628,26 @@ def modify_x0_for_ic(circ, x0):
 			x0[nv - 1 + voltage_defined_elements.index(elem), 0] = elem.ic
 	
 	return x0
+
+def convergence_check(x, dx, residuum, nv_minus_one):
+	return (voltage_convergence_check(x[:nv_minus_one, 0], dx[:nv_minus_one, 0], residuum[:nv_minus_one, 0]) and current_convergence_check(x[nv_minus_one:], dx[nv_minus_one:], residuum[nv_minus_one:]))
+	
+def voltage_convergence_check(x, dx, residuum):
+	return custom_convergence_check(x, dx, residuum, er=options.ver, ea=options.vea, eresiduum=options.iea)
+
+def current_convergence_check(x, dx, residuum):
+	return custom_convergence_check(x, dx, residuum, er=options.ier, ea=options.iea, eresiduum=options.vea)
+
+def custom_convergence_check(x, dx, residuum, er, ea, eresiduum, vector_norm=lambda v: max(abs(v))):
+	if x.shape[0]:
+		if vector_norm(dx) < er*vector_norm(x) + ea and vector_norm(residuum) < eresiduum:
+			ret = True
+		else:
+			ret = False
+	else:
+		# We get here when there's no variable to be checked. This is because there aren't variables 
+		# of this type. 
+		# Eg. the circuit has no voltage sources nor voltage defined elements. In this case, the actual check is done
+		#only by current_convergence_check, voltage_convergence_check always returns True.
+		ret = True
+	return ret
