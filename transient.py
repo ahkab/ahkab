@@ -45,8 +45,7 @@ GEAR5 = "GEAR5"
 GEAR6 = "GEAR6"
 
 def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=None, N=None, \
-	data_filename="stdout", use_step_control=True,  \
-	print_step_and_lte=False, verbose=3):
+	D=None, data_filename="stdout", use_step_control=True, return_req_dict=None, verbose=3):
 	"""Performs a transient analysis of the circuit described by circ.
 	
 	Important parameters:
@@ -55,13 +54,15 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	element of x will be printed out to step_and_lte.graph in the current directory.
 	
 	"""
-	#use_aposteriori_step_control = False
-	#use_step_control = False
-	#print_step_and_lte = True
+	_debug = False
+	if _debug:
+		print_step_and_lte = True
+	else:
+		print_step_and_lte = False
 	
 	HMAX = tstep
 	
-	#check paramenters
+	#check parameters
 	if tstart > tstop:
 		printing.print_general_error("tstart > tstop")
 		sys.exit(1)
@@ -93,15 +94,14 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 		(mna, N) = dc_analysis.generate_mna_and_N(circ)
 		mna = utilities.remove_row_and_col(mna)
 		N = utilities.remove_row(N, rrow=0)
-	elif not mna.shape[1] == N.shape[1]:
+	elif not mna.shape[0] == N.shape[0]:
 		printing.print_general_error("mna matrix and N vector have different number of columns.")
 		sys.exit(0)
-	
-	# We generate the D matrix by default. It could be provided but that makes sense only 
-	# if you do more than one tran analysis. 
-	# Ahkab is not ready to that. For example, output streams should be changed...
-	D = generate_D(circ, [mna.shape[0], mna.shape[0]])
-	D = utilities.remove_row_and_col(D)
+	if D is None:
+		# if you do more than one tran analysis, output streams should be changed...
+		# this needs to be fixed
+		D = generate_D(circ, [mna.shape[0], mna.shape[0]])
+		D = utilities.remove_row_and_col(D)
 
 	# setup x0
 	if x0 is None:
@@ -144,7 +144,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 		import gear as df
 		df.order = 6
 	else:
-		df = import_custom_df_module(method, print_out=(fdata != 'stdout'))
+		df = import_custom_df_module(method, print_out=(data_filename != "stdout"))
 		# df is none if module is not found
 	
 	if df is None:
@@ -173,6 +173,13 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	thebuffer.add((tstart, x0, None)) #setup the fist values
 	if verbose > 4: 
 		sys.stdout.write("done\n")
+	
+	#setup the output buffer
+	if return_req_dict:
+		output_buffer = dfbuffer(length=return_req_dict["points"], width=1)
+		output_buffer.add((x0,))
+	else:
+		output_buffer = None
 	
 	# import implicit_euler to be used in the first iterations
 	# this is because we don't have any dx when we start, nor any past point value
@@ -227,9 +234,10 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 			tick.display()
 	while time < tstop:
 		if iter_n < max(max_x, max_dx_plus_1):
-			[x_coeff, const, x_lte_coeff, prediction, pred_lte_coeff] = \
-			implicit_euler.get_df([thebuffer.get_df_vector()[0]], tstep, \
+			x_coeff, const, x_lte_coeff, prediction, pred_lte_coeff = \
+			implicit_euler.get_df((thebuffer.get_df_vector()[0],), tstep, \
 			predict=(use_step_control and (iter_n >= max(pmax_x, pmax_dx_plus_1))))
+			
 		else:
 			[x_coeff, const, x_lte_coeff, prediction, pred_lte_coeff] = \
 			df.get_df(thebuffer.get_df_vector(), tstep, predict=use_step_control)
@@ -277,9 +285,11 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 			x = x1
 			iter_n = iter_n + 1
 			printing.print_results_on_a_line(time, x, fdata, circ, options.print_int_nodes, iter_n)
-			#printing.print_results_at_time(time, x, fdata, iter_n)
-			#thebuffer.add((numpy.mat(numpy.array(time)), x, numpy.multiply(x_coeff, x) + const))
-			thebuffer.add((time, x, numpy.multiply(x_coeff, x) + const))
+			
+			dxdt = numpy.multiply(x_coeff, x) + const
+			thebuffer.add((time, x, dxdt))
+			if output_buffer is not None:
+				output_buffer.add((x, ))
 			if fdata != sys.stdout:
 				if verbose > 1:
 					tick.step()
@@ -313,12 +323,16 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 		if fdata != sys.stdout and verbose > 2:
 			print "done."
 			print "Average time step:", (tstop - tstart)/iter_n
+		if output_buffer:
+			ret_value = output_buffer.get_as_matrix()
+		else:
+			ret_value = None
 	else:
 		if fdata != sys.stdout:
 			print "failed."
-		(time, x) =  (None, None)
+		ret_value =  None
 	
-	return (time, x)
+	return ret_value
 
 def check_step(tstep, time, tstop, HMAX):
 	"""Checks the step for the following problems:
@@ -358,9 +372,9 @@ def generate_D(circ, shape):
 	
 	Returns: the UNREDUCED D matrix
 	"""
-	shape[0] = shape[0] + 1
-	shape[1] = shape[1] + 1
-	D = numpy.matrix(numpy.zeros(shape))
+	#shape[0] = shape[0] + 1
+	#shape[1] = shape[1] + 1
+	D = numpy.matrix(numpy.zeros((shape[0]+1, shape[1]+1)))
 	nv = len(circ.nodes_dict)# - 1
 	i_eq = 0 #each time we find a vsource or vcvs or ccvs, we'll add one to this.
 	for elem in circ.elements:
@@ -390,11 +404,12 @@ class dfbuffer:
 	_width  = 0
 	
 	def __init__(self, length, width):
+		self._the_real_buffer = []
 		self._length = length
 		self._width = width
-		self._the_real_buffer = []
 	
 	def add(self, atuple):
+		#print "len atuple " + str(len(atuple))
 		if not len(atuple) == self._width:
 			printing.print_warning("Attempted to add a element of wrong size to LIFO buffer. BUG?")
 			return False
@@ -419,6 +434,19 @@ class dfbuffer:
 			return True
 		else:
 			return False
+	
+	def get_as_matrix(self):
+		for vindex in range(self._width):
+			for index in range(len(self._the_real_buffer)):
+				if index == 0:
+					single_matrix = self._the_real_buffer[index][vindex]
+				else:
+					single_matrix = numpy.concatenate((single_matrix, self._the_real_buffer[index][vindex]), axis=0)
+			if vindex == 0:
+				complete_matrix = single_matrix
+			else:
+				complete_matrix = numpy.concatenate((complete_matrix, single_matrix), axis=1)
+		return complete_matrix
 
 def import_custom_df_module(method, print_out):
 	"""Imports a module that implements differentiation formula through imp.load_module

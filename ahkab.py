@@ -42,7 +42,6 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 	"""
 	x0_op = None
 	x0_ic_dict = {}
-	last_x_tran = None
 
 	for directive in [ x for x in an_list if x[0] == "ic" ]:
 		x0_ic_dict.update({directive[1]:dc_analysis.build_x0_from_user_supplied_ic(circ,  voltages_dict=directive[2], currents_dict=directive[3])})
@@ -107,10 +106,10 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 					sys.exit(54)
 				x0 = x0_ic_dict[an[6]]
 			
-			(time, last_x_tran) = transient.transient_analysis(circ, tstart=an[1], tstep=an[3], tstop=an[2], x0=x0, mna=None, N=None, verbose=verbose, data_filename=data_filename, use_step_control=(not disable_step_control), method=tran_method)
+			transient.transient_analysis(circ, tstart=an[1], tstep=an[3], tstop=an[2], x0=x0, mna=None, N=None, verbose=verbose, data_filename=data_filename, use_step_control=(not disable_step_control), method=tran_method)
 		
 		elif an[0] == "shooting":
-			shooting.shooting(circ, period=an[1], step=an[3], mna=None, Tf=None, D=None, points=an[2], autonomous=an[4], x0=last_x_tran, data_filename=data_filename, verbose=verbose)
+			shooting.shooting(circ, period=an[1], step=an[3], mna=None, Tf=None, D=None, points=an[2], autonomous=an[4], x0=x0_op, data_filename=data_filename, verbose=verbose)
 				
 	return None
 
