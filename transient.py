@@ -170,7 +170,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 		thebuffer = dfbuffer(length=max(max_x, max_dx, pmax_x, pmax_dx) + 1, width=3)
 	else:
 		thebuffer = dfbuffer(length=max(max_x, max_dx) + 1, width=3)
-	thebuffer.add((tstart, x0, None)) #setup the fist values
+	thebuffer.add((tstart, x0, None)) #setup the first values
 	if verbose > 4: 
 		sys.stdout.write("done\n")
 	
@@ -441,7 +441,7 @@ class dfbuffer:
 				if index == 0:
 					single_matrix = self._the_real_buffer[index][vindex]
 				else:
-					single_matrix = numpy.concatenate((single_matrix, self._the_real_buffer[index][vindex]), axis=0)
+					single_matrix = numpy.concatenate((self._the_real_buffer[index][vindex], single_matrix), axis=0)
 			if vindex == 0:
 				complete_matrix = single_matrix
 			else:
