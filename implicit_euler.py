@@ -74,6 +74,7 @@ def get_df(pv_array, suggested_step, predict=True):
 	
 	#print pv_array
 	# we'll use just the first column, since our method needs just x(n)
+
 	if len(pv_array[0]) != 3:
 		return None
 	if pv_array[0][1] is None:
@@ -95,6 +96,6 @@ def get_df(pv_array, suggested_step, predict=True):
 	#print x_lte_coeff
 	#print predict_lte_coeff
 	
-	return [ ( 1 / suggested_step), (-1 / suggested_step) * pv_array[0][1], x_lte_coeff, predict, predict_lte_coeff]
+	return (1.0/suggested_step, -1.0/suggested_step*pv_array[0][1], x_lte_coeff, predict, predict_lte_coeff)
 		
 	
