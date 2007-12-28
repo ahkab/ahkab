@@ -22,15 +22,16 @@
 
 import sys
 import numpy, numpy.linalg
-import circuit, utilities, options
+import circuit, utilities
 
-try:
-	from scipy import factorial
-except ImportError:
-	from utilities import fact as factorial
+#try:
+	#from scipy import factorial
+#except ImportError:
+	#from utilities import fact as factorial
 
-def get_dc_guess(circ, find_all=False, verbose=3):
-	"""This method tries to build a DC guess, according to what the elements suggest.
+def get_dc_guess(circ, verbose=3):
+	"""This method tries to build a DC guess, according to what the
+	elements suggest.
 	A element can suggest its guess through the elem.dc_guess field.
 	
 	find_all: boolean, if set to True, the method will attempt to find all valid 
@@ -65,7 +66,8 @@ def get_dc_guess(circ, find_all=False, verbose=3):
 	one_element_with_dc_guess_found = False
 
 	for elem in circ.elements:
-		# In the meanwhile, check how many current equations are required to solve the circuit
+		# In the meanwhile, check how many current equations are 
+		# required to solve the circuit
 		if circuit.is_elem_voltage_defined(elem):
 			v_eq = v_eq + 1
 		# This is the main focus: build a system of equations (M*x = T)
@@ -175,53 +177,9 @@ def get_dc_guess(circ, find_all=False, verbose=3):
 	#    we are likely to find a solution (the matrix has det != 0).
 	
 	Rp_list = [] # to hold the results
-	if M.shape[0] > M.shape[1]:
-		tot_count = factorial(M.shape[0])/(factorial(M.shape[1])*factorial(M.shape[0]-M.shape[1]))
-		if verbose > 3:
-			print "DBG: get_dc_guess(): There are", tot_count, "possible combinations."
-			count = 0
-			remove_char = 0
-		if tot_count*M.shape[1] > options.dc_max_guess_effort:
-			if verbose:
-				sys.stdout.write("too expensive. ")
-			if verbose > 2:
-				sys.stdout.write(str(tot_count*M.shape[1])+"/"+str(options.dc_max_guess_effort) + " ")
-			if verbose > 3:
-				print ""
-		else:
-			for comb in utilities.combinations(range(M.shape[0]), M.shape[1]):
-				Mp = None
-				#print len(comb), M.shape[1]
-				for index in comb:	
-					if Mp == None:
-						Mp = M[index, :]
-						#Tp = T[index, :] -> il termine noto lo costruisco solo se Mp � invertibile
-					else:
-						Mp = numpy.concatenate((Mp, M[index, :]), axis=0)
-						#Tp = numpy.concatenate((Tp, T[index, :]), axis=0)
-				#print Mp
-				if numpy.linalg.det(Mp) != 0:
-					# We have a solution: costruisci anche il termine noto
-					Tp = None
-					for index in comb:
-						if Tp is None:
-							Tp = T[index, :]
-						else:
-							Tp = numpy.concatenate((Tp, T[index, :]), axis=0)
-					Rp = [numpy.linalg.inv(Mp) * Tp]
-					Rp_list = Rp_list + Rp
-					if not find_all:
-						break
-				if verbose == 5:
-					count = count + 1
-					sys.stdout.write("\b"*remove_char)
-					sys.stdout.write(str(count)+"/"+str(tot_count) + " - " + str(100*count/tot_count) + "%")
-					sys.stdout.flush()
-					remove_char = len(str(count)+"/"+str(tot_count) + " - " + str(100*count/tot_count) + "%")
-			if verbose == 5:
-				print ""
-	
-	elif M.shape[0] == M.shape[1]:
+	if M.shape[0] != M.shape[1]:
+		Rp_list = [numpy.mat(numpy.linalg.pinv(M))*T]
+	else: # case M.shape[0] == M.shape[1], use normal
 		if numpy.linalg.det(M) is not 0:
 			try:
 				Rp_list = Rp_list + [numpy.linalg.inv(M) * T]
@@ -231,20 +189,20 @@ def get_dc_guess(circ, find_all=False, verbose=3):
 				if verbose and verbose < 4:
 					sys.stdout.write("cond=" +str(cond)+". No guess. ")
 
-	else:
-		raise NotImplemented, "M matrix has more columns than rows."
-	#if _debug:
-	#	print M
-	#	print "T\n", T
-
 	# Now we want to:
-	# 1. Add voltages for the nodes for which we have no clue to guess (default to 0)
-	# 2. Append to each vector of guesses the values for currents in voltage defined elem (default to 0)
-	Rp_list_dummy = [] # in python, you can't modify the list you're iterating over.
-	for Rp in Rp_list[:]:
-		for n in removed_index:
-			Rp = numpy.concatenate((numpy.concatenate((Rp[:n, 0], numpy.mat(numpy.zeros((1, 1)))), axis=0), Rp[n:, 0]), axis=0)
-		# add the 0s for the currents due to the voltage defined elements (we have no guess for those...)
+	# 1. Add voltages for the nodes for which we have no clue to guess.
+	# 2. Append to each vector of guesses the values for currents in 
+	#    voltage defined elem.
+	# Both them are set to 0
+	Rp_list_dummy = [] # We want to modify and readd each item
+	for Rp in Rp_list:
+		for index in removed_index:
+			Rp = numpy.concatenate(( \
+			numpy.concatenate((Rp[:index, 0], \
+			numpy.mat(numpy.zeros((1, 1)))), axis=0), \
+			Rp[index:, 0]), axis=0)
+		# add the 0s for the currents due to the voltage defined 
+		# elements (we have no guess for those...)
 		if v_eq > 0:
 			Rp = numpy.concatenate((Rp, numpy.mat(numpy.zeros((v_eq, 1)))), axis=0)
 		Rp_list_dummy = Rp_list_dummy + [Rp]
