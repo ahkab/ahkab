@@ -25,23 +25,20 @@ import sys, imp
 import circuit, printing
 
 def parse_circuit(filename, read_netlist_from_stdin=False):
-	"""Should parse a SPICE-like netlist and return a circuit instance 
+	"""Parse a SPICE-like netlist and return a circuit instance 
 	that includes all components, all nodes known
 	with that you can recreate mna and N at any time.
 	Note that solving the circuit requires accessing to the elements in 
-	the circuit instance to evaluate non linear elements' currents...
-	
-	The directives are touples of analysis commands and their line number, 
-	they should be passed to parse_analysis()
+	the circuit instance to evaluate non linear elements' currents.
 	
 	Returns:
 	(circuit_instance, directives)
 	"""
 	# Lots of differences with spice's syntax:
 	# Support for alphanumeric node names, but the ref has to be 0. always
-	# No continuing to next line through + 
+	# Do not break lines with + 
 	# .end is not required, but if is used anything following it is ignored
-	# ...many others
+	# many others, see doc.
 	
 	circ = circuit.circuit()
 	
@@ -60,15 +57,36 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 			line = line.strip().lower()
 			#print line
 			if line_n == 1:
-				#in spice files, the first line is always a comment (the circuit title)
+				# In spice files, the first line is always the title
+				# (which is a special type of comment) 
+				# we do the same here
 				circ.title = line
 				continue
-			elif len(line)==0:
+			elif len(line) == 0:
 				continue #empty line
-			elif line[0] == "*": #comment
+			elif line[0] == "*": # comments start with *
 				continue
 			line_elements = line.split()
-			#process element
+			
+			# directives are grouped together and evaluated after 
+			# we have the whole circuit.
+			if line[0] == ".":
+				if line_elements[0] == ".end":
+					if len(line_elements) == 1:
+						break
+					else:
+						raise NetlistParseError, ".end shouldn't be followed by any parameters"
+						
+				elif line_elements[0] == ".op" or \
+				line_elements[0]=='.dc' or line_elements[0] == ".tran"\
+				or line_elements[0] == ".shooting" or line_elements[0] == ".ic":
+					directives.append((line, line_n))
+				else:
+					raise NetlistParseError, "Unknown directive."
+				continue
+
+			# elements: detect the element type and call the
+			# appropriate parsing function
 			if line[0] == "r":
 				circ.elements = circ.elements + \
 				parse_elem_resistor(line, circ, line_elements)
@@ -99,19 +117,6 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 			elif line[0] == "y": #User defined module -> MODIFY
 				circ.elements = circ.elements + \
 				parse_elem_user_defined(line, circ, line_elements)
-			elif line[0] == ".":
-				if line_elements[0] == ".end":
-					if len(line_elements) == 1:
-						break
-					else:
-						raise NetlistParseError, ""
-						
-				elif line_elements[0] == ".op" or \
-				line_elements[0]=='.dc' or line_elements[0] == ".tran"\
-				or line_elements[0] == ".shooting" or line_elements[0] == ".ic":
-					directives.append((line, line_n))
-				else:
-					raise NetlistParseError, "Unknown directive."
 			else:
 				raise NetlistParseError, "unknown element."
 	except NetlistParseError, (msg,):
