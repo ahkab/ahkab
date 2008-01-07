@@ -17,8 +17,10 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Parse spice-like files, generate circuits instances and print them
-Ref http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
+"""Parse spice-like files, generate circuits instances and print them.
+The syntax is explained in the docs and it's based on [1] whenever possible.
+
+Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
 """
 
 import sys, imp
