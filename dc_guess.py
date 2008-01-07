@@ -41,7 +41,7 @@ def get_dc_guess(circ, verbose=3):
 	if not circ.is_nonlinear():
 		if verbose:
 			print "skipped. (linear circuit)"
-		return []
+		return ()
 	
 	
 	if verbose > 3:
@@ -98,7 +98,7 @@ def get_dc_guess(circ, verbose=3):
 			print "DBG: get_dc_guess(): no element has a dc_guess"
 		elif verbose <= 3:
 			print "skipped."
-		return []
+		return ()
 	
 	# We wish to find the linearly dependent lines of the M matrix.
 	# The matrix is made by +1, -1, 0 elements. 
@@ -155,11 +155,10 @@ def get_dc_guess(circ, verbose=3):
 	#    we are likely to find a solution (the matrix has det != 0).
 	#    I'm not sure about this though.
 	
-	# Rp_list = [] # to hold the result
 	if M.shape[0] != M.shape[1]:
-		Rp = [numpy.mat(numpy.linalg.pinv(M))*T]
+		Rp = numpy.mat(numpy.linalg.pinv(M)) * T
 	else: # case M.shape[0] == M.shape[1], use normal
-		if numpy.linalg.det(M) is not 0:
+		if numpy.linalg.det(M) != 0:
 			try:
 				Rp = numpy.linalg.inv(M) * T
 			except numpy.linalg.linalg.LinAlgError:
@@ -173,7 +172,6 @@ def get_dc_guess(circ, verbose=3):
 	# 2. Append to each vector of guesses the values for currents in 
 	#    voltage defined elem.
 	# Both them are set to 0
-	Rp_list_dummy = [] # We want to modify and readd each item
 	for index in removed_index:
 		Rp = numpy.concatenate(( \
 		numpy.concatenate((Rp[:index, 0], \
