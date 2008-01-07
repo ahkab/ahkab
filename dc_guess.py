@@ -24,26 +24,15 @@ import sys
 import numpy, numpy.linalg
 import circuit, utilities
 
-#try:
-	#from scipy import factorial
-#except ImportError:
-	#from utilities import fact as factorial
-
 def get_dc_guess(circ, verbose=3):
 	"""This method tries to build a DC guess, according to what the
 	elements suggest.
 	A element can suggest its guess through the elem.dc_guess field.
 	
-	find_all: boolean, if set to True, the method will attempt to find all valid 
-	guesses, it will not stop when it finds the first one.
 	verbose: verbosity level (from 0 silent to 5 debug)
 	
 	Returns: a list of numpy's matrix
 	"""
-	
-	#_debug = True
-
-	
 	if verbose: 
 		sys.stdout.write("Calculating guess: ")
 		sys.stdout.flush()
@@ -126,10 +115,6 @@ def get_dc_guess(circ, verbose=3):
 	# the same we were considering before; compare with the upper lines..
 	# Not optimal, but it works.
 	for i in range(M.shape[0]-1, -1, -1):
-		#if not M[i, :].any(): #not needed -> does never happen
-		#	M = utilities.remove_row(M, rrow=i)
-		#	T = utilities.remove_row(T, rrow=i)
-		#else:
 		for j in range(i-1, -1, -1):
 			#print i, j, M[i, :], M[j, :]
 			dummy1 = M[i, :] - M[j, :]
@@ -161,28 +146,22 @@ def get_dc_guess(circ, verbose=3):
 
 	# Now, we have a set of equations to be solved.
 	# There are three cases:
-	# 1. The M matrix has more rows than columns
-	#    If this happens, it means that there is no solution that satisfies
-	#    all the guesses correctly.
-	#    We have to choose a subset of the rows them to get a square M. 
-	#    Notice that:
-	#     -> Different choices _may_ give different solutions.
-	#     -> Some choices may give a singular M matrix.
-	# 2. The matrix has more columns than rows.
-	#    This means that we haven't got enough information to solve for all nodes.
-	#    We have to choose a subset of the columns (and of the variables).
-	#    The others will be left to 0.
-	# 3. The matrix is square.
-	#    I'm not sure about this: it seems that if the circuit is not pathological,
+	# 1. The M matrix has a different number of rows and columns.
+	#    We use the Moore-Penrose matrix inverse to get 
+	#    the shortest length least squares solution to the problem
+	#          M*x + T = 0
+	# 2. The matrix is square.
+	#    It seems that if the circuit is not pathological,
 	#    we are likely to find a solution (the matrix has det != 0).
+	#    I'm not sure about this though.
 	
-	Rp_list = [] # to hold the results
+	# Rp_list = [] # to hold the result
 	if M.shape[0] != M.shape[1]:
-		Rp_list = [numpy.mat(numpy.linalg.pinv(M))*T]
+		Rp = [numpy.mat(numpy.linalg.pinv(M))*T]
 	else: # case M.shape[0] == M.shape[1], use normal
 		if numpy.linalg.det(M) is not 0:
 			try:
-				Rp_list = Rp_list + [numpy.linalg.inv(M) * T]
+				Rp = numpy.linalg.inv(M) * T
 			except numpy.linalg.linalg.LinAlgError:
 				eig = numpy.linalg.eig(M)[0]
 				cond = abs(eig).max()/abs(eig).min()
@@ -195,29 +174,23 @@ def get_dc_guess(circ, verbose=3):
 	#    voltage defined elem.
 	# Both them are set to 0
 	Rp_list_dummy = [] # We want to modify and readd each item
-	for Rp in Rp_list:
-		for index in removed_index:
-			Rp = numpy.concatenate(( \
-			numpy.concatenate((Rp[:index, 0], \
-			numpy.mat(numpy.zeros((1, 1)))), axis=0), \
-			Rp[index:, 0]), axis=0)
-		# add the 0s for the currents due to the voltage defined 
-		# elements (we have no guess for those...)
-		if v_eq > 0:
-			Rp = numpy.concatenate((Rp, numpy.mat(numpy.zeros((v_eq, 1)))), axis=0)
-		Rp_list_dummy = Rp_list_dummy + [Rp]
-	Rp_list = Rp_list_dummy
-	del Rp_list_dummy
+	for index in removed_index:
+		Rp = numpy.concatenate(( \
+		numpy.concatenate((Rp[:index, 0], \
+		numpy.mat(numpy.zeros((1, 1)))), axis=0), \
+		Rp[index:, 0]), axis=0)
+	# add the 0s for the currents due to the voltage defined 
+	# elements (we have no guess for those...)
+	if v_eq > 0:
+		Rp = numpy.concatenate((Rp, numpy.mat(numpy.zeros((v_eq, 1)))), axis=0)
 	
 	if verbose == 5:
 		print circ.nodes_dict
-		print Rp_list
 	
 	if verbose and verbose < 4:
 		print "done."
 	if verbose > 3:
-		print "Guesses:", len(Rp_list)
-		for Rp in Rp_list:
-			print Rp
+		print "Guess:"
+		print Rp
 	
-	return Rp_list
+	return (Rp, )
