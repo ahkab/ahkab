@@ -603,12 +603,14 @@ def parse_elem_user_defined(line, circ, line_elements=None):
 	This method will attempt to load the module <module_name> and it will
 	then look for a class named <type>.
 	
-	The class will be created with arguments: 
+	An object will be instatiated with the following arguments: 
 	n1, n2, param_dict, get_int_id_func, convert_units_func
 	Where:
 	n1: is the anode of the element
 	n2: is the cathode
 	param_dict: is a dictionary, its elements are {param1:value1, ...}
+	get_int_id_func, convert_units_func are two function that may be used
+	in the __init__ method, if needed.
 	get_int_id_func: a function that gives back the internal name of a node
 	convert_units_func: utility function to convert eg 1p -> 1e-12
 	
