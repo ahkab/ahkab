@@ -48,27 +48,28 @@ ports vector:
 voltages_vector = ( Va-Vb, Vc-Vd, Ve-Vf, ...)
 
 That's passed to:
-3. elem.i(ports_vector, time)
+3. elem.i(voltages_vector, time)
 
 It returns the current flowing into the element if the voltages specified in
 the voltages_vector are applied to its ports, at the time given.
 
-4. elem.g(ports_v, port_index, time) is similar, but returns the differential
-transconductance between the port at position port_index in the ports_vector
-and the current, when the operating point is specified by the voltages in the
-ports_v (voltages_vector). This is used by the mdn_solver.
+4. elem.g(voltages_vector, port_index, time) is similar, but returns the 
+differential transconductance between the port at position port_index in the 
+ports_vector (see 2) and the current, when the operating point is specified by
+the voltages in the voltages_vector. 
 
 5. elem.is_nonlinear
-A non linear element must have elem.is_nonlinear set to True.
+A non linear element must have a elem.is_nonlinear field set to True.
 
 Recommended:
-1. A non linear element may have a list/tuple of the same length of its ports
-vector in which there are the recommended guesses for dc analysis. 
-Eg vgs is set to vt in mosfets.
+1. A non linear element may have a list/tuple of the same length of its 
+ports_vector in which there are the recommended guesses for dc analysis. 
+Eg Vgs is set to Vt in mosfets.
+This is obviously useless for linear devices.
 
-Every element:
-1. Every element should have a __str__ method. 
-It must return a line of paramaters without n1 n2, because a element cannot know the external names of its nodes. It is used to print the parsed netlist.
+2. Every element should have a meaningful __str__ method. 
+It must return a line of paramaters without n1 n2, because a element cannot 
+know the external names of its nodes. It is used to print the parsed netlist.
 
 """
 
@@ -80,22 +81,22 @@ user_defined_modules_dict = {}
 
 class circuit:
 	"""Every circuit is described in the ahkab simulator by a circuit class.
-	This class holds everything is needed to simulate the circuit.
+	This class holds everything is needed to simulate the circuit (except
+	the specification of the analyses to be performed).
+	
 	It is even possible to rewrite a netlist from a circuit class: see the 
 	printing module.
 
-	The code is fairly easy, I hope.
 	There are basically three things in this class.
 	
 	1. Nodes
-	In the circuit class, the nodes are stored in this way: we assign to each node
-	a internal name, whatever is it's external identifier (the one used in the 
-	netlist).
+	The nodes are stored in this way: we assign to each node a internal 
+	name, whatever is its external one (which is used in the netlist).
+	Those are integers.
 
-	The simulator uses always the internal names while solving the circuit. 
-
-	When the results are presented to the user, the internal node is not showed,
-	the external identifier (or external node name) is showed instead.
+	The simulator uses always the internal names. When the results are
+	presented to the user, the internal node is not showed, the external 
+	identifier (or external node name) is printed instead.
 
 	This is done through:
 		my_circuit = circuit()
