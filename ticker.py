@@ -24,16 +24,20 @@ Implements a progress indicator.
 import sys
 
 class ticker:
-	"""This is a progress indicator class. If activated, you shouldn't
-	print to screen before calling ticker.hide().
+	"""This is a progress indicator class.
+	
+	If activated, you shouldn't print anything to screen before calling
+	ticker.hide().
 
-	If you wish to change the progress indicator, it's easy.
+	If you wish to change the progress indicator, change self.progress to
+	something else. 
 	"""
 	progress = ("-", "\\", "|", "/")
 	_index = 0
 	_step = 0
 	_display = False
 	increments_for_step = 1
+	
 	def __init__(self, increments_for_step=10):
 		self.increments_for_step = increments_for_step
 		
