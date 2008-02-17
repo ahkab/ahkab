@@ -43,42 +43,42 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 	x0_op = None
 	x0_ic_dict = {}
 
-	for directive in [ x for x in an_list if x[0] == "ic" ]:
-		x0_ic_dict.update({directive[1]:dc_analysis.build_x0_from_user_supplied_ic(circ,  voltages_dict=directive[2], currents_dict=directive[3])})
+	for directive in [ x for x in an_list if x["type"] == "ic" ]:
+		x0_ic_dict.update({directive["name"]:dc_analysis.build_x0_from_user_supplied_ic(circ,  voltages_dict=directive["vdict"], currents_dict=directive["cdict"])})
 	
 	for an in an_list:
 		if outfile != 'stdout':
-			data_filename = outfile + "." + an[0]
+			data_filename = outfile + "." + an["type"]
 		else:
 			data_filename = outfile
 
-		if an[0] == "op":
-			guess_label = an[1]
-			if guess_label is None:
+		if an["type"] == "op":
+			if an["guess_label"] is None:
 				x0_op = dc_analysis.op_analysis(circ, guess=guess, verbose=verbose)
 			else:
-				if not guess_label in x0_ic_dict:
+				if not an["guess_label"] in x0_ic_dict:
 					printing.print_warning("op: guess is set but no matching .ic directive was found.")
 					printing.print_warning("op: using built-in guess method: "+str(guess))
 					x0_op = dc_analysis.op_analysis(circ, guess=guess, verbose=verbose)
 				else:
-					x0_op = dc_analysis.op_analysis(circ, guess=False, x0=x0_ic_dict[guess_label], verbose=verbose)
+					x0_op = dc_analysis.op_analysis(circ, guess=False, x0=x0_ic_dict[an["guess_label"]], verbose=verbose)
 		
-		elif an[0] == "dc":
-			if an[1][0].lower() == "v":
+		elif an["type"] == "dc":
+			if an["source_name"][0].lower() == "v":
 				elem_type = "vsource"
-			elif an[1][0].lower() == "i":
+			elif an["source_name"][0].lower() == "i":
 				elem_type = "isource"
 			else:
 				printing.print_general_error("Type of sweep source is unknown: " + an[1][0])
 				sys.exit(1)
-			dc_analysis.dc_analysis(circ, start=an[2], stop=an[3], step=an[4], elem_type=elem_type, elem_descr=an[1][1:], data_filename=data_filename, guess=guess, verbose=verbose)
+			dc_analysis.dc_analysis(circ, start=an["start"], stop=an["stop"], step=an["step"], elem_type=elem_type, elem_descr=an["source_name"][1:], data_filename=data_filename, guess=guess, verbose=verbose)
 		
-		elif an[0] == "tran":
+		#{"type":"tran", "tstart":tstart, "tstop":tstop, "tstep":tstep, "uic":uic, "method":method, "ic_label":ic_label}
+		elif an["type"] == "tran":
 			if cli_tran_method is not None:
 				tran_method = cli_tran_method.upper()
-			elif an[5] is not None:
-				tran_method = an[5].upper()
+			elif an["method"] is not None:
+				tran_method = an["method"].upper()
 			else:
 				tran_method = options.default_tran_method
 			
@@ -87,7 +87,7 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 			# uic = 1 -> parti con l'op, se disponibile.
 			# uic = 2 -> parti con l'op, tieni conto delle ic di condensatori e induttori
 			# uic = 3 -> carica un ic definito dall'utente
-			uic = an[4]
+			uic = an["uic"]
 			if uic == 0:
 				x0 = None
 			elif uic == 1:
@@ -98,18 +98,18 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 					sys.exit(51)
 				x0 = dc_analysis.modify_x0_for_ic(circ, x0_op)
 			elif uic == 3:
-				if an[6] is None:
+				if an["ic_label"] is None:
 					printing.print_general_error("uic is set to 3, but param ic=<ic_label> was not defined.")
 					sys.exit(53)
-				elif not an[6] in x0_ic_dict:
-					printing.print_general_error("uic is set to 3, but no .ic directive named "+str(an[6])+" was found.")
+				elif not an["ic_label"] in x0_ic_dict:
+					printing.print_general_error("uic is set to 3, but no .ic directive named "+str(an["ic_label"])+" was found.")
 					sys.exit(54)
-				x0 = x0_ic_dict[an[6]]
+				x0 = x0_ic_dict[an["ic_label"]]
 			
-			transient.transient_analysis(circ, tstart=an[1], tstep=an[3], tstop=an[2], x0=x0, mna=None, N=None, verbose=verbose, data_filename=data_filename, use_step_control=(not disable_step_control), method=tran_method)
+			transient.transient_analysis(circ, tstart=an["tstart"], tstep=an["tstep"], tstop=an["tstop"], x0=x0, mna=None, N=None, verbose=verbose, data_filename=data_filename, use_step_control=(not disable_step_control), method=tran_method)
 		
-		elif an[0] == "shooting":
-			shooting.shooting(circ, period=an[1], step=an[3], mna=None, Tf=None, D=None, points=an[2], autonomous=an[4], x0=x0_op, data_filename=data_filename, verbose=verbose)
+		elif an["type"] == "shooting":
+			shooting.shooting(circ, period=an["period"], step=an["step"], mna=None, Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], x0=x0_op, data_filename=data_filename, verbose=verbose)
 				
 	return None
 

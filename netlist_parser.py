@@ -924,7 +924,7 @@ def parse_an_op(line, line_elements=None):
 		if label == 'guess':
 			guess_label = value
 			
-	return ["op", guess_label]
+	return {"type":"op", "guess_label":guess_label}
 	
 def parse_an_dc(line, circ, line_elements=None):
 	"""Parses a DC analysis:
@@ -978,7 +978,7 @@ def parse_an_dc(line, circ, line_elements=None):
 	if start is None or stop is None or step is None or not source_exists:
 		raise NetlistParseError("Required parameters are missing.")
 	
-	return ["dc", source_name, start, stop, step]
+	return {"type":"dc", "source_name":source_name, "start":start, "stop":stop, "step":step}
 
 def parse_an_tran(line, line_elements=None):
 	"""Parses a TRAN analysis:
@@ -1020,7 +1020,7 @@ def parse_an_tran(line, line_elements=None):
 	if tstep is None or tstop is None:
 		raise NetlistParseError("Required parameters are missing.")
 	
-	return ["tran", tstart, tstop, tstep, uic, method, ic_label]
+	return {"type":"tran", "tstart":tstart, "tstop":tstop, "tstep":tstep, "uic":uic, "method":method, "ic_label":ic_label}
 
 def parse_an_shooting(line, line_elements=None):
 	"""Parses a SHOOTING analysis.
@@ -1032,10 +1032,7 @@ def parse_an_shooting(line, line_elements=None):
 	if line_elements is None:
 		line_elements = line.split()
 	
-	period = None
-	points = None
-	step = None
-	autonomous = False
+	an = {"type":"shooting", "period":None, "points":None, "step":None, "autonomous":False}
 	
 	for token in line_elements[1:]:
 		if token[0] == "*":
@@ -1044,21 +1041,26 @@ def parse_an_shooting(line, line_elements=None):
 		(label, value) = parse_param_value_from_string(token)
 
 		if label == 'period':
-			period = convert_units(value)
+			an.update({"period":convert_units(value)})
 		elif label == 'points':
-			points = int(convert_units(value))
+			an.update({"points":int(convert_units(value))})
 		elif label == 'step':
-			step = convert_units(value)
+			an.update({'step':convert_units(value)})
 		elif label == 'autonomous':
-			autonomous = convert_boolean(value)
-			
-	if period is None:
+			an.update({'autonomous':convert_boolean(value)})
+		elif label == 'tstab':
+			an.update({'tstab':convert_units(value)})
+		else:
+			raise NetlistParseError("Unknown parameter: " + label)
+	
+	if an["period"] is None:
 		raise NetlistParseError("Period is required.")
 	
-	if autonomous and step is not None:
-		raise NetlistParseError("autonomous=yes is incompatible with a step option.")
+	if an["autonomous"]:
+		if an["step"] is not None:
+			raise NetlistParseError("autonomous=yes is incompatible with a step option.")
 	
-	return ["shooting", period, points, step, autonomous]
+	return an
 
 def is_valid_value_param_string(astr):
 	"""Has the string a form like <param_name>=<value>?
@@ -1134,4 +1136,4 @@ def parse_ic_directive(line, line_elements=None):
 	if name is None:
 		raise NetlistParseError("name parameter is missing")
 	
-	return ("ic", name, voltages_dict, currents_dict)
+	return {"type":"ic", "name":name, "vdict":voltages_dict, "cdict":currents_dict}

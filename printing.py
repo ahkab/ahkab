@@ -84,23 +84,25 @@ def print_analysis(an):
 	
 	Returns: None
 	"""
-	if an[0] == "op":
+	if an["type"] == "op":
 		print ".op"
-	elif an[0] == "dc":
-		print ".dc", an[1], "start =", an[2], "stop =", an[3], "step =", an[4]
-	elif an[0] == "tran":
-		sys.stdout.write(".tran tstep = "+str(an[3])+" tstop = "+str(an[2])+" tstart = "+str(an[1])+" uic = "+str(an[4]))
-		if an[5] is not None:
-			print " method =", an[5]
+	elif an["type"] == "dc":
+		print ".dc", an["source_name"], "start =", an["start"], "stop =", an["stop"], "step =", an["step"]
+	elif an["type"] == "tran":
+		sys.stdout.write(".tran tstep="+str(an["tstep"])+" tstop="+str(an["tstop"])+" tstart="+str(an["tstart"])+" uic="+str(an["uic"]))
+		if an["uic"] == 3:
+			sys.stdout.write(" ic_label="+an["ic_label"])
+		if an["method"] is not None:
+			print " method =", an["method"]
 		else:
 			print ""
-	elif an[0] == "shooting":
-		sys.stdout.write(".shooting period = "+ str(an[1]))
-		if an[2] is not None:
-			sys.stdout.write(" points = "+str(an[2]))
-		if an[3] is not None:
-			sys.stdout.write(" step = "+str(an[3]))
-		print " autonomous =", an[4]
+	elif an["type"] == "shooting":
+		sys.stdout.write(".shooting period="+ str(an["period"]))
+		if an["points"] is not None:
+			sys.stdout.write(" points=" + str(an["points"]))
+		if an["step"] is not None:
+			sys.stdout.write(" step=" + str(an["step"]))
+		print " autonomous=", an["autonomous"]
 
 def print_general_error(description, print_to_stdout=False):
 	"""Prints a error message to stderr.
