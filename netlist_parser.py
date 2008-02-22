@@ -33,6 +33,9 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 	Note that solving the circuit requires accessing to the elements in 
 	the circuit instance to evaluate non linear elements' currents.
 	
+	Directives are collected in a list and returned too, except for
+	subcircuits, those are added to circuit.subckts_dict.
+	
 	Returns:
 	(circuit_instance, directives)
 	"""
@@ -50,12 +53,16 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 		ffile = sys.stdin
 	
 	directives = []
+	subckts_list_temp = []
+	netlist_lines = []
+	current_subckt_temp = []
+	within_subckt = False
 	line_n = 0
+	
 	try:
 		for line in ffile:
-			line_n = line_n+1
-			#create elem: we always use normal convention V opposite to I
-			# n1 is +, n2 is -, current flows from + to -
+			line_n = line_n + 1
+			
 			line = line.strip().lower()
 			#print line
 			if line_n == 1:
@@ -68,59 +75,31 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 				continue #empty line
 			elif line[0] == "*": # comments start with *
 				continue
-			line_elements = line.split()
 			
-			# directives are grouped together and evaluated after 
+			# directives are grouped together and evaluated after
 			# we have the whole circuit.
+			# subcircuits are grouped too, but processed first
 			if line[0] == ".":
-				if line_elements[0] == ".end":
-					if len(line_elements) == 1:
-						break
-					else:
-						raise NetlistParseError, ".end shouldn't be followed by any parameters"
-						
-				elif line_elements[0] == ".op" or \
-				line_elements[0]=='.dc' or line_elements[0] == ".tran"\
-				or line_elements[0] == ".shooting" or line_elements[0] == ".ic":
-					directives.append((line, line_n))
+				line_elements = line.split()
+				if line_elements[0] == '.subckt':
+					if within_subckt:
+						raise NetlistParseError, "nested subcircuit declaration detected"
+					current_subckt_temp = current_subckt_temp + [(line, line_n)]
+					within_subckt = True
+				elif line_elements[0] == '.ends':
+					if not within_subckt:
+						raise NetlistParseError, "corresponding .subckt not found"
+					within_subckt = False
+					subckts_list_temp.append(current_subckt_temp)
+					current_subckt_temp = []
 				else:
-					raise NetlistParseError, "Unknown directive."
+					directives.append((line, line_n))
 				continue
-
-			# elements: detect the element type and call the
-			# appropriate parsing function
-			if line[0] == "r":
-				circ.elements = circ.elements + \
-				parse_elem_resistor(line, circ, line_elements)
-			elif line[0] == "c":
-				circ.elements = circ.elements + \
-				parse_elem_capacitor(line, circ, line_elements)
-			elif line[0] == "l":
-				circ.elements = circ.elements + \
-				parse_elem_inductor(line, circ, line_elements)
-			elif line[0] == "v":
-				circ.elements = circ.elements + \
-				parse_elem_vsource(line, circ, line_elements)
-			elif line[0] == "i":
-				circ.elements = circ.elements + \
-				parse_elem_isource(line, circ, line_elements)
-			elif line[0] == "d":
-				circ.elements = circ.elements + \
-				parse_elem_diode(line, circ, line_elements)
-			elif line[0] == 'm': #mosfet
-				circ.elements = circ.elements + \
-				parse_elem_mos(line, circ, line_elements)
-			elif line[0] == "e": #vcvs
-				circ.elements = circ.elements + \
-				parse_elem_vcvs(line, circ, line_elements)
-			elif line[0] == "g": #vccs
-				circ.elements = circ.elements + \
-				parse_elem_vccs(line, circ, line_elements)
-			elif line[0] == "y": #User defined module -> MODIFY
-				circ.elements = circ.elements + \
-				parse_elem_user_defined(line, circ, line_elements)
+			
+			if within_subckt:
+				current_subckt_temp  = current_subckt_temp + [(line, line_n)]
 			else:
-				raise NetlistParseError, "unknown element."
+				netlist_lines = netlist_lines + [(line, line_n)]
 	except NetlistParseError, (msg,):
 		if len(msg):
 			printing.print_general_error(msg)
@@ -132,7 +111,76 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 	if not read_netlist_from_stdin:
 		ffile.close()
 	
+	if within_subckt:
+		raise NetlistParseError, ".ends not found"
+	
+	# now we parse the subcircuits, we want a circuit.subckt object that holds the netlist code,
+	# the nodes and the subckt name in a handy way.
+	# We will create all the elements in the subckt every time it is instantiated in the netlist file.
+	subckts_dict = {}
+	for subckt_temp in subckts_list_temp:
+		subckt_obj = parse_sub_declaration(subckt_temp)
+		if not subckts_dict.has_key(subckt_obj.name):
+			subckts_dict.update({subckt_obj.name:subckt_obj})
+		else:
+			raise NetlistParseError, "subckt " + subckt_obj.name + " has been redefined"
+		
+	elements = main_netlist_parser(circ, netlist_lines, subckts_dict)
+	circ.elements = circ.elements + elements
+	
 	return (circ, directives)
+	
+def main_netlist_parser(circ, netlist_lines, subckts_dict):
+	elements = []
+	try:
+		for (line, line_n) in netlist_lines:
+			# elements: detect the element type and call the
+			# appropriate parsing function
+			# we always use normal convention V opposite to I
+			# n1 is +, n2 is -, current flows from + to -
+			line_elements = line.split()
+			if line[0] == "r":
+				elements = elements + \
+				parse_elem_resistor(line, circ, line_elements)
+			elif line[0] == "c":
+				elements = elements + \
+				parse_elem_capacitor(line, circ, line_elements)
+			elif line[0] == "l":
+				elements = elements + \
+				parse_elem_inductor(line, circ, line_elements)
+			elif line[0] == "v":
+				elements = elements + \
+				parse_elem_vsource(line, circ, line_elements)
+			elif line[0] == "i":
+				elements = elements + \
+				parse_elem_isource(line, circ, line_elements)
+			elif line[0] == "d":
+				elements = elements + \
+				parse_elem_diode(line, circ, line_elements)
+			elif line[0] == 'm': #mosfet
+				elements = elements + \
+				parse_elem_mos(line, circ, line_elements)
+			elif line[0] == "e": #vcvs
+				elements = elements + \
+				parse_elem_vcvs(line, circ, line_elements)
+			elif line[0] == "g": #vccs
+				elements = elements + \
+				parse_elem_vccs(line, circ, line_elements)
+			elif line[0] == "y": #User defined module -> MODIFY
+				elements = elements + \
+				parse_elem_user_defined(line, circ, line_elements)
+			elif line[0] == "x": #User defined module -> MODIFY
+				elements = elements + \
+				parse_sub_instance(line, circ, subckts_dict, line_elements)
+			else:
+				raise NetlistParseError, "unknown element."
+	except NetlistParseError, (msg,):
+		if len(msg):
+			printing.print_general_error(msg)
+		printing.print_parse_error(line_n, line)
+		sys.exit(45)
+	
+	return elements
 
 def parse_elem_resistor(line, circ, line_elements=None):
 	"""Parses a resistor from the line supplied, adds its nodes to the circuit
@@ -897,7 +945,7 @@ def parse_analysis(circ, directives):
 					analysis.append(parse_ic_directive(line, line_elements))
 	
 				else:
-					raise NetlistParseError("")
+					raise NetlistParseError("Unknown directive.")
 			except NetlistParseError, (msg,):
 				if len(msg):
 					printing.print_general_error(msg)
@@ -1137,3 +1185,92 @@ def parse_ic_directive(line, line_elements=None):
 		raise NetlistParseError("name parameter is missing")
 	
 	return {"type":"ic", "name":name, "vdict":voltages_dict, "cdict":currents_dict}
+
+def parse_sub_declaration(subckt_lines):
+	"""Returns a circuit.subckt instance that holds the subckt 
+	information, ready to be instantiated/called.
+	"""
+	index = 0
+	netlist_lines = []
+	connected_nodes_list = []
+	for line, line_n in subckt_lines:
+		if index == 0:
+			line_elements = line.split()
+			if line_elements[0] != '.subckt':
+				raise RuntimeError, "BUG? parse_sub_declaration() \
+				called on non-subckt text. (line"+str(line_n)+")"
+			name = line_elements[1]
+			for node_name in line_elements[2:]:
+				if node_name[0] == '0':
+					raise NetlistParseError, "subckt " + name + \
+					" has a connection node named '0' (line"+str(line_n)+")"
+				if node_name[0] == '*':
+					break
+				else:
+					connected_nodes_list = connected_nodes_list + [node_name]
+		else:
+			netlist_lines = netlist_lines + [(line, "")]
+		index = index + 1
+	subck_inst = circuit.subckt(name, netlist_lines, connected_nodes_list)
+	return subck_inst
+
+def parse_sub_instance(line, circ, subckts_dict, line_elements=None):
+	"""Parses a subckt call/instance.
+	
+	1. Gets name and nodes connections
+	2. Looks in subckts_dict for a matching subckts_dict[name]
+	3. Builds a circuit wrapper
+	4. Calls main_netlist_parser() on the subcircuit code 
+	   (with the wrapped circuit)
+	
+	Returns: a elements list
+	
+	"""
+	if line_elements is None:
+		line_elements = line.split()
+
+	if (len(line_elements) < 2):
+		raise NetlistParseError, ""
+	
+	param_value_dict = {}
+	name = None
+	
+	for index in range(1, len(line_elements)):
+		if line_elements[index][0] == '*':
+			break
+		
+		(param, value) = parse_param_value_from_string(line_elements[index])
+		param_value_dict.update({param:value})
+	
+	if not param_value_dict.has_key("name"):
+		raise NetlistParseError, "missing 'name' in subckt call"
+	if not subckts_dict.has_key(param_value_dict['name']):
+		raise NetlistParseError, "subckt " + param_value_dict['name'] + " is unknown"
+	
+	name = param_value_dict['name']
+	subckt = subckts_dict[name]
+	connection_nodes_dict = {}
+	
+	for param, value in param_value_dict.iteritems():
+		if param == 'name':
+			continue
+		if param in subckt.connected_nodes_list:
+			connection_nodes_dict.update({param:value})
+		else:
+			raise NetlistParseError, "unknown node " + param
+	
+	# check all nodes are connected
+	for node in subckt.connected_nodes_list:
+		if not connection_nodes_dict.has_key(node):
+			raise NetlistParseError, "unconnected subckt node " + node
+	
+	wrapped_circ = circuit.circuit_wrapper(circ, connection_nodes_dict, subckt.name, line_elements[0])
+	
+	elements_list = main_netlist_parser(wrapped_circ, subckt.code, subckts_dict)
+	
+	# Every subckt adds elemets with the _same description_ (elem.descr)
+	# We modify it so that each descr is uniq for every instance
+	for element in elements_list:
+		element.descr = "-" + wrapped_circ.prefix + element.descr
+	
+	return elements_list

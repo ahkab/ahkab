@@ -842,3 +842,52 @@ def is_elem_voltage_defined(elem):
 class NodeNotFoundError(Exception):
 	"""Circuit Node exception."""
 	pass
+
+class subckt:
+	"""This class holds the necessary information about a circuit.
+	An instance of this class is returned by 
+	  
+	  netlist_parser.parse_sub_declaration(subckt_lines)
+	  
+	
+	"""
+	name = ""
+	connected_nodes_list = []
+	code = []
+	
+	def __init__(self, name, code, connected_nodes_list):
+		self.name = name
+		self.connected_nodes_list = connected_nodes_list
+		self.code = code
+		
+class circuit_wrapper:
+	"""Within a subcircuit, the nodes name are fictious.
+	The nodes of the subcircuit that are connected to the 
+	nodes of the circuit have to be renamed to them, the 
+	others have to be renamed too.
+	
+	This class wraps a circuit object and performs the conversion
+	_before_ calling circ.add_node_to_circ()
+	
+	While instatiating/calling a subcircuit wrap circ in this.
+	"""
+	circ = None
+	subckt_node_filter_dict = {}
+	prefix = ""
+	def __init__(self, circ, connection_nodes_dict, subckt_name, subckt_label):
+		self.circ = circ
+		self.prefix = subckt_label + "-" + subckt_name + "-"
+		self.subckt_node_filter_dict.update(connection_nodes_dict)		
+		self.subckt_node_filter_dict.update({'0':'0'})
+	def add_node_to_circ(self, ext_name):
+		"""We want to perform the following conversions:
+		connected node in the subcircuit -> node in the upper circuit
+		local-only node of the subcircuit -> rename it to something uniq
+		REF (0) -> REF (0)
+		
+		And then call circ.add_node_to_circ()
+		"""
+		if not self.subckt_node_filter_dict.has_key(ext_name):
+			self.subckt_node_filter_dict.update({ext_name:self.prefix+ext_name})
+		int_node = self.circ.add_node_to_circ(self.subckt_node_filter_dict[ext_name])
+		return int_node
