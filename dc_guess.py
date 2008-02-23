@@ -31,7 +31,7 @@ def get_dc_guess(circ, verbose=3):
 	
 	verbose: verbosity level (from 0 silent to 5 debug)
 	
-	Returns: a list of numpy's matrix
+	Returns: the dc_guess (matrix) or None
 	"""
 	if verbose: 
 		sys.stdout.write("Calculating guess: ")
@@ -41,7 +41,7 @@ def get_dc_guess(circ, verbose=3):
 	if not circ.is_nonlinear():
 		if verbose:
 			print "skipped. (linear circuit)"
-		return ()
+		return None
 	
 	
 	if verbose > 3:
@@ -98,7 +98,7 @@ def get_dc_guess(circ, verbose=3):
 			print "DBG: get_dc_guess(): no element has a dc_guess"
 		elif verbose <= 3:
 			print "skipped."
-		return ()
+		return None
 	
 	# We wish to find the linearly dependent lines of the M matrix.
 	# The matrix is made by +1, -1, 0 elements. 
@@ -191,4 +191,4 @@ def get_dc_guess(circ, verbose=3):
 		print "Guess:"
 		print Rp
 	
-	return (Rp, )
+	return Rp

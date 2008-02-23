@@ -269,10 +269,6 @@ def op_analysis(circ, x0=None, guess=True, verbose=3):
 	
 	if x0 is None and guess:
 		x0 = dc_guess.get_dc_guess(circ, verbose=verbose)
-		if len(x0) == 0:
-			x0 = None
-		else:
-			x0 = x0[0]
 	# if x0 is not None, use that
 	
 	if verbose:
