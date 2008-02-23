@@ -409,8 +409,8 @@ class mosq:
 	
 	def __str__(self):
 		rep = "type=" + self.mos_type + " "
-		if not self.mos_type == 'n' or self.mos_type == 'p':
-			raise Exception, "Unknown mos type:", str(self.mos_type)
+		if self.mos_type != 'n' and self.mos_type != 'p':
+			raise Exception, "Unknown mos type: " + str(self.mos_type)
 		rep = rep + "kp=" + str(self.kp)+ " vt="+ str(self.vt)+ " w="+ str(self.w)+ " l=" + str(self.l) + \
 		" lambda="+ str(self.lambd)
 		return rep
