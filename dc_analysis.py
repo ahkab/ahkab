@@ -220,6 +220,9 @@ def dc_analysis(circ, start, stop, step, elem_type, elem_descr, data_filename="s
 		printing.print_results_on_a_line(time=None, x=x, fdata=fpdata, circ=circ, \
 			print_int_nodes=print_int_nodes, iter_n=index)
 		
+		if guess:
+			guess = False
+
 		if verbose > 2 and fpdata != sys.stdout: 
 			tick.step()
 	
