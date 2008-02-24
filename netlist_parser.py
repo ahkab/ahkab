@@ -24,6 +24,7 @@ Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
 """
 
 import sys, imp
+from os.path import exists, abspath, isfile
 import circuit, printing
 
 def parse_circuit(filename, read_netlist_from_stdin=False):
@@ -51,7 +52,9 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 		ffile = open(filename, "r")
 	else:
 		ffile = sys.stdin
-	
+		
+	file_list = [(ffile, "unknown", not read_netlist_from_stdin)]
+	file_index = 0
 	directives = []
 	subckts_list_temp = []
 	netlist_lines = []
@@ -60,59 +63,63 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 	line_n = 0
 	
 	try:
-		for line in ffile:
-			line_n = line_n + 1
-			
-			line = line.strip().lower()
-			#print line
-			if line_n == 1:
-				# In spice files, the first line is always the title
-				# (which is a special type of comment) 
-				# we do the same here
-				circ.title = line
-				continue
-			elif len(line) == 0:
-				continue #empty line
-			elif line[0] == "*": # comments start with *
-				continue
-			
-			# directives are grouped together and evaluated after
-			# we have the whole circuit.
-			# subcircuits are grouped too, but processed first
-			if line[0] == ".":
-				line_elements = line.split()
-				if line_elements[0] == '.subckt':
-					if within_subckt:
-						raise NetlistParseError, "nested subcircuit declaration detected"
-					current_subckt_temp = current_subckt_temp + [(line, line_n)]
-					within_subckt = True
-				elif line_elements[0] == '.ends':
-					if not within_subckt:
-						raise NetlistParseError, "corresponding .subckt not found"
-					within_subckt = False
-					subckts_list_temp.append(current_subckt_temp)
-					current_subckt_temp = []
+		while ffile is not None:
+			for line in ffile:
+				line_n = line_n + 1
+				
+				line = line.strip().lower()
+				if line_n == 1:
+					# the first line is always the title
+					circ.title = line
+					continue
+				elif len(line) == 0:
+					continue #empty line
+				elif line[0] == "*": # comments start with *
+					continue
+				
+				# directives are grouped together and evaluated after
+				# we have the whole circuit.
+				# subcircuits are grouped too, but processed first
+				if line[0] == ".":
+					line_elements = line.split()
+					if line_elements[0] == '.subckt':
+						if within_subckt:
+							raise NetlistParseError, "nested subcircuit declaration detected"
+						current_subckt_temp = current_subckt_temp + [(line, line_n)]
+						within_subckt = True
+					elif line_elements[0] == '.ends':
+						if not within_subckt:
+							raise NetlistParseError, "corresponding .subckt not found"
+						within_subckt = False
+						subckts_list_temp.append(current_subckt_temp)
+						current_subckt_temp = []
+					elif line_elements[0] == '.include':
+						file_list.append(parse_include_directive(line, line_elements=None))
+					else:
+						directives.append((line, line_n))
+					continue
+				
+				if within_subckt:
+					current_subckt_temp  = current_subckt_temp + [(line, line_n)]
 				else:
-					directives.append((line, line_n))
-				continue
-			
+					netlist_lines = netlist_lines + [(line, line_n)]
 			if within_subckt:
-				current_subckt_temp  = current_subckt_temp + [(line, line_n)]
-			else:
-				netlist_lines = netlist_lines + [(line, line_n)]
+				raise NetlistParseError, ".ends not found"
+			
+			file_index = file_index + 1
+			ffile = get_next_file_and_close_current(file_list, file_index)
+			#print file_list
+			
 	except NetlistParseError, (msg,):
 		if len(msg):
 			printing.print_general_error(msg)
 		printing.print_parse_error(line_n, line)
-		if not read_netlist_from_stdin:
-			ffile.close()
+		#if not read_netlist_from_stdin:
+			#ffile.close()
 		sys.exit(45)
 	
-	if not read_netlist_from_stdin:
-		ffile.close()
-	
-	if within_subckt:
-		raise NetlistParseError, ".ends not found"
+	#if not read_netlist_from_stdin:
+		#ffile.close()
 	
 	# now we parse the subcircuits, we want a circuit.subckt object that holds the netlist code,
 	# the nodes and the subckt name in a handy way.
@@ -181,6 +188,17 @@ def main_netlist_parser(circ, netlist_lines, subckts_dict):
 		sys.exit(45)
 	
 	return elements
+
+def get_next_file_and_close_current(file_list, file_index):
+	print file_index
+	if file_list[file_index - 1][2]:
+		file_list[file_index - 1][0].close()
+	if file_index == len(file_list):
+		ffile = None
+	else:
+		ffile = open(file_list[file_index][1], "r")
+		file_list[file_index][0] = ffile
+	return ffile
 
 def parse_elem_resistor(line, circ, line_elements=None):
 	"""Parses a resistor from the line supplied, adds its nodes to the circuit
@@ -1274,3 +1292,26 @@ def parse_sub_instance(line, circ, subckts_dict, line_elements=None):
 		element.descr = "-" + wrapped_circ.prefix + element.descr
 	
 	return elements_list
+
+def parse_include_directive(line, line_elements=None):
+	""".include <filename> [*comments]
+	"""
+	if line_elements is None:
+		line_elements = line.split()
+
+	if not len(line_elements) > 1 or \
+	(len(line_elements) > 2 and not line_elements[2][0] == '*'):
+		raise NetlistParseError, ""
+	
+	path = abspath(line_elements[1])
+	
+	if not exists(path):
+		printing.print_general_error("Can't open file "+path+". File not found.")
+		raise RuntimeError, ""
+	if not isfile(path):
+		printing.print_general_error("Can't open file "+path+". Not a file.")
+		raise RuntimeError, ""
+	
+	fnew = open(path, "r")
+	
+	return [None, path, True]
