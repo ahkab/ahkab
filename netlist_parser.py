@@ -189,7 +189,6 @@ def main_netlist_parser(circ, netlist_lines, subckts_dict):
 	return elements
 
 def get_next_file_and_close_current(file_list, file_index):
-	print file_index
 	if file_list[file_index - 1][2]:
 		file_list[file_index - 1][0].close()
 	if file_index == len(file_list):
