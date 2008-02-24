@@ -24,7 +24,6 @@ Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
 """
 
 import sys, imp
-from os.path import exists, abspath, isfile
 import circuit, printing
 
 def parse_circuit(filename, read_netlist_from_stdin=False):
@@ -1303,13 +1302,8 @@ def parse_include_directive(line, line_elements=None):
 	(len(line_elements) > 2 and not line_elements[2][0] == '*'):
 		raise NetlistParseError, ""
 	
-	path = abspath(line_elements[1])
-	
-	if not exists(path):
-		printing.print_general_error("Can't open file "+path+". File not found.")
-		raise RuntimeError, ""
-	if not isfile(path):
-		printing.print_general_error("Can't open file "+path+". Not a file.")
+	path = line_elements[1]
+	if not utilities.check_file(path):
 		raise RuntimeError, ""
 	
 	fnew = open(path, "r")
