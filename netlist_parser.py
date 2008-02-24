@@ -24,7 +24,7 @@ Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
 """
 
 import sys, imp
-import circuit, printing
+import circuit, printing, utilities
 
 def parse_circuit(filename, read_netlist_from_stdin=False):
 	"""Parse a SPICE-like netlist and return a circuit instance 
