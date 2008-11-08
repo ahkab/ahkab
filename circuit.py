@@ -376,8 +376,6 @@ class mosq:
 	vt: threshold voltage
 	lambd: lambd = 1/Va channel length modulation
 	mos_type: may be 'n' or 'p', identifies the mos type
-	
-	#fixme: add lambd everywhere
 	"""
 	letter_id = "m"
 	is_nonlinear = True
@@ -388,16 +386,18 @@ class mosq:
 	
 	def __init__(self, nd, ng, ns, kp, w, l, vt, lambd=0, mos_type='n'):
 		self.ng = ng
-		self.n2 = ns
 		self.n1 = nd
+		self.n2 = ns
 		self.kp = kp
 		self.w = float(w)
 		self.l = float(l)
 		self.vt = vt
-		self.ports = ((self.ng, self.n2), (self.n1, self.n2))
+		self.ports = ((self.ng, self.n2), (self.ng, self.n1))
+		if mos_type != 'n' and mos_type != 'p':
+			raise Exception, "Unknown mos type: " + str(mos_type)
 		self.mos_type = mos_type.lower()
-		self.lambd = lambd
-		self.dc_guess = [self.vt, 0]
+		self.lambd = lambd * w / l
+		self.dc_guess = [self.vt*(1.1)*(1-2*(self.mos_type=='p')), 0]
 	
 	def get_ports(self):
 		"""Returns a tuple of tuples of ports nodes, as:
@@ -408,10 +408,7 @@ class mosq:
 		return self.ports
 	
 	def __str__(self):
-		rep = "type=" + self.mos_type + " "
-		if self.mos_type != 'n' and self.mos_type != 'p':
-			raise Exception, "Unknown mos type: " + str(self.mos_type)
-		rep = rep + "kp=" + str(self.kp)+ " vt="+ str(self.vt)+ " w="+ str(self.w)+ " l=" + str(self.l) + \
+		rep = "type=" + self.mos_type + " kp=" + str(self.kp)+ " vt="+ str(self.vt)+ " w="+ str(self.w)+ " l=" + str(self.l) + \
 		" lambda="+ str(self.lambd)
 		return rep
 	
@@ -425,51 +422,39 @@ class mosq:
 		None during DC analysis.
 		
 		"""
-		vgs = ports_v[0]
-		vds = ports_v[1]
-		vgd = vgs - vds
-
-		if self.mos_type == 'n':
-			if vgs <= self.vt and vgd <= self.vt:
-				# no channel at both sides
-				idr = 0
-				if self._debug:
-					print "M"+self.descr+":", "vgs:", str(vgs), "vgd:", str(vgd), "vds:", str(vds), "OFF"
-			elif vgs > self.vt and vgd > self.vt:
-				# zona ohmica: channel at both sides
-				idr = self.kp * ((vgs - self.vt)*vds - 0.5*(vds**2)) * (self.w / self.l)
-				if self._debug:
-					print "M"+self.descr+":", "vgs:", str(vgs), "vgd:", str(vgd), "vds:", str(vds), "OHM", "idr:", str(idr)
-			elif vgs > self.vt and vgd <= self.vt:
-				# zona di saturazione: canale al s
-				idr =  0.5 * self.kp * ((vgs - self.vt)**2) * (self.w / self.l) * (1 + self.lambd*abs(vds - vgs + self.vt))
-				if self._debug:
-					print "M"+self.descr+":", "vgs:", str(vgs), "vgd:", str(vgd), "vds:", str(vds), "SAT", "idr:", str(idr)
-			else:
-				# zona di saturazione: canale al d
-				idr =  -0.5 * self.kp * ((vgd - self.vt)**2) * (self.w / self.l) * (1 + self.lambd*abs(vds - vgd + self.vt))
-				if self._debug:
-					print "M"+self.descr+":", "vgs:", str(vgs), "vgd:", str(vgd), "vds:", str(vds), "SAT", "idr:", str(idr)
-
-		elif self.mos_type == 'p':
-			if vgs >= self.vt and vgd >= self.vt:
-				idr = 0
-				if self._debug:
-					print "M"+self.descr+":", "vsg:", str(-1*vgs), "vsd:", str(-1*vds), "OFF"
+		v1 = ports_v[0]
+		v2 = ports_v[1]
+		
+		if self.mos_type == 'p':
+			v1 = -v1
+			v2 = -v2
+			sign = -1
+		else:
+			sign = +1
 			
-			elif vgs < self.vt and vgd >= self.vt: #channel at s
-				idr = -0.5 * self.kp * (self.w / self.l) * (self.vt - vgs)**2
-				if self._debug:
-					print "M"+self.descr+":", "vsg:", str(-1*vgs), "vsd:", str(-1*vds), "SAT", "idr:", str(idr)
-			elif vgs >= self.vt and vgd < self.vt: #channel at d
-				idr = 0.5 * self.kp * (self.w / self.l) * (self.vt - vgd)**2
-				if self._debug:
-					print "M"+self.descr+":", "vsg:", str(-1*vgs), "vsd:", str(-1*vds), "SAT", "idr:", str(idr)
-			else:
-				idr = - self.kp * ((self.vt - vgs)*(-vds) - 0.5 * vds**2) * (self.w / self.l)
-				if self._debug:
-					print "M"+self.descr+":", "vsg:", str(-1*vgs), "vsd:", str(-1*vds), "OHM", "idr:", str(idr)
-		return idr
+			
+		if v1 <= self.vt and v2 <= self.vt:
+			# no channel at both sides
+			idr = 0
+			if self._debug:
+				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "OFF"
+		elif v1 > self.vt and v2 > self.vt:
+			# zona ohmica: channel at both sides
+			idr = .5 * self.kp * (v1 - v2)*(-2*self.vt + v1 + v2) * (self.w / self.l)
+			if self._debug:
+				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "OHM", "idr:", str(idr)
+		elif v1 > self.vt and v2 <= self.vt:
+			# zona di saturazione: canale al s
+			idr =  0.5 * self.kp * ((v1 - self.vt)**2) * (self.w / self.l) * (1 - self.lambd*(v2 - self.vt))
+			if self._debug:
+				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "SAT", "idr:", str(idr)
+		else:
+			# zona di saturazione: canale al d
+			idr =  -0.5 * self.kp * ((v2 - self.vt)**2) * (self.w / self.l) * (1 - self.lambd*(v1 - self.vt))
+			if self._debug:
+				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "SAT", "idr:", str(idr)
+
+		return sign*idr
 	
 	def g(self, ports_v, port_index, time=0):
 		"""
@@ -482,59 +467,39 @@ class mosq:
 		time: the simulation time at which the evaluation is performed. Set it to
 		None during DC analysis.
 		"""
-		vgs = ports_v[0]
-		vds = ports_v[1]
-		vgd = vgs - vds
-		if self.mos_type == 'n':
-			if port_index == 0: #vgs
-				if vgs <= self.vt and vgd <= self.vt:
-					# no channel at both sides
-					gdr = 0
-				elif vgs > self.vt and vgd > self.vt:
-					# zona ohmica: channel at both sides
-					gdr = (1 - 2*(vds < 0)) * self.kp * \
-						((vds > 0)*vds +(vds < 0)*vgs*(-1*vds)) * (self.w / self.l)
-				elif vgs > self.vt and vgd <= self.vt:
-					# zona di saturazione: canale al s
-					gdr =  0.5 * self.kp * (vgs - self.vt)*(2 + self.lambd*(3*vds + 3*self.vt - 3*vgs)) * (self.w / self.l)
-				else:
-					# zona di saturazione: canale al d # era: 3*vgs - vds - 3*self.vt
-					gdr =  -0.5 * self.kp * (vgd - self.vt)*(2 - self.lambd*(3*vgs - 3*vds - 3*self.vt)) * (self.w / self.l)
-			elif port_index == 1: #vds
-				if vgs <= self.vt and vgd <= self.vt:
-					# no channel at both sides
-					gdr = 0
-				elif vgs > self.vt and vgd > self.vt:
-					# zona ohmica: channel at both sides
-					gdr = self.kp * ((vgs - self.vt)  - vds) * (self.w / self.l)
-				elif vgs > self.vt and vgd <= self.vt:
-					# zona di saturazione: canale al s
-					gdr =  0.5 * self.kp * ((vgs - self.vt)**2) * (self.w / self.l) * self.lambd
-					#gdr = 0
-				else:
-					# zona di saturazione: canale al d
-					gdr = self.kp * (self.w / self.l) * (vgs - vds - self.vt) * (1 - self.lambd*(vgs - self.vt))
-					#gdr = 0
-
-		elif self.mos_type == 'p':
-			if port_index == 0:
-				if vgs >= self.vt and vgd >= self.vt:
-					gdr = 0
-				elif vgs < self.vt and vgd >= self.vt:
-					gdr = + 1.0 * self.kp * (self.w / self.l) * (self.vt - vgs)
-				elif vgs >= self.vt and vgd < self.vt:
-					gdr = - 0.5 * self.kp * (self.w / self.l) * (self.vt - vgd) * 2 
-				else: #ohm
-					gdr = + self.kp *(-vds) * (self.w / self.l)
-			elif port_index == 1:
-				if vgs >= self.vt and vgd >= self.vt:
-					gdr = 0
-				elif vgs < self.vt and vgd >= self.vt:
-					gdr = 0
-				elif vgs >= self.vt and vgd < self.vt:
-					gdr = - 0.5 * self.kp * (self.w / self.l) * (self.vt - vgs - vds)
-				else: #ohm
-					gdr = - self.kp * ((self.vt - vgs)*(-1) - vds) * (self.w / self.l)
+		v1 = ports_v[0]
+		v2 = ports_v[1]
+		vds = v1 - v2
+		if self.mos_type == 'p':
+			v1 = -v1
+			v2 = -v2
+			
+		if port_index == 0: #vgs
+			if v1 <= self.vt and v2 <= self.vt:
+				# no channel at both sides
+				gdr = 0
+			elif v1 > self.vt and v2 > self.vt:
+				# zona ohmica: channel at both sides
+				gdr =  self.kp * (self.w / self.l) * (self.vt - v1)
+			elif v1 > self.vt and v2 <= self.vt:
+				# zona di saturazione: canale al s
+				gdr =  self.kp * (v1 - self.vt) * (self.w / self.l) * (1 - self.lambd*(v2 - self.vt))
+			else:
+				# zona di saturazione: canale al d # era: 3*vgs - vds - 3*self.vt
+				gdr =  0.5 * self.kp * ((v2 - self.vt)**2) * (self.w / self.l) * self.lambd*v1
+		elif port_index == 1: #vgd
+			if v1 <= self.vt and v2 <= self.vt:
+				# no channel at both sides
+				gdr = 0
+			elif v1 > self.vt and v2 > self.vt:
+				# zona ohmica: channel at both sides
+				gdr = self.kp * (self.vt - v2) * (self.w / self.l)
+			elif v1 > self.vt and v2 <= self.vt:
+				# zona di saturazione: canale al s
+				gdr = - 0.5 * self.kp * ((v1 - self.vt)**2) * (self.w / self.l) * self.lambd*v2
+			else:
+				# zona di saturazione: canale al d
+				gdr =  - self.kp * (v2 - self.vt) * (self.w / self.l) * (1 - self.lambd*(v1 - self.vt))
 		
 		return gdr
 
@@ -558,7 +523,7 @@ class isource:
 	and then perform a transient analysis with the OP as starting point.
 	Otherwise the value in t=0 is used for DC analysis.
 	"""
-	letter_id = "m"
+	letter_id = "i"
 	is_nonlinear = False
 	is_timedependent = False
 	_time_function = None

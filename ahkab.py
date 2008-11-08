@@ -71,7 +71,7 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 			else:
 				printing.print_general_error("Type of sweep source is unknown: " + an[1][0])
 				sys.exit(1)
-			dc_analysis.dc_analysis(circ, start=an["start"], stop=an["stop"], step=an["step"], elem_type=elem_type, elem_descr=an["source_name"][1:], data_filename=data_filename, guess=guess, verbose=verbose)
+			dc_analysis.dc_analysis(circ, start=an["start"], stop=an["stop"], step=an["step"], type_descr=(elem_type, an["source_name"][1:]), xguess=x0_op, data_filename=data_filename, guess=guess, verbose=verbose)
 		
 		#{"type":"tran", "tstart":tstart, "tstop":tstop, "tstep":tstep, "uic":uic, "method":method, "ic_label":ic_label}
 		elif an["type"] == "tran":

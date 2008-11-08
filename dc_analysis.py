@@ -129,7 +129,7 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 	
 	return (x, error, solved)
 
-def dc_analysis(circ, start, stop, step, elem_type, elem_descr, data_filename="stdout", print_int_nodes=True, guess=True, verbose=2):
+def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename="stdout", print_int_nodes=True, guess=True, verbose=2):
 	"""Performs a sweep of the value of V or I of a independent source from start 
 	value to stop value using the provided step. 
 	For every circuit generated, computes the op and prints it out.
@@ -152,6 +152,7 @@ def dc_analysis(circ, start, stop, step, elem_type, elem_descr, data_filename="s
 	for a sweep value
 	"""
 	if verbose > 1 and data_filename != 'stdout': print "Starting DC analysis:"
+	(elem_type, elem_descr) = type_descr
 	if step == 0:
 		printing.print_general_error("Can't sweep with step=0 !")
 		sys.exit(1)
