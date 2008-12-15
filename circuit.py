@@ -480,7 +480,7 @@ class mosq:
 				gdr = 0
 			elif v1 > self.vt and v2 > self.vt:
 				# zona ohmica: channel at both sides
-				gdr =  self.kp * (self.w / self.l) * (self.vt - v1)
+				gdr =  self.kp * (self.w / self.l) * (v1 - self.vt)
 			elif v1 > self.vt and v2 <= self.vt:
 				# zona di saturazione: canale al s
 				gdr =  self.kp * (v1 - self.vt) * (self.w / self.l) * (1 - self.lambd*(v2 - self.vt))
@@ -496,7 +496,7 @@ class mosq:
 				gdr = self.kp * (self.vt - v2) * (self.w / self.l)
 			elif v1 > self.vt and v2 <= self.vt:
 				# zona di saturazione: canale al s
-				gdr = - 0.5 * self.kp * ((v1 - self.vt)**2) * (self.w / self.l) * self.lambd*v2
+				gdr = - 0.5 * self.kp * ((v1 - self.vt)**2) * (self.w / self.l) * self.lambd
 			else:
 				# zona di saturazione: canale al d
 				gdr =  - self.kp * (v2 - self.vt) * (self.w / self.l) * (1 - self.lambd*(v1 - self.vt))
