@@ -17,18 +17,37 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Shooting analysis module"""
+"""Periodic steady state analysis based on the shooting method"""
 
 import sys
-import numpy
+import numpy, numpy.linalg
 import transient, implicit_euler, dc_analysis, ticker, options, circuit, printing, utilities
 
-#_debug = True
-
-def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, autonomous=False, x0=None,  data_filename='stdout', vector_norm=lambda v: max(abs(v)), verbose=3):
-	"""Performs a shooting analysis. 
+def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, autonomous=False, data_filename='stdout', vector_norm=lambda v: max(abs(v)), verbose=3):
+	"""Performs a periodic steady state analysis based on the algorithm described in
+	Brambilla, A.; D'Amore, D., "Method for steady-state simulation of 
+	strongly nonlinear circuits in the time domain," Circuits and 
+	Systems I: Fundamental Theory and Applications, IEEE Transactions on, 
+	vol.48, no.7, pp.885-889, Jul 2001
+	URL: http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=933329&isnumber=20194
 	
-	Time step is constant, IE will be used as DF
+	The results have been computed again by me, the formulas are not exactly the 
+	same, but the idea behind the shooting algorithm is.
+	
+	This method allows us to have a period with many points without having to
+	invert a huge matrix (and being limited to the maximum matrix size).
+
+	A tran is performed to initialize the solver.
+	
+	We compute the change in the last point, calculating several matrices in
+	the process.
+	From that, with the same matrices we calculate the canges in all points, 
+	starting from 0 (which is the same as the last one), then 1, ...
+
+	Key points:
+	- Only not autonomous circuits are supported.
+	- The time step is constant
+	- Implicit euler is used as DF
 	
 	Parameters:
 	circ is the circuit description class
@@ -41,7 +60,6 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 	- if points is set, the step will be automatically determined
 	- if none of them is set, options.shooting_default_points will be used as points
 	autonomous has to be False, autonomous circuits are not supported
-	x0 is the initial guess to be used. Needs work.
 	data_filename is the output filename. Defaults to stdout.
 	verbose is set to zero (print errors only) if datafilename == 'stdout'.
 
@@ -53,8 +71,9 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 		fdata = sys.stdout
 		verbose = 0
 	
-	if verbose > 2:
-		print "Starting shooting analysis:"
+	if verbose > 2 and data_filename != "stdout": 
+		print "Starting periodic steady state analysis:"
+		print "Method: shooting"
 	
 	if mna is None or Tf is None:
 		(mna, Tf) = dc_analysis.generate_mna_and_N(circ)
@@ -72,90 +91,89 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 		sys.exit(0)
 	
 	(points, step) = check_step_and_points(step, points, period)
+	print "points", points
+	print "step", step
 	
 	n_of_var = mna.shape[0]
 	locked_nodes = circ.get_locked_nodes()
+	
+	if verbose > 2:
+		print "Starting transient analysis for init, tstop="+str(10*points*step)+", tstep="+str(step)
+	xtran = transient.transient_analysis(circ=circ, tstart=0, tstep=step, tstop=10*points*step, method="TRAP", x0=None, mna=mna, N=Tf, \
+        D=D, use_step_control=False, data_filename=data_filename+".tran", return_req_dict={"points":points}, verbose=0)
+	if xtran is None:
+		print "Failed."
+		return
+	if verbose >2:
+		print "Done."
+	
+	x = []
+	for index in range(points):
+		x.append(xtran[index*n_of_var:(index+1)*n_of_var,0])
+
 	if verbose > 2: 
 		tick = ticker.ticker(increments_for_step=1)
+	else:
+		tick=None
 
-	CMAT = build_CMAT(mna, D, step, points, tick, n_of_var=n_of_var, \
-		verbose=verbose)
-
-	x = build_x(mna, step, points, tick, x0=x0, n_of_var=n_of_var, \
-		verbose=verbose)
-
-	Tf = build_Tf(Tf, points, tick, n_of_var=n_of_var, verbose=verbose)
+	MAass_static, MBass = build_static_MAass_and_MBass(mna, D, step)
 	
-	# time variable component: Tt this is always the same in each iter. So we build it once for all
+	# This contains
+	# the time invariant part, Tf
+	# time variable component: Tt this is always the same, since the time interval is the same
 	# this holds all time-dependent sources (both V/I).
-	Tt = build_Tt(circ, points, step, tick, n_of_var=n_of_var, verbose=verbose)
+	Tass_static_vector = build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose)
 	
 	converged = False
 	if verbose > 2: 
 		sys.stdout.write("Solving... ")
 		tick.reset()
 		tick.display()
-	J = numpy.mat(numpy.zeros(CMAT.shape))
-	T = numpy.mat(numpy.zeros((CMAT.shape[0], 1)))
-	# td is a numpy matrix that will hold the damping factors
-	td = numpy.mat(numpy.zeros((points, 1)))
-	iteration = 0 # newton iteration counter
 	
-	while True:
-		if iteration: # the first time are already all zeros
-			J[:, :] = 0
-			T[:, 0] = 0
-			td[:, 0] = 0
-		for index in xrange(1, points):
-			for elem in circ.elements:
-				# build all dT(xn)/dxn (stored in J) and T(x)
-				if elem.is_nonlinear:
-					ports = elem.get_ports()
-					v_ports = []
-					for port in ports:
-						v = 0 # build v: remember we trashed the 0 row and 0 col of mna -> -1
-						if port[0]:
-							v = v + x[index*n_of_var + port[0] - 1, 0]
-						if port[1]:
-							v = v - x[index*n_of_var + port[1] - 1, 0]
-						v_ports.append(v)
-					if elem.n1:
-						T[index*n_of_var + elem.n1 - 1, 0] = T[index*n_of_var + elem.n1 - 1, 0] + elem.i(v_ports)
-					if elem.n2:
-						T[index*n_of_var + elem.n2 - 1, 0] = T[index*n_of_var + elem.n2 - 1, 0] - elem.i(v_ports)
-					for pindex in xrange(len(ports)):
-						if elem.n1:
-							if ports[pindex][0]:
-								J[index*n_of_var + elem.n1-1, index*n_of_var + ports[pindex][0]-1] = \
-								J[index*n_of_var + elem.n1-1, index*n_of_var + ports[pindex][0]-1] + elem.g(v_ports, pindex)
-							if ports[pindex][1]:
-								J[index*n_of_var + elem.n1-1, index*n_of_var + ports[pindex][1]-1] =\
-								J[index*n_of_var + elem.n1-1, index * n_of_var + ports[pindex][1]-1] - 1.0*elem.g(v_ports, pindex)
-						if elem.n2:
-							if ports[pindex][0]:	
-								J[index*n_of_var + elem.n2-1, index*n_of_var + ports[pindex][0]-1] = \
-								J[index*n_of_var + elem.n2-1, index*n_of_var + ports[pindex][0]-1] - 1.0*elem.g(v_ports, pindex)
-							if ports[pindex][1]:
-								J[index*n_of_var + elem.n2-1, index*n_of_var + ports[pindex][1]-1] =\
-								J[index*n_of_var + elem.n2-1, index*n_of_var + ports[pindex][1]-1] + elem.g(v_ports, pindex)
+	iteration = 0 # newton iteration counter
+	conv_counter = 0
 
-		J = J + CMAT
-		residuo = CMAT*x + T + Tf + Tt
-		dx = -1 * (numpy.linalg.inv(J) *  residuo)
-		#td
-		for index in xrange(points):
-			td[index, 0] = dc_analysis.get_td(dx[index*n_of_var:(index+1)*n_of_var, 0], locked_nodes, n=-1)
-		x = x + min(abs(td))[0, 0] * dx
-		#print x[points*n_of_var, 0]
-		# convergence and maxit test FIXME: WHAT?
-		if (vector_norm(dx) < min(options.ver, options.ier)*vector_norm(x) + min(options.vea, options.iea)): #\
+	while True:
+		dx = []
+		Tass_variable_vector = []
+		MAass_variable_vector = []
+		for index in range(points):
+			if index == 0:
+				xn_minus_1 = x[points-1]
+			else:
+				xn_minus_1 = x[index-1]
+			MAass_variable, Tass_variable = get_variable_MAass_and_Tass(circ, x[index], xn_minus_1, mna, D, step, n_of_var)
+			MAass_variable_vector.append(MAass_variable + MAass_static)
+			Tass_variable_vector.append(Tass_variable + Tass_static_vector[index])
+		
+		dxN = compute_dxN(circ, MAass_variable_vector, MBass, Tass_variable_vector, n_of_var, points, verbose=verbose)
+		td = dc_analysis.get_td(dxN, locked_nodes, n=-1)
+		x[points-1] = td * dxN + x[points-1]
+		#print dxN
+		#print Tass_variable_vector
+		#print MAass_variable_vector
+		for index in range(points-1):
+			if index == 0:
+				dxi_minus_1 = dxN
+			else:
+				dxi_minus_1 = dx[index-1]
+			dx.append(compute_dx(MAass_variable_vector[index], MBass, Tass_variable_vector[index], dxi_minus_1))
+			td = dc_analysis.get_td(dx[index], locked_nodes, n=-1)
+			x[index] = td*dx[index] + x[index]
+		dx.append(dxN)
+
+		if (vector_norm_wrapper(dx, vector_norm) < min(options.ver, options.ier)*vector_norm_wrapper(x,vector_norm) + min(options.vea, options.iea)): #\
 		#and (dc_analysis.vector_norm(residuo) < options.er*dc_analysis.vector_norm(x) + options.ea):
-			converged = True
-			break
-		elif vector_norm(dx) is numpy.nan: #needs work fixme
+			if conv_counter ==3:
+				converged = True
+				break
+			else:
+				conv_counter = conv_counter + 1
+		elif vector_norm(dx[points-1]) is numpy.nan: #needs work fixme
 			raise OverflowError
 			#break
 		else:
+			conv_counter = 0
 			if verbose > 2: 
 				tick.step()
 	
@@ -165,46 +183,28 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 			break
 		else:
 			iteration = iteration + 1
+#		if iteration % 5 == 0:
+#			print_results(circ, x, fdata, points, step)
 	if verbose > 2: 
 		tick.hide()
 	if converged:
 		if verbose > 2: 
 			print "done."
-		printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_time=True)
-
-		for index in xrange(points):
-			printing.print_results_on_a_line(time=index*step, x=x[index*n_of_var:(index+1)*n_of_var, 0], fdata=fdata, circ=circ, print_int_nodes=options.print_int_nodes, iter_n=0)
-			#printing.print_results_at_time(index*step, x[index*n_of_var:(index+1)*n_of_var, 0], fdata, iter_n=0)
+		print_results(circ, x, fdata, points, step)
 	else:
 		if verbose > 2 and data_filename != "stdout": 
 			print "failed."
 	return
 
+def vector_norm_wrapper(vector, norm_fun):
+	max = 0
+	for elem in vector:
+		new_max = norm_fun(elem)
+		if max < new_max:
+			max = new_max
+	return max
 
-def set_submatrix(row, col, dest_matrix, source_matrix):
-	"""Copies the source_matrix in dest_matrix, 
-	the position of the upper left corner of source matrix is (row, col) within dest_matrix
-	
-	Returns dest_matrix
-	"""
-	for li in xrange(source_matrix.shape[0]):
-		for ci in xrange(source_matrix.shape[1]):
-			if source_matrix[li, ci] != 0:
-				dest_matrix[row + li, col + ci] = source_matrix[li, ci]
-	return dest_matrix
-	
-def get_e(index, length):
-	"""Builds a e(j=index) col vector
-	e(j) is defined as:
-		e(i, 0) = 1 if i=j
-		e(i, 0) = 0 otherwise
-	
-	Returns: e(index)
-	"""
-	e = numpy.mat(numpy.zeros((length, 1)))
-	e[index, 0] = 1
-	return e
-	
+
 def check_step_and_points(step, points, period):
 	"""Sets consistently the step size and the number of points, according to the given period
 	Returns: (points, step)
@@ -226,124 +226,112 @@ def check_step_and_points(step, points, period):
 			print "Warning: adapted step is", step
 		else:
 			points = int(points)
-		points = points + 1 #0 - N where xN is in reality the first point of the second period!!
 	
 	return (points, step)
 
-def build_CMAT(mna, D, step, points, tick, n_of_var=None, verbose=3):
-	if n_of_var is None: 
-		n_of_var = mna.shape[0]
-	if verbose > 4: 
-		sys.stdout.write("Building the CMAT ("+str(n_of_var*points)+"x"+str(n_of_var*points)+")... ")
-	if verbose > 2: 
-		tick.reset()
-		tick.display()
+#mna, D, step, points, tick, n_of_var=None, verbose=3)
+def build_static_MAass_and_MBass(mna, D, step):
 	(C1, C0) = implicit_euler.get_df_coeff(step)
-	I = numpy.mat(numpy.eye(n_of_var))
-	M = mna + C1*D
-	N = C0 * D
-	#Z = numpy.mat(numpy.zeros((n_of_var, n_of_var)))
-	CMAT = numpy.mat(numpy.zeros((n_of_var*points, n_of_var*points)))
-	for li in xrange(points): #li = line index
-		for ci in xrange(points):
-			if li == 0:
-				if ci == 0:
-					temp = 1.0 * I
-				elif ci == points - 1:
-					temp = -1.0 * I
-				else:
-					continue #temp = Z
-			else:
-				if ci == li:
-					temp = M
-				elif ci == li -1:
-					temp = N
-				else:
-					continue #temp = Z
-			CMAT = set_submatrix(row=li*n_of_var, col=ci*n_of_var, dest_matrix=CMAT, source_matrix=temp)
-		if verbose > 2: 
-			tick.step()
-	if verbose > 2: 
-		tick.hide()
-		if verbose > 4: 
-			print "done."
-	#print CMAT
-	return CMAT
-	
-def build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
-	if n_of_var is None: 
-		n_of_var = mna.shape[0]
-	if verbose > 4: 
-		sys.stdout.write("Building x...")
-	if verbose > 2: 
-		tick.reset()
-		tick.display()
-	x = numpy.mat(numpy.zeros((points*n_of_var, 1)))
-	if x0 is not None:
-		if x0.shape[0] != n_of_var:
-			print "Warning x0 has the wrong dimensions. Using all 0s."
-		else:
-			for index in xrange(points):
-				x = set_submatrix(row=index*n_of_var, col=0, dest_matrix=x, source_matrix=x0)
-				if verbose > 2: 
-					tick.step()
-	if verbose > 2: 
-		tick.hide()
-		if verbose > 4: 
-			print "done."
-	
-	return x
-	
-def build_Tf(sTf, points, tick, n_of_var, verbose=3):
-	if verbose > 4: 
-		sys.stdout.write("Building Tf... ")
-	if verbose > 2: 
-		tick.reset()
-		tick.display()
-	Tf = numpy.mat(numpy.zeros((points*n_of_var, 1)))
-	
-	for index in xrange(1, points):
-		Tf = set_submatrix(row=index*n_of_var, col=0, dest_matrix=Tf, source_matrix=sTf)
-		if verbose > 2: 
-			tick.step()
-	
-	if verbose > 2: 
-		tick.hide()
-		if verbose > 4: 
-			print "done."
-	
-	return Tf
-	
-def build_Tt(circ, points, step, tick, n_of_var, verbose=3):
+	MAass = mna + D*C1
+        MBass = D * C0
+	return (MAass, MBass)
+
+def build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3):
+        Tass_vector = []
 	nv = len(circ.nodes_dict)
-	if verbose > 4: 
-		sys.stdout.write("Building Tt... ")
-	if verbose > 2: 
-		tick.reset()
-		tick.display()	
-	Tt = numpy.zeros((points*n_of_var, 1))
-	for index in xrange(1, points):
-		v_eq = 0
-		time = index * step
-		for elem in circ.elements:
-			if (isinstance(elem, circuit.vsource) or isinstance(elem, circuit.isource)) and elem.is_timedependent:
-				if isinstance(elem, circuit.vsource):
-					Tt[index*n_of_var + nv - 1 + v_eq, 0] = -1.0 * elem.V(time)
-				elif isinstance(elem, circuit.isource):
-					if elem.n1:
-						Tt[index*n_of_var + elem.n1-1, 0] = \
-						Tt[index*n_of_var + elem.n1-1, 0] + elem.I(time)
-					if elem.n2:
-						Tt[index*n_of_var + elem.n2-1, 0] = \
-						Tt[index*n_of_var + elem.n2-1, 0] - elem.I(time)
-			if circuit.is_elem_voltage_defined(elem):
-				v_eq = v_eq +1
-			#print Tt[index*n_of_var:(index+1)*n_of_var]
-		if verbose > 2: 
-			tick.step()
-	if verbose > 2: 
-		tick.hide()
-		if verbose > 4: 
-			print "done."
+        if verbose > 4:
+                sys.stdout.write("Building Tass... ")
+        if verbose > 2:
+                tick.reset()
+                tick.display()
+        for index in xrange(0, points):
+                Tt = numpy.zeros((n_of_var, 1))
+                v_eq = 0
+                time = index * step
+                for elem in circ.elements:
+                        if (isinstance(elem, circuit.vsource) or isinstance(elem, circuit.isource)) and elem.is_timedependent:
+                                if isinstance(elem, circuit.vsource):
+                                        Tt[nv - 1 + v_eq, 0] = -1.0 * elem.V(time)
+                                elif isinstance(elem, circuit.isource):
+                                        if elem.n1:
+                                                Tt[elem.n1-1, 0] = \
+                                                Tt[elem.n1-1, 0] + elem.I(time)
+                                        if elem.n2:
+                                                Tt[elem.n2-1, 0] = \
+                                                Tt[elem.n2-1, 0] - elem.I(time)
+                        if circuit.is_elem_voltage_defined(elem):
+                                v_eq = v_eq +1
+                if verbose > 2:
+                        tick.step()
+                Tass_vector.append(Tf+Tt)
+        if verbose > 2:
+                tick.hide()
+                if verbose > 4:
+                        print "done."
+
+        return Tass_vector
+
+def get_variable_MAass_and_Tass(circ, xi, xi_minus_1, M, D, step, n_of_var):
+	Tass = numpy.zeros((n_of_var, 1))
+	J = numpy.zeros((n_of_var, n_of_var))
+	(C1, C0) = implicit_euler.get_df_coeff(step)
+
+	for elem in circ.elements:
+		# build all dT(xn)/dxn (stored in J) and T(x)
+		if elem.is_nonlinear:
+			ports = elem.get_ports()
+			v_ports = []
+			for port in ports:
+				v = 0 # build v: remember we trashed the 0 row and 0 col of mna -> -1
+				if port[0]:
+					v = v + xi[port[0] - 1, 0]
+				if port[1]:
+					v = v - xi[port[1] - 1, 0]
+				v_ports.append(v)
+			if elem.n1:
+				Tass[elem.n1 - 1, 0] = Tass[elem.n1 - 1, 0] + elem.i(v_ports)
+			if elem.n2:
+				Tass[elem.n2 - 1, 0] = Tass[elem.n2 - 1, 0] - elem.i(v_ports)
+			for pindex in xrange(len(ports)):
+				if elem.n1:
+					if ports[pindex][0]:
+						J[elem.n1-1, ports[pindex][0]-1] = \
+						J[elem.n1-1, ports[pindex][0]-1] + elem.g(v_ports, pindex)
+					if ports[pindex][1]:
+						J[elem.n1-1, ports[pindex][1]-1] =\
+						J[elem.n1-1, ports[pindex][1]-1] - 1.0*elem.g(v_ports, pindex)
+				if elem.n2:
+					if ports[pindex][0]:
+						J[elem.n2-1, ports[pindex][0]-1] = \
+						J[elem.n2-1, ports[pindex][0]-1] - 1.0*elem.g(v_ports, pindex)
+					if ports[pindex][1]:
+						J[elem.n2-1, ports[pindex][1]-1] =\
+						J[elem.n2-1, ports[pindex][1]-1] + elem.g(v_ports, pindex)
 	
-	return Tt
+	Tass = Tass + D*C1*xi + M*xi + D*C0*xi_minus_1
+
+	return (J, Tass)
+
+def compute_dxN(circ, MAass_vector, MBass, Tass_vector, n_of_var, points, verbose=3):
+	temp_mat1 = numpy.mat(numpy.eye(n_of_var))
+	for index in range(points):
+		temp_mat1 = -1*numpy.linalg.inv(MAass_vector[index])*MBass*temp_mat1
+	temp_mat2 = numpy.mat(numpy.zeros((n_of_var,1)))
+	for index in range(points):
+		temp_mat3 = -1*numpy.linalg.inv(MAass_vector[index])*Tass_vector[index]
+		for index2 in range(index+1, points):
+			temp_mat3 = -1*numpy.linalg.inv(MAass_vector[index2])*MBass*temp_mat3
+		temp_mat2 = temp_mat2 + temp_mat3
+
+	dxN = numpy.linalg.inv(numpy.mat(numpy.eye(n_of_var)) - temp_mat1) * temp_mat2
+
+	return dxN
+
+def compute_dx(MAass, MBass, Tass, dxi_minus_1):
+	dxi = -1 * numpy.linalg.inv(MAass) * (MBass * dxi_minus_1 + Tass)
+	return dxi
+
+def print_results(circ, x, fdata, points, step):
+	printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_time=True)
+	for index in xrange(points):
+		printing.print_results_on_a_line(time=index*step, x=x[index], fdata=fdata, circ=circ, print_int_nodes=options.print_int_nodes, iter_n=0)

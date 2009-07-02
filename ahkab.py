@@ -23,7 +23,7 @@
 
 import sys
 from optparse import OptionParser
-import netlist_parser, dc_analysis, transient, utilities, shooting, options, printing
+import netlist_parser, dc_analysis, transient, utilities, shooting, bfpss, options, printing
 
 
 VERSION = "0.02"
@@ -109,8 +109,10 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 			transient.transient_analysis(circ, tstart=an["tstart"], tstep=an["tstep"], tstop=an["tstop"], x0=x0, mna=None, N=None, verbose=verbose, data_filename=data_filename, use_step_control=(not disable_step_control), method=tran_method)
 		
 		elif an["type"] == "shooting":
-			shooting.shooting(circ, period=an["period"], step=an["step"], mna=None, Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], x0=x0_op, data_filename=data_filename, verbose=verbose)
-				
+			if an["method"]=="brute-force":
+				bfpss.bfpss(circ, period=an["period"], step=an["step"], mna=None, Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], x0=x0_op, data_filename=data_filename, verbose=verbose)
+			elif an["method"]=="shooting":	
+				shooting.shooting(circ, period=an["period"], step=an["step"], mna=None, Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], data_filename=data_filename, verbose=verbose)
 	return None
 
 if __name__ == "__main__":

@@ -1096,7 +1096,7 @@ def parse_an_shooting(line, line_elements=None):
 	if line_elements is None:
 		line_elements = line.split()
 	
-	an = {"type":"shooting", "period":None, "points":None, "step":None, "autonomous":False}
+	an = {"type":"shooting", "period":None, "points":None, "step":None, "autonomous":False, "method":"shooting"}
 	
 	for token in line_elements[1:]:
 		if token[0] == "*":
@@ -1114,6 +1114,8 @@ def parse_an_shooting(line, line_elements=None):
 			an.update({'autonomous':convert_boolean(value)})
 		elif label == 'tstab':
 			an.update({'tstab':convert_units(value)})
+		elif label == 'method':
+			an.update({'method':value})
 		else:
 			raise NetlistParseError("Unknown parameter: " + label)
 	
@@ -1123,6 +1125,9 @@ def parse_an_shooting(line, line_elements=None):
 	if an["autonomous"]:
 		if an["step"] is not None:
 			raise NetlistParseError("autonomous=yes is incompatible with a step option.")
+	
+	if an["method"] != 'brute-force' and an["method"] != 'shooting':
+		raise NetlistParseError("Unknown shooting method: "+an["method"])
 	
 	return an
 
