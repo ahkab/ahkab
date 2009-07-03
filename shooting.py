@@ -1,7 +1,7 @@
 # -*- coding: iso-8859-1 -*-
 # shooting.py
 # Shooting analysis module
-# Copyright 2006 Giuseppe Venturini
+# Copyright 2009 Giuseppe Venturini
 
 # This file is part of the ahkab simulator.
 #
@@ -41,7 +41,7 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 	
 	We compute the change in the last point, calculating several matrices in
 	the process.
-	From that, with the same matrices we calculate the canges in all points, 
+	From that, with the same matrices we calculate the changes in all points, 
 	starting from 0 (which is the same as the last one), then 1, ...
 
 	Key points:
