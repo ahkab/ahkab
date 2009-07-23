@@ -193,7 +193,7 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 	# The initial value is set to None and this IS CORRECT. 
 	# op_analysis will attempt to do a smart guess, if called with x0 = None and guess=True
 	# For each iteration over the source voltage (current) value, the last result is used as x0.
-	# op_analysis disregards guess is x0 is not None
+	# op_analysis will not attempt to guess the op if x0 is not None
 	x = None
 	solved = True
 	
@@ -416,17 +416,13 @@ def mdn_solver(x, mna, element_list, Tf, Tt, MAXIT, nv, locked_nodes, time=None,
 		residuo = mna*x + T + Tf + Tt
 		dx = numpy.linalg.inv(J) * (-1 * residuo)
 		x = x + get_td(dx, locked_nodes, n=iteration)*dx
-		# convergence and maxit test FIXME: check the residual
 		if convergence_check(x, dx, residuo, nv-1):
-		#(vector_norm(dx[:nv-1, 0]) < options.ver*vector_norm(x[:nv-1, 0]) + options.vea) and \
-			#(mna_size == nv-1 or vector_norm(dx[nv-1:, 0]) < options.ier*vector_norm(x[nv-1:, 0]) + options.iea):
-			#and vector_norm(residuo) < options.iea: fixme!
 			converged = True
 			break
-		elif vector_norm(dx) is numpy.nan: #needs work fixme
+		elif vector_norm(dx) is numpy.nan: #Overflow
 			raise OverflowError
-			#break
-	if print_steps: tick.hide()
+	if print_steps: 
+		tick.hide()
 	return (x, residuo, converged, iteration)
 
 
@@ -450,7 +446,6 @@ def get_td(dx, locked_nodes, n=-1):
 	Returns: a float, the damping coefficient (td)
 	"""
 	
-	# questo � per evitare sovraoscillazioni iniziali
 	if not options.nr_damp_first_iters or n < 0:
 		td = 1
 	else:
@@ -460,7 +455,6 @@ def get_td(dx, locked_nodes, n=-1):
 			td = 0.1
 		else:
 			td = 1
-	# per i componenti NL, vogliamo evitare OVERFLOW!
 	td_new = 1
 	if options.nl_voltages_lock:
 		for (n1, n2) in locked_nodes:
