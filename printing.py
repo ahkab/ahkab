@@ -97,7 +97,7 @@ def print_analysis(an):
 		else:
 			print ""
 	elif an["type"] == "shooting":
-		sys.stdout.write(".shooting period="+ str(an["period"]))
+		sys.stdout.write(".shooting period="+ str(an["period"])+" method="str(an["method"]))
 		if an["points"] is not None:
 			sys.stdout.write(" points=" + str(an["points"]))
 		if an["step"] is not None:
@@ -265,8 +265,8 @@ def print_results_header(circ, fp, print_int_nodes=False, print_time=False):
 	
 	for lab in labels:
 		fp.write(lab+"\t")
-	fp.flush()
 	fp.write("\n")
+	fp.flush()
 	
 	return None
 
