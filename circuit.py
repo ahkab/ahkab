@@ -364,144 +364,144 @@ class diode:
 			raise Exception, "Attepted to evaluate a diode's gm on a unknown port."
 		return (self.i(ports_v)*constants.e)/(self.m*constants.k*self.T) + options.gmin
 
-class mosq:
-	"""Square law MOS model
-	
-	nd: drain node
-	ng: gate node
-	ns: source node
-	kp: kp = u0 * C'ox
-	w: channel width in meters
-	l: channel length in meters
-	vt: threshold voltage
-	lambd: lambd = 1/Va channel length modulation
-	mos_type: may be 'n' or 'p', identifies the mos type
-	"""
-	letter_id = "m"
-	is_nonlinear = True
-	dc_guess = None #defined in init
-	descr = None
-	
-	_debug = False
-	
-	def __init__(self, nd, ng, ns, kp, w, l, vt, lambd=0, mos_type='n'):
-		self.ng = ng
-		self.n1 = nd
-		self.n2 = ns
-		self.kp = kp
-		self.w = float(w)
-		self.l = float(l)
-		self.vt = vt
-		self.ports = ((self.ng, self.n2), (self.ng, self.n1))
-		if mos_type != 'n' and mos_type != 'p':
-			raise Exception, "Unknown mos type: " + str(mos_type)
-		self.mos_type = mos_type.lower()
-		self.lambd = lambd * w / l
-		self.dc_guess = [self.vt*(1.1)*(1-2*(self.mos_type=='p')), 0]
-	
-	def get_ports(self):
-		"""Returns a tuple of tuples of ports nodes, as:
-		(port0, port1, port2...)
-		Where each port is in the form:
-		port0 = (nplus, nminus)
-		"""
-		return self.ports
-	
-	def __str__(self):
-		rep = "type=" + self.mos_type + " kp=" + str(self.kp)+ " vt="+ str(self.vt)+ " w="+ str(self.w)+ " l=" + str(self.l) + \
-		" lambda="+ str(self.lambd)
-		return rep
-	
-
-	def i(self, ports_v, time=0):
-		"""Returns the current flowing in the element with the voltages applied
-		as specified in the ports_v vector.
-		
-		ports_v: a list in the form: [voltage_across_port0, voltage_across_port1, ...]
-		time: the simulation time at which the evaluation is performed. Set it to
-		None during DC analysis.
-		
-		"""
-		v1 = ports_v[0]
-		v2 = ports_v[1]
-		
-		if self.mos_type == 'p':
-			v1 = -v1
-			v2 = -v2
-			sign = -1
-		else:
-			sign = +1
-			
-			
-		if v1 <= self.vt and v2 <= self.vt:
-			# no channel at both sides
-			idr = 0
-			if self._debug:
-				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "OFF"
-		elif v1 > self.vt and v2 > self.vt:
-			# zona ohmica: channel at both sides
-			idr = .5 * self.kp * (v1 - v2)*(-2*self.vt + v1 + v2) * (self.w / self.l)
-			if self._debug:
-				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "OHM", "idr:", str(idr)
-		elif v1 > self.vt and v2 <= self.vt:
-			# zona di saturazione: canale al s
-			idr =  0.5 * self.kp * ((v1 - self.vt)**2) * (self.w / self.l) * (1 - self.lambd*(v2 - self.vt))
-			if self._debug:
-				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "SAT", "idr:", str(idr)
-		else:
-			# zona di saturazione: canale al d
-			idr =  -0.5 * self.kp * ((v2 - self.vt)**2) * (self.w / self.l) * (1 - self.lambd*(v1 - self.vt))
-			if self._debug:
-				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "SAT", "idr:", str(idr)
-
-		return sign*idr
-	
-	def g(self, ports_v, port_index, time=0):
-		"""
-		Returns the differential (trans)conductance rs the port specified by port_index
-		when the element has the voltages specified in ports_v across its ports,
-		at (simulation) time.
-		
-		ports_v: a list in the form: [voltage_across_port0, voltage_across_port1, ...]
-		port_index: an integer, 0 <= port_index < len(self.get_ports())
-		time: the simulation time at which the evaluation is performed. Set it to
-		None during DC analysis.
-		"""
-		v1 = ports_v[0]
-		v2 = ports_v[1]
-		vds = v1 - v2
-		if self.mos_type == 'p':
-			v1 = -v1
-			v2 = -v2
-			
-		if port_index == 0: #vgs
-			if v1 <= self.vt and v2 <= self.vt:
-				# no channel at both sides
-				gdr = 0
-			elif v1 > self.vt and v2 > self.vt:
-				# zona ohmica: channel at both sides
-				gdr =  self.kp * (self.w / self.l) * (v1 - self.vt)
-			elif v1 > self.vt and v2 <= self.vt:
-				# zona di saturazione: canale al s
-				gdr =  self.kp * (v1 - self.vt) * (self.w / self.l) * (1 - self.lambd*(v2 - self.vt))
-			else:
-				# zona di saturazione: canale al d # era: 3*vgs - vds - 3*self.vt
-				gdr =  0.5 * self.kp * ((v2 - self.vt)**2) * (self.w / self.l) * self.lambd*v1
-		elif port_index == 1: #vgd
-			if v1 <= self.vt and v2 <= self.vt:
-				# no channel at both sides
-				gdr = 0
-			elif v1 > self.vt and v2 > self.vt:
-				# zona ohmica: channel at both sides
-				gdr = self.kp * (self.vt - v2) * (self.w / self.l)
-			elif v1 > self.vt and v2 <= self.vt:
-				# zona di saturazione: canale al s
-				gdr = - 0.5 * self.kp * ((v1 - self.vt)**2) * (self.w / self.l) * self.lambd
-			else:
-				# zona di saturazione: canale al d
-				gdr =  - self.kp * (v2 - self.vt) * (self.w / self.l) * (1 - self.lambd*(v1 - self.vt))
-		
-		return gdr
+#class mosq:
+#	"""Square law MOS model
+#	
+#	nd: drain node
+#	ng: gate node
+#	ns: source node
+#	kp: kp = u0 * C'ox
+#	w: channel width in meters
+#	l: channel length in meters
+#	vt: threshold voltage
+#	lambd: lambd = 1/Va channel length modulation
+#	mos_type: may be 'n' or 'p', identifies the mos type
+#	"""
+#	letter_id = "m"
+#	is_nonlinear = True
+#	dc_guess = None #defined in init
+#	descr = None
+#	
+#	_debug = False
+#	
+#	def __init__(self, nd, ng, ns, kp, w, l, vt, lambd=0, mos_type='n'):
+#		self.ng = ng
+#		self.n1 = nd
+#		self.n2 = ns
+#		self.kp = kp
+#		self.w = float(w)
+#		self.l = float(l)
+#		self.vt = vt
+#		self.ports = ((self.ng, self.n2), (self.ng, self.n1))
+#		if mos_type != 'n' and mos_type != 'p':
+#			raise Exception, "Unknown mos type: " + str(mos_type)
+#		self.mos_type = mos_type.lower()
+#		self.lambd = lambd * w / l
+#		self.dc_guess = [self.vt*(1.1)*(1-2*(self.mos_type=='p')), 0]
+#	
+#	def get_ports(self):
+#		"""Returns a tuple of tuples of ports nodes, as:
+#		(port0, port1, port2...)
+#		Where each port is in the form:
+#		port0 = (nplus, nminus)
+#		"""
+#		return self.ports
+#	
+#	def __str__(self):
+#		rep = "type=" + self.mos_type + " kp=" + str(self.kp)+ " vt="+ str(self.vt)+ " w="+ str(self.w)+ " l=" + str(self.l) + \
+#		" lambda="+ str(self.lambd)
+#		return rep
+#	
+#
+#	def i(self, ports_v, time=0):
+#		"""Returns the current flowing in the element with the voltages applied
+#		as specified in the ports_v vector.
+#		
+#		ports_v: a list in the form: [voltage_across_port0, voltage_across_port1, ...]
+#		time: the simulation time at which the evaluation is performed. Set it to
+#		None during DC analysis.
+#		
+#		"""
+#		v1 = ports_v[0]
+#		v2 = ports_v[1]
+#		
+#		if self.mos_type == 'p':
+#			v1 = -v1
+#			v2 = -v2
+#			sign = -1
+#		else:
+#			sign = +1
+#			
+#			
+#		if v1 <= self.vt and v2 <= self.vt:
+#			# no channel at both sides
+#			idr = 0
+#			if self._debug:
+#				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "OFF"
+#		elif v1 > self.vt and v2 > self.vt:
+#			# zona ohmica: channel at both sides
+#			idr = .5 * self.kp * (v1 - v2)*(-2*self.vt + v1 + v2) * (self.w / self.l)
+#			if self._debug:
+#				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "OHM", "idr:", str(idr)
+#		elif v1 > self.vt and v2 <= self.vt:
+#			# zona di saturazione: canale al s
+#			idr =  0.5 * self.kp * ((v1 - self.vt)**2) * (self.w / self.l) * (1 - self.lambd*(v2 - self.vt))
+#			if self._debug:
+#				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "SAT", "idr:", str(idr)
+#		else:
+#			# zona di saturazione: canale al d
+#			idr =  -0.5 * self.kp * ((v2 - self.vt)**2) * (self.w / self.l) * (1 - self.lambd*(v1 - self.vt))
+#			if self._debug:
+#				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "SAT", "idr:", str(idr)
+#
+#		return sign*idr
+#	
+#	def g(self, ports_v, port_index, time=0):
+#		"""
+#		Returns the differential (trans)conductance rs the port specified by port_index
+#		when the element has the voltages specified in ports_v across its ports,
+#		at (simulation) time.
+#		
+#		ports_v: a list in the form: [voltage_across_port0, voltage_across_port1, ...]
+#		port_index: an integer, 0 <= port_index < len(self.get_ports())
+#		time: the simulation time at which the evaluation is performed. Set it to
+#		None during DC analysis.
+#		"""
+#		v1 = ports_v[0]
+#		v2 = ports_v[1]
+#		vds = v1 - v2
+#		if self.mos_type == 'p':
+#			v1 = -v1
+##			v2 = -v2
+#			
+#		if port_index == 0: #vgs
+#			if v1 <= self.vt and v2 <= self.vt:
+#				# no channel at both sides
+#				gdr = 0
+#			elif v1 > self.vt and v2 > self.vt:
+#				# zona ohmica: channel at both sides
+#				gdr =  self.kp * (self.w / self.l) * (v1 - self.vt)
+#			elif v1 > self.vt and v2 <= self.vt:
+#				# zona di saturazione: canale al s
+#				gdr =  self.kp * (v1 - self.vt) * (self.w / self.l) * (1 - self.lambd*(v2 - self.vt))
+#			else:
+#				# zona di saturazione: canale al d # era: 3*vgs - vds - 3*self.vt
+#				gdr =  0.5 * self.kp * ((v2 - self.vt)**2) * (self.w / self.l) * self.lambd*v1
+#		elif port_index == 1: #vgd
+#			if v1 <= self.vt and v2 <= self.vt:
+#				# no channel at both sides
+#				gdr = 0
+#			elif v1 > self.vt and v2 > self.vt:
+#				# zona ohmica: channel at both sides
+#				gdr = self.kp * (self.vt - v2) * (self.w / self.l)
+#			elif v1 > self.vt and v2 <= self.vt:
+#				# zona di saturazione: canale al s
+#				gdr = - 0.5 * self.kp * ((v1 - self.vt)**2) * (self.w / self.l) * self.lambd
+#			else:
+#				# zona di saturazione: canale al d
+#				gdr =  - self.kp * (v2 - self.vt) * (self.w / self.l) * (1 - self.lambd*(v1 - self.vt))
+#		
+#		return gdr
 
 
 

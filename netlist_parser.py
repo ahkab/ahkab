@@ -24,7 +24,7 @@ Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
 """
 
 import sys, imp
-import circuit, printing, utilities
+import circuit, printing, utilities, mosq
 
 def parse_circuit(filename, read_netlist_from_stdin=False):
 	"""Parse a SPICE-like netlist and return a circuit instance 
@@ -577,7 +577,7 @@ def parse_elem_mos(line, circ, line_elements=None):
 	ng = circ.add_node_to_circ(ext_ng)
 	ns = circ.add_node_to_circ(ext_ns)
 	
-	elem = circuit.mosq(nd, ng, ns, kp=kp, w=w, l=l, vt=vt, mos_type=mos_type, lambd=lambd)
+	elem = mosq.mosq(nd, ng, ns, kp=kp, w=w, l=l, vt=vt, mos_type=mos_type, lambd=lambd)
 	elem.descr = line_elements[0][1:]
 	
 	return [elem]
