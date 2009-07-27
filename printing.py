@@ -97,7 +97,7 @@ def print_analysis(an):
 		else:
 			print ""
 	elif an["type"] == "shooting":
-		sys.stdout.write(".shooting period="+ str(an["period"])+" method="str(an["method"]))
+		sys.stdout.write(".shooting period="+ str(an["period"])+" method="+str(an["method"]))
 		if an["points"] is not None:
 			sys.stdout.write(" points=" + str(an["points"]))
 		if an["step"] is not None:
