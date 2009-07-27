@@ -91,43 +91,82 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 					Tt[elem.n2 - 1, 0] = Tt[elem.n2 - 1, 0] - elem.I(time)
 		if circuit.is_elem_voltage_defined(elem):
 			v_eq = v_eq + 1
-	
-	solved = True
-	converged = False
-	
-	if verbose: 
-		sys.stdout.write("Solving... ")
+	#update N to include the time variable sources
+	N = N + Tt
+
 	#initial guess, if specified, otherwise it's zero
 	if x0 is not None:
 		x = x0
 	else:
 		x = numpy.mat(numpy.zeros((mna_size, 1))) # has n-1 rows because of discard of ^^^
+	
+	converged = False
+	standard_solving = {"enabled":True, "failed":False}
+	source_stepping = {"enabled":False,"failed":False,"factors":(-.9,-.8,-.7,-.6,-.5,-.4,-.3,-.2,-.1,0), "index":0}
+	gmin_stepping = {"enabled":False,"failed":False,"factors":(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1),"index":0}
 
-	try:
-		(x, error, converged, n_iter) = mdn_solver(x, mna + (use_gmin)*Gmin_matrix, circ.elements, Tf=N, Tt=Tt, \
-		 nv=nv, print_steps=(verbose > 0), locked_nodes=locked_nodes, time=time, MAXIT=MAXIT)
-	except numpy.linalg.linalg.LinAlgError:
-		solved = False
-		print "failed."
-		printing.print_general_error("J Matrix is singular")
-	except OverflowError:
-		solved = False
-		print "failed."
-		printing.print_general_error("Overflow")
-	
-	if not converged and solved:
-		solved = False
-		print "failed."
-		printing.print_general_error("Error: Hitted MAXIT ("+str(MAXIT)+")")
-	
-	if solved:
+	while(not converged):
 		if verbose: 
-			print " done."
-	else:
-		x = None
-		error = None
+			sys.stdout.write("Solving... ")
+		if standard_solving["enabled"]:
+			mna_to_pass =  mna + (use_gmin)*Gmin_matrix
+			N_to_pass = N
+		elif gmin_stepping["enabled"]:
+			mna_to_pass = 10**(gmin_stepping["index"]*numpy.log(options.gmin))*Gmin_matrix + mna
+			N_to_pass = N
+		elif source_stepping["enabled"]:
+			mna_to_pass =  mna + (use_gmin)*Gmin_matrix
+			N_to_pass = source_stepping["index"]*N
+		try:
+		
+			(x, error, converged, n_iter) = mdn_solver(x, mna_to_pass, circ.elements, T=N_to_pass, \
+			 nv=nv, print_steps=(verbose > 0), locked_nodes=locked_nodes, time=time, MAXIT=MAXIT)
+		except numpy.linalg.linalg.LinAlgError:
+			converged = False
+			print "failed."
+			printing.print_general_error("J Matrix is singular")
+		except OverflowError:
+			converged = False
+			print "failed."
+			printing.print_general_error("Overflow")
 	
-	return (x, error, solved)
+		if not converged:
+			if n_iter == MAXIT-1:
+				printing.print_general_error("Error: Hitted MAXIT ("+str(MAXIT)+")")
+			if standard_solving["enabled"]:
+				standard_solving["enabled"] = False
+				standard_solving["failed"] = True
+				gmin_stepping["enabled"] = True
+				print "Enabling gmin stepping convergence aid."
+			elif gmin_stepping["enabled"]:
+				if gmin_stepping["index"] == 9:
+					print "failed."
+					print "Enabling source stepping convergence aid."
+					gmin_stepping["enabled"] = False
+					gmin_stepping["failed"] = True
+					source_stepping["enabled"] = True
+				else:
+					gmin_stepping["index"] = gmin_stepping["index"] + 1
+			elif source_stepping["enabled"]:
+				if source_stepping["index"] == 9:
+					print "failed."
+					source_stepping["enabled"] = False
+					source_stepping["failed"] = True
+				else:
+					source_stepping["index"] = source_stepping["index"] + 1
+			if standard_solving["failed"] and gmin_stepping["failed"] and source_stepping["failed"]:
+				#print "Giving up."
+				x = None
+				error = None
+				break		
+		else:
+			if (source_stepping["enabled"] and source_stepping["index"] != 9) or (gmin_stepping["enabled"] and source_stepping["index"] != 9):
+				converged = False
+			else:	
+				if verbose: 
+					print " done."
+	
+	return (x, error, converged)
 
 def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename="stdout", print_int_nodes=True, guess=True, verbose=2):
 	"""Performs a sweep of the value of V or I of a independent source from start 
@@ -298,22 +337,20 @@ def op_analysis(circ, x0=None, guess=True, verbose=3):
 				printing.print_dc_results(x2, error2, circ, print_int_nodes=True, print_error=(verbose>3))
 			return x2
 	else:
-		printing.print_general_error("Couldn't solve circuit. Giving up.")
+		printing.print_general_error("Couldn't solve the circuit. Giving up.")
 	return None
 			
 
-def mdn_solver(x, mna, element_list, Tf, Tt, MAXIT, nv, locked_nodes, time=None, print_steps=False, vector_norm=lambda v: max(abs(v))):
+def mdn_solver(x, mna, element_list, T, MAXIT, nv, locked_nodes, time=None, print_steps=False, vector_norm=lambda v: max(abs(v))):
 	"""
 	Solves a problem like F(x) = 0 using the Newton Algorithm with a variable damping td.
 	
 	Where:
 	
-	F(x) = mna*x + Tf + Tt + T(x)
+	F(x) = mna*x + T + T(x)
 	mna is the Modified Network Analysis matrix of the circuit
 	T(x) is the contribute of nonlinear elements to KCL
-	Tf -> independent sources, time invariant _ Those are both seen as constant within this method...
-	Tt -> independent sources, time variant   -
-	
+	T -> independent sources, time invariant and invariant
 	
 	x is the initial guess.
 	
@@ -334,8 +371,7 @@ def mdn_solver(x, mna, element_list, Tf, Tt, MAXIT, nv, locked_nodes, time=None,
 	is found if there are more than one.
 	mna: the Modified Network Analysis matrix of the circuit, reduced, see above
 	element_list:
-	Tf: see above.
-	Tt: see above. Note: Tf and Tt are the same thing from the method's POV. We may remove one and set Tf=Tf+Tt...
+	T: see above.
 	MAXIT: Maximum iterations that the method may perform.
 	nv: number of nodes in the circuit (counting the ref, 0)
 	locked_nodes: see get_td() and dc_solve(), generated by circ.get_locked_nodes()
@@ -367,9 +403,9 @@ def mdn_solver(x, mna, element_list, Tf, Tt, MAXIT, nv, locked_nodes, time=None,
 	else:
 		if not x.shape[0] == mna_size:
 			raise Exception, "x0s size is different from expected: "+str(x.shape[0])+" "+str(mna_size)
-	if Tt is None:
-		printing.print_warning("dc_analysis.mdn_solver called with Tf=is=None, setting Tf=0. BUG?")
-		Tt = numpy.mat(numpy.zeros((mna_size, 1)))
+	if T is None:
+		printing.print_warning("dc_analysis.mdn_solver called with T==None, setting T=0. BUG or no sources in circuit?")
+		T = numpy.mat(numpy.zeros((mna_size, 1)))
 
 	converged = False
 	iteration = 0
@@ -377,9 +413,9 @@ def mdn_solver(x, mna, element_list, Tf, Tt, MAXIT, nv, locked_nodes, time=None,
 		if print_steps: 
 			tick.step()
 		J = numpy.mat(numpy.zeros((mna_size, mna_size)))
-		T = numpy.mat(numpy.zeros((mna_size, 1)))
+		Tx = numpy.mat(numpy.zeros((mna_size, 1)))
 		for elem in element_list:
-			 # build dT(x)/dx (stored in J) and T(x)
+			 # build dT(x)/dx (stored in J) and Tx(x)
 			if elem.is_nonlinear:
 				ports = elem.get_ports()
 				#print ports
@@ -393,9 +429,9 @@ def mdn_solver(x, mna, element_list, Tf, Tt, MAXIT, nv, locked_nodes, time=None,
 					v_ports.append(v)
 					#print v
 				if elem.n1:
-					T[elem.n1 - 1, 0] = T[elem.n1 - 1, 0] + elem.i(v_ports, time)
+					Tx[elem.n1 - 1, 0] = Tx[elem.n1 - 1, 0] + elem.i(v_ports, time)
 				if elem.n2:
-					T[elem.n2 - 1, 0] = T[elem.n2 - 1, 0] - elem.i(v_ports, time)
+					Tx[elem.n2 - 1, 0] = Tx[elem.n2 - 1, 0] - elem.i(v_ports, time)
 				for index in xrange(len(ports)):
 					if elem.n1:
 						if ports[index][0]:
@@ -413,7 +449,7 @@ def mdn_solver(x, mna, element_list, Tf, Tt, MAXIT, nv, locked_nodes, time=None,
 							J[elem.n2 - 1, ports[index][1] - 1] + elem.g(v_ports, index, time)
 						
 		J = J + mna
-		residuo = mna*x + T + Tf + Tt
+		residuo = mna*x + T + Tx
 		dx = numpy.linalg.inv(J) * (-1 * residuo)
 		x = x + get_td(dx, locked_nodes, n=iteration)*dx
 		if convergence_check(x, dx, residuo, nv-1):
