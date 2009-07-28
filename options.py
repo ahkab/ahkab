@@ -58,5 +58,6 @@ shooting_default_points = 100
 shooting_max_nr_iter = 10000
 
 #plotting
+# Set to None to disable writing plots to disk
 plotting_outtype = "png"
 plotting_wait_after_plot = True

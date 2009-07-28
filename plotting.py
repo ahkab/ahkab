@@ -113,7 +113,7 @@ def plot_data(title, x, y2, y1, filename, analysis, outfilename):
 		g.plot(gdata[0],gdata[1],gdata[2],gdata[3],gdata[4],gdata[5],gdata[6],gdata[7],gdata[8])
 	if len(gdata) == 10:
 		g.plot(gdata[0],gdata[1],gdata[2],gdata[3],gdata[4],gdata[5],gdata[6],gdata[7],gdata[8],gdata[9])
-	if outfilename is not None:
+	if outfilename is not None and options.plotting_outtype is not None:
 		g.hardcopy(outfilename, terminal=options.plotting_outtype)
 	
 	if options.plotting_wait_after_plot:
