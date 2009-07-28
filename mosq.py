@@ -246,14 +246,62 @@ class mosq:
 
 if __name__ == '__main__': 
 	import numpy
-	mymos = mosq(nd=2, ng=1, ns=0, kp=1, w=1, l=1, vt=1, lambd=0.5, mos_type='p')
-	mymos.descr = "TEST"
-	vgs_v = (numpy.array(range(400))-200)/100.0
-	vgd_v = [-2, -1.5, -1, -0.5, -0.2, 0, 0.2, 0.5, 1, 1.5, 2]
-	for vgd in vgd_v:
-		fp = open("mos_test-vgs_sweep-vgd_"+str(vgd)+".txt", 'w')
-		fp.write("#VGS\tVGD\tI\tgm\tgos\n")
+	for type in ('n', 'p'):
+		mymos = mosq(nd=2, ng=1, ns=0, kp=1e-3, w=1, l=1, vt=1, lambd=0.5, mos_type=type)
+		mymos.descr = "TEST"
+		vgs_v = (numpy.array(range(400))-200)/100.0
+		vgd_v = [-2, -1.5, -1, -0.5, -0.2, 0, 0.2, 0.5, 1, 1.5, 2]
+		for vgd in vgd_v:
+			fp = open(type+"mos_test-vgs_sweep-vgd_"+str(vgd)+".txt", 'w')
+			fp.write("#VGS\tVGD\tI\tgm\tgos\n")
+			for vgs in vgs_v:
+				fp.write(str(vgs)+"\t"+str(vgd)+"\t"+str(mymos.i([vgs, vgd]))+"\t"+str(mymos.g([vgs, vgd], 0))+"\t"+str(mymos.g([vgs, vgd], 1))+"\n")
+			fp.close()
+	
+		vgd_v = (numpy.array(range(400))-200)/100.0
+		vgs_v = [-2, -1.5, -1, -0.5, -0.2, 0, 0.2, 0.5, 1, 1.5, 2]
 		for vgs in vgs_v:
-			fp.write(str(vgs)+"\t"+str(vgd)+"\t"+str(mymos.i([vgs, vgd]))+"\t"+str(mymos.g([vgs, vgd], 0))+"\t"+str(mymos.g([vgs, vgd], 1))+"\n")
-		fp.close()
+			fp = open(type+"mos_test-vgd_sweep-vgs_"+str(vgs)+".txt", 'w')
+			fp.write("#VGD\tVGS\tI\tgos\tgm\n")
+			for vgd in vgd_v:
+				fp.write(str(vgd)+"\t"+str(vgs)+"\t"+str(mymos.i([vgs, vgd]))+"\t"+str(mymos.g([vgs, vgd], 1))+"\t"+str(mymos.g([vgs, vgd], 0))+"\n")
+			fp.close()
 
+	mymos = mosq(nd=2, ng=1, ns=0, kp=1e-3, w=1, l=1, vt=1, lambd=0.5, mos_type='n')
+	mymos.descr = "TEST"
+	vds_v = range(400)
+	vds_v.reverse()
+	vds_v = (numpy.array(vds_v))/100.0
+	vgs_v = [0.5, 1, 1.2, 1.4, 1.6, 1.8, 2.0]
+	fp = open("nmos_test-char.txt", 'w')
+	fp.write("#VDS\t")
+	mymos.lambd = 0.01
+	for vgs in vgs_v:
+		fp.write("I(VGS="+str(vgs)+")\t")
+	fp.write("\n")
+	for vds in vds_v:
+		fp.write(str(vds)+"\t")
+		for vgs in vgs_v:
+			fp.write(str(mymos.i([vgs, vgs-vds]))+"\t")
+		fp.write("\n")
+	fp.close()
+		
+	mymos = mosq(nd=2, ng=1, ns=0, kp=1e-3, w=1, l=1, vt=1, lambd=0.5, mos_type='p')
+	mymos.descr = "TEST"
+	vsd_v = range(400)
+	vsd_v.reverse()
+	vsd_v = (numpy.array(vsd_v))/100.0
+	vgs_v = [-0.5, -1, -1.2, -1.4, -1.6, -1.8, -2.0]
+	fp = open("pmos_test-char.txt", 'w')
+	fp.write("#VDS\t")
+	mymos.lambd = 0.01
+	for vgs in vgs_v:
+		fp.write("I(VGS="+str(vgs)+")\t")
+	fp.write("\n")
+	for vsd in vsd_v:
+		fp.write(str(vsd)+"\t")
+		for vgs in vgs_v:
+			fp.write(str(-1*mymos.i([vgs, vgs + vsd]))+"\t")
+		fp.write("\n")
+	fp.close()
+		

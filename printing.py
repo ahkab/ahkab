@@ -23,7 +23,7 @@ be somewhat uniform.
 """
 
 import sys
-import circuit, options
+import circuit, options, mosq
 	
 def print_circuit(circ):
 	"""Prints the whole circuit to stdout, in a format similar to 
@@ -63,7 +63,7 @@ def print_netlist_elem_line(elem, circ):
 	elif isinstance(elem, circuit.evsource) or isinstance(elem, circuit.gisource):
 		sys.stdout.write(ext_n1 + " " + ext_n2 + " " + circ.nodes_dict[elem.sn1]+ " " + \
 		circ.nodes_dict[elem.sn2] + " ")
-	elif isinstance(elem, circuit.mosq): #quadratic mos
+	elif isinstance(elem, mosq.mosq): #quadratic mos
 		sys.stdout.write(ext_n1 + " " + circ.nodes_dict[elem.ng] + " " + ext_n2 + " ")
 	elif elem.letter_id == "y":
 		sys.stdout.write(ext_n1 + " " + ext_n2 + " ")

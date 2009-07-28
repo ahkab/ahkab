@@ -139,28 +139,26 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 				gmin_stepping["enabled"] = True
 				print "Enabling gmin stepping convergence aid."
 			elif gmin_stepping["enabled"]:
-				if gmin_stepping["index"] == 9:
-					print "failed."
-					print "Enabling source stepping convergence aid."
-					gmin_stepping["enabled"] = False
-					gmin_stepping["failed"] = True
-					source_stepping["enabled"] = True
-				else:
-					gmin_stepping["index"] = gmin_stepping["index"] + 1
+				print "failed."
+				print "Enabling source stepping convergence aid."
+				gmin_stepping["enabled"] = False
+				gmin_stepping["failed"] = True
+				source_stepping["enabled"] = True
 			elif source_stepping["enabled"]:
-				if source_stepping["index"] == 9:
-					print "failed."
-					source_stepping["enabled"] = False
-					source_stepping["failed"] = True
-				else:
-					source_stepping["index"] = source_stepping["index"] + 1
+				print "failed."
+				source_stepping["enabled"] = False
+				source_stepping["failed"] = True
 			if standard_solving["failed"] and gmin_stepping["failed"] and source_stepping["failed"]:
 				#print "Giving up."
 				x = None
 				error = None
 				break		
 		else:
-			if (source_stepping["enabled"] and source_stepping["index"] != 9) or (gmin_stepping["enabled"] and source_stepping["index"] != 9):
+			if (source_stepping["enabled"] and source_stepping["index"] != 9): 
+				converged = False
+				source_stepping["index"] = source_stepping["index"] + 1
+			elif (gmin_stepping["enabled"] and source_stepping["index"] != 9):
+				gmin_stepping["index"] = gmin_stepping["index"] + 1
 				converged = False
 			else:	
 				if verbose: 
