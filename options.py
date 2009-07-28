@@ -56,3 +56,7 @@ transient_aposteriori_step_threshold = 0.9
 # shooting
 shooting_default_points = 100
 shooting_max_nr_iter = 10000
+
+#plotting
+plotting_outtype = "png"
+plotting_wait_after_plot = True

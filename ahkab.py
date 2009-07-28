@@ -24,9 +24,9 @@
 import sys
 from optparse import OptionParser
 import netlist_parser, dc_analysis, transient, utilities, shooting, bfpss, options, printing
+import plotting
 
-
-VERSION = "0.02"
+VERSION = "0.03"
 
 
 def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, guess=True, disable_step_control=False):
@@ -115,6 +115,16 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 				shooting.shooting(circ, period=an["period"], step=an["step"], mna=None, Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], data_filename=data_filename, verbose=verbose)
 	return None
 
+def process_postproc(postproc_list, title, outfilename):
+	index = 0
+	if outfilename is None:
+		print "Plotting and printing the results to stdout are incompatible options. Plotting skipped."
+		return
+	for postproc in postproc_list:
+		plotting.plot_data(title, postproc["x"], postproc["l2"], postproc["l1"], outfilename+"."+postproc["analysis"], postproc["analysis"], outfilename+"-"+str(index)+"."+options.plotting_outtype)
+		index = index +1
+	return None
+
 if __name__ == "__main__":
 	# Import Psyco if available
 	try:
@@ -183,7 +193,7 @@ if __name__ == "__main__":
 	if not read_netlist_from_stdin and not utilities.check_file(remaning_args[0]):
 		sys.exit(23)
 	
-	(circ, directives) = netlist_parser.parse_circuit(remaning_args[0], read_netlist_from_stdin)
+	(circ, directives, postproc_direct) = netlist_parser.parse_circuit(remaning_args[0], read_netlist_from_stdin)
 	
 	check, reason = dc_analysis.check_circuit(circ)
 	if not check:
@@ -198,6 +208,7 @@ if __name__ == "__main__":
 		print circ.title.upper()
 	
 	an_list = netlist_parser.parse_analysis(circ, directives)
+	postproc_list = netlist_parser.parse_postproc(circ, an_list, postproc_direct)
 	if verbose > 3:
 		if len(an_list) > 0:
 			print "Requested an.:"
@@ -207,6 +218,8 @@ if __name__ == "__main__":
 	if len(an_list) > 0:
 		process_analysis(an_list, circ, cli_options.outfile, verbose, guess=cli_options.dc_guess.lower()=="guess", cli_tran_method=cli_options.method, \
 		disable_step_control=cli_options.no_step_control)
+		if len(postproc_list) > 0:
+			process_postproc(postproc_list, circ.title, cli_options.outfile)
 	else:
 		if verbose:
 			printing.print_warning("Nothing to do. Quitting.")

@@ -24,7 +24,7 @@ Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
 """
 
 import sys, imp
-import circuit, printing, utilities, mosq
+import circuit, printing, utilities, mosq, plotting
 
 def parse_circuit(filename, read_netlist_from_stdin=False):
 	"""Parse a SPICE-like netlist and return a circuit instance 
@@ -55,6 +55,7 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 	file_list = [(ffile, "unknown", not read_netlist_from_stdin)]
 	file_index = 0
 	directives = []
+	postproc = []
 	subckts_list_temp = []
 	netlist_lines = []
 	current_subckt_temp = []
@@ -94,6 +95,10 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 						current_subckt_temp = []
 					elif line_elements[0] == '.include':
 						file_list.append(parse_include_directive(line, line_elements=None))
+					elif line_elements[0] == ".end":
+						break
+					elif line_elements[0] == ".plot":
+						postproc.append((line, line_n))
 					else:
 						directives.append((line, line_n))
 					continue
@@ -134,7 +139,7 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 	elements = main_netlist_parser(circ, netlist_lines, subckts_dict)
 	circ.elements = circ.elements + elements
 	
-	return (circ, directives)
+	return (circ, directives, postproc)
 	
 def main_netlist_parser(circ, netlist_lines, subckts_dict):
 	elements = []
@@ -922,6 +927,48 @@ def convert_units(string_value):
 		raise ValueError
 	return numeric_value
 
+def parse_postproc(circ, an_list, postproc_direc):
+	postproc_list = []
+	for line, line_n in postproc_direc:
+		if line[0] == ".":
+			try:
+				line_elements = line.split()
+				#plot
+				if line_elements[0] == ".plot":
+					plot_postproc = {}
+					l2_list = []
+					l1_list = []
+					plot_postproc["type"] = "plot"
+					plot_postproc["analysis"] = line_elements[1]
+					existing_an = False
+					for an in an_list:
+						if an["type"] == plot_postproc["analysis"]:
+							existing_an = True
+							if plot_postproc["analysis"] == "tran" or plot_postproc["analysis"] == "shooting":  	
+								plot_postproc["x"] = "T"
+							else: #dc
+								plot_postproc["x"] = an["source_name"]
+							break
+					if not existing_an:
+						raise NetlistParseError("Analysis "+plot_postproc["analysis"]+" not found.")
+						
+					for graph_label in line_elements[2:]:
+						l2, l1 = plotting.split_netlist_label(graph_label)
+						l1_list.append(l1)
+						l2_list.append(l2)
+					plot_postproc["l1"] = l1_list
+					plot_postproc["l2"] = l2_list
+					postproc_list.append(plot_postproc)
+				else:
+					raise NetlistParseError("Unknown postproc directive.")
+			except NetlistParseError, (msg,):
+				if len(msg):
+					printing.print_general_error(msg)
+				printing.print_parse_error(line_n, line)
+				sys.exit(0)
+	return postproc_list
+					
+
 def parse_analysis(circ, directives):
 	"""Parses the analyses.
 
@@ -959,7 +1006,6 @@ def parse_analysis(circ, directives):
 					analysis.append(parse_an_shooting(line, line_elements))
 				elif line_elements[0] == ".ic":
 					analysis.append(parse_ic_directive(line, line_elements))
-	
 				else:
 					raise NetlistParseError("Unknown directive.")
 			except NetlistParseError, (msg,):

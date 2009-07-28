@@ -24,7 +24,7 @@ of a simulation
 
 
 import Gnuplot, numpy
-import printing
+import printing, options
 
 def read_data_header(filename):
 	fp = open(filename, "r")
@@ -53,9 +53,19 @@ def read_data(filename, label, labels=None):
 	return data
 
 def split_netlist_label(label):
-	label = label.trim()
-	l2, l1 = label[2:-1].split(",")
-	return label[0]+l2.trim(), label[0]+l1.trim()
+	label = label.strip().upper()
+	if label[0] == "V":
+		try:
+			l2, l1 = label[2:-1].split(",")
+			l2 = label[0]+l2.strip()
+			l1 = label[0]+l1.strip()
+		except ValueError:
+			l2 = label[0]+label[2:-1].strip()
+			l1 = None
+		ret_labels = (l2,l1)
+	else:
+		ret_labels = (label, None)
+	return ret_labels			
 
 def plot_data(title, x, y2, y1, filename, analysis, outfilename):
 	g = Gnuplot.Gnuplot()
@@ -104,8 +114,10 @@ def plot_data(title, x, y2, y1, filename, analysis, outfilename):
 	if len(gdata) == 10:
 		g.plot(gdata[0],gdata[1],gdata[2],gdata[3],gdata[4],gdata[5],gdata[6],gdata[7],gdata[8],gdata[9])
 	if outfilename is not None:
-		g.hardcopy(outfilename, terminal='png', color=1)
-	raw_input('Please press return to continue...\n')
+		g.hardcopy(outfilename, terminal=options.plotting_outtype)
+	
+	if options.plotting_wait_after_plot:
+		raw_input('Please press return to continue...\n')
 	g.reset()
 	del data1, data2, g, d, gdata
 
