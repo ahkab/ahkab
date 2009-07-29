@@ -324,7 +324,7 @@ def op_analysis(circ, x0=None, guess=True, verbose=3):
 			if verbose:
 				print "Displaying latest valid results."
 				printing.print_dc_results(x1, error1, circ, print_int_nodes=True, print_error=(verbose>3))
-			return x1
+			opsolution = x1
 		else:
 			check_ok = printing.print_result_check(x2, x1, circ, verbose=verbose)
 			if not check_ok and verbose:
@@ -333,11 +333,38 @@ def op_analysis(circ, x0=None, guess=True, verbose=3):
 			if verbose:
 				print "Solution without Gmin:"
 				printing.print_dc_results(x2, error2, circ, print_int_nodes=True, print_error=(verbose>3))
-			return x2
+			opsolution = x2
+		if verbose >= 3:
+			print_elements_ops(circ, opsolution)
+	
 	else:
 		printing.print_general_error("Couldn't solve the circuit. Giving up.")
+		opsolution = None
+	
+	return opsolution
+
+def print_elements_ops(circ, x):
+	for elem in circ.elements:
+		if hasattr(elem, "print_op_info"):
+			if elem.is_nonlinear:
+				ports_i = elem.get_ports()
+				ports_v = []
+			else:
+				ports_i = (elem.n2, elem.n1)
+			for port in ports_i:
+				tempv = 0
+				if port[0] != 0:
+					tempv = x[port[0]-1]
+				if port[1] != 0:
+					tempv = tempv - x[port[1]-1]
+				if elem.is_nonlinear:
+					ports_v.append(tempv)
+			if elem.is_nonlinear:
+				elem.print_op_info(ports_v)
+			else:
+				elem.print_op_info(tempv)
 	return None
-			
+
 
 def mdn_solver(x, mna, element_list, T, MAXIT, nv, locked_nodes, time=None, print_steps=False, vector_norm=lambda v: max(abs(v))):
 	"""

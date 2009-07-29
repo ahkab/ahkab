@@ -21,45 +21,25 @@
 Notice: a positive current is a current that flows into the anode and out of
 the cathode. This convention is used throughout the simulator.
 
-2. elem.get_ports()
-This method must return a tuple of pairs of nodes. Something like:
-((na, nb), (nc, nd), (ne, nf), ... )
+This MOS Model follows the Square Law Mos Model:
+[Vds > 0 in the following, transistor type: N]
+1. No subthreshold conduction.
+   Vgs < Vt
+   Id = 0
+2. Ohmic region of operation
+   Vgs > Vt
+   Vgd > Vt
+   Id = k w/l ((vgs-vt)vds - vds^2/2)
+3. Saturation region of operation
+   Vgs > Vt
+   Vgs < Vt
+   Id = 1/2 k w/l (vgs-vt)^2 * (1 + lambd*(vds-vgs+vt))
 
-Each pair of nodes is used to determine a voltage that has effect on the
-current. I referred to them as a 'port' though it may not be a good idea.
+Two ports: Vgs, Vgd
 
-For example, an nmos has:
-((n_gate, n_source), (n_drain, n_source))
+Positive current flows out of source and into drain.
 
-The positive terminal is the first.
-
-From that, the calling method builds a voltage vector corresponding to the
-ports vector:
-voltages_vector = ( Va-Vb, Vc-Vd, Ve-Vf, ...)
-
-That's passed to:
-3. elem.i(voltages_vector, time)
-
-It returns the current flowing into the element if the voltages specified in
-the voltages_vector are applied to its ports, at the time given.
-
-4. elem.g(voltages_vector, port_index, time) is similar, but returns the 
-differential transconductance between the port at position port_index in the 
-ports_vector (see 2) and the current, when the operating point is specified by
-the voltages in the voltages_vector. 
-
-5. elem.is_nonlinear
-A non linear element must have a elem.is_nonlinear field set to True.
-
-Recommended:
-1. A non linear element may have a list/tuple of the same length of its 
-ports_vector in which there are the recommended guesses for dc analysis. 
-Eg Vgs is set to Vt in mosfets.
-This is obviously useless for linear devices.
-
-2. Every element should have a meaningful __str__ method. 
-It must return a line of paramaters without n1 n2, because a element cannot 
-know the external names of its nodes. It is used to print the parsed netlist.
+The model is symmetric, Source and Drain can be swapped.
 
 """
 
@@ -115,7 +95,7 @@ class mosq:
 		return rep
 	
 
-	def i(self, ports_v, time=0):
+	def i(self, ports_v, time=0, get_status=False):
 		"""Returns the current flowing in the element with the voltages applied
 		as specified in the ports_v vector.
 		
@@ -145,8 +125,16 @@ class mosq:
 				v1 = sign * ports_v[1]
 				v2 = sign * ports_v[0]
 				reversed_factor = -1
-			
-		return reversed_factor*sign*self._get_id(vgs=v1, vgd=v2)
+		idrain, status = self._get_id(vgs=v1, vgd=v2)
+		idrain_np_mos = reversed_factor*sign*idrain
+
+		if self._debug:
+                        print "M"+self.descr+":", "vgs:", str(ports_v[0]), "vgd:", str(ports_v[1]), "vds:", str(ports_v[0]-ports_v[1]), status, "id =", str(idrain_np_mos)
+
+		if get_status:
+			return idrain_np_mos, status
+		else:
+			return idrain_np_mos
 
 	def g(self, ports_v, port_index, time=0):
 		"""
@@ -220,29 +208,36 @@ class mosq:
 		return gdr
 
 	def _get_id(self, vgs, vgd):
+                status = ""
 		if vgs <= self.vt and vgd <= self.vt:
 			# no channel at both sides
 			idr = 0
-			if self._debug:
-				print "M"+self.descr+":", "vgs:", str(vgs), "vgd:", str(vgd), "vds:", str(vgs-vgd), "OFF"
+			status = "off"
 		elif vgs > self.vt and vgd > self.vt:
 			# zona ohmica: channel at both sides
 			idr = .5 * self.kp * (vgs - vgd)*(-2*self.vt + vgs + vgd) * (self.w / self.l)
-			if self._debug:
-				print "M"+self.descr+":", "vgs:", str(vgs), "vgd:", str(vgd), "vds:", str(vgs-vgd), "OHM", "idr:", str(idr)
+			status = 'ohmic'
 		elif vgs > self.vt and vgd <= self.vt:
 			# zona di saturazione: canale al s
 			idr =  0.5 * self.kp * ((vgs - self.vt)**2) * (self.w / self.l) * (1 - self.lambd*(vgd - self.vt))
-			if self._debug:
-				print "M"+self.descr+":", "vgs:", str(vgs), "vgd:", str(vgd), "vds:", str(vgs-vgd), "SAT", "idr:", str(idr)
+			status = "sat"
 		else:
 			# zona di saturazione: canale al d
 			idr =  -0.5 * self.kp * ((vgd - self.vt)**2) * (self.w / self.l) * (1 - self.lambd*(vgs - self.vt))
-			if self._debug:
-				print "M"+self.descr+":", "vgs:", str(vgs), "vgd:", str(vgd), "vds:", str(vgs-vgd), "SAT", "idr:", str(idr)
-		return idr
+			status = "sat"
+
+		return idr, status
 	
-#	def print_op_info(self, )
+	def print_op_info(self, ports_v):
+		idrain, status = self.i(ports_v, get_status=True)
+		print "M"+self.descr+":", status, "vgs:", str(ports_v[0]), "vgd:", str(ports_v[1]), "vds:", str(ports_v[0]-ports_v[1])
+		if status == 'sat':
+			print "  ", "id =", str(idrain), "gm:", str(self.g(ports_v, 0)), "ro:", str(-1/self.g(ports_v, 1))
+		elif status == 'ohmic':
+			print "  ", "id =", str(idrain), "gm:", str(self.g(ports_v, 0)), "go:", str(self.g(ports_v, 1))
+		else:
+			print "  ", "id =", str(idrain), "gm:", str(self.g(ports_v, 0)), "go:", str(self.g(ports_v, 1))
+                
 
 if __name__ == '__main__': 
 	import numpy

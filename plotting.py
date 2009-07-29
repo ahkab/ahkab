@@ -22,7 +22,7 @@ This module offers the functions needed to plot the results
 of a simulation
 """
 
-
+import re
 import Gnuplot, numpy
 import printing, options
 
@@ -30,7 +30,7 @@ def read_data_header(filename):
 	fp = open(filename, "r")
 	line = fp.readline()
 	if line[0] == '#':
-		labels = line[1:].split()
+		labels = line[1:].upper().split()
 	else:
 		printing.print_general_error("Unrecognized file: "+filename)
 	fp.close()
@@ -41,27 +41,34 @@ def read_data(filename, label, labels=None):
 		labels = read_data_header(filename)
 	try:
 		index = labels.index(label)
+		fp = open(filename, "r")
+		data = []
+		for line in fp:
+			if line.strip()[0] != '#':
+				data.append(float(line.split()[index]))
+		fp.close()
+		data = numpy.array(data)
 	except ValueError:
 		printing.print_general_error("Unrecognized data set: "+label)
-	fp = open(filename, "r")
-	data = []
-	for line in fp:
-		if line.strip()[0] != '#':
-			data.append(float(line.split()[index]))
-	fp.close()
-	data = numpy.array(data)
+		data =None
 	return data
 
 def split_netlist_label(label):
 	label = label.strip().upper()
 	if label[0] == "V":
-		try:
-			l2, l1 = label[2:-1].split(",")
-			l2 = label[0]+l2.strip()
-			l1 = label[0]+l1.strip()
-		except ValueError:
-			l2 = label[0]+label[2:-1].strip()
-			l1 = None
+		p = re.compile(r'V\s*\(\s*(\w*)\s*,\s*(\w*)\s*\)', re.IGNORECASE)
+		m = p.match(label)
+		if m is not None:
+			l2 = "V"+m.group(1)
+			l1 = "V"+m.group(2)
+		else:
+			p = re.compile(r'V\s*\(\s*(\w*)\s*\)', re.IGNORECASE)
+			m = p.match(label)
+			if m is not None:
+				l2 = "V"+m.group(1)
+				l1 = None
+			else:
+				raise Exception, "Unrecognized plot label "+ label
 		ret_labels = (l2,l1)
 	else:
 		ret_labels = (label, None)
@@ -76,16 +83,17 @@ def plot_data(title, x, y2, y1, filename, analysis, outfilename):
 		g.xlabel(x + "V")
 	elif x[0] == 'I':
 		g.xlabel(x+" [A]")
-	if y2[0] == 'V':
+	# here we hope all variables are of the same type
+	if y2[0][0] == 'V':
 		g.ylabel("V [V]")
-	elif y2[0] == 'I':
+	elif y2[0][0] == 'I':
 		g.ylabel("I [A]")
 	gdata = []
 	gx = read_data(filename, x)
-	for y1label, y2label in zip(y1,y2):
+	for y2label, y1label in zip(y2,y1):
 		if y1label is not None and y1label != '':
 			data1 = read_data(filename, y1label)
-			ylabel = y2+"-"+y1
+			ylabel = y2label+"-"+y1label
 		else:
 			ylabel = y2label
 			data1 = 0
