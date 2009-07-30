@@ -122,10 +122,12 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 			(x, error, converged, n_iter) = mdn_solver(x, mna_to_pass, circ.elements, T=N_to_pass, \
 			 nv=nv, print_steps=(verbose > 0), locked_nodes=locked_nodes, time=time, MAXIT=MAXIT)
 		except numpy.linalg.linalg.LinAlgError:
+			n_iter = 0
 			converged = False
 			print "failed."
 			printing.print_general_error("J Matrix is singular")
 		except OverflowError:
+			n_iter = 0
 			converged = False
 			print "failed."
 			printing.print_general_error("Overflow")

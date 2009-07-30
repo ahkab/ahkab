@@ -65,7 +65,7 @@ def split_netlist_label(labels_string):
 	p = re.compile(r'V\s*\(\s*(\w*)\s*\)', re.IGNORECASE)
 	labels_list = p.findall(labels_string)
 	for i in range(len(labels_list)):
-		l2 = "V"+labels_list[i][0]
+		l2 = "V"+labels_list[i]
 		l1 = None
 		ret_labels.append((l2,l1))
 	p = re.compile(r'I\s*\(\s*(\w*)\s*\)', re.IGNORECASE)
