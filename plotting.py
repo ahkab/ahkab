@@ -53,28 +53,32 @@ def read_data(filename, label, labels=None):
 		data =None
 	return data
 
-def split_netlist_label(label):
-	label = label.strip().upper()
-	if label[0] == "V":
-		p = re.compile(r'V\s*\(\s*(\w*)\s*,\s*(\w*)\s*\)', re.IGNORECASE)
-		m = p.match(label)
-		if m is not None:
-			l2 = "V"+m.group(1)
-			l1 = "V"+m.group(2)
-		else:
-			p = re.compile(r'V\s*\(\s*(\w*)\s*\)', re.IGNORECASE)
-			m = p.match(label)
-			if m is not None:
-				l2 = "V"+m.group(1)
-				l1 = None
-			else:
-				raise Exception, "Unrecognized plot label "+ label
-		ret_labels = (l2,l1)
-	else:
-		ret_labels = (label, None)
+def split_netlist_label(labels_string):
+	labels_string = labels_string.strip().upper()
+	ret_labels = []
+	p = re.compile(r'V\s*\(\s*(\w*)\s*,\s*(\w*)\s*\)', re.IGNORECASE)
+	labels_list = p.findall(labels_string)
+	for i in range(len(labels_list)):
+		l2 = "V"+labels_list[i][0]
+		l1 = "V"+labels_list[i][1]
+		ret_labels.append((l2,l1))
+	p = re.compile(r'V\s*\(\s*(\w*)\s*\)', re.IGNORECASE)
+	labels_list = p.findall(labels_string)
+	for i in range(len(labels_list)):
+		l2 = "V"+labels_list[i][0]
+		l1 = None
+		ret_labels.append((l2,l1))
+	p = re.compile(r'I\s*\(\s*(\w*)\s*\)', re.IGNORECASE)
+	labels_list = p.findall(labels_string)
+	for i in range(len(labels_list)):
+		l2 = "I("+labels_list[i]+")"
+		l1 = None
+		ret_labels.append((l2,l1))
+	if len(ret_labels) == 0:
+		raise Exception, "Unrecognized plot labels: "+ label
 	return ret_labels			
 
-def plot_data(title, x, y2, y1, filename, analysis, outfilename):
+def plot_data(title, x, y2y1_list, filename, analysis, outfilename):
 	g = Gnuplot.Gnuplot()
 	g.title(title)
 	if x=='T':
@@ -84,13 +88,13 @@ def plot_data(title, x, y2, y1, filename, analysis, outfilename):
 	elif x[0] == 'I':
 		g.xlabel(x+" [A]")
 	# here we hope all variables are of the same type
-	if y2[0][0] == 'V':
+	if y2y1_list[0][0] == 'V':
 		g.ylabel("V [V]")
-	elif y2[0][0] == 'I':
+	elif y2y1_list[0][0] == 'I':
 		g.ylabel("I [A]")
 	gdata = []
 	gx = read_data(filename, x)
-	for y2label, y1label in zip(y2,y1):
+	for y2label, y1label in y2y1_list:
 		if y1label is not None and y1label != '':
 			data1 = read_data(filename, y1label)
 			ylabel = y2label+"-"+y1label

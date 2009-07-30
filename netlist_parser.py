@@ -936,8 +936,6 @@ def parse_postproc(circ, an_list, postproc_direc):
 				#plot
 				if line_elements[0] == ".plot":
 					plot_postproc = {}
-					l2_list = []
-					l1_list = []
 					plot_postproc["type"] = "plot"
 					plot_postproc["analysis"] = line_elements[1]
 					existing_an = False
@@ -952,12 +950,12 @@ def parse_postproc(circ, an_list, postproc_direc):
 					if not existing_an:
 						raise NetlistParseError("Analysis "+plot_postproc["analysis"]+" not found.")
 						
-					for graph_label in line_elements[2:]:
-						l2, l1 = plotting.split_netlist_label(graph_label)
-						l1_list.append(l1)
-						l2_list.append(l2)
-					plot_postproc["l1"] = l1_list
-					plot_postproc["l2"] = l2_list
+					graph_labels = ""
+					for glabel in line_elements[2:]:
+						graph_labels = graph_labels + " " + glabel
+					
+					l2l1 = plotting.split_netlist_label(graph_labels)
+					plot_postproc["l2l1"] = l2l1
 					postproc_list.append(plot_postproc)
 				else:
 					raise NetlistParseError("Unknown postproc directive.")
