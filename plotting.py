@@ -105,17 +105,20 @@ def plot_file(title, x, y2y1_list, filename, analysis, outfilename):
 	x_index =  str(get_data_label_index(x, filename) + 1)
 
 	plotting_strings = []
+	title_strings = []
 	for y2label, y1label in y2y1_list:
 		y2_index =  str(get_data_label_index(y2label, filename) + 1)
 		if y1label is not None:
 			y1_index =  str(get_data_label_index(y1label, filename) + 1)
 			plotting_strings.append("($" + y2_index +"-$"+y1_index+")")
+			title_strings.append(y2label+"-"+y1label)
 		else:
 			plotting_strings.append(y2_index)
+			title_strings.append(y2label)
 	
 	files_list = []
-	for pstring in plotting_strings:
-		f = Gnuplot.File(filename, using=x_index+":"+pstring, with=options.plotting_style)
+	for pstring, tstring in zip(plotting_strings, title_strings):
+		f = Gnuplot.File(filename, using=x_index+":"+pstring, with=options.plotting_style, title=tstring+" ("+analysis+")")
 		files_list.append(f)
 	
 	g.plot(*files_list)
