@@ -36,6 +36,11 @@ def read_data_header(filename):
 	fp.close()
 	return labels
 
+def get_data_label_index(label, filename, labels=None):
+	if labels is None:
+		labels = read_data_header(filename)
+	return labels.index(label.upper())
+
 def read_data(filename, label, labels=None):
 	if labels == None:
 		labels = read_data_header(filename)
@@ -78,20 +83,57 @@ def split_netlist_label(labels_string):
 		raise Exception, "Unrecognized plot labels: "+ label
 	return ret_labels			
 
-def plot_data(title, x, y2y1_list, filename, analysis, outfilename):
+def setup_plot(title, xlabel, y2y1_list, analysis):
 	g = Gnuplot.Gnuplot()
 	g.title(title)
-	if x=='T':
+	if xlabel == 'T':
 		g.xlabel('t [s]')
-	elif x[0] == 'V':
-		g.xlabel(x + "V")
-	elif x[0] == 'I':
-		g.xlabel(x+" [A]")
+	elif xlabel[0] == 'V':
+		g.xlabel(xlabel + " [V]")
+	elif xlabel[0] == 'I':
+		g.xlabel(xlabel + " [A]")
 	# here we hope all variables are of the same type
 	if y2y1_list[0][0] == 'V':
 		g.ylabel("V [V]")
 	elif y2y1_list[0][0] == 'I':
 		g.ylabel("I [A]")
+	return g
+
+def plot_file(title, x, y2y1_list, filename, analysis, outfilename):
+	g = setup_plot(title, x, y2y1_list, analysis)
+	gfiles = []
+	x_index =  str(get_data_label_index(x, filename) + 1)
+
+	plotting_strings = []
+	for y2label, y1label in y2y1_list:
+		y2_index =  str(get_data_label_index(y2label, filename) + 1)
+		if y1label is not None:
+			y1_index =  str(get_data_label_index(y1label, filename) + 1)
+			plotting_strings.append("($" + y2_index +"-$"+y1_index+")")
+		else:
+			plotting_strings.append(y2_index)
+	
+	files_list = []
+	for pstring in plotting_strings:
+		f = Gnuplot.File(filename, using=x_index+":"+pstring, with=options.plotting_style)
+		files_list.append(f)
+	
+	g.plot(*files_list)
+
+	if outfilename is not None and options.plotting_outtype is not None:
+		g.hardcopy(outfilename, terminal=options.plotting_outtype)
+	
+	if options.plotting_wait_after_plot:
+		raw_input('Please press return to continue...\n')
+	g.reset()
+	del g, files_list
+
+def plot_data(title, x, y2y1_list, filename, analysis, outfilename):
+	"""Reads out data from a file and plots it.
+	Deprecated, use plot_file, it passes the file directly to gnuplot.
+	"""
+	
+	g = setup_plot(title, x, y2y1_list, analysis)
 	gdata = []
 	gx = read_data(filename, x)
 	for y2label, y1label in y2y1_list:
@@ -102,29 +144,11 @@ def plot_data(title, x, y2y1_list, filename, analysis, outfilename):
 			ylabel = y2label
 			data1 = 0
 		data2 =  read_data(filename, y2label)
-		d = Gnuplot.Data(gx, data2-data1, title=ylabel+" ("+analysis+")", with_='linespoints')
+		d = Gnuplot.Data(gx, data2-data1, title=ylabel+" ("+analysis+")", with_=options.plotting_style)
 		gdata.append(d)
-	# ghastly interface!! a workaround would be awesome... suggestion?
-	if len(gdata) == 1:
-		g.plot(gdata[0])
-	if len(gdata) == 2:
-		g.plot(gdata[0],gdata[1])
-	if len(gdata) == 3:
-		g.plot(gdata[0],gdata[1],gdata[2])
-	if len(gdata) == 4:
-		g.plot(gdata[0],gdata[1],gdata[2],gdata[3])
-	if len(gdata) == 5:
-		g.plot(gdata[0],gdata[1],gdata[2],gdata[3],gdata[4])
-	if len(gdata) == 6:
-		g.plot(gdata[0],gdata[1],gdata[2],gdata[3],gdata[4],gdata[5])
-	if len(gdata) == 7:
-		g.plot(gdata[0],gdata[1],gdata[2],gdata[3],gdata[4],gdata[5],gdata[6])
-	if len(gdata) == 8:
-		g.plot(gdata[0],gdata[1],gdata[2],gdata[3],gdata[4],gdata[5],gdata[6],gdata[7])
-	if len(gdata) == 9:
-		g.plot(gdata[0],gdata[1],gdata[2],gdata[3],gdata[4],gdata[5],gdata[6],gdata[7],gdata[8])
-	if len(gdata) == 10:
-		g.plot(gdata[0],gdata[1],gdata[2],gdata[3],gdata[4],gdata[5],gdata[6],gdata[7],gdata[8],gdata[9])
+	
+	g.plot(*gdata)
+
 	if outfilename is not None and options.plotting_outtype is not None:
 		g.hardcopy(outfilename, terminal=options.plotting_outtype)
 	
@@ -139,4 +163,4 @@ if __name__ == '__main__':
 	print labels
 	for label in labels[1:]:
                 print label
-		plot_data("Plot "+label, labels[0], [label], [None], filename, "tran", "plot-"+label+".png")
+		plot_file("Plot "+label, labels[0], [label], [None], filename, "tran", "plot-"+label+".png")

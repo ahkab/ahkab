@@ -61,3 +61,4 @@ shooting_max_nr_iter = 10000
 # Set to None to disable writing plots to disk
 plotting_outtype = "png"
 plotting_wait_after_plot = True
+plotting_style = "linespoints"

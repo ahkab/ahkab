@@ -121,7 +121,7 @@ def process_postproc(postproc_list, title, outfilename):
 		print "Plotting and printing the results to stdout are incompatible options. Plotting skipped."
 		return
 	for postproc in postproc_list:
-		plotting.plot_data(title, postproc["x"], postproc["l2l1"], outfilename+"."+postproc["analysis"], postproc["analysis"], outfilename+"-"+str(index)+"."+options.plotting_outtype)
+		plotting.plot_file(title, postproc["x"], postproc["l2l1"], outfilename+"."+postproc["analysis"], postproc["analysis"], outfilename+"-"+str(index)+"."+options.plotting_outtype)
 		index = index +1
 	return None
 
