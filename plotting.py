@@ -118,7 +118,7 @@ def plot_file(title, x, y2y1_list, filename, analysis, outfilename):
 	
 	files_list = []
 	for pstring, tstring in zip(plotting_strings, title_strings):
-		f = Gnuplot.File(filename, using=x_index+":"+pstring, with=options.plotting_style, title=tstring+" ("+analysis+")")
+		f = Gnuplot.File(filename, using=x_index+":"+pstring, with_=options.plotting_style, title=tstring+" ("+analysis+")")
 		files_list.append(f)
 	
 	g.plot(*files_list)
