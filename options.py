@@ -37,9 +37,15 @@ nl_voltages_lock_factor = 4  	# if we allow the voltage on controlling ports to 
 				# So we allow them to change of nl_voltages_lock_factor*Vth at most
 				# and damp all variables accordingly
 
+use_standard_solve_method = True
+use_gmin_stepping = True
+use_source_stepping = False
+
 # dc
 dc_max_nr_iter = 10000
 dc_max_guess_effort = 250000
+
+dc_sweep_skip_allowed = True
 
 # transient
 default_tran_method = "IMPLICIT_EULER"

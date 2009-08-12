@@ -67,13 +67,7 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 	nv = len(circ.nodes_dict)
 	#removed if use_gmin: gets built anyway.
 	if use_gmin:
-		if verbose: print "Building Gmin matrix..."
-		Gmin_matrix = numpy.mat(numpy.zeros((mna_size, mna_size)))
-		for index in xrange(len(circ.nodes_dict)-1):
-			Gmin_matrix[index, index] = options.gmin
-			# the three missing terms of the stample matrix go on [index,0] [0,0] [0, index] but since 
-			# we discarded the 0 row and 0 column, we simply don't need to add them
-			#the last lines are the KVL lines, introduced by voltage sources. Don't add gmin there.
+		Gmin_matrix = build_gmin_matrix(circ, options.gmin, mna_size, verbose)
 	else:
 		Gmin_matrix = 0
 	
@@ -101,22 +95,23 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 		x = numpy.mat(numpy.zeros((mna_size, 1))) # has n-1 rows because of discard of ^^^
 	
 	converged = False
-	standard_solving = {"enabled":True, "failed":False}
-	source_stepping = {"enabled":False,"failed":False,"factors":(-.9,-.8,-.7,-.6,-.5,-.4,-.3,-.2,-.1,0), "index":0}
-	gmin_stepping = {"enabled":False,"failed":False,"factors":(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1),"index":0}
+	standard_solving, gmin_stepping, source_stepping = get_solve_methods()
+	standard_solving, gmin_stepping, source_stepping = set_next_solve_method(standard_solving, gmin_stepping, source_stepping)
 
+	if verbose: 
+		sys.stdout.write("Solving... ")
+	
 	while(not converged):
-		if verbose: 
-			sys.stdout.write("Solving... ")
 		if standard_solving["enabled"]:
-			mna_to_pass =  mna + (use_gmin)*Gmin_matrix
+			mna_to_pass =  mna + Gmin_matrix
 			N_to_pass = N
 		elif gmin_stepping["enabled"]:
-			mna_to_pass = 10**(gmin_stepping["index"]*numpy.log(options.gmin))*Gmin_matrix + mna
+			#print "gmin index:", str(gmin_stepping["index"])+", gmin:", str( 10**(gmin_stepping["factors"][gmin_stepping["index"]]))
+			mna_to_pass = build_gmin_matrix(circ, 10**(gmin_stepping["factors"][gmin_stepping["index"]]), mna_size, verbose) + mna
 			N_to_pass = N
 		elif source_stepping["enabled"]:
-			mna_to_pass =  mna + (use_gmin)*Gmin_matrix
-			N_to_pass = source_stepping["index"]*N
+			mna_to_pass =  mna + Gmin_matrix
+			N_to_pass = source_stepping["factors"][source_stepping["index"]]*N
 		try:
 		
 			(x, error, converged, n_iter) = mdn_solver(x, mna_to_pass, circ.elements, T=N_to_pass, \
@@ -135,22 +130,9 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 		if not converged:
 			if n_iter == MAXIT-1:
 				printing.print_general_error("Error: Hitted MAXIT ("+str(MAXIT)+")")
-			if standard_solving["enabled"]:
-				standard_solving["enabled"] = False
-				standard_solving["failed"] = True
-				gmin_stepping["enabled"] = True
-				print "Enabling gmin stepping convergence aid."
-			elif gmin_stepping["enabled"]:
-				print "failed."
-				print "Enabling source stepping convergence aid."
-				gmin_stepping["enabled"] = False
-				gmin_stepping["failed"] = True
-				source_stepping["enabled"] = True
-			elif source_stepping["enabled"]:
-				print "failed."
-				source_stepping["enabled"] = False
-				source_stepping["failed"] = True
-			if standard_solving["failed"] and gmin_stepping["failed"] and source_stepping["failed"]:
+			if more_solve_methods_available(standard_solving, gmin_stepping, source_stepping):
+				standard_solving, gmin_stepping, source_stepping = set_next_solve_method(standard_solving, gmin_stepping, source_stepping)
+			else:
 				#print "Giving up."
 				x = None
 				error = None
@@ -159,7 +141,7 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 			if (source_stepping["enabled"] and source_stepping["index"] != 9): 
 				converged = False
 				source_stepping["index"] = source_stepping["index"] + 1
-			elif (gmin_stepping["enabled"] and source_stepping["index"] != 9):
+			elif (gmin_stepping["enabled"] and gmin_stepping["index"] != 9):
 				gmin_stepping["index"] = gmin_stepping["index"] + 1
 				converged = False
 			else:	
@@ -167,6 +149,55 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 					print " done."
 	
 	return (x, error, converged)
+
+def build_gmin_matrix(circ, gmin, mna_size, verbose):
+	if verbose: print "Building Gmin matrix..."
+	Gmin_matrix = numpy.mat(numpy.zeros((mna_size, mna_size)))
+	for index in xrange(len(circ.nodes_dict)-1):
+		Gmin_matrix[index, index] = options.gmin
+		# the three missing terms of the stample matrix go on [index,0] [0,0] [0, index] but since 
+		# we discarded the 0 row and 0 column, we simply don't need to add them
+		#the last lines are the KVL lines, introduced by voltage sources. Don't add gmin there.
+	return Gmin_matrix
+
+
+def set_next_solve_method(standard_solving, gmin_stepping, source_stepping):
+	if standard_solving["enabled"]:
+		print "failed."
+		standard_solving["enabled"] = False
+		standard_solving["failed"] = True
+	elif gmin_stepping["enabled"]:
+		print "failed."
+		gmin_stepping["enabled"] = False
+		gmin_stepping["failed"] = True
+	elif source_stepping["enabled"]:
+		print "failed."
+		source_stepping["enabled"] = False
+		source_stepping["failed"] = True
+	if not standard_solving["failed"] and options.use_standard_solve_method:
+		standard_solving["enabled"] = True
+	elif not gmin_stepping["failed"] and options.use_gmin_stepping:
+		gmin_stepping["enabled"] = True
+		print "Enabling gmin stepping convergence aid."
+	elif not source_stepping["failed"] and options.use_source_stepping:
+		source_stepping["enabled"] = True
+		print "Enabling source stepping convergence aid."
+
+	return standard_solving, gmin_stepping, source_stepping
+
+def more_solve_methods_available(standard_solving, gmin_stepping, source_stepping):
+	if (standard_solving["failed"] or not options.use_standard_solve_method) and (gmin_stepping["failed"] or not options.use_gmin_stepping) and (source_stepping["failed"] or not options.use_source_stepping):
+		return False
+	else:
+		return True
+
+def get_solve_methods():
+	standard_solving = {"enabled":False, "failed":False}
+	g_indices = range(int(numpy.log(options.gmin)),0)
+	g_indices.reverse()
+	gmin_stepping = {"enabled":False,"failed":False,"factors":g_indices,"index":0}	
+	source_stepping = {"enabled":False,"failed":False,"factors":(.9,.8,.7,.6,.5,.4,.3,.2,.1,0), "index":0}
+	return standard_solving, gmin_stepping, source_stepping
 
 def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename="stdout", print_int_nodes=True, guess=True, verbose=2):
 	"""Performs a sweep of the value of V or I of a independent source from start 
@@ -254,9 +285,13 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 		if x is None:
 			if verbose > 2 and fpdata != sys.stdout: 
 				tick.hide()
-			print "Could't solve the circuit for sweep value:", start + index*step
 			solved = False
-			break
+			if not options.dc_sweep_skip_allowed:
+				print "Could't solve the circuit for sweep value:", start + index*step
+				break
+			else:
+				print "Skipping sweep value:", start + index*step
+				continue
 		printing.print_results_on_a_line(time=None, x=x, fdata=fpdata, circ=circ, \
 			print_int_nodes=print_int_nodes, iter_n=index)
 		
