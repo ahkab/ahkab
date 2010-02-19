@@ -666,6 +666,9 @@ def check_circuit(circ):
 	elif len(circ.elements) < 2:
 		test_passed = False
 		reason = "the circuit has less than two elements."
+	elif circ.has_duplicate_elem():
+		test_passed = False
+		reason = "duplicate elements found (check the names!)"
 	else:
 		test_passed = True
 		reason = ""

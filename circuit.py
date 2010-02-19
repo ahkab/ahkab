@@ -254,6 +254,15 @@ class circuit:
 			raise NodeNotFoundError, ""
 		
 		return ret
+
+	def has_duplicate_elem(self):
+		for index1 in range(len(self.elements)):
+			for index2 in range(index1+1, len(self.elements)):
+				if self.elements[index1].letter_id == self.elements[index2].letter_id and \
+				self.elements[index1].descr == self.elements[index2].descr:
+					return True
+		return False
+
 	
 ## NOTES ON ELEM CLASSES
 # see above ^^^^^
