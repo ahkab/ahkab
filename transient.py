@@ -392,6 +392,10 @@ def generate_D(circ, shape):
 		elif isinstance(elem, circuit.inductor):
 			D[ nv + i_eq, nv + i_eq ] = -1 * elem.L
 			i_eq = i_eq + 1
+		
+	if options.cmin > 0:
+		D[:-i_eq, :-i_eq] += options.cmin*numpy.matrix(numpy.eye(shape[0]+1-i_eq))
+
 	return D
 
 class dfbuffer:

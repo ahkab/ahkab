@@ -58,6 +58,7 @@ transient_use_aposteriori_step_control = True
 # we do not want to redo the iteraction if the aposteriori check suggests a step that is 
 # very close to the one we already used. 0.9 seems to be a good idea.
 transient_aposteriori_step_threshold = 0.9
+cmin=1e-18
 
 # shooting
 shooting_default_points = 100

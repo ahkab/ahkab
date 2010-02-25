@@ -230,7 +230,7 @@ class mosq:
 	
 	def print_op_info(self, ports_v):
 		idrain, status = self.i(ports_v, get_status=True)
-		print "M"+self.descr+":", status, "vgs:", str(ports_v[0]), "vgd:", str(ports_v[1]), "vds:", str(ports_v[0]-ports_v[1])
+		print "M"+self.descr+":", self.mos_type.upper(), status, "vgs:", str(ports_v[0]), "vgd:", str(ports_v[1]), "vds:", str(ports_v[0]-ports_v[1])
 		if status == 'sat':
 			print "  ", "id =", str(idrain), "gm:", str(self.g(ports_v, 0)), "ro:", str(-1/self.g(ports_v, 1))
 		elif status == 'ohmic':
