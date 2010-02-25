@@ -306,7 +306,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 				solved = False
 				break
 		if options.transient_max_time_iter and iter_n == options.transient_max_time_iter:
-			printing.print_general_error("Hitted MAX_TIME_ITER ("+str(options.transient_max_time_iter)+"), iteration halted.")
+			printing.print_general_error("MAX_TIME_ITER exceeded ("+str(options.transient_max_time_iter)+"), iteration halted.")
 			solved = False
 			break
 	#end of while
@@ -394,7 +394,11 @@ def generate_D(circ, shape):
 			i_eq = i_eq + 1
 		
 	if options.cmin > 0:
-		D[:-i_eq, :-i_eq] += options.cmin*numpy.matrix(numpy.eye(shape[0]+1-i_eq))
+		cmin_mat = numpy.matrix(numpy.eye(shape[0]+1-i_eq))
+		cmin_mat[0, 1:] = 1
+		cmin_mat[1:, 0] = 1
+		cmin_mat[0, 0] = cmin_mat.shape[0]-1
+		D[:-i_eq, :-i_eq] += options.cmin*cmin_mat
 
 	return D
 

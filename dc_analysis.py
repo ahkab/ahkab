@@ -129,7 +129,7 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 	
 		if not converged:
 			if n_iter == MAXIT-1:
-				printing.print_general_error("Error: Hitted MAXIT ("+str(MAXIT)+")")
+				printing.print_general_error("Error: MAXIT exceeded ("+str(MAXIT)+")")
 			if more_solve_methods_available(standard_solving, gmin_stepping, source_stepping):
 				standard_solving, gmin_stepping, source_stepping = set_next_solve_method(standard_solving, gmin_stepping, source_stepping)
 			else:
