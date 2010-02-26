@@ -107,6 +107,8 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 			N_to_pass = N
 		elif gmin_stepping["enabled"]:
 			#print "gmin index:", str(gmin_stepping["index"])+", gmin:", str( 10**(gmin_stepping["factors"][gmin_stepping["index"]]))
+			if verbose == 6:
+				print "Setting Gmin to: "+str(10**gmin_stepping["factors"][gmin_stepping["index"]])
 			mna_to_pass = build_gmin_matrix(circ, 10**(gmin_stepping["factors"][gmin_stepping["index"]]), mna_size, verbose) + mna
 			N_to_pass = N
 		elif source_stepping["enabled"]:
@@ -154,7 +156,7 @@ def build_gmin_matrix(circ, gmin, mna_size, verbose):
 	if verbose: print "Building Gmin matrix..."
 	Gmin_matrix = numpy.mat(numpy.zeros((mna_size, mna_size)))
 	for index in xrange(len(circ.nodes_dict)-1):
-		Gmin_matrix[index, index] = options.gmin
+		Gmin_matrix[index, index] = gmin
 		# the three missing terms of the stample matrix go on [index,0] [0,0] [0, index] but since 
 		# we discarded the 0 row and 0 column, we simply don't need to add them
 		#the last lines are the KVL lines, introduced by voltage sources. Don't add gmin there.
