@@ -96,7 +96,8 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 	
 	converged = False
 	standard_solving, gmin_stepping, source_stepping = get_solve_methods()
-	standard_solving, gmin_stepping, source_stepping = set_next_solve_method(standard_solving, gmin_stepping, source_stepping)
+	standard_solving, gmin_stepping, source_stepping = set_next_solve_method(standard_solving, gmin_stepping,\
+		source_stepping, verbose)
 
 	if verbose: 
 		sys.stdout.write("Solving... ")
@@ -112,6 +113,8 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 			mna_to_pass = build_gmin_matrix(circ, 10**(gmin_stepping["factors"][gmin_stepping["index"]]), mna_size, verbose) + mna
 			N_to_pass = N
 		elif source_stepping["enabled"]:
+			if verbose == 6:
+				print "Setting sources to ", str(source_stepping["factors"][source_stepping["index"]]*100), "% of their actual value"
 			mna_to_pass =  mna + Gmin_matrix
 			N_to_pass = source_stepping["factors"][source_stepping["index"]]*N
 		try:
@@ -163,27 +166,27 @@ def build_gmin_matrix(circ, gmin, mna_size, verbose):
 	return Gmin_matrix
 
 
-def set_next_solve_method(standard_solving, gmin_stepping, source_stepping):
+def set_next_solve_method(standard_solving, gmin_stepping, source_stepping, verbose=3):
 	if standard_solving["enabled"]:
-		print "failed."
+		if verbose: print "failed."
 		standard_solving["enabled"] = False
 		standard_solving["failed"] = True
 	elif gmin_stepping["enabled"]:
-		print "failed."
+		if verbose: print "failed."
 		gmin_stepping["enabled"] = False
 		gmin_stepping["failed"] = True
 	elif source_stepping["enabled"]:
-		print "failed."
+		if verbose: print "failed."
 		source_stepping["enabled"] = False
 		source_stepping["failed"] = True
 	if not standard_solving["failed"] and options.use_standard_solve_method:
 		standard_solving["enabled"] = True
 	elif not gmin_stepping["failed"] and options.use_gmin_stepping:
 		gmin_stepping["enabled"] = True
-		print "Enabling gmin stepping convergence aid."
+		if verbose > 2: print "Enabling gmin stepping convergence aid."
 	elif not source_stepping["failed"] and options.use_source_stepping:
 		source_stepping["enabled"] = True
-		print "Enabling source stepping convergence aid."
+		if verbose >2: print "Enabling source stepping convergence aid."
 
 	return standard_solving, gmin_stepping, source_stepping
 
@@ -198,7 +201,7 @@ def get_solve_methods():
 	g_indices = range(int(numpy.log(options.gmin)),0)
 	g_indices.reverse()
 	gmin_stepping = {"enabled":False,"failed":False,"factors":g_indices,"index":0}	
-	source_stepping = {"enabled":False,"failed":False,"factors":(.9,.8,.7,.6,.5,.4,.3,.2,.1,0), "index":0}
+	source_stepping = {"enabled":False,"failed":False,"factors":(0.001,.005,.01,.03,.1,.3,.5,.7,.8,.9), "index":0}
 	return standard_solving, gmin_stepping, source_stepping
 
 def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename="stdout", print_int_nodes=True, guess=True, verbose=2):
