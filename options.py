@@ -39,7 +39,7 @@ nl_voltages_lock_factor = 4  	# if we allow the voltage on controlling ports to 
 
 use_standard_solve_method = True
 use_gmin_stepping = True
-use_source_stepping = False
+use_source_stepping = True
 
 # dc
 dc_max_nr_iter = 10000

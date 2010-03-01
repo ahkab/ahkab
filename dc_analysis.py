@@ -35,13 +35,13 @@ import constants, ticker, options, circuit, printing, utilities, dc_guess
 
 
 
-def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked_nodes=None, verbose=3):
+def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=None, locked_nodes=None, verbose=3):
 	"""Tries to perform a DC analysis of the circuit. 
 	The system we want to solve is:
-	mna*x + N + T(x) = 0
+	(mna+Gmin)*x + N + T(x) = 0
 	
 	mna is the reduced mna matrix with the required KVL rows
-	N is the constant part of ?termine noto?
+	N is Ndc + Ntran
 	T(x) will be built.
 	
 	circ is the circuit instance from which mna, N were built.
@@ -65,12 +65,13 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 		locked_nodes = circ.get_locked_nodes()
 	mna_size = mna.shape[0]
 	nv = len(circ.nodes_dict)
-	#removed if use_gmin: gets built anyway.
-	if use_gmin:
-		Gmin_matrix = build_gmin_matrix(circ, options.gmin, mna_size, verbose)
-	else:
-		Gmin_matrix = 0
 	
+	if Gmin is None:
+		Gmin = 0
+	
+	if Ntran is None:
+		Ntran = 0
+
 	#time variable component: Tt this is always the same in each iter. So we build it once for all.
 	Tt = numpy.mat(numpy.zeros((mna_size, 1)))
 	v_eq = 0
@@ -86,7 +87,7 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 		if circuit.is_elem_voltage_defined(elem):
 			v_eq = v_eq + 1
 	#update N to include the time variable sources
-	N = N + Tt
+	Ndc = Ndc + Tt
 
 	#initial guess, if specified, otherwise it's zero
 	if x0 is not None:
@@ -104,19 +105,19 @@ def dc_solve(mna, N, circ, use_gmin=True, x0=None, time=None, MAXIT=None, locked
 	
 	while(not converged):
 		if standard_solving["enabled"]:
-			mna_to_pass =  mna + Gmin_matrix
-			N_to_pass = N
+			mna_to_pass =  mna + Gmin
+			N_to_pass = Ndc+Ntran*(Ntran is not None)
 		elif gmin_stepping["enabled"]:
 			#print "gmin index:", str(gmin_stepping["index"])+", gmin:", str( 10**(gmin_stepping["factors"][gmin_stepping["index"]]))
 			if verbose == 6:
 				print "Setting Gmin to: "+str(10**gmin_stepping["factors"][gmin_stepping["index"]])
 			mna_to_pass = build_gmin_matrix(circ, 10**(gmin_stepping["factors"][gmin_stepping["index"]]), mna_size, verbose) + mna
-			N_to_pass = N
+			N_to_pass = Ndc + Ntran*(Ntran is not None)
 		elif source_stepping["enabled"]:
 			if verbose == 6:
 				print "Setting sources to ", str(source_stepping["factors"][source_stepping["index"]]*100), "% of their actual value"
-			mna_to_pass =  mna + Gmin_matrix
-			N_to_pass = source_stepping["factors"][source_stepping["index"]]*N
+			mna_to_pass =  mna + Gmin
+			N_to_pass = source_stepping["factors"][source_stepping["index"]]*Ndc+Ntran*(Ntran is not None)
 		try:
 		
 			(x, error, converged, n_iter) = mdn_solver(x, mna_to_pass, circ.elements, T=N_to_pass, \
@@ -353,13 +354,14 @@ def op_analysis(circ, x0=None, guess=True, verbose=3):
 	
 	if verbose:
 		print "Solving with Gmin:"
-	(x1, error1, solved1) = dc_solve(mna, N, circ, use_gmin=True, x0=x0, verbose=verbose)
+	Gmin_matrix = build_gmin_matrix(circ, options.gmin, mna.shape[0], verbose)
+	(x1, error1, solved1) = dc_solve(mna, N, circ, Gmin=Gmin_matrix, x0=x0, verbose=verbose)
 	
 	# We'll check the results now. Recalculate them without Gmin (using previsious solution as initial guess)
 	# and check that differences on nodes are not too big
 	if solved1:
 		if verbose: print "Solving without Gmin:"
-		(x2, error2, solved2) = dc_solve(mna, N, circ, use_gmin=False, x0=x1, verbose=verbose)
+		(x2, error2, solved2) = dc_solve(mna, N, circ, Gmin=None, x0=x1, verbose=verbose)
 		
 		if not solved2:
 			printing.print_general_error("Can't solve without Gmin.")

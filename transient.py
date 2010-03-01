@@ -196,6 +196,9 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	x = None
 	time = tstart
 	nv = len(circ.nodes_dict)
+
+	Gmin_matrix = dc_analysis.build_gmin_matrix(circ, options.gmin, mna.shape[0], verbose)
+
 	# lo step viene generato automaticamente, ma non superare mai quello fornito.
 	if use_step_control:
 		#tstep = min((tstop-tstart)/9999.0, HMAX, 100.0 * options.hmin)
@@ -247,7 +250,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 		elif x is not None:
 			x0 = x
 		
-		(x1, error, solved) = dc_analysis.dc_solve(mna=(mna + numpy.multiply(x_coeff, D)) , N=(N + D*const), circ=circ, use_gmin=True, x0=x0, time=(time + tstep), locked_nodes=locked_nodes, MAXIT=options.transient_max_nr_iter, verbose=0)
+		(x1, error, solved) = dc_analysis.dc_solve(mna=(mna + numpy.multiply(x_coeff, D)) , Ndc=N,  Ntran=D*const, circ=circ, Gmin=Gmin_matrix, x0=x0, time=(time + tstep), locked_nodes=locked_nodes, MAXIT=options.transient_max_nr_iter, verbose=0)
 		
 		if solved:
 			old_step = tstep #we will modify it, if we're using step control otherwise it's the same
