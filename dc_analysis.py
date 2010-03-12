@@ -119,7 +119,6 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 			mna_to_pass =  mna + Gmin
 			N_to_pass = source_stepping["factors"][source_stepping["index"]]*Ndc+Ntran*(Ntran is not None)
 		try:
-		
 			(x, error, converged, n_iter) = mdn_solver(x, mna_to_pass, circ.elements, T=N_to_pass, \
 			 nv=nv, print_steps=(verbose > 0), locked_nodes=locked_nodes, time=time, MAXIT=MAXIT)
 		except numpy.linalg.linalg.LinAlgError:
@@ -388,25 +387,33 @@ def op_analysis(circ, x0=None, guess=True, verbose=3):
 	return opsolution
 
 def print_elements_ops(circ, x):
+	print "OP INFORMATION:"
 	for elem in circ.elements:
+		ports_v_v = []
 		if hasattr(elem, "print_op_info"):
 			if elem.is_nonlinear:
-				ports_i = elem.get_ports()
-				ports_v = []
+				oports = elem.get_output_ports()
+				for index in range(len(oports)):
+					dports = elem.get_drive_ports(index)
+					ports_v = []				
+					for port in dports:					
+						tempv = 0						
+						if port[0]:
+							tempv = x[port[0]-1]
+						if port[1]:
+							tempv = tempv - x[port[1]-1]
+						ports_v.append(tempv)
+				ports_v_v.append(ports_v)
 			else:
-				ports_i = (elem.n2, elem.n1)
-			for port in ports_i:
-				tempv = 0
-				if port[0] != 0:
+				port = (elem.n2, elem.n1)	
+				tempv = 0						
+				if port[0]:
 					tempv = x[port[0]-1]
-				if port[1] != 0:
-					tempv = tempv - x[port[1]-1]
-				if elem.is_nonlinear:
-					ports_v.append(tempv)
-			if elem.is_nonlinear:
-				elem.print_op_info(ports_v)
-			else:
-				elem.print_op_info(tempv)
+				if port[1]:
+					tempv = tempv - x[port[1]-1]				
+				ports_v_v = ((tempv,),)
+			elem.print_op_info(ports_v_v)
+			print "-------------------"
 	return None
 
 
@@ -484,39 +491,9 @@ def mdn_solver(x, mna, element_list, T, MAXIT, nv, locked_nodes, time=None, prin
 		J = numpy.mat(numpy.zeros((mna_size, mna_size)))
 		Tx = numpy.mat(numpy.zeros((mna_size, 1)))
 		for elem in element_list:
-			 # build dT(x)/dx (stored in J) and Tx(x)
+			# build dT(x)/dx (stored in J) and Tx(x)
 			if elem.is_nonlinear:
-				ports = elem.get_ports()
-				#print ports
-				v_ports = []
-				for port in ports:
-					v = 0 # build v: remember we removed the 0 row and 0 col of mna -> -1
-					if port[0]:
-						v = v + x[port[0] - 1, 0]
-					if port[1]:
-						v = v - x[port[1] - 1, 0]
-					v_ports.append(v)
-					#print v
-				if elem.n1:
-					Tx[elem.n1 - 1, 0] = Tx[elem.n1 - 1, 0] + elem.i(v_ports, time)
-				if elem.n2:
-					Tx[elem.n2 - 1, 0] = Tx[elem.n2 - 1, 0] - elem.i(v_ports, time)
-				for index in xrange(len(ports)):
-					if elem.n1:
-						if ports[index][0]:
-							J[elem.n1 - 1, ports[index][0] - 1] = \
-							J[elem.n1 - 1, ports[index][0] - 1] + elem.g(v_ports, index, time)
-						if ports[index][1]:
-							J[elem.n1 - 1, ports[index][1] - 1] = \
-							J[elem.n1 - 1, ports[index][1] - 1] - 1.0*elem.g(v_ports, index, time)
-					if elem.n2:
-						if ports[index][0]:
-							J[elem.n2 - 1, ports[index][0] - 1] = \
-							J[elem.n2 - 1, ports[index][0] - 1] - 1.0*elem.g(v_ports, index, time)
-						if ports[index][1]:
-							J[elem.n2 - 1, ports[index][1] - 1] = \
-							J[elem.n2 - 1, ports[index][1] - 1] + elem.g(v_ports, index, time)
-						
+				update_J_and_Tx(J, Tx, x, elem, time)
 		J = J + mna
 		residuo = mna*x + T + Tx
 		dx = numpy.linalg.inv(J) * (-1 * residuo)
@@ -530,6 +507,39 @@ def mdn_solver(x, mna, element_list, T, MAXIT, nv, locked_nodes, time=None, prin
 		tick.hide()
 	return (x, residuo, converged, iteration)
 
+def update_J_and_Tx(J, Tx, x, elem, time):
+	out_ports = elem.get_output_ports()
+	for index in xrange(len(out_ports)):
+		n1, n2 = out_ports[index]
+		dports = elem.get_drive_ports(index)
+		v_dports = []
+		for port in dports:
+			v = 0 # build v: remember we removed the 0 row and 0 col of mna -> -1
+			if port[0]:
+				v = v + x[port[0] - 1, 0]
+			if port[1]:
+				v = v - x[port[1] - 1, 0]
+			v_dports.append(v)
+		if n1 or n2:
+			iel = elem.i(index, v_dports, time)
+		if n1:
+			Tx[n1 - 1, 0] = Tx[n1 - 1, 0] + iel
+		if n2:
+			Tx[n2 - 1, 0] = Tx[n2 - 1, 0] - iel
+		for iindex in xrange(len(dports)):
+			if n1 or n2:
+				g = elem.g(index, v_dports, iindex, time)
+			if n1:
+				if dports[iindex][0]:
+					J[n1 - 1, dports[iindex][0] - 1] += g
+				if dports[iindex][1]:
+					J[n1 - 1, dports[iindex][1] - 1] -= g
+			if n2:
+				if dports[iindex][0]:
+					J[n2 - 1, dports[iindex][0] - 1] -= g
+				if dports[iindex][1]:
+					J[n2 - 1, dports[iindex][1] - 1] += g
+	
 
 def get_td(dx, locked_nodes, n=-1):
 	"""Calculates the damping coefficient for the Newthon method.
@@ -565,14 +575,14 @@ def get_td(dx, locked_nodes, n=-1):
 		for (n1, n2) in locked_nodes:
 			if n1 != 0:
 				if n2 != 0:
-					if abs(dx[n1 - 1, 0] - dx[n2-1, 0]) > options.nl_voltages_lock_factor * constants.Vth:
-						td_new = (options.nl_voltages_lock_factor * constants.Vth)/abs(dx[n1 - 1, 0] - dx[n2 - 1, 0])
+					if abs(dx[n1 - 1, 0] - dx[n2-1, 0]) > options.nl_voltages_lock_factor * constants.Vth():
+						td_new = (options.nl_voltages_lock_factor * constants.Vth())/abs(dx[n1 - 1, 0] - dx[n2 - 1, 0])
 				else:
-					if abs(dx[n1 - 1, 0]) > options.nl_voltages_lock_factor * constants.Vth:
-						td_new = (options.nl_voltages_lock_factor * constants.Vth)/abs(dx[n1 - 1, 0])
+					if abs(dx[n1 - 1, 0]) > options.nl_voltages_lock_factor * constants.Vth():
+						td_new = (options.nl_voltages_lock_factor * constants.Vth())/abs(dx[n1 - 1, 0])
 			else:
-				if abs(dx[n2 - 1, 0]) > options.nl_voltages_lock_factor * constants.Vth:
-					td_new = (options.nl_voltages_lock_factor * constants.Vth)/abs(dx[n2 - 1, 0])
+				if abs(dx[n2 - 1, 0]) > options.nl_voltages_lock_factor * constants.Vth():
+					td_new = (options.nl_voltages_lock_factor * constants.Vth())/abs(dx[n2 - 1, 0])
 			if td_new < td:
 				td = td_new
 	return td

@@ -23,7 +23,7 @@ be somewhat uniform.
 """
 
 import sys
-import circuit, options, mosq
+import circuit, options, mosq, ekv
 	
 def print_circuit(circ):
 	"""Prints the whole circuit to stdout, in a format similar to 
@@ -65,6 +65,8 @@ def print_netlist_elem_line(elem, circ):
 		circ.nodes_dict[elem.sn2] + " ")
 	elif isinstance(elem, mosq.mosq): #quadratic mos
 		sys.stdout.write(ext_n1 + " " + circ.nodes_dict[elem.ng] + " " + ext_n2 + " ")
+	elif isinstance(elem, ekv.ekv_device):
+		sys.stdout.write(ext_n1 + " " + circ.nodes_dict[elem.ng] + " " + ext_n2 + " " + circ.nodes_dict[elem.nb] + " ")
 	elif elem.letter_id == "y":
 		sys.stdout.write(ext_n1 + " " + ext_n2 + " ")
 	else:
@@ -304,3 +306,28 @@ def print_results_on_a_line(time, x, fdata, circ, print_int_nodes=False, iter_n=
 		fdata.flush()
 	
 	return None
+
+def table_print(twodarray, separator='  '):
+	col_width = []
+	if len(twodarray) == 0 or len(twodarray[0]) == 0:
+		return
+	for ci in range(len(twodarray[0])):
+		current_width = 0
+		for ri in range(len(twodarray)):
+			elem_width = len(str(twodarray[ri][ci]))			
+			if elem_width > current_width:
+				current_width = elem_width
+		col_width.append(current_width)
+
+	for ri in range(len(twodarray)):
+		current_str = "" 
+		for ci in range(len(twodarray[ri])):
+			elem = str(twodarray[ri][ci])
+			elem_width = len(elem)
+			if not ci +1 % 3 == 1:
+				current_str = current_str + " "*(col_width[ci]-elem_width) + elem + separator
+			else:
+				current_str = current_str + elem + " "*(col_width[ci]-elem_width) +  separator
+		print current_str
+
+

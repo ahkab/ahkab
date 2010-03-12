@@ -206,9 +206,11 @@ class circuit:
 		nl_elements = [elem for elem in self.elements if elem.is_nonlinear]
 		#nl_elements = filter(lambda elem: elem.is_nonlinear, element_list)
 		for elem in nl_elements:
-			ports = elem.get_ports()
-			for port in ports:
-				locked_nodes.append(port)
+			oports = elem.get_output_ports()
+			for index in range(len(oports)):
+				ports = elem.get_drive_ports(index)
+				for port in ports:
+					locked_nodes.append(port)
 		return locked_nodes
 	
 	def ext_node_to_int(self, ext_node):
