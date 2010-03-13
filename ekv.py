@@ -388,6 +388,9 @@ class ekv_mos_model:
 
 	def get_voltages(self, vd, vg, vs):
 		# vd / vs swap
+		vd = vd*self.NPMOS
+		vg = vg*self.NPMOS
+		vs = vs*self.NPMOS
 		if vs > vd:
 			vd_new = vs
 			vs_new = vd
@@ -396,7 +399,7 @@ class ekv_mos_model:
 			vd_new = vd
 			vs_new = vs
 			cs = +1
-		return ((float(self.NPMOS*vd_new), float(self.NPMOS*vg), float(self.NPMOS*vs_new)), cs)
+		return ((float(vd_new), float(vg), float(vs_new)), cs)
 
 	def get_ip_abs_err(self, device):
 		return  options.iea / (4*constants.Vth()**2*self.KP*device.M*device.W/device.L)
@@ -417,7 +420,7 @@ class ekv_mos_model:
 	
 	def get_ids(self, device, (vd, vg, vs), opdict=None, debug=False):
 		# internal variables setup	
-		if debug: print vd, vg, vs
+		if debug: print "Current for vd:", vd, "vg:", vg, "vs:", vs
 		ip_abs_err = self.get_ip_abs_err() if opdict['ip_abs_err'] is None else opdict['ip_abs_err']
 		Vth = constants.Vth()
 		(vd, vg, vs), CS_FACTOR = self.get_voltages(vd, vg, vs)	
@@ -465,6 +468,7 @@ class ekv_mos_model:
 
 		# forward current scaled control voltage
 		v_if = (Vp - vs)/Vth
+		#assert v_if > 0
 		# scaled forward current
 		ifn = self.get_ismall(v_if, opdict['ip_abs_err'], opdict['ifn'])
 		if debug: print "# ifn OK"		
@@ -518,12 +522,14 @@ class ekv_mos_model:
 		Is = 2* n * beta * Vth**2
 		Ids = CS_FACTOR* self.NPMOS * Is*(ifn - irn)
 		
-		opdict.update({'state':(vd*self.NPMOS, vg*self.NPMOS, vs*self.NPMOS)})
+		vd_real = vd if CS_FACTOR == 1 else vs
+		vs_real = vs if CS_FACTOR == 1 else vd
+		opdict.update({'state':(vd_real*self.NPMOS, vg*self.NPMOS, vs_real*self.NPMOS)})
 		opdict.update({'Ids':Ids, "Weff":Weff, "Leff":Leff, 'Vp':Vp})
 		opdict.update({'if':ifn, "ir":irn, "n":n, 'beta':beta})
 		opdict.update({'VTH':self.VTO + Delta_vrsce + gamp*math.sqrt(Vsp)-self.GAMMA*math.sqrt(self.PHI), \
 				"VOD":self.NPMOS*n*(Vp-vs), "VDSAT":2*vdss, 'SAT':ifn>irn*self.SATLIM})
-
+		if debug: print "current:", Ids
 		return Ids, vdss, Lc
 
 	def get_idb(self, device, (vd, vg, vs), opdict, debug=False):
@@ -543,38 +549,43 @@ class ekv_mos_model:
 
 	def get_ismall(self, vsmall, ip_abs_err, iguess=None, debug=False):
 		if iguess is None:
-			iguess = 1.0e-3
+			iguess = 1
 		if math.isnan(vsmall):
 			raise Exception, "vsmall is NaN!!"
-		
+		check = False
 		ismall = iguess
-		if debug: iter_c = 0
+		#if debug: iter_c = 0
 
 		#if vsmall < utilities.EPS:
 		#	print "vsmall:", vsmall, "returning EPS"
 		#	return utilities.EPS
 			
 		while True:
-			if debug: iter_c = iter_c + 1			
+			#if debug: iter_c = iter_c + 1			
 			vsmall_iter = self.get_vsmall(ismall)
-			#print vsmall_iter, vsmall
+			if debug: print vsmall_iter, vsmall
 			deltai = (vsmall - vsmall_iter)/self.get_dvsmall_dismall(ismall)
 			ratio = deltai/ismall			
+			if ismall == 0:
+				ismall = utilities.EPS
+			#print ismall, deltai
+			elif abs(deltai) < ip_abs_err or abs(deltai/ismall) < options.ier:
+				if not check:
+					check = True
+				else:
+					break
+			else:
+				check = False
+			if math.isnan(ismall):
+				print "Ismall is NaN!!"
+				exit()
 			if ratio > 3: 			 
-				ismall = 4*deltai
+				ismall = 3*deltai
 			elif ratio <= -1:
 				ismall = 0.1*ismall
 			else:			
 				ismall = ismall + deltai
-			if ismall == 0:
-				ismall = utilities.EPS
-			#print ismall, deltai
-			if abs(deltai) < ip_abs_err or abs(deltai)/ismall < options.ier:
-				break
-			if math.isnan(ismall):
-				print "Ismall is NaN!!"
-				exit()
-		if debug: print str(iter_c) + " iterations."
+		#if debug: print str(iter_c) + " iterations."
 		return ismall
 	
 	def get_vsmall(self, ismall, verbose=3):
@@ -643,9 +654,9 @@ if __name__ == '__main__':
 	ma.descr = "1"
 
 	print "#Vg\tId\tgmd\tgmg\tgms"
-	for Vhel in range(0):
-		Vg = -Vhel/100.0
-		str_mine =  str(Vg)+"\t"+str(ma.i((-1, Vg, 0)))+"\t"+str(ma.g((-1, Vg, 0), 0))+"\t"+str(ma.g((-1, Vg, 0), 1))+"\t"+str(ma.g((-1, Vg, 0), 2))
-		print "--"
+	vdb = 1
+	for Vhel in range(250):
+		Vg = Vhel/100.0
+		str_mine =  str(Vg)+"\t"+str(ma.i(0, (vdb, Vg, 0)))+"\t"+str(ma.g(0, (vdb, Vg, 0), 0))+"\t"+str(ma.g(0, (vdb, Vg, 0), 1))+"\t"+str(ma.g(0, (vdb, Vg, 0), 2))
 		print str_mine
 	print ma.print_op_info(((0.33031697099518587, 1.1704486464618264, 0.0),(0.33031697099518587, 1.1704486464618264, 0.0)))
