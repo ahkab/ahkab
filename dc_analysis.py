@@ -405,7 +405,7 @@ def print_elements_ops(circ, x):
 						ports_v.append(tempv)
 				ports_v_v.append(ports_v)
 			else:
-				port = (elem.n2, elem.n1)	
+				port = (elem.n1, elem.n2)	
 				tempv = 0						
 				if port[0]:
 					tempv = x[port[0]-1]

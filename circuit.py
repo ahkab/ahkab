@@ -74,7 +74,7 @@ know the external names of its nodes. It is used to print the parsed netlist.
 """
 
 import math
-import constants, options
+import constants, options, printing
 
 # will be added here by netlist_parser
 user_defined_modules_dict = {}
@@ -303,6 +303,12 @@ class resistor:
 		return 1.0/self.R
 	def i(self, v, time=0):
 		return 0
+	def print_op_info(self, ports_v):
+		vn1n2 = float(ports_v[0][0])
+		in1n2 = float(ports_v[0][0]/self.R)
+		power = float(ports_v[0][0]**2/self.R)
+		arr = [[self.letter_id.upper()+self.descr,"V(n1-n2):", vn1n2, "[V]", "I(n2-n1):", in1n2, "[A]", "P:", power, "[W]"]]
+		printing.table_print(arr)
 class capacitor:
 	letter_id = "c"
 	is_nonlinear = False
@@ -319,6 +325,12 @@ class capacitor:
 		return 0
 	def d(self, v, time=0):
 		return self.C
+	def print_op_info(self, ports_v):
+		vn1n2 = float(ports_v[0][0])
+		qn1n2 = float(ports_v[0][0]*self.C)
+		energy = float(.5*ports_v[0][0]**2*self.C)
+		arr = [[self.letter_id.upper()+self.descr,"V(n1-n2):", vn1n2, "[V]", "Q:", qn1n2, "[C]", "E:", energy, "[J]"]]
+		printing.table_print(arr)
 class inductor:
 	letter_id = "l"
 	is_nonlinear = False
