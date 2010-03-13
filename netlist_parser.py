@@ -547,6 +547,8 @@ def parse_elem_mos(line, circ, line_elements=None):
 	l = None
 	mos_type = None
 	vt = None
+	m = 1
+	n = 1		
 	lambd = 0 # va is supposed infinite if not specified
 	for index in range(5, len(line_elements)):
 		if line_elements[index][0] == '*':
@@ -562,6 +564,10 @@ def parse_elem_mos(line, circ, line_elements=None):
 			l = convert_units(value)
 		elif param == "vt":
 			vt = convert_units(value)
+		elif param == "m":
+			m = convert_units(value)
+		elif param == "vt":
+			n = convert_units(value)
 		elif param == "type":
 			if value != 'n' and value != 'p':
 				raise NetlistParseError, "unknown mos type "+value
@@ -583,7 +589,7 @@ def parse_elem_mos(line, circ, line_elements=None):
 	nb = circ.add_node_to_circ(ext_ns)	
 
 	ekv_m = ekv.ekv_mos_model(TYPE=mos_type, KP=kp, VTO=vt, WETA=0, LETA=0, GAMMA=.01)
-	elem = ekv.ekv_device(nd, ng, ns, nb, l, w, ekv_m)
+	elem = ekv.ekv_device(nd, ng, ns, nb, l, w, ekv_m, m, n)
 
 	#elem = mosq.mosq(nd, ng, ns, kp=kp, w=w, l=l, vt=vt, mos_type=mos_type, lambd=lambd)
 	elem.descr = line_elements[0][1:]
