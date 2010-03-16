@@ -1,11 +1,13 @@
 import sympy
 import circuit, ekv, mosq, printing
 
-def dc_solve(circ, tf_source=None, options={'r0s':True}, verbose=6):
+def dc_solve(circ, ac=False, tf_source=None, options={'r0s':True}, verbose=6):
 	#options = setup_options()	
-	if verbose > 1:
-		print "Attempting to solve circuit symbolically..."
-	
+	if verbose > 1 and not ac:
+		print "Starting symbolic DC..."
+	elif verbose > 1 and ac:
+		print "Starting symbolic AC..."
+		
 	if verbose > 2:
 		 print "Building symbolic MNA, N and x..."
 	mna, N = generate_mna_and_N(circ, options)
@@ -133,7 +135,7 @@ def to_real_list(M):
 		reallist.append(elem[0])
 	return reallist
 
-def generate_mna_and_N(circ, options):
+def generate_mna_and_N(circ, options, ac=False):
 	"""Generates a symbolic Modified Nodal Analysis matrix and the N vector.
 	"""
 	#print options
@@ -152,7 +154,7 @@ def generate_mna_and_N(circ, options):
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/R
 			mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1/R
 			mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1/R
-		elif isinstance(elem, circuit.capacitor):
+		elif isinstance(elem, circuit.capacitor) and ac:
 			capa = sympy.Symbol(elem.letter_id+elem.descr, real=True)
 			mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + sympy.I*omega*capa
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - sympy.I*omega*capa
@@ -205,7 +207,7 @@ def generate_mna_and_N(circ, options):
 				alpha = sympy.Symbol(elem.letter_id + elem.descr, real=True)
 				mna[index, elem.sn1] = -1.0 * alpha
 				mna[index, elem.sn2] = +1.0 * alpha
-			elif isinstance(elem, circuit.inductor):
+			elif isinstance(elem, circuit.inductor) and ac:
 				mna[index, index] = -1*sympy.I*omega* sympy.Symbol(elem.letter_id + elem.descr, real=True)
 				# already so: commented out				
 				# N[index,0] = 0

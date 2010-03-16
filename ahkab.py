@@ -114,7 +114,7 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 			elif an["method"]=="shooting":	
 				shooting.shooting(circ, period=an["period"], step=an["step"], mna=None, Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], data_filename=data_filename, verbose=verbose)
 		elif an["type"] == "symbolic":
-			symbolic.dc_solve(circ, an['source'])
+			symbolic.dc_solve(circ, an['ac'], an['source'])
 	return None
 
 def process_postproc(postproc_list, title, outfilename):

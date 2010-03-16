@@ -1196,7 +1196,8 @@ def parse_an_symbolic(line, circ, line_elements=None):
 		line_elements = line.split()
 	
 	source_name = None
-	
+	ac = False	
+
 	for token in line_elements[1:]:
 		if token[0] == "*":
 			break
@@ -1222,12 +1223,13 @@ def parse_an_symbolic(line, circ, line_elements=None):
 						break
 			if not source_exists:
 				raise NetlistParseError("Source "+source_name+" not found in circuit.")
-		
+		elif label=='ac':
+			ac = convert_boolean(value)	
 		else:
 			raise NetlistParseError("")
 	
 	
-	return {"type":"symbolic", "source":source_name}
+	return {"type":"symbolic", "source":source_name, 'ac':ac}
 
 def is_valid_value_param_string(astr):
 	"""Has the string a form like <param_name>=<value>?
