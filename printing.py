@@ -197,6 +197,20 @@ def print_dc_results(x, error, circ, print_int_nodes=False, print_error=True):
 				print error[index]
 	return None
 
+def print_symbolic_results(x):
+	keys = x.keys()
+	keys.sort()	
+	for key in keys:
+		print str(key) + "\t = " + str(x[key])
+	return None
+
+def print_symbolic_equations(eq_list):
+	print "+--"	
+	for eq in eq_list:
+		print "| " + str(eq) + " = 0"
+	print "+--"
+	return
+
 def print_result_check(x2, x1, circ, verbose=2): #fixme I don't like it!
 	"""Checks the differences between two sets of results and prints to stdout.
 	It assumes one set of results is calculated with Gmin, the other without.

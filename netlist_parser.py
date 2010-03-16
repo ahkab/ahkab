@@ -24,7 +24,7 @@ Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
 """
 
 import sys, imp
-import circuit, printing, utilities, ekv, plotting
+import circuit, printing, utilities, mosq, ekv, plotting
 
 def parse_circuit(filename, read_netlist_from_stdin=False):
 	"""Parse a SPICE-like netlist and return a circuit instance 
@@ -1013,6 +1013,8 @@ def parse_analysis(circ, directives):
 					analysis.append(parse_an_shooting(line, line_elements))
 				elif line_elements[0] == ".ic":
 					analysis.append(parse_ic_directive(line, line_elements))
+				elif line_elements[0] == ".symbolic":
+					analysis.append(parse_an_symbolic(line, circ, line_elements))
 				else:
 					raise NetlistParseError("Unknown directive.")
 			except NetlistParseError, (msg,):
@@ -1183,6 +1185,49 @@ def parse_an_shooting(line, line_elements=None):
 		raise NetlistParseError("Unknown shooting method: "+an["method"])
 	
 	return an
+
+def parse_an_symbolic(line, circ, line_elements=None):
+	"""Parses a symbolic analysis:
+	
+	Directive is:
+	.symbolic [tf=<src_name>]
+	"""
+	if line_elements is None:
+		line_elements = line.split()
+	
+	source_name = None
+	
+	for token in line_elements[1:]:
+		if token[0] == "*":
+			break
+		(label, value) = parse_param_value_from_string(token)
+		if label == 'tf':
+			source_name = value
+			if value[0] == "v":
+				source_type = "vsource"
+			elif value[0] == "i":
+				source_type = "isource"
+			else:
+				raise NetlistParseError("Stepping is only" + \
+				"supported with Voltage and Current sources")
+			
+			source_exists = False
+			for elem in circ.elements:
+				if elem.descr == source_name[1:]:
+					if (source_type == 'vsource' and isinstance(elem, circuit.vsource)): 
+						source_exists = True
+						break
+					elif (source_type == 'isource' and isinstance(elem, circuit.isource)):
+						source_exists = True
+						break
+			if not source_exists:
+				raise NetlistParseError("Source "+source_name+" not found in circuit.")
+		
+		else:
+			raise NetlistParseError("")
+	
+	
+	return {"type":"symbolic", "source":source_name}
 
 def is_valid_value_param_string(astr):
 	"""Has the string a form like <param_name>=<value>?

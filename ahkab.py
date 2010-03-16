@@ -24,7 +24,7 @@
 import sys
 from optparse import OptionParser
 import netlist_parser, dc_analysis, transient, utilities, shooting, bfpss, options, printing
-import plotting
+import plotting, symbolic
 
 VERSION = "0.03"
 
@@ -113,6 +113,8 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 				bfpss.bfpss(circ, period=an["period"], step=an["step"], mna=None, Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], x0=x0_op, data_filename=data_filename, verbose=verbose)
 			elif an["method"]=="shooting":	
 				shooting.shooting(circ, period=an["period"], step=an["step"], mna=None, Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], data_filename=data_filename, verbose=verbose)
+		elif an["type"] == "symbolic":
+			symbolic.dc_solve(circ, an['source'])
 	return None
 
 def process_postproc(postproc_list, title, outfilename):
