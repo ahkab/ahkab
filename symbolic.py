@@ -10,7 +10,7 @@ def dc_solve(circ, ac=False, tf_source=None, options={'r0s':True}, verbose=6):
 		
 	if verbose > 2:
 		 print "Building symbolic MNA, N and x..."
-	mna, N = generate_mna_and_N(circ, options)
+	mna, N = generate_mna_and_N(circ, options, ac)
 	x = generate_variable_names(circ, N.shape[0] - 1)
 	mna = mna[1:, 1:]
 	N = N[1:, :]
@@ -146,7 +146,7 @@ def generate_mna_and_N(circ, options, ac=False):
 	#process_elements() 	
 	for elem in circ.elements:
 		if elem.is_nonlinear and not (isinstance(elem, mosq.mosq) or isinstance(elem, ekv.ekv_device)): 
-			print "Skipped elem "+elem.letter_id+elem.descr	
+			print "Skipped elem "+elem.letter_id+elem.descr + ": not implemented."	
 			continue
 		if isinstance(elem, circuit.resistor):
 			R = sympy.Symbol(elem.letter_id+elem.descr)
@@ -154,12 +154,15 @@ def generate_mna_and_N(circ, options, ac=False):
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/R
 			mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1/R
 			mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1/R
-		elif isinstance(elem, circuit.capacitor) and ac:
-			capa = sympy.Symbol(elem.letter_id+elem.descr, real=True)
-			mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + sympy.I*omega*capa
-			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - sympy.I*omega*capa
-			mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + sympy.I*omega*capa
-			mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - sympy.I*omega*capa
+		elif isinstance(elem, circuit.capacitor):
+			if ac:
+				capa = sympy.Symbol(elem.letter_id+elem.descr, real=True)
+				mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + sympy.I*omega*capa
+				mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - sympy.I*omega*capa
+				mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + sympy.I*omega*capa
+				mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - sympy.I*omega*capa
+			else:
+				pass
 		elif isinstance(elem, circuit.inductor):
 			pass
 		elif isinstance(elem, circuit.gisource):
@@ -207,10 +210,13 @@ def generate_mna_and_N(circ, options, ac=False):
 				alpha = sympy.Symbol(elem.letter_id + elem.descr, real=True)
 				mna[index, elem.sn1] = -1.0 * alpha
 				mna[index, elem.sn2] = +1.0 * alpha
-			elif isinstance(elem, circuit.inductor) and ac:
-				mna[index, index] = -1*sympy.I*omega* sympy.Symbol(elem.letter_id + elem.descr, real=True)
-				# already so: commented out				
-				# N[index,0] = 0
+			elif isinstance(elem, circuit.inductor):
+				if ac:
+					mna[index, index] = -1*sympy.I*omega* sympy.Symbol(elem.letter_id + elem.descr, real=True)
+				else: 
+					pass
+					# already so: commented out				
+					# N[index,0] = 0
 			elif isinstance(elem, circuit.hvsource):
 				print "dcsymbolic.py: BUG - hvsources are not implemented yet."
 				sys.exit(33)
