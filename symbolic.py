@@ -45,7 +45,7 @@ def dc_solve(circ, ac=False, tf_source=None, options={'r0s':True}, verbose=6):
 	if tf_source is not None:
 		if verbose > 2: print "Calculating symbolic transfer functions...",
 		src = sympy.Symbol(tf_source, real=True)
-		tfs = calculate_gains(sol, sympy.Symbol("v2", real=True))
+		tfs = calculate_gains(sol, src)
 		if verbose > 2: print "done!"
 		elif verbose > 1:
 			print "Symbolic transfer functions:"
