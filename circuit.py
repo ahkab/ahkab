@@ -377,15 +377,23 @@ class diode:
 		if self.ic is not None:
 			rep = rep + " ic="+str(self.ic)
 		return rep
-	def get_ports(self):
+	def get_output_ports(self):
 		return self.ports
-	def i(self, ports_v, time=0): #with gmin added
+	def get_drive_ports(self, op):
+		return self.ports
+	def i(self, op_index, ports_v, time=0): #with gmin added
 		v = ports_v[0]
-		return self.Io*(math.exp((constants.e*v)/(self.m*constants.k*self.T))-1) + options.gmin*v
-	def g(self, ports_v, port_index, time=0):
+		return self.Io*(math.exp(v/(self.m*constants.Vth()))-1)
+	def g(self, op_index, ports_v, port_index, time=0):
 		if not port_index == 0: 
 			raise Exception, "Attepted to evaluate a diode's gm on a unknown port."
-		return (self.i(ports_v)*constants.e)/(self.m*constants.k*self.T) + options.gmin
+		return (self.i(op_index, ports_v)/constants.Vth()/self.m)
+	def print_op_info(self, ports_v_v):
+		vn1n2 = float(ports_v_v[0][0])
+		idiode = self.i(0, (vn1n2,))
+		gmdiode = self.g(0, (vn1n2,), 0)
+		arr = [[self.letter_id.upper()+self.descr,"V(n1-n2):", vn1n2, "[V]", "I(n1-n2):", idiode, "[A]", "g:", gmdiode, "[A/V]"]]
+		printing.table_print(arr)
 
 #class mosq:
 #	"""Square law MOS model
