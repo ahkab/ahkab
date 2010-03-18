@@ -26,7 +26,7 @@ from optparse import OptionParser
 import netlist_parser, dc_analysis, transient, utilities, shooting, bfpss, options, printing
 import plotting, symbolic
 
-VERSION = "0.03"
+VERSION = "0.04"
 
 
 def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, guess=True, disable_step_control=False):
@@ -114,7 +114,7 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 			elif an["method"]=="shooting":	
 				shooting.shooting(circ, period=an["period"], step=an["step"], mna=None, Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], data_filename=data_filename, verbose=verbose)
 		elif an["type"] == "symbolic":
-			symbolic.dc_solve(circ, an['ac'], an['source'])
+			symbolic.solve(circ, an['ac'], an['source'])
 	return None
 
 def process_postproc(postproc_list, title, outfilename):
@@ -135,7 +135,7 @@ if __name__ == "__main__":
 	except ImportError:
 		pass
 	
-	parser = OptionParser(usage="usage: \t%prog [options] <filename>\n\nThe filename is the netlist to be open. Use - (a dash) to read from stdin.",  version="%prog "+VERSION+u" (c) 2006-2007 Giuseppe Venturini")
+	parser = OptionParser(usage="usage: \t%prog [options] <filename>\n\nThe filename is the netlist to be open. Use - (a dash) to read from stdin.",  version="%prog "+VERSION+u" (c) 2006-2010 Giuseppe Venturini")
 	
 	#general options
 	parser.add_option("-v", "--verbose", action="store", type="string", dest="verbose", default="3", help="Verbose level: from 0 (almost silent) to 5 (debug)")

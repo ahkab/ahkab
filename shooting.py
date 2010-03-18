@@ -279,34 +279,37 @@ def get_variable_MAass_and_Tass(circ, xi, xi_minus_1, M, D, step, n_of_var):
 	for elem in circ.elements:
 		# build all dT(xn)/dxn (stored in J) and T(x)
 		if elem.is_nonlinear:
-			ports = elem.get_ports()
-			v_ports = []
-			for port in ports:
-				v = 0 # build v: remember we trashed the 0 row and 0 col of mna -> -1
-				if port[0]:
-					v = v + xi[port[0] - 1, 0]
-				if port[1]:
-					v = v - xi[port[1] - 1, 0]
-				v_ports.append(v)
-			if elem.n1:
-				Tass[elem.n1 - 1, 0] = Tass[elem.n1 - 1, 0] + elem.i(v_ports)
-			if elem.n2:
-				Tass[elem.n2 - 1, 0] = Tass[elem.n2 - 1, 0] - elem.i(v_ports)
-			for pindex in xrange(len(ports)):
-				if elem.n1:
-					if ports[pindex][0]:
-						J[elem.n1-1, ports[pindex][0]-1] = \
-						J[elem.n1-1, ports[pindex][0]-1] + elem.g(v_ports, pindex)
-					if ports[pindex][1]:
-						J[elem.n1-1, ports[pindex][1]-1] =\
-						J[elem.n1-1, ports[pindex][1]-1] - 1.0*elem.g(v_ports, pindex)
-				if elem.n2:
-					if ports[pindex][0]:
-						J[elem.n2-1, ports[pindex][0]-1] = \
-						J[elem.n2-1, ports[pindex][0]-1] - 1.0*elem.g(v_ports, pindex)
-					if ports[pindex][1]:
-						J[elem.n2-1, ports[pindex][1]-1] =\
-						J[elem.n2-1, ports[pindex][1]-1] + elem.g(v_ports, pindex)
+			output_ports = elem.get_output_ports()
+			for index in range(len(output_ports)):
+				n1, n2 = output_ports[index]
+				ports = elem.get_drive_ports(index)
+				v_ports = []
+				for port in ports:
+					v = 0 # build v: remember we trashed the 0 row and 0 col of mna -> -1
+					if port[0]:
+						v = v + xi[port[0] - 1, 0]
+					if port[1]:
+						v = v - xi[port[1] - 1, 0]
+					v_ports.append(v)
+				if n1:
+					Tass[n1 - 1, 0] = Tass[n1 - 1, 0] + elem.i(index, v_ports)
+				if n2:
+					Tass[n2 - 1, 0] = Tass[n2 - 1, 0] - elem.i(index, v_ports)
+				for pindex in xrange(len(ports)):
+					if n1:
+						if ports[pindex][0]:
+							J[n1 - 1, ports[pindex][0]-1] = \
+							J[n1 - 1, ports[pindex][0]-1] + elem.g(index, v_ports, pindex)
+						if ports[pindex][1]:
+							J[n1 - 1, ports[pindex][1]-1] =\
+							J[n1 - 1, ports[pindex][1]-1] - 1.0*elem.g(index, v_ports, pindex)
+					if n2:
+						if ports[pindex][0]:
+							J[n2 - 1, ports[pindex][0]-1] = \
+							J[n2 - 1, ports[pindex][0]-1] - 1.0*elem.g(index, v_ports, pindex)
+						if ports[pindex][1]:
+							J[n2 - 1, ports[pindex][1]-1] =\
+							J[n2 - 1, ports[pindex][1]-1] + elem.g(index, v_ports, pindex)
 	
 	Tass = Tass + D*C1*xi + M*xi + D*C0*xi_minus_1
 

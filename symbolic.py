@@ -1,7 +1,33 @@
+# -*- coding: iso-8859-1 -*-
+# symbolic.py
+# Symbolic simulation module
+# Copyright 2010 Giuseppe Venturini
+
+# This file is part of the ahkab simulator.
+#
+# Ahkab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 2 of the License.
+#
+# Ahkab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License v2
+# along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+This module offers the functions needed to perform a symbolic simulation,
+AC or DC.
+
+The principal is solve() - which carries out the symbolic solution
+"""
+
 import sympy
 import circuit, ekv, mosq, printing
 
-def dc_solve(circ, ac=False, tf_source=None, options={'r0s':True}, verbose=6):
+def solve(circ, ac=False, tf_source=None, options={'r0s':True}, verbose=6):
 	#options = setup_options()	
 	if verbose > 1 and not ac:
 		print "Starting symbolic DC..."
@@ -23,28 +49,30 @@ def dc_solve(circ, ac=False, tf_source=None, options={'r0s':True}, verbose=6):
 	if verbose > 2:
 		 print "Solving..."
 	if verbose > 5:
+		print "MNA matrix (reduced):"
+		print mna
+	if verbose > 3:
 		eq = to_real_list(mna * x + N)
 		printing.print_symbolic_equations(eq)
 		print "To be solved for:"
 		print to_real_list(x)
-		#print mna.inv()
 		print "Matrix is singular: ", (mna.det() == 0)
 	sol = -1.0*mna.inv()*N
-	sol = sol_to_dict(sol, x)
 	#sol = sympy.solve(eq, x)
+	if verbose > 2:
+	 	print "Success!"
+	sol = sol_to_dict(sol, x)
 	
 	if sol == {}:
 		print "HEY, NO VARIABLES?"
 	else:
-		if verbose > 2:
-		 	print "Success!"
-		elif verbose > 1:
+		if verbose > 1:
 			print "Results:"
 		printing.print_symbolic_results(sol)
 	
 	if tf_source is not None:
-		if verbose > 2: print "Calculating symbolic transfer functions...",
 		src = sympy.Symbol(tf_source, real=True)
+		if verbose > 2: print "Calculating symbolic transfer functions ("+str(src)+")...",
 		tfs = calculate_gains(sol, src)
 		if verbose > 2: print "done!"
 		elif verbose > 1:
@@ -142,25 +170,25 @@ def generate_mna_and_N(circ, options, ac=False):
 	n_of_nodes = len(circ.nodes_dict)
 	mna = sympy.matrices.zeros(n_of_nodes)
 	N = sympy.matrices.zeros((n_of_nodes, 1))
-	omega = sympy.Symbol("w", real=True)
+	s = sympy.Symbol("s", real=False)
 	#process_elements() 	
 	for elem in circ.elements:
-		if elem.is_nonlinear and not (isinstance(elem, mosq.mosq) or isinstance(elem, ekv.ekv_device)): 
-			print "Skipped elem "+elem.letter_id+elem.descr + ": not implemented."	
-			continue
+		#if elem.is_nonlinear and not (isinstance(elem, mosq.mosq) or isinstance(elem, ekv.ekv_device)): 
+		#	print "Skipped elem "+elem.letter_id+elem.descr + ": not implemented."	
+		#	continue
 		if isinstance(elem, circuit.resistor):
-			R = sympy.Symbol(elem.letter_id+elem.descr)
+			R = sympy.Symbol(elem.letter_id.upper()+elem.descr)
 			mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1/R
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/R
 			mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1/R
 			mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1/R
 		elif isinstance(elem, circuit.capacitor):
 			if ac:
-				capa = sympy.Symbol(elem.letter_id+elem.descr, real=True)
-				mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + sympy.I*omega*capa
-				mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - sympy.I*omega*capa
-				mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + sympy.I*omega*capa
-				mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - sympy.I*omega*capa
+				capa = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True)
+				mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + s*capa
+				mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - s*capa
+				mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + s*capa
+				mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - s*capa
 			else:
 				pass
 		elif isinstance(elem, circuit.inductor):
@@ -187,11 +215,17 @@ def generate_mna_and_N(circ, options, ac=False):
 				mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/r0
 				mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1/r0
 				mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1/r0
+		elif isinstance(elem, circuit.diode):
+			gd = sympy.Symbol("g"+elem.letter_id+elem.descr)
+			mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + gd
+			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gd
+			mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - gd
+			mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + gd
 		elif circuit.is_elem_voltage_defined(elem):
 			pass
 			#we'll add its lines afterwards
 		else:
-			print "dcsymbolic.py: BUG - Unknown linear element. Ref. #28935"
+			print "Skipped elem "+elem.letter_id+elem.descr + ": not implemented."	
 
 	for elem in circ.elements:
 		if circuit.is_elem_voltage_defined(elem):
@@ -212,13 +246,13 @@ def generate_mna_and_N(circ, options, ac=False):
 				mna[index, elem.sn2] = +1.0 * alpha
 			elif isinstance(elem, circuit.inductor):
 				if ac:
-					mna[index, index] = -1*sympy.I*omega* sympy.Symbol(elem.letter_id + elem.descr, real=True)
+					mna[index, index] = -1*s*sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
 				else: 
 					pass
 					# already so: commented out				
 					# N[index,0] = 0
 			elif isinstance(elem, circuit.hvsource):
-				print "dcsymbolic.py: BUG - hvsources are not implemented yet."
+				print "symbolic.py: BUG - hvsources are not implemented yet."
 				sys.exit(33)
 	#all done
 	return (mna, N)
