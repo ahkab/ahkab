@@ -180,21 +180,24 @@ def print_dc_results(x, error, circ, print_int_nodes=False, print_error=True):
 	idescr = [ (elem.letter_id.upper() + elem.descr) \
 		for elem in circ.elements if circuit.is_elem_voltage_defined(elem) ] #cleaner ??
 
+	print_array = []
 	#print "Solution:"
 	for index in xrange(x.shape[0]):
 		if index < nv_1:
 			if print_int_nodes or not circ.is_int_node_internal_only(index+1):
-				print "V" + str(circ.nodes_dict[index + 1]) + ": " + \
-				str(x[index, 0]) + " V"
+				line_array = ["V" + str(circ.nodes_dict[index + 1]) + ":", str(x[index, 0]), "V"]
+				if print_error: 
+					line_array.append("("+str(float(error[index]))+")")
 			else:
 				skip_nodes_list.append(index)
 		else:
-			print "I: "+str(x[index, 0])+" A  (through "+idescr[index-nv_1]+")"
-	if print_error:
-		print "Residual error:"
-		for index in xrange(x.shape[0]):
-			if skip_nodes_list.count(index) == 0:
-				print error[index]
+			line_array = ["I("+idescr[index-nv_1]+"):", str(x[index, 0]), "A"] 
+			if print_error: 
+				line_array.append("("+str(float(error[index]))+")")
+		print_array.append(line_array)	
+
+	table_print(print_array)
+
 	return None
 
 def print_symbolic_results(x):
@@ -332,7 +335,6 @@ def table_print(twodarray, separator='  '):
 			if elem_width > current_width:
 				current_width = elem_width
 		col_width.append(current_width)
-
 	for ri in range(len(twodarray)):
 		current_str = "" 
 		for ci in range(len(twodarray[ri])):

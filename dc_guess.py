@@ -164,8 +164,14 @@ def get_dc_guess(circ, verbose=3):
 			except numpy.linalg.linalg.LinAlgError:
 				eig = numpy.linalg.eig(M)[0]
 				cond = abs(eig).max()/abs(eig).min()
-				if verbose and verbose < 4:
-					sys.stdout.write("cond=" +str(cond)+". No guess. ")
+				if verbose:
+					print "cond=" +str(cond)+". No guess."
+				return None
+		else:
+			if verbose:
+				print "Guess matrix is singular. No guess."
+			return None
+			
 
 	# Now we want to:
 	# 1. Add voltages for the nodes for which we have no clue to guess.

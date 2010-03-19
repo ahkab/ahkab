@@ -41,27 +41,28 @@ def solve(circ, ac=False, tf_source=None, options={'r0s':True}, verbose=6):
 	mna = mna[1:, 1:]
 	N = N[1:, :]
 	
-	#if verbose > 2:
-	#	 print "Building equation..."
-	#x = to_real_list(x)
-	#eq = apply_options(eq, options)
-
-	if verbose > 2:
-		 print "Solving..."
 	if verbose > 5:
 		print "MNA matrix (reduced):"
 		print mna
+	
+	if verbose > 2:
+		 print "Building equation..."
+	#eq = apply_options(eq, options)
+	eq = to_real_list(mna * x + N)
+
+	if verbose > 2:
+		 print "Solving..."
 	if verbose > 3:
-		eq = to_real_list(mna * x + N)
 		printing.print_symbolic_equations(eq)
 		print "To be solved for:"
 		print to_real_list(x)
 		print "Matrix is singular: ", (mna.det() == 0)
-	sol = -1.0*mna.inv()*N
-	#sol = sympy.solve(eq, x)
+	#sol = -1.0*mna.inv()*N #too heavy
+	x = to_real_list(x)
+	sol = sympy.solve(eq, x)
 	if verbose > 2:
 	 	print "Success!"
-	sol = sol_to_dict(sol, x)
+	#sol = sol_to_dict(sol, x)
 	
 	if sol == {}:
 		print "HEY, NO VARIABLES?"
