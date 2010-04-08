@@ -64,6 +64,9 @@ cmin=1e-18
 shooting_default_points = 100
 shooting_max_nr_iter = 10000
 
+#symbolic
+symb_internal_solver = False
+
 #plotting
 # Set to None to disable writing plots to disk
 plotting_outtype = "png"

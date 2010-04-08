@@ -207,6 +207,17 @@ def print_symbolic_results(x):
 		print str(key) + "\t = " + str(x[key])
 	return None
 
+def print_symbolic_transfer_functions(x):
+	keys = x.keys()
+	keys.sort()	
+	for key in keys:
+		print str(key) + " = " + str(x[key]['gain'])
+		print '\tDC: ' + str(x[key]['gain0'])
+		for index in range(len(x[key]['poles'])):
+			print '\tP'+str(index)+":", str(x[key]['poles'][index])
+		for index in range(len(x[key]['zeros'])):
+			print '\tZ'+str(index)+":", str(x[key]['zeros'][index])
+	return None
 def print_symbolic_equations(eq_list):
 	print "+--"	
 	for eq in eq_list:

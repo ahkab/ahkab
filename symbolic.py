@@ -25,10 +25,10 @@ The principal is solve() - which carries out the symbolic solution
 """
 
 import sympy
-import circuit, ekv, mosq, printing
+import circuit, ekv, mosq, printing, options
 
-def solve(circ, ac=False, tf_source=None, options={'r0s':True}, verbose=6):
-	#options = setup_options()	
+def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=6):
+	#opts = setup_options()	
 	if verbose > 1 and not ac:
 		print "Starting symbolic DC..."
 	elif verbose > 1 and ac:
@@ -36,7 +36,7 @@ def solve(circ, ac=False, tf_source=None, options={'r0s':True}, verbose=6):
 		
 	if verbose > 2:
 		 print "Building symbolic MNA, N and x..."
-	mna, N = generate_mna_and_N(circ, options, ac)
+	mna, N = generate_mna_and_N(circ, opts, ac)
 	x = generate_variable_names(circ, N.shape[0] - 1)
 	mna = mna[1:, 1:]
 	N = N[1:, :]
@@ -47,19 +47,39 @@ def solve(circ, ac=False, tf_source=None, options={'r0s':True}, verbose=6):
 	
 	if verbose > 2:
 		 print "Building equation..."
-	#eq = apply_options(eq, options)
 	eq = to_real_list(mna * x + N)
+	eq = apply_options_and_subs(eq, opts)
 
-	if verbose > 2:
-		 print "Solving..."
-	if verbose > 3:
+	x = to_real_list(x)
+	if verbose > 4:
 		printing.print_symbolic_equations(eq)
 		print "To be solved for:"
-		print to_real_list(x)
-		print "Matrix is singular: ", (mna.det() == 0)
+		print x
+		#print "Matrix is singular: ", (mna.det() == 0)
 	#sol = -1.0*mna.inv()*N #too heavy
-	x = to_real_list(x)
-	sol = sympy.solve(eq, x)
+	if verbose > 2:
+		print "Performing auxiliary simplification..."
+	eq, x, sol_h = help_the_solver(eq, x)
+		
+	if len(eq):
+		if verbose > 3:
+			print "Symplified sytem:"
+			printing.print_symbolic_equations(eq)
+			print "To be solved for:"
+			print x
+		if verbose > 2:
+			print "Solving..."
+
+		if options.symb_internal_solver:
+			sol = local_solve(eq, x)
+		else:
+			sol = sympy.solve(eq, x)
+		sol.update(sol_h)
+	else:
+		if verbose > 3:
+			print "Auxiliary simplification solved the problem."
+		sol = sol_h
+	
 	if verbose > 2:
 	 	print "Success!"
 	#sol = sol_to_dict(sol, x)
@@ -78,30 +98,40 @@ def solve(circ, ac=False, tf_source=None, options={'r0s':True}, verbose=6):
 		if verbose > 2: print "done!"
 		elif verbose > 1:
 			print "Symbolic transfer functions:"
-		printing.print_symbolic_results(tfs)
+		printing.print_symbolic_transfer_functions(tfs)
 	
 
 def calculate_gains(sol, xin, optimize=True):
 	gains = {}
 	for key, value in sol.iteritems():
-		gain = sympy.simplify(value.diff(xin)) if optimize else value.diff(xin)
-		gains.update({"d/d" + str(xin)+" "+str(key):gain})
+		tf = {}
+		gain = sympy.together(value.diff(xin)) if optimize else value.diff(xin)
+		(ps, zs) = get_roots(gain)
+		tf.update({'gain':gain})
+		tf.update({'gain0':gain.subs(sympy.Symbol('s', real=False), 0)})
+		tf.update({'poles':ps})
+		tf.update({'zeros':zs})
+		gains.update({"d/d" + str(xin)+" "+str(key):tf})
 	return gains
 
 
-def sol_to_dict(sol, x, optimize=False):
+def sol_to_dict(sol, x, optimize=True):
 	ret = {}
 	for index in range(x.shape[0]):
-		sol_current = sympy.simplify(sol[index]) if optimize else sol[index]
+		sol_current = sympy.together(sol[index]) if optimize else sol[index]
 		ret.update({str(x[index]):sol_current})
 	return ret
 
-def apply_options(eq_list, options):
+def apply_options_and_subs(eq_list, opts):
+	import subs
+	opts = {}
+	for key, value in subs.subs.iteritems():
+		opts.update({sympy.Symbol(key, real=True):sympy.Symbol(value, real=True)}) 
 	running_eq_list = eq_list	
-	for key in options.keys():
+	for key in opts.keys():
 		subs_eq_list = []		
 		for eq in running_eq_list:
-			subs_eq_list.append(eq.subs(key, options[key]))
+			subs_eq_list.append(eq.subs(key, opts[key]))
 		running_eq_list = subs_eq_list
 	print subs_eq_list
 	return subs_eq_list
@@ -127,8 +157,8 @@ def setup_options():
 	options.update({r8:2*r1})
 	options.update({r9:r1})
 	options.update({r10:r1})"""
-	options = {}	
-	return options
+	opts = {}	
+	return opts
 
 def generate_variable_names(circ, mna_size):
 	x = sympy.matrices.zeros((mna_size, 1))
@@ -164,7 +194,7 @@ def to_real_list(M):
 		reallist.append(elem[0])
 	return reallist
 
-def generate_mna_and_N(circ, options, ac=False):
+def generate_mna_and_N(circ, opts, ac=False):
 	"""Generates a symbolic Modified Nodal Analysis matrix and the N vector.
 	"""
 	#print options
@@ -210,7 +240,7 @@ def generate_mna_and_N(circ, options, ac=False):
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gm
 			mna[elem.n2, elem.ng] = mna[elem.n2, elem.ng] - gm
 			mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + gm
-			if options['r0s']:
+			if opts['r0s']:
 				r0 = sympy.Symbol('r0_'+elem.letter_id+elem.descr, real=True)
 				mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1/r0
 				mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/r0
@@ -266,6 +296,81 @@ def expand_matrix(mat, add_a_row=False, add_a_col=False):
 		col = sympy.zeros((mat.shape[0], 1))
 		mat = mat.col_insert(mat.shape[1], col)
 	return mat
+
+def get_roots(expr):
+	num, den = sympy.fraction(expr)
+	s = sympy.Symbol('s', real=False)
+	return sympy.solve(den, s), sympy.solve(num, s)
+
+############## THESE  WILL BE REMOVED - AS SOON AS SOME SYMPY BUGS ARE FIXED ###########
+def help_the_solver(eqs, xs, debug=True):
+	iter_flag = True
+	sol = {}
+	while iter_flag:
+		iter_flag, eqs, subs = help_the_solver_iter(eqs, xs)
+		if iter_flag:
+			xs.remove(subs.keys()[0])
+			sol.update(subs)
+		if debug:
+			for key, value in subs.iteritems():
+				print key, "=", value
+	return eqs, xs, sol
+
+def help_the_solver_iter(eqs, xs):
+	success = False
+	for eq in eqs:
+		success, subs = help_the_solver_1eq(eq, xs)
+		if success:
+			break
+	if success:
+		new_eqs = []
+		eqs.remove(eq)
+		for eq in eqs:
+			new_eqs.append(eq.subs(subs))
+	else:
+		new_eqs = eqs
+		subs = {}
+	return success, new_eqs, subs
+def help_the_solver_1eq(eq, xs, debug=True):
+	one_x = None
+	for x in xs:
+		if eq.has(x) and one_x is None:
+			one_x = x
+		elif eq.has(x) and one_x is not None:
+			one_x = None
+			break
+	if one_x is not None:
+		sol = {one_x:sympy.solve(eq, one_x)[0]}
+	else:
+		sol = {}	
+	return not one_x is None, sol
+
+def local_solve(eqs, xs):
+	sol = {}
+	while len(eqs):
+		eqs, single_sol = local_solve_iter(eqs, xs)
+		new_sol = {}
+		for key, value in sol.iteritems():
+			new_sol.update({key:value.subs(single_sol)})
+		new_sol.update(single_sol)
+		sol = new_sol
+		new_eqs = []
+		for eq in eqs:
+			new_eqs.append(eq.subs(single_sol)) 
+		eqs = new_eqs
+	return sol
+
+def local_solve_iter(eqs, xs):
+	for eq in eqs:	
+		for x in xs:
+			if eq.has(x):
+				print "Solving for", x
+				single_sol = {x:sympy.solve(eq, x)[0]}
+				eqs.remove(eq)
+				print single_sol
+				return eqs, single_sol
+	return eqs, {}
+	
 
 #def process_elements(circ):
 #	new_elem_list = []
