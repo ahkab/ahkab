@@ -27,7 +27,7 @@ import dc_analysis, transient, shooting, bfpss, symbolic, ac
 import netlist_parser, utilities, options 
 import plotting, printing 
 
-VERSION = "0.04"
+VERSION = "0.05"
 
 
 def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, guess=True, disable_step_control=False):
