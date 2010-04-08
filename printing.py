@@ -23,6 +23,7 @@ be somewhat uniform.
 """
 
 import sys
+import numpy
 import circuit, options, mosq, ekv
 	
 def print_circuit(circ):
@@ -265,7 +266,7 @@ def print_result_check(x2, x1, circ, verbose=2): #fixme I don't like it!
 		return True
 	return False
 
-def print_results_header(circ, fp, print_int_nodes=False, print_time=False):
+def print_results_header(circ, fp, print_int_nodes=False, print_time=False, print_omega=False):
 	"""Prints the header of the results.
 	circ, a circuit instance
 	fp, the file pointer to which the header should be written
@@ -274,22 +275,30 @@ def print_results_header(circ, fp, print_int_nodes=False, print_time=False):
 	
 	Returns: None
 	"""
-	#node_names = map(lambda n: circ.nodes_dict[n], range(1, len(circ.nodes_dict)))
-	#if not print_int_nodes:
-		#node_names = filter(lambda name: not (name.find("INT") > -1), node_names)
-	#labels = map(lambda n: "V"+n, node_names)
-
-	voltage_labels = [ "V" + circ.nodes_dict[n] \
-		for n in range(1, len(circ.nodes_dict)) \
-		if (print_int_nodes or not circ.is_int_node_internal_only(n)) ]
+	voltage_labels = []
+	for n in range(1, len(circ.nodes_dict)): 
+		if (print_int_nodes or not circ.is_int_node_internal_only(n)): 
+			if print_omega == False:
+				iter_voltage_labels = ["V" + circ.nodes_dict[n]] 
+			else:
+				iter_voltage_labels = ["|V" + circ.nodes_dict[n]+"|", "arg(V" + circ.nodes_dict[n]+")"] 
+			voltage_labels = voltage_labels + iter_voltage_labels
 	
-	current_labels = [ "I("+elem.letter_id.upper()+elem.descr+")" \
-			for elem in circ.elements \
-			if circuit.is_elem_voltage_defined(elem)]
+	current_labels = []
+	for elem in circ.elements: 
+		if circuit.is_elem_voltage_defined(elem):
+			if print_omega == False:
+				iter_current_labels = ["I("+elem.letter_id.upper()+elem.descr+")"] 
+			else:
+				iter_current_labels = ["|I("+elem.letter_id.upper()+elem.descr+")|", "arg(I("+elem.letter_id.upper()+elem.descr+"))"]
+			current_labels = current_labels + iter_current_labels
+
 	labels = voltage_labels + current_labels
 	
 	if print_time:
 		labels.insert(0, "#T")
+	elif print_omega:
+		labels.insert(0, "#w")
 	else:
 		labels[0] = "#" + labels[0]
 	
@@ -301,7 +310,7 @@ def print_results_header(circ, fp, print_int_nodes=False, print_time=False):
 	return None
 
 	
-def print_results_on_a_line(time, x, fdata, circ, print_int_nodes=False, iter_n=0):
+def print_results_on_a_line(time, x, fdata, circ, print_int_nodes=False, iter_n=0, ac_data=False):
 	"""Prints the time (if it's not None) and the values of the elements of x (a numpy matrix Nx1) 
 	in order to the stream fdata.
 	If time is None it will be skipped
@@ -324,10 +333,15 @@ def print_results_on_a_line(time, x, fdata, circ, print_int_nodes=False, iter_n=
 	
 	if time is not None:
 		fdata.write(str(time)+"\t")
-	
+
 	for i in range(x.shape[0]):
 		if print_int_nodes or circ.is_int_node_internal_only(i) or i > nv_1:
-			fdata.write(str(x[i, 0])+"\t")
+			if ac_data:
+				abs_value = numpy.abs(x[i,0])
+				arg_value = numpy.angle(x[i,0],deg=options.ac_phase_in_deg)
+				fdata.write(str(abs_value)+"\t"+str(arg_value)+"\t")
+			else:
+				fdata.write(str(x[i, 0])+"\t")
 	fdata.write("\n")
 	
 	if iter_n != 0 and iter_n % 10 == 0:

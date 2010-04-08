@@ -35,7 +35,7 @@ import constants, ticker, options, circuit, printing, utilities, dc_guess
 
 
 
-def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=None, locked_nodes=None, verbose=3):
+def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=None, locked_nodes=None, skip_Tt=False, verbose=3):
 	"""Tries to perform a DC analysis of the circuit. 
 	The system we want to solve is:
 	(mna+Gmin)*x + N + T(x) = 0
@@ -75,17 +75,18 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 	#time variable component: Tt this is always the same in each iter. So we build it once for all.
 	Tt = numpy.mat(numpy.zeros((mna_size, 1)))
 	v_eq = 0
-	for elem in circ.elements:
-		if (isinstance(elem, circuit.vsource) or isinstance(elem, circuit.isource)) and elem.is_timedependent:
-			if isinstance(elem, circuit.vsource):
-				Tt[nv - 1 + v_eq, 0] = -1 * elem.V(time)
-			elif isinstance(elem, circuit.isource):
-				if elem.n1:
-					Tt[elem.n1 - 1, 0] = Tt[elem.n1 - 1, 0] + elem.I(time)
-				if elem.n2:
-					Tt[elem.n2 - 1, 0] = Tt[elem.n2 - 1, 0] - elem.I(time)
-		if circuit.is_elem_voltage_defined(elem):
-			v_eq = v_eq + 1
+	if not skip_Tt:
+		for elem in circ.elements:
+			if (isinstance(elem, circuit.vsource) or isinstance(elem, circuit.isource)) and elem.is_timedependent:
+				if isinstance(elem, circuit.vsource):
+					Tt[nv - 1 + v_eq, 0] = -1 * elem.V(time)
+				elif isinstance(elem, circuit.isource):
+					if elem.n1:
+						Tt[elem.n1 - 1, 0] = Tt[elem.n1 - 1, 0] + elem.I(time)
+					if elem.n2:
+						Tt[elem.n2 - 1, 0] = Tt[elem.n2 - 1, 0] - elem.I(time)
+			if circuit.is_elem_voltage_defined(elem):
+				v_eq = v_eq + 1
 	#update N to include the time variable sources
 	Ndc = Ndc + Tt
 
@@ -119,7 +120,9 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 			mna_to_pass =  mna + Gmin
 			N_to_pass = source_stepping["factors"][source_stepping["index"]]*Ndc+Ntran*(Ntran is not None)
 		try:
-			(x, error, converged, n_iter) = mdn_solver(x, mna_to_pass, circ.elements, T=N_to_pass, \
+			#print mna_to_pass
+			#print N_to_pass
+			(x, error, converged, n_iter) = mdn_solver(x, mna_to_pass, circ, T=N_to_pass, \
 			 nv=nv, print_steps=(verbose > 0), locked_nodes=locked_nodes, time=time, MAXIT=MAXIT)
 		except numpy.linalg.linalg.LinAlgError:
 			n_iter = 0
@@ -143,6 +146,8 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 				error = None
 				break		
 		else:
+			#if verbose == 6:
+			#	print "["+str(n_iter)+" iterations]",
 			if (source_stepping["enabled"] and source_stepping["index"] != 9): 
 				converged = False
 				source_stepping["index"] = source_stepping["index"] + 1
@@ -417,7 +422,7 @@ def print_elements_ops(circ, x):
 	return None
 
 
-def mdn_solver(x, mna, element_list, T, MAXIT, nv, locked_nodes, time=None, print_steps=False, vector_norm=lambda v: max(abs(v))):
+def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=False, vector_norm=lambda v: max(abs(v))):
 	"""
 	Solves a problem like F(x) = 0 using the Newton Algorithm with a variable damping td.
 	
@@ -471,6 +476,7 @@ def mdn_solver(x, mna, element_list, T, MAXIT, nv, locked_nodes, time=None, prin
 	#print_steps = False
 	#locked_nodes = get_locked_nodes(element_list)
 	mna_size = mna.shape[0]
+	nonlinear_circuit = circ.is_nonlinear()
 	if print_steps: 
 		tick = ticker.ticker(increments_for_step=1)
 		tick.display()
@@ -488,24 +494,34 @@ def mdn_solver(x, mna, element_list, T, MAXIT, nv, locked_nodes, time=None, prin
 	for iteration in xrange(MAXIT): # newton iteration counter
 		if print_steps: 
 			tick.step()
-		J = numpy.mat(numpy.zeros((mna_size, mna_size)))
-		Tx = numpy.mat(numpy.zeros((mna_size, 1)))
-		for elem in element_list:
-			# build dT(x)/dx (stored in J) and Tx(x)
-			if elem.is_nonlinear:
-				update_J_and_Tx(J, Tx, x, elem, time)
-		J = J + mna
+		if nonlinear_circuit:
+		# build dT(x)/dx (stored in J) and Tx(x)
+			J, Tx = build_J_and_Tx(x, mna_size, circ.elements, time)
+			J = J + mna
+		else:
+			J = mna
+			Tx = 0
 		residuo = mna*x + T + Tx
 		dx = numpy.linalg.inv(J) * (-1 * residuo)
 		x = x + get_td(dx, locked_nodes, n=iteration)*dx
-		if convergence_check(x, dx, residuo, nv-1):
-			converged = True
-			break
-		elif vector_norm(dx) is numpy.nan: #Overflow
+		if iteration > 0: 
+			if convergence_check(x, dx, residuo, nv-1):
+				converged = True
+				break
+		if vector_norm(dx) is numpy.nan: #Overflow
 			raise OverflowError
 	if print_steps: 
 		tick.hide()
 	return (x, residuo, converged, iteration)
+
+def build_J_and_Tx(x, mna_size, element_list, time):
+	J = numpy.mat(numpy.zeros((mna_size, mna_size)))
+	Tx = numpy.mat(numpy.zeros((mna_size, 1)))
+	for elem in element_list:
+		if elem.is_nonlinear:
+			update_J_and_Tx(J, Tx, x, elem, time)
+	return J, Tx
+
 
 def update_J_and_Tx(J, Tx, x, elem, time):
 	out_ports = elem.get_output_ports()

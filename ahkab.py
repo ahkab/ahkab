@@ -23,8 +23,9 @@
 
 import sys
 from optparse import OptionParser
-import netlist_parser, dc_analysis, transient, utilities, shooting, bfpss, options, printing
-import plotting, symbolic
+import dc_analysis, transient, shooting, bfpss, symbolic, ac
+import netlist_parser, utilities, options 
+import plotting, printing 
 
 VERSION = "0.04"
 
@@ -106,15 +107,26 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 					sys.exit(54)
 				x0 = x0_ic_dict[an["ic_label"]]
 			
-			transient.transient_analysis(circ, tstart=an["tstart"], tstep=an["tstep"], tstop=an["tstop"], x0=x0, mna=None, N=None, verbose=verbose, data_filename=data_filename, use_step_control=(not disable_step_control), method=tran_method)
+			transient.transient_analysis(circ, \
+				tstart=an["tstart"], tstep=an["tstep"], tstop=an["tstop"], \
+				x0=x0, mna=None, N=None, verbose=verbose, data_filename=data_filename, \
+				use_step_control=(not disable_step_control), method=tran_method)
 		
 		elif an["type"] == "shooting":
 			if an["method"]=="brute-force":
-				bfpss.bfpss(circ, period=an["period"], step=an["step"], mna=None, Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], x0=x0_op, data_filename=data_filename, verbose=verbose)
+				bfpss.bfpss(circ, period=an["period"], step=an["step"], mna=None, Tf=None, \
+					D=None, points=an["points"], autonomous=an["autonomous"], x0=x0_op, \
+					data_filename=data_filename, verbose=verbose)
 			elif an["method"]=="shooting":	
-				shooting.shooting(circ, period=an["period"], step=an["step"], mna=None, Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], data_filename=data_filename, verbose=verbose)
+				shooting.shooting(circ, period=an["period"], step=an["step"], mna=None, \
+					Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], \
+					data_filename=data_filename, verbose=verbose)
 		elif an["type"] == "symbolic":
 			symbolic.solve(circ, an['ac'], an['source'])
+		elif an["type"] == "ac":
+			ac.ac_analysis(circ=circ, start=an['start'], nsteps=an['nsteps'], \
+				stop=an['stop'], step_type='LOG', xop=x0_op, mna=None,\
+			        data_filename=data_filename, verbose=verbose)
 	return None
 
 def process_postproc(postproc_list, title, outfilename):

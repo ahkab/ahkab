@@ -558,8 +558,10 @@ class isource:
 	is_nonlinear = False
 	is_timedependent = False
 	_time_function = None
-	def __init__(self, n1, n2, idc=None):
+	def __init__(self, n1, n2, idc=None, abs_ac=None, arg_ac=0):
 		self.idc = idc
+		self.abs_ac = abs_ac
+		self.arg_ac = arg_ac
 		self.n1 = n1
 		self.n2 = n2
 		
@@ -601,10 +603,12 @@ class vsource:
 	is_timedependent = False
 	_time_function = None
 	dc_guess = None #defined in init
-	def __init__(self, n1, n2, vdc=None):
+	def __init__(self, n1, n2, vdc=None, abs_ac=None, arg_ac=0):
 		self.vdc = vdc
 		self.n1 = n1
 		self.n2 = n2
+		self.abs_ac = abs_ac
+		self.arg_ac = arg_ac
 		if vdc is not None:
 			self.dc_guess = [self.vdc]
 	

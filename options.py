@@ -67,6 +67,11 @@ shooting_max_nr_iter = 10000
 #symbolic
 symb_internal_solver = False
 
+ac_log_step = 'LOG'
+ac_lin_step = 'LIN'
+ac_max_nr_iter = 20
+ac_phase_in_deg = False
+
 #plotting
 # Set to None to disable writing plots to disk
 plotting_outtype = "png"

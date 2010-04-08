@@ -326,6 +326,7 @@ def parse_elem_vsource(line, circ, line_elements=None):
 		raise NetlistParseError, ""
 	
 	vdc = None
+	vac = None
 	function = None
 	
 	index = 3
@@ -339,6 +340,8 @@ def parse_elem_vsource(line, circ, line_elements=None):
 		
 		if label == 'type':
 			if value == 'vdc':
+				param_number = 0
+			elif value == 'vac':
 				param_number = 0
 			elif value == 'pulse':
 				param_number = 7
@@ -356,6 +359,8 @@ def parse_elem_vsource(line, circ, line_elements=None):
 				raise NetlistParseError, "only a time function can be defined."
 		elif label == 'vdc':
 			vdc = convert_units(value)
+		elif label == 'vac':
+			vac = convert_units(value)
 		else:
 			raise NetlistParseError, ""
 		index = index + 1
@@ -369,7 +374,7 @@ def parse_elem_vsource(line, circ, line_elements=None):
 	n1 = circ.add_node_to_circ(ext_n1)
 	n2 = circ.add_node_to_circ(ext_n2)
 	
-	elem = circuit.vsource(n1=n1, n2=n2, vdc=vdc)
+	elem = circuit.vsource(n1=n1, n2=n2, vdc=vdc, abs_ac=vac)
 	elem.descr = line_elements[0][1:]
 	
 	if function is not None:
@@ -398,6 +403,7 @@ def parse_elem_isource(line, circ, line_elements=None):
 		raise NetlistParseError, ""
 	
 	idc = None
+	iac = None
 	function = None
 	
 	index = 3
@@ -411,6 +417,8 @@ def parse_elem_isource(line, circ, line_elements=None):
 		
 		if label == 'type':
 			if value == 'idc':
+				param_number = 0
+			elif value == 'iac':
 				param_number = 0
 			elif value == 'pulse':
 				param_number = 7
@@ -427,6 +435,8 @@ def parse_elem_isource(line, circ, line_elements=None):
 				raise NetlistParseError, "only a time function can be defined."
 		elif label == 'idc':
 			idc = convert_units(value)
+		elif label == 'iac':
+			iac = convert_units(value)
 		else:
 			raise NetlistParseError, ""
 		index = index + 1
@@ -439,7 +449,7 @@ def parse_elem_isource(line, circ, line_elements=None):
 	n1 = circ.add_node_to_circ(ext_n1)
 	n2 = circ.add_node_to_circ(ext_n2)
 	
-	elem = circuit.isource(n1=n1, n2=n2, idc=idc)
+	elem = circuit.isource(n1=n1, n2=n2, idc=idc, abs_ac=iac)
 	elem.descr = line_elements[0][1:]
 	
 	if function is not None:
@@ -1002,9 +1012,12 @@ def parse_analysis(circ, directives):
 				# operating point
 				if line_elements[0] == ".op":
 					analysis.append(parse_an_op(line, line_elements))
-				# dc analisi semplice
+				# DC (direct current) sweep
 				elif line_elements[0] == ".dc":
 					analysis.append(parse_an_dc(line, circ, line_elements))
+				# AC (alternating current) sweep
+				elif line_elements[0] == ".ac":
+					analysis.append(parse_an_ac(line, circ, line_elements))
 				# transient analysis
 				elif line_elements[0] == ".tran":
 					analysis.append(parse_an_tran(line, line_elements))
@@ -1098,6 +1111,38 @@ def parse_an_dc(line, circ, line_elements=None):
 		raise NetlistParseError("Required parameters are missing.")
 	
 	return {"type":"dc", "source_name":source_name, "start":start, "stop":stop, "step":step}
+
+def parse_an_ac(line, circ, line_elements=None):
+	"""Parses an AC analysis:
+	
+	Directive is:
+	.AC start=<float> stop=<float> nsteps=<integer>
+	"""
+	if line_elements is None:
+		line_elements = line.split()
+	
+	start = None
+	stop = None
+	nsteps = None
+	
+	for token in line_elements[1:]:
+		if token[0] == "*":
+			break
+		(label, value) = parse_param_value_from_string(token)
+		if label == 'start':
+			start = convert_units(value)
+		elif label == 'stop':
+			stop = convert_units(value)
+		elif label == 'nsteps':
+			nsteps = convert_units(value)
+		else:
+			raise NetlistParseError("")
+	
+	if start is None or stop is None or nsteps is None:
+		raise NetlistParseError("Required parameters are missing.")
+	
+	return {"type":"ac", "start":start, "stop":stop, "nsteps":nsteps}
+
 
 def parse_an_tran(line, line_elements=None):
 	"""Parses a TRAN analysis:
