@@ -773,9 +773,9 @@ class sin:
 		if time < self.td:
 			return self.vo
 		elif self.theta:
-			return self.vo + self.va * math.exp(-1*(time-self.td)/self.theta) * math.sin(2*math.pi*self.freq*(time+self.td))
+			return self.vo + self.va * math.exp(-1*(time-self.td)/self.theta) * math.sin(2*math.pi*self.freq*(time-self.td))
 		else:
-			return self.vo + self.va * math.sin(2*math.pi*self.freq*(time+self.td))
+			return self.vo + self.va * math.sin(2*math.pi*self.freq*(time-self.td))
 	def ready(self):
 		if self.vo == None or self.va == None or self.freq == None or self.td == None or self.theta == None:
 			return False
