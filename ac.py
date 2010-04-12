@@ -33,7 +33,7 @@ import numpy
 import dc_analysis, ticker, options, circuit, printing, utilities
 
 def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
-	AC=None, data_filename="stdout", verbose=3):
+	AC=None, Nac=None, J=None, data_filename="stdout", verbose=3):
 	"""Performs an AC analysis of the circuit (described by circ).
 	"""
 	
@@ -73,39 +73,31 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 		(mna, N) = dc_analysis.generate_mna_and_N(circ)
 		del N
 		mna = utilities.remove_row_and_col(mna)
-	Nac = generate_Nac(circ)
-	Nac = utilities.remove_row(Nac, rrow=0)
-	
+	if Nac is None:
+		Nac = generate_Nac(circ)
+		Nac = utilities.remove_row(Nac, rrow=0)
 	if AC is None:
 		AC = generate_AC(circ, [mna.shape[0], mna.shape[0]])
 		AC = utilities.remove_row_and_col(AC)
 
-	# setup J
-	if verbose > 4 and fdata is not sys.stdout:
-		print "Linearizing the circuit..."
-	if xop is None:
-		if circ.is_nonlinear():
-			printing.print_general_error("AC failed to find an op to linearize the (NL) circuit.") 
-			sys.exit(3)
-		else:
-			printing.print_warning("AC failed to find an op to linearize the linear circuit.") 
-			printing.print_warning("Carrying on...")
-	else:	
+	if J is None and circ.is_nonlinear():
 		if verbose > 4 and fdata is not sys.stdout:
-			print "Linearizing point (xop):"
-			printing.print_results_header(circ, sys.stdout, print_int_nodes=True, print_time=False)
-			printing.print_results_on_a_line(None, xop, sys.stdout, circ, print_int_nodes=True, iter_n=10)
-
-	# build the linearized matrix (stored in J)
-	J = numpy.mat(numpy.zeros(mna.shape))
-	Tlin = numpy.mat(numpy.zeros(Nac.shape))
-        for elem in circ.elements:
-		if elem.is_nonlinear:
-			dc_analysis.update_J_and_Tx(J, Tlin, xop, elem, time=None)
-	del Tlin # not needed! **DC**!
-
-	if verbose > 4 and fdata is not sys.stdout:
-		sys.stdout.write("done\n")
+			print "Linearizing the circuit..."
+		if xop is None:
+			if circ.is_nonlinear():
+				printing.print_general_error("AC failed to find an op to linearize the (NL) circuit.") 
+				sys.exit(3)
+			else:
+				printing.print_warning("AC failed to find an op to linearize the linear circuit.") 
+				printing.print_warning("Carrying on...")
+		else:	
+			if verbose > 4 and fdata is not sys.stdout:
+				print "Linearizing point (xop):"
+				printing.print_results_header(circ, sys.stdout, print_int_nodes=True, print_time=False)
+				printing.print_results_on_a_line(None, xop, sys.stdout, circ, print_int_nodes=True, iter_n=10)
+		J = generate_J(xop=xop, circ=circ, mna=mna, Nac=Nac, fdata=fdata, verbose=verbose)
+	elif J is None and not circ.is_nonlinear():
+		J = 0
 	
 	if verbose > 4 and fdata is not sys.stdout:
 		print "MNA (reduced):"
@@ -139,6 +131,8 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 		if solved:
 			if fdata != sys.stdout and verbose > 1:
 				tick.step()
+			# iter_n % 10 == 0 causes the printing function to flush the stream
+			iter_n = iter_n + 1
 			# hooray!
 			printing.print_results_on_a_line(omega, x, fdata, circ, print_int_nodes=options.print_int_nodes, iter_n=iter_n, ac_data=True)
 		else:
@@ -153,7 +147,7 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 	if solved:
 		if fdata != sys.stdout and verbose > 2:
 			print "done."
-		ret_value = None
+		ret_value = x
 	else:
 		if fdata != sys.stdout:
 			print "failed."
@@ -162,8 +156,8 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 	return ret_value
 
 def generate_AC(circ, shape):
-	"""Generates the derivate coefficients. Shape is the REDUCED MNA shape, 
-	AC will be of the same shape.
+	"""Generates the AC coefficients matrix. 
+	Shape is the REDUCED MNA shape, AC will be of the same shape.
 	
 	It's easy to set up the voltage lines, we know that line 2 refers to 
 	node 2, etc... 
@@ -240,6 +234,8 @@ def generate_Nac(circ):
 	return Nac
 
 class log_axis_iterator:
+	"""This iterator provides the values for a logarithmic sweep.
+	"""
 	def __init__(self, max, min, nsteps):
 		self.inc = 10**((numpy.log10(max)-numpy.log10(min))/nsteps)
 		self.max = max
@@ -248,6 +244,8 @@ class log_axis_iterator:
 		self.current = min
 		self.nsteps = nsteps
 	def next(self):
+		"""Iterator method: get the next value
+		"""
 		if self.index < self.nsteps:
 			self.current = self.current * self.inc
 			ret = self.current 
@@ -256,15 +254,21 @@ class log_axis_iterator:
 		self.index = self.index + 1 
 		return ret
 	def __getitem__(self, i):
+		"""Iterator method: get a particular value (n. i)
+		"""
 		if i < self.nsteps:
 			ret = self.min*self.inc**i
 		else:
 			ret = None
 		return ret
 	def __iter__(self):
+		"""Required iterator method.
+		"""
 		return self
 
 class lin_axis_iterator:
+	"""This iterator provides the values for a linear sweep.
+	"""
 	def __init__(self, max, min, nsteps):
 		self.inc = (max - min)/nsteps
 		self.max = max
@@ -273,6 +277,8 @@ class lin_axis_iterator:
 		self.current = min
 		self.nsteps = nsteps
 	def next(self):
+		"""Iterator method: get the next value
+		"""
 		if self.index < self.nsteps:
 			self.current = self.current + self.inc
 			ret = self.current 
@@ -281,11 +287,29 @@ class lin_axis_iterator:
 		self.index = self.index + 1 
 		return ret
 	def __getitem__(self, i):
+		"""Iterator method: get a particular value (n. i)
+		"""
 		if i < self.nsteps:
 			ret = self.min + self.inc*i
 		else:
 			ret = None
 		return ret
 	def __iter__(self):
+		"""Required iterator method.
+		"""
 		return self
+def generate_J(xop, circ, mna, Nac, fdata, verbose):
+	# setup J
+	# build the linearized matrix (stored in J)
+	J = numpy.mat(numpy.zeros(mna.shape))
+	Tlin = numpy.mat(numpy.zeros(Nac.shape))
+        for elem in circ.elements:
+		if elem.is_nonlinear:
+			dc_analysis.update_J_and_Tx(J, Tlin, xop, elem, time=None)
+	#del Tlin # not needed! **DC**!
+
+	if verbose > 4 and fdata is not sys.stdout:
+		sys.stdout.write("done\n")
+
+	return J
 
