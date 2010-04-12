@@ -282,7 +282,8 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 			if print_step_and_lte and lte is not None: 
 				#if you wish to look at the step. We print just a lte
 				flte.write(str(time)+"\t"+str(old_step)+"\t"+str(lte.max())+"\n")
-			# if we get here, or aposteriori_step_control is disabled, or it's enabled and the error is small
+			# if we get here, either aposteriori_step_control is 
+			# disabled, or it's enabled and the error is small
 			# enough. Anyway, the result is GOOD, STORE IT.
 			time = time + old_step
 			x = x1
@@ -401,7 +402,10 @@ def generate_D(circ, shape):
 		cmin_mat[0, 1:] = 1
 		cmin_mat[1:, 0] = 1
 		cmin_mat[0, 0] = cmin_mat.shape[0]-1
-		D[:-i_eq, :-i_eq] += options.cmin*cmin_mat
+		if i_eq > 0:
+			D[:-i_eq, :-i_eq] += options.cmin*cmin_mat
+		else:
+			D[:, :] += options.cmin*cmin_mat
 
 	return D
 
