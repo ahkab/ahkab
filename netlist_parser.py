@@ -227,7 +227,12 @@ def parse_elem_resistor(line, circ, line_elements=None):
 	n1 = circ.add_node_to_circ(ext_n1)
 	n2 = circ.add_node_to_circ(ext_n2)
 	
-	elem = circuit.resistor(n1=n1, n2=n2, R=convert_units(line_elements[3]))
+	R = convert_units(line_elements[3])
+
+	if R == 0:
+		raise NetlistParseError, "ZERO-valued resistors are not allowed." 
+
+	elem = circuit.resistor(n1=n1, n2=n2, R=R)
 	elem.descr = line_elements[0][1:]
 	
 	return [elem]
