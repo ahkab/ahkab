@@ -565,20 +565,21 @@ class ekv_mos_model:
 			vsmall_iter = self.get_vsmall(ismall)
 			if debug: print vsmall_iter, vsmall
 			deltai = (vsmall - vsmall_iter)/self.get_dvsmall_dismall(ismall)
-			ratio = deltai/ismall			
-			if ismall == 0:
-				ismall = utilities.EPS
-			#print ismall, deltai
-			elif abs(deltai) < ip_abs_err or abs(deltai/ismall) < options.ier:
+			#if ismall == 0:
+			#	ismall = utilities.EPS
+			if (abs(deltai) < ip_abs_err or abs(deltai) <= abs(ismall)*options.ier):# or \
 				if not check:
 					check = True
 				else:
 					break
 			else:
 				check = False
+			if deltai == 0:
+				break
 			if math.isnan(ismall):
 				print "Ismall is NaN!!"
 				exit()
+			ratio = deltai/ismall			
 			if ratio > 3: 			 
 				ismall = 3*deltai
 			elif ratio <= -1:
