@@ -392,6 +392,9 @@ def op_analysis(circ, x0=None, guess=True, verbose=3):
 	return opsolution
 
 def print_elements_ops(circ, x):
+	tot_power = 0
+	i_index = 0
+	nv_1 = len(circ.nodes_dict) - 1
 	print "OP INFORMATION:"
 	for elem in circ.elements:
 		ports_v_v = []
@@ -419,6 +422,29 @@ def print_elements_ops(circ, x):
 				ports_v_v = ((tempv,),)
 			elem.print_op_info(ports_v_v)
 			print "-------------------"
+		if isinstance(elem, circuit.gisource):
+			v = 0
+			v = v + x[elem.n1-1] if elem.n1 != 0 else v
+			v = v - x[elem.n2-1] if elem.n2 != 0 else v
+			vs = 0
+			vs = vs + x[elem.n1-1] if elem.n1 != 0 else vs
+			vs = vs - x[elem.n2-1] if elem.n2 != 0 else vs
+			tot_power = tot_power - v*vs*elem.alpha
+		elif isinstance(elem, circuit.isource):
+			v = 0
+			v = v + x[elem.n1-1] if elem.n1 != 0 else v
+			v = v - x[elem.n2-1] if elem.n2 != 0 else v
+			tot_power = tot_power - v*elem.I()
+		elif isinstance(elem, circuit.vsource) or isinstance(elem, circuit.evsource):
+			v = 0
+			v = v + x[elem.n1-1] if elem.n1 != 0 else v
+			v = v - x[elem.n2-1] if elem.n2 != 0 else v
+			tot_power = tot_power - v*x[nv_1 + i_index, 0]
+			i_index = i_index + 1
+		elif circuit.is_elem_voltage_defined(elem):
+			i_index = i_index + 1
+	print "TOTAL POWER: "+str(float(tot_power))+" W"	
+
 	return None
 
 
