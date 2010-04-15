@@ -206,19 +206,10 @@ class ekv_device:
 		arr.append([ "VTH", "[V]:", self.opdict['VTH'], "VOD", "[V]:", self.opdict['VOD'], "VDSAT", "[V]:", self.opdict['VDSAT'], "VA", "[V]:", str(ids/gmd)])
 		arr.append(["Ids", "[A]:", ids, "Idb", "[A]:", idb, "", "", "", "TEF:", "", str(TEF),]) 
 		arr.append(["gmg", "[S]:", gmg, "gms", "[S]:", gms, "rob", "[Ohm]:", 1/gmd, "", "", ""])
-		arr.append(["if:", "", self.opdict['if'],"ir:", "", self.opdict['ir'], "n: ", "",self.opdict['n'],"beta:", "", self.opdict['beta']])
+		arr.append(["if:", "", self.opdict['ifn'],"ir:", "", self.opdict['irn'], "n: ", "",self.opdict['n'],"beta:", "", self.opdict['beta']])
 		#arr.append([  "", "", "", "", "", ""])
 
 		printing.table_print(arr)
-
-#		print "M"+self.descr+":", mos_type.upper(), status
-#		print "  ", "Weff:", self.opdict['Weff'], "("+str(self.device.W)+")", "Leff:", self.opdict['Leff'], "("+str(self.device.L)+")"
-#		print "  ", "Vdb:", str(ports_v[0][0]), "vgb:", str(ports_v[0][1]), "vsb:", str(ports_v[0][2])
-#		print "  ", 'Vp', self.opdict['Vp'], 'VTH', self.opdict['VTH'], 'VOD', self.opdict['VOD'], 'VDSAT', self.opdict['VDSAT']
-#		print "  ", "ids =", str(ids), "idb =", str(idb) 
-#		print "  ", "gmg:", str(gmg), "gms:", str(gms), "rob:", str(1/gmd)
-#		print "  ", "(if:", str(self.opdict['if'])+ ", ir:", str(self.opdict['if'])+", n: "+str(self.opdict['n'])+", beta: "+str(self.opdict['beta'])+")"
-#		print "  ", "TEF =", str(TEF), "VA:", str(ids/gmd)		
 
 	
 	def g(self, op_index, ports_v, port_index, time=0):
@@ -526,7 +517,7 @@ class ekv_mos_model:
 		vs_real = vs if CS_FACTOR == 1 else vd
 		opdict.update({'state':(vd_real*self.NPMOS, vg*self.NPMOS, vs_real*self.NPMOS)})
 		opdict.update({'Ids':Ids, "Weff":Weff, "Leff":Leff, 'Vp':Vp})
-		opdict.update({'if':ifn, "ir":irn, "n":n, 'beta':beta})
+		opdict.update({'ifn':ifn, "irn":irn, "n":n, 'beta':beta})
 		opdict.update({'VTH':self.VTO + Delta_vrsce + gamp*math.sqrt(Vsp)-self.GAMMA*math.sqrt(self.PHI), \
 				"VOD":self.NPMOS*n*(Vp-vs), "VDSAT":2*vdss, 'SAT':ifn>irn*self.SATLIM})
 		if debug: print "current:", Ids
@@ -563,7 +554,7 @@ class ekv_mos_model:
 		while True:
 			#if debug: iter_c = iter_c + 1			
 			vsmall_iter = self.get_vsmall(ismall)
-			if debug: print vsmall_iter, vsmall
+			#if debug: print vsmall_iter, vsmall
 			deltai = (vsmall - vsmall_iter)/self.get_dvsmall_dismall(ismall)
 			#if ismall == 0:
 			#	ismall = utilities.EPS
@@ -580,13 +571,15 @@ class ekv_mos_model:
 				print "Ismall is NaN!!"
 				exit()
 			ratio = deltai/ismall			
-			if ratio > 3: 			 
-				ismall = 3*deltai
-			elif ratio <= -1:
+			#if ratio > 3: 			 
+			#	ismall = 3*ismall
+			if ratio <= -1:
 				ismall = 0.1*ismall
 			else:			
 				ismall = ismall + deltai
-		#if debug: print str(iter_c) + " iterations."
+		#if debug: 
+		#	print str(iter_c) + " iterations."
+		#	print ismall, ismall/iguess
 		return ismall
 	
 	def get_vsmall(self, ismall, verbose=3):
