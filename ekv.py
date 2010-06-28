@@ -6,8 +6,8 @@
 # The EKV model was developed by Matthias Bucher, Christophe Lallement, 
 # Christian Enz, Fabien Théodoloz, François Krummenacher at the Electronics 
 # Laboratories, Swiss Federal Institute of Technology (EPFL), 
-# Lausanne, Switzerland
-# and the Tecnical Report upon which this implementation is based is here:
+# Lausanne, Switzerland. The Tecnical Report upon which this implementation 
+# is based is available here:
 # <http://legwww.epfl.ch/ekv/pdf/ekv_v262.pdf>.
 #
 # This file is part of the ahkab simulator.
@@ -28,8 +28,8 @@
 The EKV model was developed by Matthias Bucher, Christophe Lallement, 
 Christian Enz, Fabien Théodoloz, François Krummenacher at the Electronics 
 Laboratories, Swiss Federal Institute of Technology (EPFL), 
-Lausanne, Switzerland
-and the Tecnical Report upon which this implementation is based is here:
+Lausanne, Switzerland. The Tecnical Report upon which this implementation 
+is based is available here:
 <http://legwww.epfl.ch/ekv/pdf/ekv_v262.pdf>.
 
 This module defines two classes:
