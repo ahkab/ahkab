@@ -104,8 +104,8 @@ class ekv_device:
 		self.device = dev_class()
 		self.device.L = float(L) #channel length -
 		self.device.W = float(W) #channel width -
-		self.device.M = M #parallel multiple device number
-		self.device.N = N #series multiple device number
+		self.device.M = int(M) #parallel multiple device number
+		self.device.N = int(N) #series multiple device number
 		self.ekv_model = model
 		self.opdict = {}
 		self.opdict.update({'state':(float('nan'), float('nan'), float('nan'))})
@@ -198,13 +198,19 @@ class ekv_device:
 		else:
 			TEF = gms*constants.Vth()/ids	
 		
-		status = "SATURATION" if self.opdict['SAT'] else "LINEAR MODE"
-
-		arr = [["M"+self.descr, mos_type.upper()+" ch",status, "", "", "", "", "", "", "", "",""],]
+		sat_status = "SATURATION" if self.opdict['SAT'] else "LINEAR"
+		if self.opdict["WMSI"] == 0: 
+			wmsi_status = "WEAK INVERSION"
+		if self.opdict["WMSI"] == 1: 
+			wmsi_status = "MODERATE INVERSION"
+		if self.opdict["WMSI"] == 2: 
+			wmsi_status = "STRONG INVERSION"
+			
+		arr = [["M"+self.descr, mos_type.upper()+" ch",wmsi_status, "", "", sat_status, "", "", "", "", "",""],]
 		arr.append(["Weff", "[m]:", str(self.opdict['Weff'])+" ("+str(self.device.W)+")", "Leff", "[m]:", str(self.opdict['Leff'])+ " ("+str(self.device.L)+")", "M:", "", self.device.M, "N:", "", self.device.N])
 		arr.append(["Vdb", "[V]:", float(ports_v[0][0]), "Vgb", "[V]:", float(ports_v[0][1]), "Vsb", "[V]:", float(ports_v[0][2]),  "Vp", "[V]:", self.opdict['Vp'],])
 		arr.append([ "VTH", "[V]:", self.opdict['VTH'], "VOD", "[V]:", self.opdict['VOD'], "VDSAT", "[V]:", self.opdict['VDSAT'], "VA", "[V]:", str(ids/gmd)])
-		arr.append(["Ids", "[A]:", ids, "Idb", "[A]:", idb, "", "", "", "TEF:", "", str(TEF),]) 
+		arr.append(["Ids", "[A]:", ids, "Idb", "[A]:", idb, "Ispec", "[A]:", self.opdict["Ispec"], "TEF:", "", str(TEF),]) 
 		arr.append(["gmg", "[S]:", gmg, "gms", "[S]:", gms, "rob", "[Ohm]:", 1/gmd, "", "", ""])
 		arr.append(["if:", "", self.opdict['ifn'],"ir:", "", self.opdict['irn'], "n: ", "",self.opdict['n'],"beta:", "", self.opdict['beta']])
 		#arr.append([  "", "", "", "", "", ""])
@@ -371,6 +377,7 @@ class ekv_mos_model:
 		#Setup switches
 		self.XQC = 1
 		self.SATLIM = math.exp(4)
+		self.WMSI_factor = 10
 		self.NQS = 0
 
 		sc, sc_reason = self._self_check()
@@ -517,9 +524,16 @@ class ekv_mos_model:
 		vs_real = vs if CS_FACTOR == 1 else vd
 		opdict.update({'state':(vd_real*self.NPMOS, vg*self.NPMOS, vs_real*self.NPMOS)})
 		opdict.update({'Ids':Ids, "Weff":Weff, "Leff":Leff, 'Vp':Vp})
-		opdict.update({'ifn':ifn, "irn":irn, "n":n, 'beta':beta})
+		opdict.update({'ifn':ifn, "irn":irn, "n":n, 'beta':beta, 'Ispec':Is})
 		opdict.update({'VTH':self.VTO + Delta_vrsce + gamp*math.sqrt(Vsp)-self.GAMMA*math.sqrt(self.PHI), \
 				"VOD":self.NPMOS*n*(Vp-vs), "VDSAT":2*vdss, 'SAT':ifn>irn*self.SATLIM})
+		if Ids > self.WMSI_factor*Is: 
+			WMSI = 2
+		elif Ids < Is/self.WMSI_factor:
+			WMSI = 0
+		else:
+			WMSI = 1
+		opdict.update({'WMSI':WMSI})
 		if debug: print "current:", Ids
 		return Ids, vdss, Lc
 
