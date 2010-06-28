@@ -601,7 +601,7 @@ def parse_elem_mos(line, circ, line_elements=None):
 	nd = circ.add_node_to_circ(ext_nd)
 	ng = circ.add_node_to_circ(ext_ng)
 	ns = circ.add_node_to_circ(ext_ns)
-	nb = circ.add_node_to_circ(ext_ns)	
+	nb = circ.add_node_to_circ(ext_nb)	
 
 	ekv_m = ekv.ekv_mos_model(TYPE=mos_type, KP=kp, VTO=vt, WETA=0, LETA=0, GAMMA=.01)
 	elem = ekv.ekv_device(nd, ng, ns, nb, l, w, ekv_m, m, n)
