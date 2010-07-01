@@ -1,14 +1,18 @@
 # -*- coding: iso-8859-1 -*-
 # ekv.py
-# EKV MOS transistor model
+# Partial implementation of the EKV 3.0 MOS transistor model
 # Copyright 2010 Giuseppe Venturini
 # 
 # The EKV model was developed by Matthias Bucher, Christophe Lallement, 
 # Christian Enz, Fabien Théodoloz, François Krummenacher at the Electronics 
 # Laboratories, Swiss Federal Institute of Technology (EPFL), 
-# Lausanne, Switzerland. The Tecnical Report upon which this implementation 
-# is based is available here:
-# <http://legwww.epfl.ch/ekv/pdf/ekv_v262.pdf>.
+# Lausanne, Switzerland. 
+# This implementation is based upon:
+# 1. Matthias Bucher, Christian Enz, François Krummenacher, Jean-M. Sallese, 
+# Christophe Lallement and Alain-S. Porret, 
+# The EKV 3.0 Compact MOS Transistor Model: Accounting for Deep-Submicron 
+# Aspects, <http://www.nsti.org/publications/MSM/2002/pdf/346.pdf>
+# 2. EKV 2.6 Technical report, <http://legwww.epfl.ch/ekv/pdf/ekv_v262.pdf>.
 #
 # This file is part of the ahkab simulator.
 #
@@ -36,8 +40,17 @@ This module defines two classes:
  ekv_device
  ekv_mos_model
 
-and several default values for the model. Their meaning is stated in the 
-model doc.
+
+Features:
+- EKV model implementation, computation of charges, potentials,
+  reverse and forward currents, slope factor and normalization factors,
+- Calculation of trans-conductances based on the charge approach,
+- Rudimentary temperature effects.
+
+The Missing Features:
+- Channel length modulation
+- Reverse Short Channel Effect (RSCE)
+
 
 TODO:
 - Complex mobility degradation is missing
@@ -46,44 +59,23 @@ TODO:
 """
 
 import constants, options, utilities, printing
-import math, random
+import math 
+
 
 # DEFAULT VALUES FOR 500n CH LENGTH
 COX_DEFAULT = .7e-3
-XJ_DEFAULT = .1e-6
 
-DW_DEFAULT = 0
-DL_DEFAULT = 0
 VTO_DEFAULT = .5
 GAMMA_DEFAULT = 1
 PHI_DEFAULT = .7
 KP_DEFAULT = 50e-6
-E0_DEFAULT = 1e12
-UCRIT_DEFAULT = 2e6
-
-THETA_DEFAULT = 0
-LAMBDA_DEFAULT = .5
-WETA_DEFAULT = 0#.25
-LETA_DEFAULT = 0#.1
-Q0_DEFAULT = 0
-LK_DEFAULT = .29e-6
-
-IBA_DEFAULT = 0
-IBB_DEFAULT = 3e8
-IBN_DEFAULT = 1
 
 TCV_DEFAULT = 1e-3
 BEX_DEFAULT = -1.5 
-UCEX_DEFAULT = .8
-IBBT_DEFAULT = 9e-4
-
-
 
 class ekv_device:
-	# enable this to use the pseudo-random generator
-	OPT_SPICE_IT_UP = False
 	INIT_IFRN_GUESS = 1e-3
-	def __init__(self, nd, ng, ns, nb, L, W, model, M=1, N=1):
+	def __init__(self, nd, ng, ns, nb, W, L, model, M=1, N=1):
 		""" ekv device
 		nd: drain node
 		ng: gate node
@@ -115,9 +107,8 @@ class ekv_device:
 		self.letter_id = 'M'
 		self.is_nonlinear = True
 		self.dc_guess = [self.ekv_model.VTO*(0.1)*self.ekv_model.NPMOS, self.ekv_model.VTO*(1.1)*self.ekv_model.NPMOS, 0]
-		self.randomstate = None
-		devcheck, reason =  self.ekv_model._device_check(self.device)
 
+		devcheck, reason =  self.ekv_model._device_check(self.device)
 		if not devcheck:
 			raise Exception, reason + " out of boundaries."		
 	
@@ -130,7 +121,7 @@ class ekv_device:
 		return self.ports #d,g,s
 
 	def get_output_ports(self):
-		return ((self.n1, self.n2),(self.n1, self.nb))
+		return ((self.n1, self.n2),)
 	
 	def __str__(self):
 		mos_type = self._get_mos_type()
@@ -157,47 +148,44 @@ class ekv_device:
 		"""
 		#self.opdict = {'state':ports_v[0]}
 		#print ports_v
-		if op_index == 0: 		
-			ret, j1, j2 = \
-				self.ekv_model.get_ids(self.device, ports_v, \
+		ret, j1, j2 = self.ekv_model.get_ids(self.device, ports_v, \
 				self.opdict)
-		elif op_index == 1:
-			ret, j1, j2 = \
-				self.ekv_model.get_idb(self.device, ports_v, \
-				self.opdict)
+		
 		return ret
 
-	def print_op_info(self, ports_v):
-		"""Operating point info, for design/verification. """
-		mos_type = self._get_mos_type()
-		
-		gmd, gmg, gms, ids = (None, None, None, None)
-		if not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gmd')):
-			gmd = self.g(1, ports_v[0], 0) + self.g(0, ports_v[0], 0)
-		else:	
-			gmd = self.opdict['gmd'] + self.g(1, ports_v, 0)		
-		if not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gmg')):
-			gmg = self.g(0, ports_v[0], 1)
-		else:	
-			gmg = self.opdict['gmg']		
-		if not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gms')):
-			gms = self.g(0, ports_v[0], 2)
-		else:	
-			gms = self.opdict['gms']		
-		if not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('Ids')):
-			ids = self.i(0, ports_v[0])
-		else:	
-			ids = self.opdict['Ids']
-		if not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('Idb')):
-			idb = self.i(1, ports_v[0])
-		else:	
-			idb = self.opdict['Idb']
+	def update_status_dictionary(self, ports_v):
+		if self.opdict is None:
+			self.opdict = {}
+		if not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gmd')) or \
+			not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gmg')) or \
+			not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gms')) or \
+			not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('Ids')):
+
+			self.opdict['state'] == ports_v[0]		
+			self.opdict['gmd'] = self.g(0, ports_v[0], 0)
+			self.opdict['gmg'] = self.g(0, ports_v[0], 1)
+			self.opdict['gms'] = self.g(0, ports_v[0], 2)
+			self.opdict['Ids'] = self.i(0, ports_v[0])
+
+		gmd = self.opdict['gmd']
+		gmg = self.opdict['gmg']		
+		gms = self.opdict['gms']		
+		ids = self.opdict['Ids']
 
 		if ids == 0:
 			TEF = float('nan')
 		else:
-			TEF = gms*constants.Vth()/ids	
+			TEF = -gms*constants.Vth()/ids
+		self.opdict['TEF'] = TEF
 		
+
+			
+	def print_op_info(self, ports_v):
+		"""Operating point info, for design/verification. """
+		mos_type = self._get_mos_type()
+
+		self.update_status_dictionary(ports_v)
+
 		sat_status = "SATURATION" if self.opdict['SAT'] else "LINEAR"
 		if self.opdict["WMSI"] == 0: 
 			wmsi_status = "WEAK INVERSION"
@@ -205,14 +193,14 @@ class ekv_device:
 			wmsi_status = "MODERATE INVERSION"
 		if self.opdict["WMSI"] == 2: 
 			wmsi_status = "STRONG INVERSION"
-			
+
 		arr = [["M"+self.descr, mos_type.upper()+" ch",wmsi_status, "", "", sat_status, "", "", "", "", "",""],]
-		arr.append(["Weff", "[m]:", str(self.opdict['Weff'])+" ("+str(self.device.W)+")", "Leff", "[m]:", str(self.opdict['Leff'])+ " ("+str(self.device.L)+")", "M:", "", self.device.M, "N:", "", self.device.N])
+		arr.append(["beta", "[A/V^2]:", self.opdict['beta'], "Weff", "[m]:", str(self.opdict['Weff'])+" ("+str(self.device.W)+")", "Leff", "[m]:", str(self.opdict['Leff'])+ " ("+str(self.device.L)+")", "M/N:", "", str(self.device.M)+"/"+str(self.device.N)])
 		arr.append(["Vdb", "[V]:", float(ports_v[0][0]), "Vgb", "[V]:", float(ports_v[0][1]), "Vsb", "[V]:", float(ports_v[0][2]),  "Vp", "[V]:", self.opdict['Vp'],])
-		arr.append([ "VTH", "[V]:", self.opdict['VTH'], "VOD", "[V]:", self.opdict['VOD'], "VDSAT", "[V]:", self.opdict['VDSAT'], "VA", "[V]:", str(ids/gmd)])
-		arr.append(["Ids", "[A]:", ids, "Idb", "[A]:", idb, "Ispec", "[A]:", self.opdict["Ispec"], "TEF:", "", str(TEF),]) 
-		arr.append(["gmg", "[S]:", gmg, "gms", "[S]:", gms, "rob", "[Ohm]:", 1/gmd, "", "", ""])
-		arr.append(["if:", "", self.opdict['ifn'],"ir:", "", self.opdict['irn'], "n: ", "",self.opdict['n'],"beta:", "", self.opdict['beta']])
+		arr.append([ "VTH", "[V]:", self.opdict['VTH'], "VOD", "[V]:", self.opdict['VOD'], "", "", "", "VA", "[V]:", str(self.opdict['Ids']/self.opdict['gmd'])])
+		arr.append(["Ids", "[A]:", self.opdict['Ids'], "n: ", "",self.opdict['n'], "Ispec", "[A]:", self.opdict["Ispec"], "TEF:", "", str(self.opdict['TEF']),]) 
+		arr.append(["gmg", "[S]:", self.opdict['gmg'], "gms", "[S]:", self.opdict['gms'], "rob", "[Ohm]:", 1/self.opdict['gmd'], "", "", ""])
+		arr.append(["if:", "", self.opdict['ifn'],"ir:", "", self.opdict['irn'], "Qf", "[C/m^2]:", self.opdict["qf"], "Qr", "[C/m^2]:", self.opdict["qf"],])
 		#arr.append([  "", "", "", "", "", ""])
 
 		printing.table_print(arr)
@@ -222,39 +210,22 @@ class ekv_device:
 		"""Returns the differential (trans)conductance rs the port specified by port_index
 		when the element has the voltages specified in ports_v across its ports,
 		at (simulation) time.
-
-		This is here not computed through analytical derivation rather it is
-		approximated by [I2(v+dv)-I1(v)]/dv
 		
 		ports_v: a list in the form: [voltage_across_port0, voltage_across_port1, ...]
 		port_index: an integer, 0 <= port_index < len(self.get_ports())
 		time: the simulation time at which the evaluation is performed. Set it to
 		None during DC analysis.
 		"""
-		if self.randomstate is not None and self.OPT_SPICE_IT_UP:			
-			random.setstate(self.randomstate)
-		step = 	math.sqrt(options.ver)*(1 + self.OPT_SPICE_IT_UP*random.random())#*base_step
-		if self.OPT_SPICE_IT_UP: 
-			self.randomstate = random.getstate()		
-				
-		vd_2 = ports_v[0] if port_index != 0 else ports_v[0]+step
-		vg_2 = ports_v[1] if port_index != 1 else ports_v[1]+step
-		vs_2 = ports_v[2] if port_index != 2 else ports_v[2]+step
-		vd_1 = ports_v[0]
-		vg_1 = ports_v[1]
-		vs_1 = ports_v[2]
-
-		ports_v2 = (vd_2, vg_2, vs_2)
-		ports_v1 = (vd_1, vg_1, vs_1)
-
-		if op_index == 0:		
-			I2, j1, j2 = self.ekv_model.get_ids(self.device, ports_v2, self.opdict)
-			I1, j1, j2 = self.ekv_model.get_ids(self.device, ports_v1, self.opdict)
-		else:
-			I2, j1, j2 = self.ekv_model.get_idb(self.device, ports_v2, self.opdict)
-			I1, j1, j2 = self.ekv_model.get_idb(self.device, ports_v1, self.opdict)
-
-		g = (I2-I1)/step
+		
+		assert op_index == 0 
+		assert port_index < 3
+		
+		if port_index == 0:
+			g = self.ekv_model.get_gmd(self.device, ports_v, self.opdict)
+		elif port_index == 1:
+			g = self.ekv_model.get_gmg(self.device, ports_v, self.opdict)
+		if port_index == 2:
+			g = self.ekv_model.get_gms(self.device, ports_v, self.opdict)
 
 		if op_index == 0 and g == 0:
 			if port_index == 2:
@@ -274,115 +245,92 @@ class ekv_device:
 
 		return g
 
+	def get_value_function(self, identifier):
+		def get_value(self):
+			return self.opdict[identifier]
+		return get_value
+
+class scaling_holder: pass # will hold the scaling factors
+
 class ekv_mos_model:
-	Cepsi = 4*(22e-3)**2
-	Ca = 0.028	
-	def __init__(self, name=None, TYPE='n', TNOM=None, COX=None, XJ=None, DW=None, DL=None,\
-	GAMMA=None, NSUB=None, PHI=None, VTO=None, KP=None, E0=None, UCRIT=None, \
-	TOX=None, VFB=None, U0=None, VMAX=None, THETA=None, LAMBDA=None, \
-	WETA=None, LETA=None, Q0=None, LK=None, IBA=None, IBB=None, IBN=None, \
-	TCV=None, BEX=None, UCEX=None, IBBT=None):
+	def __init__(self, name=None, TYPE='n', TNOM=None, COX=None, \
+	GAMMA=None, NSUB=None, PHI=None, VTO=None, KP=None, \
+	TOX=None, VFB=None, U0=None, TCV=None, BEX=None):
 		
+		self.scaling = scaling_holder()
+
 		self.name = "model_ekv0" if name is None else name
 		Vth = constants.Vth()
-		self.TNOM = TNOM if TNOM is not None else constants.Tref	
+		self.TNOM = float(TNOM) if TNOM is not None else constants.Tref	
 		#print "TYPE IS:" + TYPE		
 		self.NPMOS = 1 if TYPE == 'n' else -1
 
 		# optional parameters (no defaults)	
-		self.TOX = TOX
-		self.NSUB = NSUB
-		self.VFB = self.NPMOS*VFB if VFB is not None else None
-		self.U0 = U0
-		self.VMAX = VMAX
-		self.THETA = THETA if THETA is not None else THETA_DEFAULT
+		self.TOX = float(TOX) if TOX is not None else None
+		self.NSUB = float(NSUB)  if NSUB is not None else None
+		self.VFB = self.NPMOS*float(VFB) if VFB is not None else None
+		self.U0 = float(U0) if U0 is not None else None
 
 		# crucial parameters
 		if COX is not None: 
-			self.COX = COX
+			self.COX = float(COX)
 		elif TOX is not None:
 			self.COX = constants.si.esi/TOX
 		else:
 			self.COX = COX_DEFAULT
-		self.XJ = XJ if XJ is not None else XJ_DEFAULT
-
-		self.DW = DW if DW is not None else DW_DEFAULT
-		self.DL = DL if DL is not None else DL_DEFAULT
 	
 		if GAMMA is not None:
-			self.GAMMA = GAMMA
+			self.GAMMA = float(GAMMA)
 		elif NSUB is not None:
 			math.sqrt(2*constants.e*constants.si.esi*NSUB*10**6/self.COX)
 		else:
 			self.GAMMA = GAMMA_DEFAULT
 		if PHI is not None:
-			self.PHI = PHI
+			self.PHI = float(PHI)
 		elif NSUB is not None:
 			self.PHI = 2*constants.Vth(self.TNOM)*math.log(NSUB*10**6/constants.si.ni(self.TNOM))
 		else:
 			self.PHI = PHI_DEFAULT
 		if VTO is not None:
-			self.VTO = self.NPMOS*VTO
+			self.VTO = self.NPMOS*float(VTO)
 		elif VFB is not None:
 			self.VTO = VFB + PHI + GAMMA*PHI #inv here??
 		else:
 			self.VTO = self.NPMOS*VTO_DEFAULT
 
 		if KP is not None:
-			self.KP = KP
+			self.KP = float(KP)
 		elif U0 is not None:
 			self.KP = (U0*10**-4)*self.COX
 		else:
 			self.KP = KP_DEFAULT
 	
-		if E0 is not None:
-			self.E0 = E0 
-		elif THETA is not None: 
-			self.E0 = 0
-		else:
-			self.E0 = E0_DEFAULT
-	
-		if UCRIT is not None:
-			self.UCRIT = UCRIT 
-		elif VMAX is not None and U0 is not None:
-			self.UCRIT
-		else:
-			self.UCRIT = UCRIT_DEFAULT 
-	
-		#Channel length modulation and charge sharing parameters
-		self.LAMBDA = LAMBDA if LAMBDA is not None else LAMBDA_DEFAULT
-		self.WETA = WETA if WETA is not None else WETA_DEFAULT
-		self.LETA = LETA if LETA is not None else LETA_DEFAULT
-		# Reverse short-channel effect parameters
-		self.Q0 = Q0 if Q0 is not None else Q0_DEFAULT
-		self.LK = LK if LK is not None else LK_DEFAULT
-		# impact ionization current parameters
-		self.IBA = IBA if IBA is not None else IBA_DEFAULT
-		self.IBB = IBB if IBB is not None else IBB_DEFAULT
-		self.IBN = IBN if IBN is not None else IBN_DEFAULT
 		# Intrinsic model temperature parameters
-		self.TCV = self.NPMOS*TCV if TCV is not None else self.NPMOS*TCV_DEFAULT
-		self.BEX = BEX if BEX is not None else BEX_DEFAULT
-		self.UCEX = UCEX if UCEX is not None else UCEX_DEFAULT
-		self.IBBT = IBBT if IBBT is not None else IBBT_DEFAULT
+		self.TCV = self.NPMOS*float(TCV) if TCV is not None else self.NPMOS*TCV_DEFAULT
+		self.BEX = float(BEX) if BEX is not None else BEX_DEFAULT
 	
-		# temperature effects update
-		self.VTO = self.VTO - self.TCV*(constants.T-self.TNOM)
-		self.KP = self.KP*(constants.T/self.TNOM)**self.BEX
-		self.UCRIT = self.UCRIT*(constants.T/self.TNOM)**self.UCEX
-		self.PHI = self.PHI * constants.T/self.TNOM + 3*constants.Vth(self.TNOM)*math.log(constants.T/self.TNOM) \
-			   - constants.si.Eg(self.TNOM)*constants.T/self.TNOM + constants.si.Eg(constants.T)
-		self.IBB = self.IBB*(1+ self.IBBT*(constants.T - self.TNOM))
-	
+		self.set_device_temperature(constants.T)
+
 		#Setup switches
-		self.XQC = 1
 		self.SATLIM = math.exp(4)
 		self.WMSI_factor = 10
 		self.NQS = 0
+		self.CLM_SWITCH = True
 
 		sc, sc_reason = self._self_check()
 		if not sc:
 			raise Exception, sc_reason + " out of range"
+
+	def set_device_temperature(self, T):
+		self.TEMP = T
+		self.VTO = self.VTO - self.TCV*(T-self.TNOM)
+		self.KP = self.KP*(T/self.TNOM)**self.BEX
+		self.PHI = self.PHI * T/self.TNOM + 3*constants.Vth(self.TNOM)*math.log(T/self.TNOM) \
+			   - constants.si.Eg(self.TNOM)*T/self.TNOM + constants.si.Eg(T)
+
+
+	def get_device_temperature(self):
+		return self.TEMP
 
 	def get_voltages(self, vd, vg, vs):
 		# vd / vs swap
@@ -397,160 +345,124 @@ class ekv_mos_model:
 			vd_new = vd
 			vs_new = vs
 			cs = +1
+		#print "got", vd,vg,vs,"returned", vd_new, vg, vs_new
 		return ((float(vd_new), float(vg), float(vs_new)), cs)
 
 	def get_ip_abs_err(self, device):
 		return  options.iea / (4*constants.Vth()**2*self.KP*device.M*device.W/device.L)
 
-	def _get_Vgp(self, vg, Weff, Leff, debug=False):
-		"""Do not forget to setup the inputs FIRST with get_voltages!
-		"""
-		# Reverse short-channel effect (RSCE)
-		Psi = self.Ca * (10*Leff/self.LK - 1) # eq. 31
-		Delta_vrsce = 2*self.Q0/self.COX/(1 + .5*(Psi + math.sqrt(Psi**2+self.Cepsi)))**2 # eq. 32
-		if debug: 
-			print "Psi:", Psi, "Delta_vrsce:", Delta_vrsce
-
-		# Effective gate voltage including RSCE
-		Vgp = vg -self.VTO -Delta_vrsce +self.PHI +self.GAMMA*math.sqrt(Psi) # eq. 33
-
-		return Vgp, Delta_vrsce
+	def setup_scaling(self, nq, device, debug=False):
+		self.scaling.Ut = constants.Vth()
+		self.scaling.Is = 2 * nq * self.scaling.Ut**2 * self.KP * device.W/device.L
+		self.scaling.Gs = 2 * nq * self.scaling.Ut * self.KP * device.W/device.L
+		self.scaling.Qs = 2 * nq * self.scaling.Ut * self.COX
+		
+		if debug:
+			print "Is", self.scaling.Is
+		return		
 	
+	def get_vp_nv_nq(self, VG):
+		#VGeff = VG - self.VTO + self.PHI + self.GAMMA*math.sqrt(self.PHI)
+		##if VGeff > 0:		
+		#	VP = VGeff - self.PHI - self.GAMMA*(math.sqrt(VGeff + (self.GAMMA/2)**2) -self.GAMMA/2)
+		#else:
+		#	VP = -self.PHI
+		VGeff = VG - self.VTO + self.PHI + self.GAMMA*math.sqrt(self.PHI)
+		if VGeff > 0:		
+			VP = VG - self.VTO - self.GAMMA*(math.sqrt(VG -self.VTO +(math.sqrt(self.PHI)+self.GAMMA/2)**2) -(math.sqrt(self.PHI)+self.GAMMA/2))
+		else:
+			VP = -self.PHI		
+		
+
+		nq = 1 + .5 * self.GAMMA / math.sqrt(self.PHI + .5*VP)
+		nv = 1 + .5 * self.GAMMA / math.sqrt(self.PHI +    VP)
+
+		return VP, nv, nq
+
 	def get_ids(self, device, (vd, vg, vs), opdict=None, debug=False):
-		# internal variables setup	
 		if debug: print "Current for vd:", vd, "vg:", vg, "vs:", vs
-		ip_abs_err = self.get_ip_abs_err() if opdict['ip_abs_err'] is None else opdict['ip_abs_err']
-		Vth = constants.Vth()
-		(vd, vg, vs), CS_FACTOR = self.get_voltages(vd, vg, vs)	
-		vds = .5*(vd - vs) # eq. 49		
-		Weff, Leff = self.get_eff_wl(device.W, device.L)
+		ip_abs_err = self.get_ip_abs_err(device) if opdict['ip_abs_err'] is None else opdict['ip_abs_err']
+		
+		(VD, VG, VS), CS_FACTOR = self.get_voltages(vd, vg, vs)	
+
+		#Weff, Leff = self.get_eff_wl(device.W, device.L)		
+
+		VP, nv, nq = self.get_vp_nv_nq(VG)
+		
+		self.setup_scaling(nq, device)
+
+		vp = VP/self.scaling.Ut
+		vs = VS/self.scaling.Ut
+		vd = VD/self.scaling.Ut
+
+		if debug: print "Scaled voltages: vd:", vd, "vp:", vp, "vs:", vs
+
+		v_ifn = vp - vs
+		ifn = self.get_ismall(v_ifn, opdict['ip_abs_err'], opdict['ifn'])
+
+		Leff = device.L
+
+		v_irn = vp - vd
+		irn = self.get_ismall(v_irn, opdict['ip_abs_err'], opdict['irn'])
 		
 		if debug:
-			print "vd:", vd, "vg:",vg, "vs:", vs, "vds:", vds
+			print "vd:", vd, "vg:",vg/self.scaling.Ut, "vs:", vs, "vds:", vd-vs
+			print "v_ifn:", v_ifn, "v_irn:",v_irn
 			print "ip_abs_err:", ip_abs_err
-			print "Vth:", Vth
-			print "Weff:", Weff, "Leff:", Leff
+			print "Vth:", self.scaling.Ut
+			print "Weff:", device.W, "Leff:", Leff
+			print "NPMOS:", self.NPMOS, "CS_FACTOR", CS_FACTOR
 
-		Vgp, Delta_vrsce = self._get_Vgp(vg, Weff, Leff)
+		qf = self.ismall2qsmall(ifn)
+		qr = self.ismall2qsmall(irn)
 
-		# Effective substrate factor including charge-sharing for short and narrow channels
-		if Vgp > 0: 
-			Vp0 = Vgp -self.PHI -self.GAMMA*(math.sqrt(Vgp+(self.GAMMA/2)**2)-self.GAMMA/2)
-		else:
-			Vp0 = -self.PHI
-		Vsp = .5 * (vs + self.PHI + math.sqrt((vs + self.PHI)**2+(4*Vth)**2))
-		Vdp = .5 * (vd + self.PHI + math.sqrt((vd + self.PHI)**2+(4*Vth)**2))
-		
-		if debug:
-			print "Vsp:",Vsp, "Vdp:", Vdp, "CK:", math.sqrt(self.PHI + Vp0)
-		
-		gam0 = self.GAMMA
-		if self.LETA > 0:
-			gam0 = gam0 - constants.si.esi/self.COX*self.LETA/Leff*(math.sqrt(Vsp)+math.sqrt(Vdp))
-			if debug: print gam0
-		if self.WETA > 0:
-			gam0 = gam0 - constants.si.esi/self.COX*3*self.WETA/Weff*math.sqrt(self.PHI + Vp0)
-		gamp = .5 * (gam0 + math.sqrt(gam0**2+0.1*Vth)) #FIXME
-		if debug: print "gam0:", gam0, "gamp:", gamp
-
-		# Pinch-off voltage including short and narrow channel effects, eq. 38
-		if Vgp > 0:
-			Vp = Vgp - self.PHI - gamp*(math.sqrt(Vgp + (gamp/2)**2)-gamp/2)
-		else:
-			Vp = -self.PHI
-
-		assert not math.isnan(Vp) 
-
-		# slope factor, eq. 39		
-		n = 1 + self.GAMMA/(2*math.sqrt(Vp +self.PHI+4*Vth))
-
-		# forward current scaled control voltage
-		v_if = (Vp - vs)/Vth
-		#assert v_if > 0
-		# scaled forward current
-		ifn = self.get_ismall(v_if, opdict['ip_abs_err'], opdict['ifn'])
-		if debug: print "# ifn OK"		
-
-		if ifn != 0:		
-			# velocity saturation voltage, eq. 45
-			Vc = self.UCRIT*device.N*Leff
-
-			vdss  = Vc * (math.sqrt(.25+Vth/Vc *math.sqrt(ifn))-.5) # eq. 46
-			# Drain-to-source saturation voltage for reverse normalized current, eq. 47		
-			vdssp = Vc * (math.sqrt(.25 +Vth/Vc *(math.sqrt(ifn)-.75*math.log(ifn)))-.5) + Vth*(math.log(Vc/(2*Vth))-.6)
-
-			# channel length modulation
-			assert not math.isnan(vdss)
-			#print math.sqrt(ifn), vdss/Vth
-			#assert math.sqrt(ifn) > vdss/Vth
-			vser_1 = math.sqrt(ifn) - vdss/Vth
-			if vser_1 < 0: vser_1 = 0
-			delta_v = 4*Vth*math.sqrt(self.LAMBDA*(vser_1)+1/64) # eq. 48
-			Vip = math.sqrt(vdss**2 + delta_v**2) - math.sqrt((vds - vdss)**2 + delta_v**2) #eq 50
-			Lc = math.sqrt(constants.si.esi*self.XJ/self.COX) #eq. 51
-			delta_l = self.LAMBDA * Lc * math.log(1+ (vds - Vip)/(Lc*self.UCRIT)) #eq. 52
-	
-			# Equivalent channel length including channel-length modulation and velocity saturation
-			Lp = device.N*Leff - delta_l + (vds + Vip)/self.UCRIT #eq. 53
-			Lmin = device.N*Leff/10 #eq. 54
-			Leq = .5*(Lp + math.sqrt(Lp**2 + Lmin**2)) #eq. 55
-			assert not math.isnan(vdssp)
-			assert not math.isnan(delta_v)
-			if debug: print "# channel length modulation OK"
-
-			v_irp = (Vp - vds + vs - math.sqrt(vdssp**2 + delta_v**2)+math.sqrt((vds-vdssp)**2+delta_v**2))/Vth
-			if debug: print delta_v
-
-			irn = self.get_ismall(v_irp, opdict['ip_abs_err'], opdict['irn'])
-		else:
-			vdss = 0
-			irn = opdict['ip_abs_err']*1.1
-			ifn = opdict['ip_abs_err']*1.1*2
-			Leq = Leff
-			
-		beta0 = self.KP*device.M*Weff/Leq
-		
-		if self.THETA == 1:
-			Vpp = .5 * (Vp + math.sqrt(Vp**2 + 2.0*Vth**2))
-			beta = beta0/(1+self.THETA*Vpp)
-		else:
-			beta = beta0
-			#FIXME Complex mobility degradation missing
-
-		Is = 2* n * beta * Vth**2
-		Ids = CS_FACTOR* self.NPMOS * Is*(ifn - irn)
+		Ids = CS_FACTOR* self.NPMOS * device.L/Leff *self.scaling.Is * (ifn - irn)
 		
 		vd_real = vd if CS_FACTOR == 1 else vs
 		vs_real = vs if CS_FACTOR == 1 else vd
+
 		opdict.update({'state':(vd_real*self.NPMOS, vg*self.NPMOS, vs_real*self.NPMOS)})
-		opdict.update({'Ids':Ids, "Weff":Weff, "Leff":Leff, 'Vp':Vp})
-		opdict.update({'ifn':ifn, "irn":irn, "n":n, 'beta':beta, 'Ispec':Is})
-		opdict.update({'VTH':self.VTO + Delta_vrsce + gamp*math.sqrt(Vsp)-self.GAMMA*math.sqrt(self.PHI), \
-				"VOD":self.NPMOS*n*(Vp-vs), "VDSAT":2*vdss, 'SAT':ifn>irn*self.SATLIM})
-		if Ids > self.WMSI_factor*Is: 
+		opdict.update({'Ids':Ids, "Weff":device.W, "Leff":Leff, 'Vp':VP})
+		opdict.update({'ifn':ifn, "irn":irn, "n":nv, 'beta':.5*self.KP*device.W/Leff, 'Ispec':self.scaling.Is})
+		opdict.update({'VTH':self.VTO, "VOD":self.NPMOS*nv*(VP-VS), 'SAT':ifn>irn*self.SATLIM})
+		opdict.update({'qf':qf*self.scaling.Qs, 'qr':qr*self.scaling.Qs})
+
+		if Ids > self.WMSI_factor*self.scaling.Is: 
 			WMSI = 2
-		elif Ids < Is/self.WMSI_factor:
+		elif Ids < self.scaling.Is/self.WMSI_factor:
 			WMSI = 0
 		else:
 			WMSI = 1
 		opdict.update({'WMSI':WMSI})
+
 		if debug: print "current:", Ids
-		return Ids, vdss, Lc
-
-	def get_idb(self, device, (vd, vg, vs), opdict, debug=False):
-		ids, vdss, Lc = self.get_ids(device, (vd, vg, vs), opdict, debug)
-		Vib = vd - vs - self.IBN * 2 * vdss
-		if Vib > 0 and self.IBA != 0: 
-			idb = ids * self.IBB/self.IBA * Vib * math.exp(-self.IBB*Lc/Vib)
-		else:
-			idb = 0	
-		opdict.update({'Idb':idb})
-		return idb, vdss, Lc
 		
+		return Ids, qf, qr
 
-	def get_eff_wl(self, w, l):
-		return w+self.DW, l+self.DL
+	def get_gms(self, device, (vd, vg, vs), opdict=None, debug=False):
+		(j1, j2, j3), CS_FACTOR = self.get_voltages(vd, vg, vs)
+		Ids, qf, qr = self.get_ids(device, (vd, vg, vs), opdict, debug)
+		if CS_FACTOR == +1:
+			gms = -1.0*self.scaling.Gs*qf
+		elif CS_FACTOR == -1:
+			gms = self.scaling.Gs*qr
+		return gms
 
+	def get_gmd(self, device, (vd, vg, vs), opdict=None, debug=False):
+		(j1, j2, j3), CS_FACTOR = self.get_voltages(vd, vg, vs)
+		Ids, qf, qr = self.get_ids(device, (vd, vg, vs), opdict, debug)
+		if CS_FACTOR == +1:
+			gmd = self.scaling.Gs*qr
+		elif CS_FACTOR == -1:
+			gmd = self.scaling.Gs*qf
+		return gmd
+
+	def get_gmg(self, device, (vd, vg, vs), opdict=None, debug=False):
+		VP, nv, nq = self.get_vp_nv_nq(float(vg))
+		Ids, qf, qr = self.get_ids(device, (vd, vg, vs), opdict, debug)
+		(j1, j2, j3), CS_FACTOR = self.get_voltages(vd, vg, vs)
+		gmg = CS_FACTOR*self.scaling.Gs*(qf-qr)/nv
+		return gmg
 
 	def get_ismall(self, vsmall, ip_abs_err, iguess=None, debug=False):
 		if iguess is None:
@@ -559,19 +471,20 @@ class ekv_mos_model:
 			raise Exception, "vsmall is NaN!!"
 		check = False
 		ismall = iguess
-		#if debug: iter_c = 0
-
+		if debug: iter_c = 0
+		if debug: print "get_ismall IN"
 		#if vsmall < utilities.EPS:
 		#	print "vsmall:", vsmall, "returning EPS"
 		#	return utilities.EPS
 			
 		while True:
-			#if debug: iter_c = iter_c + 1			
+			if debug: iter_c = iter_c + 1
 			vsmall_iter = self.get_vsmall(ismall)
-			#if debug: print vsmall_iter, vsmall
+			if debug: print " ->", ismall, vsmall
 			deltai = (vsmall - vsmall_iter)/self.get_dvsmall_dismall(ismall)
 			#if ismall == 0:
 			#	ismall = utilities.EPS
+			#	if debug: print "ismall = 0!"
 			if (abs(deltai) < ip_abs_err or abs(deltai) <= abs(ismall)*options.ier):# or \
 				if not check:
 					check = True
@@ -584,63 +497,64 @@ class ekv_mos_model:
 			if math.isnan(ismall):
 				print "Ismall is NaN!!"
 				exit()
-			ratio = deltai/ismall			
-			#if ratio > 3: 			 
-			#	ismall = 3*ismall
-			if ratio <= -1:
-				ismall = 0.1*ismall
-			else:			
-				ismall = ismall + deltai
-		#if debug: 
-		#	print str(iter_c) + " iterations."
-		#	print ismall, ismall/iguess
+			if ismall == 0:
+				check = True
+			else:
+				ratio = deltai/ismall	
+				if ratio > 3: 			 
+					ismall = 2*ismall
+				elif ratio <= -1:
+					ismall = 0.1*ismall
+				else:			
+					ismall = ismall + deltai
+		if debug: 
+			print str(iter_c) + " iterations."
+			print ismall, ismall/iguess
+		if debug: print "get_ismall OUT"
+		assert ismall >= 0
 		return ismall
 	
 	def get_vsmall(self, ismall, verbose=3):
 		#print "AA ", 0.25 + ismall, -0.5 + math.sqrt(0.25 + ismall)
 		if abs(ismall) < utilities.EPS:
-			ismall = (1-2*(ismall<0))*utilities.EPS
+			ismall = (1 - 2*(ismall<0))*utilities.EPS
 			if verbose == 6:
-				print "EKV: Machine precision problem detected in current evaluation"
-		vsmall = -1.0 + math.log(-0.5 + .5*math.sqrt(1 + 4*ismall)) + math.sqrt(1 + 4*ismall)
+				print "EKV: Machine precision limited the resolution on i. (i<EPS)"
+
+		vsmall = math.log(math.sqrt(.25 + ismall) - 0.5) + 2*math.sqrt(.25 + ismall) - 1.0
 		return vsmall
 
 	def get_dvsmall_dismall(self, ismall, verbose=3):
 		if abs(ismall) < utilities.EPS:
 			ismall = (1-2*(ismall<0))*utilities.EPS
 			if verbose == 6:
-				print "EKV: Machine precision problem detected in the NR iteration"
-		dvdi = -1.0/(.5*math.sqrt(1 + 4*ismall)*(1.0 - math.sqrt(1 + 4*ismall))) + 2/math.sqrt(1 + 4*ismall)
+				print "EKV: Machine precision limited the resolution on dv/di in the NR iteration. (i<EPS)"
+		dvdi = 1.0/(math.sqrt(.25+ismall)-.5) * .5/math.sqrt(.25 + ismall) + 1.0/math.sqrt(.25 + ismall)
 		return dvdi
 
+	def ismall2qsmall(self, ismall, verbose=0):
+		if verbose == 6:
+			print "EKV: Machine precision limited the resolution on q(s,d). (i<EPS)"
+		qsmall = math.sqrt(.25+ismall) - .5
+		return qsmall
+
+	def qsmall2ismall(self, qsmall):
+		ismall = qsmall**2 + qsmall 
+		return ismall
+
 	def _self_check(self):
-		if not self.XJ > 0:
-			ret = (False, "XJ")
-		elif self.NSUB is not None and not self.NSUB > 0:
+		ret = True, ""
+
+		if self.NSUB is not None and self.NSUB < 0:
 			ret = (False, "NSUB")
 		elif self.U0 is not None and not self.U0 > 0:
 			ret = (False, "UO")
-		elif self.VMAX is not None and not self.VMAX > 0:
-			ret = (False, "VMAX")
-		elif not self.THETA >= 0:			 
-			ret = (False, "THETA")
 		elif not self.GAMMA > 0:			 
 			ret = (False, "GAMMA")
 		elif not self.PHI > 0.1:			 
 			ret = (False, "PHI")
-		elif not self.E0 > 1e5:			 
-			ret = (False, "E0")
-		elif not self.UCRIT > 0:			 
-			ret = (False, "UCRIT")
-		elif not self.IBN > 0.1:			 
-			ret = (False, "IBN")
-		elif not self.IBB > 1e8:			 
-			ret = (False, "IBB")
-		elif not self.LK > 0:			 
-			ret = (False, "LK")
-		else:
-			ret = True, ""
 		return ret
+
 	def _device_check(self, adev):
 		if not adev.L > 0:
 			ret = (False, "L")
@@ -657,14 +571,33 @@ class ekv_mos_model:
 		return ret
 		
 if __name__ == '__main__':
-	ekv_m = ekv_mos_model(TYPE='n')
-	ma = ekv_device(1, 2, 3, 4, 10e-6,1e-6, ekv_m)
+	import matplotlib.pyplot as plt
+	ekv_m = ekv_mos_model(TYPE='n', KP=50e-6, VTO=.4)
+	ma = ekv_device(1, 2, 3, 4, W=10e-6,L=1e-6, model=ekv_m)
 	ma.descr = "1"
 
-	print "#Vg\tId\tgmd\tgmg\tgms"
-	vdb = 1
-	for Vhel in range(250):
-		Vg = Vhel/100.0
-		str_mine =  str(Vg)+"\t"+str(ma.i(0, (vdb, Vg, 0)))+"\t"+str(ma.g(0, (vdb, Vg, 0), 0))+"\t"+str(ma.g(0, (vdb, Vg, 0), 1))+"\t"+str(ma.g(0, (vdb, Vg, 0), 2))
-		print str_mine
-	print ma.print_op_info(((0.33031697099518587, 1.1704486464618264, 0.0),(0.33031697099518587, 1.1704486464618264, 0.0)))
+	vd = 0
+	vg = 1
+	vs = 0
+	ma.print_op_info(((vd, vg, vs),))
+
+	if True:
+		data0 = []
+		data1 = []
+		vs = 2.5
+		if True:
+			vd = 1
+			for Vhel in range(250):
+				vg = (Vhel+1)/100.0
+				ma.update_status_dictionary(((vd, vg, 0),))						
+				data0.append(ma.opdict['Ids'])
+				#print "Current for vd", vd, "vg", vg, "vs", vs
+				data1.append(ma.opdict['TEF'])
+		plt.plot(data0, data1)
+		plt.title('EKV MODEL CHECK: VD_SWEEP')
+		plt.legend(['GM/ID'])
+		plt.show()
+
+
+
+	#print data2

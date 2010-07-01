@@ -55,6 +55,7 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 	file_list = [(ffile, "unknown", not read_netlist_from_stdin)]
 	file_index = 0
 	directives = []
+	model_directives = []
 	postproc = []
 	subckts_list_temp = []
 	netlist_lines = []
@@ -99,6 +100,8 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 						break
 					elif line_elements[0] == ".plot":
 						postproc.append((line, line_n))
+					elif line_elements[0] == ".model":
+						model_directives.append((line, line_n))
 					else:
 						directives.append((line, line_n))
 					continue
@@ -124,6 +127,8 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 	
 	#if not read_netlist_from_stdin:
 		#ffile.close()
+
+	models = parse_models(model_directives)
 	
 	# now we parse the subcircuits, we want a circuit.subckt object that holds the netlist code,
 	# the nodes and the subckt name in a handy way.
@@ -136,12 +141,12 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 		else:
 			raise NetlistParseError, "subckt " + subckt_obj.name + " has been redefined"
 		
-	elements = main_netlist_parser(circ, netlist_lines, subckts_dict)
+	elements = main_netlist_parser(circ, netlist_lines, subckts_dict, models)
 	circ.elements = circ.elements + elements
 	
 	return (circ, directives, postproc)
 	
-def main_netlist_parser(circ, netlist_lines, subckts_dict):
+def main_netlist_parser(circ, netlist_lines, subckts_dict, models):
 	elements = []
 	try:
 		for (line, line_n) in netlist_lines:
@@ -170,7 +175,7 @@ def main_netlist_parser(circ, netlist_lines, subckts_dict):
 				parse_elem_diode(line, circ, line_elements)
 			elif line[0] == 'm': #mosfet
 				elements = elements + \
-				parse_elem_mos(line, circ, line_elements)
+				parse_elem_mos(line, circ, line_elements, models)
 			elif line[0] == "e": #vcvs
 				elements = elements + \
 				parse_elem_vcvs(line, circ, line_elements)
@@ -202,6 +207,28 @@ def get_next_file_and_close_current(file_list, file_index):
 		ffile = open(file_list[file_index][1], "r")
 		file_list[file_index][0] = ffile
 	return ffile
+
+def parse_models(models_lines):
+	models = {}
+	for line, line_n in models_lines:
+		tokens = line.split()
+		if len(tokens) < 3:
+			raise NetlistParseError, ("Syntax error in model declaration on line " + str(line_n) + ".\n\t"+line,)
+		model_label = tokens[2]
+		model_type = tokens[1]
+		model_parameters = {}
+		for index in range(3, len(tokens)):
+			if tokens[index][0] == "*":
+				break
+			(label, value) = parse_param_value_from_string(tokens[index])
+			model_parameters.update({label.upper():value})
+		if model_type == "ekv":
+			model_iter = ekv.ekv_mos_model(**model_parameters)
+		else:
+			raise NetlistParseError, ("Unknown model ("+model_type+") on line " + str(line_n) + ".\n\t"+line,)
+		models.update({model_label:model_iter})
+	return models
+			
 
 def parse_elem_resistor(line, circ, line_elements=None):
 	"""Parses a resistor from the line supplied, adds its nodes to the circuit
@@ -533,7 +560,7 @@ def parse_elem_diode(line, circ, line_elements=None):
 	
 	return return_list
 
-def parse_elem_mos(line, circ, line_elements=None):
+def parse_elem_mos(line, circ, line_elements, models):
 	"""Parses a mos from the line supplied, adds its nodes to the circuit
 	instance circ and returns a list holding the mos element.
 	
@@ -554,45 +581,48 @@ def parse_elem_mos(line, circ, line_elements=None):
 	if line_elements is None:
 		line_elements = line.split()
 
-	if (len(line_elements) < 4):
-		raise NetlistParseError, ""
-		
-	kp = None
+	if (len(line_elements) < 6):
+		raise NetlistParseError, "required parameters are missing."
+		#print "MX ND NG NS model_id W=xxx L=xxx"
+	
+	model_label = line_elements[5]
+	
+	#kp = None
 	w  = None
 	l = None
-	mos_type = None
-	vt = None
+	#mos_type = None
+	#vt = None
 	m = 1
 	n = 1		
-	lambd = 0 # va is supposed infinite if not specified
-	for index in range(5, len(line_elements)):
+	#lambd = 0 # va is supposed infinite if not specified
+	for index in range(6, len(line_elements)):
 		if line_elements[index][0] == '*':
 			break
 		
 		(param, value) = parse_param_value_from_string(line_elements[index])
 		
-		if param == 'kp':
-			kp = convert_units(value)
-		elif param == "w":
+		#if param == 'kp':
+		#	kp = convert_units(value)
+		if param == "w":
 			w = convert_units(value)
 		elif param == "l":
 			l = convert_units(value)
-		elif param == "vt":
-			vt = convert_units(value)
+		#elif param == "vt":
+		#	vt = convert_units(value)
 		elif param == "m":
 			m = convert_units(value)
-		elif param == "vt":
-			n = convert_units(value)
-		elif param == "type":
-			if value != 'n' and value != 'p':
-				raise NetlistParseError, "unknown mos type "+value
-			mos_type = value
+		#elif param == "vt":
+		#	n = convert_units(value)
+		#elif param == "type":
+		#	if value != 'n' and value != 'p':
+		#		raise NetlistParseError, "unknown mos type "+value
+		#	mos_type = value
 		else:
 			raise NetlistParseError, "unknown parameter " + param
 
-	if (kp is None) or (w is None) or (l is None) or (mos_type is None) or (vt is None):
+	if (w is None) or (l is None):
 		raise NetlistParseError, "required parameter is missing."
-		#print "MX ND NG NS KP=xxx Vt=xxx W=xxx L=xxx type=n/p <LAMBDA=xxx>"
+		#print "MX ND NG NS W=xxx L=xxx <LAMBDA=xxx>"
 		
 	ext_nd = line_elements[1]
 	ext_ng = line_elements[2]
@@ -603,8 +633,9 @@ def parse_elem_mos(line, circ, line_elements=None):
 	ns = circ.add_node_to_circ(ext_ns)
 	nb = circ.add_node_to_circ(ext_nb)	
 
-	ekv_m = ekv.ekv_mos_model(TYPE=mos_type, KP=kp, VTO=vt, WETA=0, LETA=0, GAMMA=.01)
-	elem = ekv.ekv_device(nd, ng, ns, nb, l, w, ekv_m, m, n)
+	if not models.has_key(model_label):
+		raise NetlistParseError, "Unknown model id: "+model_label
+	elem = ekv.ekv_device(nd, ng, ns, nb, w, l, models[model_label], m, n)
 
 	#elem = mosq.mosq(nd, ng, ns, kp=kp, w=w, l=l, vt=vt, mos_type=mos_type, lambd=lambd)
 	elem.descr = line_elements[0][1:]
