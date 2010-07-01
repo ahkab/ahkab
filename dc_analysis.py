@@ -209,7 +209,7 @@ def get_solve_methods():
 	source_stepping = {"enabled":False,"failed":False,"factors":(0.001,.005,.01,.03,.1,.3,.5,.7,.8,.9), "index":0}
 	return standard_solving, gmin_stepping, source_stepping
 
-def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename="stdout", print_int_nodes=True, guess=True, verbose=2):
+def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename="stdout", print_int_nodes=True, guess=True, stype="LINEAR", verbose=2):
 	"""Performs a sweep of the value of V or I of a independent source from start 
 	value to stop value using the provided step. 
 	For every circuit generated, computes the op and prints it out.
@@ -285,11 +285,22 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 		tick.display()
 	
 	#tarocca il generatore di tensione, avvia DC silenziosa, ritarocca etc
-	for index in xrange(int((stop-start)/step)):
-		if isinstance(source_elem, circuit.vsource):
-			source_elem.vdc = start + index*step
+	index = 0
+	while True:
+		if stype == "LINEAR":
+			sweep_value = start + index*step 
+		elif stype == "LOG":
+			sweep_value = start*(step**index) 
 		else:
-			source_elem.idc = start + index*step
+			raise Exception, "Unknown sweep type: "+stype+" (linear/log)" 
+		if sweep_value > stop:
+			break	
+		else:
+			index = index + 1
+		if isinstance(source_elem, circuit.vsource):
+			source_elem.vdc = sweep_value
+		else:
+			source_elem.idc = sweep_value
 		#silently calculate the op
 		x = op_analysis(circ, x0=x, guess=guess, verbose=0)
 		if x is None:

@@ -1076,6 +1076,7 @@ def parse_an_dc(line, circ, line_elements=None):
 	start = None
 	stop = None
 	step = None
+	stype = "LINEAR"
 	
 	for token in line_elements[1:]:
 		if token[0] == "*":
@@ -1109,13 +1110,15 @@ def parse_an_dc(line, circ, line_elements=None):
 			stop = convert_units(value)
 		elif label == 'step':
 			step = convert_units(value)
+		elif label == 'type':
+			stype = value.upper()
 		else:
 			raise NetlistParseError("")
 	
 	if start is None or stop is None or step is None or not source_exists:
 		raise NetlistParseError("Required parameters are missing.")
 	
-	return {"type":"dc", "source_name":source_name, "start":start, "stop":stop, "step":step}
+	return {"type":"dc", "source_name":source_name, "start":start, "stop":stop, "step":step, "stype":stype}
 
 def parse_an_ac(line, circ, line_elements=None):
 	"""Parses an AC analysis:
