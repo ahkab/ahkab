@@ -224,6 +224,7 @@ def parse_models(models_lines):
 			model_parameters.update({label.upper():value})
 		if model_type == "ekv":
 			model_iter = ekv.ekv_mos_model(**model_parameters)
+			model_iter.name = model_label
 		else:
 			raise NetlistParseError, ("Unknown model ("+model_type+") on line " + str(line_n) + ".\n\t"+line,)
 		models.update({model_label:model_iter})

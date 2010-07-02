@@ -44,15 +44,13 @@ This module defines two classes:
 Features:
 - EKV model implementation, computation of charges, potentials,
   reverse and forward currents, slope factor and normalization factors,
-- Calculation of trans-conductances based on the charge approach,
+- Calculation of trans-conductances based on the charge approach.
+- N/P MOS symmetry
 - Rudimentary temperature effects.
 
 The Missing Features:
 - Channel length modulation
 - Reverse Short Channel Effect (RSCE)
-
-
-TODO:
 - Complex mobility degradation is missing
 - Transcapacitances
 - Quasistatic implementation
@@ -64,7 +62,6 @@ import math
 
 # DEFAULT VALUES FOR 500n CH LENGTH
 COX_DEFAULT = .7e-3
-
 VTO_DEFAULT = .5
 GAMMA_DEFAULT = 1
 PHI_DEFAULT = .7
@@ -76,16 +73,23 @@ BEX_DEFAULT = -1.5
 class ekv_device:
 	INIT_IFRN_GUESS = 1e-3
 	def __init__(self, nd, ng, ns, nb, W, L, model, M=1, N=1):
-		""" ekv device
-		nd: drain node
-		ng: gate node
-		ns: source node
-		nb: bulk node
-		L: element width [m]
-		W: element length [m]
-		M: multiplier (n. of shunt devices)
-		N: series mult. (n. of series devices)
-		model: pass an instance of ekv_mos_model
+		""" EKV device
+		Parameters:
+			nd: drain node
+			ng: gate node
+			ns: source node
+			nb: bulk node
+			L: element width [m]
+			W: element length [m]
+			M: multiplier (n. of shunt devices)
+			N: series mult. (n. of series devices)
+			model: pass an instance of ekv_mos_model
+		
+		Selected methods:
+		- get_output_ports() -> (nd, ns)
+		- get_drive_ports() -> (nd, nb), (ng, nb), (ns, nb)
+		  
+
 		"""
 		self.ng = ng
 		self.nb = nb
@@ -125,7 +129,7 @@ class ekv_device:
 	
 	def __str__(self):
 		mos_type = self._get_mos_type()
-		rep = "type=" + mos_type + " w="+ str(self.device.W) + " l=" + \
+		rep = " " + self.ekv_model.name + " w="+ str(self.device.W) + " l=" + \
 		str(self.device.L) + " M="+ str(self.device.M) + " N=" + \
 		str(self.device.N)
 
@@ -143,11 +147,9 @@ class ekv_device:
 		
 		ports_v: [voltage_across_port0, voltage_across_port1, ...]
 		time: the simulation time at which the evaluation is performed. 
-		      Set it to None during DC analysis.
+		      It has no effect here. Set it to None during DC analysis.
 		
 		"""
-		#self.opdict = {'state':ports_v[0]}
-		#print ports_v
 		ret, j1, j2 = self.ekv_model.get_ids(self.device, ports_v, \
 				self.opdict)
 		
@@ -314,25 +316,49 @@ class ekv_mos_model:
 		#Setup switches
 		self.SATLIM = math.exp(4)
 		self.WMSI_factor = 10
-		self.NQS = 0
-		self.CLM_SWITCH = True
+		self.NR_damp_factor = options.nl_voltages_lock_factor
 
 		sc, sc_reason = self._self_check()
 		if not sc:
 			raise Exception, sc_reason + " out of range"
 
 	def set_device_temperature(self, T):
+		"""Change the temperature of the device. VTO, KP and PHI get updated.
+		"""		
 		self.TEMP = T
 		self.VTO = self.VTO - self.TCV*(T-self.TNOM)
 		self.KP = self.KP*(T/self.TNOM)**self.BEX
 		self.PHI = self.PHI * T/self.TNOM + 3*constants.Vth(self.TNOM)*math.log(T/self.TNOM) \
 			   - constants.si.Eg(self.TNOM)*T/self.TNOM + constants.si.Eg(T)
 
-
 	def get_device_temperature(self):
+		"""Returns the temperature of the device - in K.
+		"""
 		return self.TEMP
 
+	def print_model(self):
+		"""All the internal parameters of the model get printed out, 
+		for visual inspection. Notice some can be set to None 
+		(ie not available) if they were not provided in the netlist
+		or some not provided are calculated from the others.
+		"""
+		arr = []
+		TYPE = 'N' if self.NPMOS == 1 else "P"
+		arr.append([self.name, "", "", TYPE+" MOS", "EKV MODEL", "", "", "", "",  "", "", ""])
+		arr.append(["KP", "[A/V^2]", self.KP, "VTO", "[V]:", self.VTO, "TOX", "[m]", self.TOX, "COX", "[F/m^2]:", self.COX])
+		arr.append(["PHI", "[V]:", self.PHI, "GAMMA", "sqrt(V)", self.GAMMA, "NSUB", "[cm^-3]", self.NSUB,  "VFB", "[V]:", self.VFB])
+		arr.append(["U0", "[cm^2/(V*s)]:", self.U0, "TCV", "[V/K]", self.TCV, "BEX", "", self.BEX,  "", "", ""])
+		arr.append(["INTERNAL", "", "", "SAT LIMIT", "", self.SATLIM, "W/M/S INV FACTOR", "", self.WMSI_factor,  "", "", ""])		
+		printing.table_print(arr)
+
 	def get_voltages(self, vd, vg, vs):
+		"""Performs the VD <-> VS swap if needed.
+		Returns: 
+		(VD, VG, VS) after the swap
+		CS, an integer which equals to:
+  			+1 if no swap was necessary,
+			-1 if VD and VS have been swapped.
+		"""
 		# vd / vs swap
 		vd = vd*self.NPMOS
 		vg = vg*self.NPMOS
@@ -345,28 +371,33 @@ class ekv_mos_model:
 			vd_new = vd
 			vs_new = vs
 			cs = +1
-		#print "got", vd,vg,vs,"returned", vd_new, vg, vs_new
+
 		return ((float(vd_new), float(vg), float(vs_new)), cs)
 
 	def get_ip_abs_err(self, device):
-		return  options.iea / (4*constants.Vth()**2*self.KP*device.M*device.W/device.L)
+		"""Absolute error to be enforced in the calculation of the normalized currents.
+		"""
+		return  options.iea / (2*constants.Vth(self.TEMP)**2*self.KP*device.M*device.W/device.L)
 
-	def setup_scaling(self, nq, device, debug=False):
+	def setup_scaling(self, nq, device):
+		"""Calculates and stores in self.scaling the scaling factors:
+		  Ut, 
+		  Is,
+		  Gs,
+		  Qs,
+		"""
 		self.scaling.Ut = constants.Vth()
 		self.scaling.Is = 2 * nq * self.scaling.Ut**2 * self.KP * device.W/device.L
 		self.scaling.Gs = 2 * nq * self.scaling.Ut * self.KP * device.W/device.L
 		self.scaling.Qs = 2 * nq * self.scaling.Ut * self.COX
-		
-		if debug:
-			print "Is", self.scaling.Is
 		return		
 	
 	def get_vp_nv_nq(self, VG):
-		#VGeff = VG - self.VTO + self.PHI + self.GAMMA*math.sqrt(self.PHI)
-		##if VGeff > 0:		
-		#	VP = VGeff - self.PHI - self.GAMMA*(math.sqrt(VGeff + (self.GAMMA/2)**2) -self.GAMMA/2)
-		#else:
-		#	VP = -self.PHI
+		"""Calculates and returns:
+			VP, the pinch-off voltage,
+			nv, the slope factor,
+			nq, the charge linearization factor.
+		"""
 		VGeff = VG - self.VTO + self.PHI + self.GAMMA*math.sqrt(self.PHI)
 		if VGeff > 0:		
 			VP = VG - self.VTO - self.GAMMA*(math.sqrt(VG -self.VTO +(math.sqrt(self.PHI)+self.GAMMA/2)**2) -(math.sqrt(self.PHI)+self.GAMMA/2))
@@ -380,6 +411,11 @@ class ekv_mos_model:
 		return VP, nv, nq
 
 	def get_ids(self, device, (vd, vg, vs), opdict=None, debug=False):
+		"""Returns:
+			IDS, the drain-to-source current (de-normalized),
+			qs, the (scaled) charge at the source,
+			qr, the (scaled) charge at the drain.
+		"""
 		if debug: print "Current for vd:", vd, "vg:", vg, "vs:", vs
 		ip_abs_err = self.get_ip_abs_err(device) if opdict['ip_abs_err'] is None else opdict['ip_abs_err']
 		
@@ -440,6 +476,7 @@ class ekv_mos_model:
 		return Ids, qf, qr
 
 	def get_gms(self, device, (vd, vg, vs), opdict=None, debug=False):
+		"""Returns the source-bulk transconductance or d(IDS)/d(VS-VB)."""
 		(j1, j2, j3), CS_FACTOR = self.get_voltages(vd, vg, vs)
 		Ids, qf, qr = self.get_ids(device, (vd, vg, vs), opdict, debug)
 		if CS_FACTOR == +1:
@@ -449,6 +486,7 @@ class ekv_mos_model:
 		return gms
 
 	def get_gmd(self, device, (vd, vg, vs), opdict=None, debug=False):
+		"""Returns the drain-bulk transconductance or d(IDS)/d(VD-VB)."""
 		(j1, j2, j3), CS_FACTOR = self.get_voltages(vd, vg, vs)
 		Ids, qf, qr = self.get_ids(device, (vd, vg, vs), opdict, debug)
 		if CS_FACTOR == +1:
@@ -458,6 +496,7 @@ class ekv_mos_model:
 		return gmd
 
 	def get_gmg(self, device, (vd, vg, vs), opdict=None, debug=False):
+		"""Returns the gate-bulk transconductance or d(IDS)/d(VG-VB)."""
 		VP, nv, nq = self.get_vp_nv_nq(float(vg))
 		Ids, qf, qr = self.get_ids(device, (vd, vg, vs), opdict, debug)
 		(j1, j2, j3), CS_FACTOR = self.get_voltages(vd, vg, vs)
@@ -465,66 +504,88 @@ class ekv_mos_model:
 		return gmg
 
 	def get_ismall(self, vsmall, ip_abs_err, iguess=None, debug=False):
+		"""Solves the problem: given v, find i such that:
+			v = ln(q) + 2q
+			q = sqrt(.25 + i) - .5
+		A damped Newton algorithm is used inside.
+		"""
+		# starting guess for Newton's Method.
 		if iguess is None:
 			iguess = 1
+		# sanity checks 
 		if math.isnan(vsmall):
-			raise Exception, "vsmall is NaN!!"
+			raise Exception, \
+			"Attempted to calculate a current corresponding to a NaN voltage."
+		if not ip_abs_err > 0:
+			raise Exception, \
+			"The normalized current absolute error has been set to a negative value."
+
 		check = False
 		ismall = iguess
 		if debug: iter_c = 0
-		if debug: print "get_ismall IN"
-		#if vsmall < utilities.EPS:
-		#	print "vsmall:", vsmall, "returning EPS"
-		#	return utilities.EPS
 			
 		while True:
 			if debug: iter_c = iter_c + 1
 			vsmall_iter = self.get_vsmall(ismall)
-			if debug: print " ->", ismall, vsmall
+
 			deltai = (vsmall - vsmall_iter)/self.get_dvsmall_dismall(ismall)
-			#if ismall == 0:
-			#	ismall = utilities.EPS
-			#	if debug: print "ismall = 0!"
-			if (abs(deltai) < ip_abs_err or abs(deltai) <= abs(ismall)*options.ier):# or \
+
+			# absolute and relative value convergence checks. 
+			if (abs(deltai) < ip_abs_err or abs(deltai) <= abs(ismall)*options.ier):
+				# To make the algorithm more robust, 
+				# the convergence check has to be passed twice in a row
+				# to reach convergence.
 				if not check:
 					check = True
 				else:
 					break
 			else:
 				check = False
-			if deltai == 0:
-				break
+
+			# convergence was not reached, update ismall 
 			if math.isnan(ismall):
 				print "Ismall is NaN!!"
 				exit()
 			if ismall == 0:
-				check = True
+				# this is a sign we went below the machine resolution
+				# it makes no sense to iterate there as quantization errors
+				# prevent reaching a meaningful result. 
+				break
 			else:
-				ratio = deltai/ismall	
-				if ratio > 3: 			 
-					ismall = 2*ismall
-				elif ratio <= -1:
+				# Damped Newton with domain restriction: ismall >= 0.
+				ratio = deltai/ismall
+				if ratio > self.NR_damp_factor:
+					# Do not allow a change in ismall bigger than self.NR_damp_factor
+					# in a single iteration
+					ismall = self.NR_damp_factor*ismall
+				elif ratio <= -1: 
+					# this would give a negative ismall
 					ismall = 0.1*ismall
 				else:			
 					ismall = ismall + deltai
 		if debug: 
 			print str(iter_c) + " iterations."
 			print ismall, ismall/iguess
-		if debug: print "get_ismall OUT"
-		assert ismall >= 0
 		return ismall
 	
 	def get_vsmall(self, ismall, verbose=3):
-		#print "AA ", 0.25 + ismall, -0.5 + math.sqrt(0.25 + ismall)
+		"""Returns v according to the equations:
+			q = sqrt(.25 + i) - .5
+			v = ln(q) + 2q
+		"""
 		if abs(ismall) < utilities.EPS:
 			ismall = (1 - 2*(ismall<0))*utilities.EPS
 			if verbose == 6:
 				print "EKV: Machine precision limited the resolution on i. (i<EPS)"
-
 		vsmall = math.log(math.sqrt(.25 + ismall) - 0.5) + 2*math.sqrt(.25 + ismall) - 1.0
 		return vsmall
 
 	def get_dvsmall_dismall(self, ismall, verbose=3):
+		"""The Newton algorithm in get_ismall(...) requires the evaluation of the 
+		first derivative of the	fixed point function:
+			dv/di = 1.0/(sqrt(.25+i)-.5) * .5/sqrt(.25 + i) + 1/sqrt(.25 + i)
+		This is provided by this module.
+		"""
 		if abs(ismall) < utilities.EPS:
 			ismall = (1-2*(ismall<0))*utilities.EPS
 			if verbose == 6:
@@ -533,18 +594,22 @@ class ekv_mos_model:
 		return dvdi
 
 	def ismall2qsmall(self, ismall, verbose=0):
-		if verbose == 6:
+		""" i(f,r) -> q(f,r)
+		Convert a source/drain scaled current to the corresponding normalized charge."""
+		if verbose == 6: #ismall is lower than EPS, errors here are usually not important
 			print "EKV: Machine precision limited the resolution on q(s,d). (i<EPS)"
-		qsmall = math.sqrt(.25+ismall) - .5
+		qsmall = math.sqrt(.25 + ismall) - .5
 		return qsmall
 
 	def qsmall2ismall(self, qsmall):
+		""" q(f,r) -> i(f,r)
+		Convert a source/drain scaled charge to the corresponding normalized current."""
 		ismall = qsmall**2 + qsmall 
 		return ismall
 
 	def _self_check(self):
+		"""Performs sanity check on the model parameters."""
 		ret = True, ""
-
 		if self.NSUB is not None and self.NSUB < 0:
 			ret = (False, "NSUB")
 		elif self.U0 is not None and not self.U0 > 0:
@@ -556,12 +621,11 @@ class ekv_mos_model:
 		return ret
 
 	def _device_check(self, adev):
+		"""Performs sanity check on the device parameters."""
 		if not adev.L > 0:
 			ret = (False, "L")
 		elif not adev.W > 0:
 			ret = (False, "W")
-		# we don't check for fractional series/shunt devices
-		# DIY 
 		elif not adev.N > 0:
 			ret = (False, "N")
 		elif not adev.M > 0:
@@ -571,33 +635,34 @@ class ekv_mos_model:
 		return ret
 		
 if __name__ == '__main__':
+	# Tests
 	import matplotlib.pyplot as plt
+
 	ekv_m = ekv_mos_model(TYPE='n', KP=50e-6, VTO=.4)
 	ma = ekv_device(1, 2, 3, 4, W=10e-6,L=1e-6, model=ekv_m)
 	ma.descr = "1"
 
+	# OP test
 	vd = 0
 	vg = 1
 	vs = 0
 	ma.print_op_info(((vd, vg, vs),))
+	ekv_m.print_model()
 
+	# gmUt/Ids test
+	data0 = []
+	data1 = []
+	vs = 2.5
 	if True:
-		data0 = []
-		data1 = []
-		vs = 2.5
-		if True:
-			vd = 1
-			for Vhel in range(250):
-				vg = (Vhel+1)/100.0
-				ma.update_status_dictionary(((vd, vg, 0),))						
-				data0.append(ma.opdict['Ids'])
-				#print "Current for vd", vd, "vg", vg, "vs", vs
-				data1.append(ma.opdict['TEF'])
-		plt.plot(data0, data1)
-		plt.title('EKV MODEL CHECK: VD_SWEEP')
-		plt.legend(['GM/ID'])
-		plt.show()
+		vd = 1
+		for Vhel in range(2500):
+			vg = (Vhel+1)/1000.0
+			ma.update_status_dictionary(((vd, vg, 0),))						
+			data0.append(ma.opdict['Ids'])
+			#print "Current for vd", vd, "vg", vg, "vs", vs
+			data1.append(ma.opdict['TEF'])
+	plt.semilogx(data0, data1)
+	plt.title('Transconductance efficiency factor')
+	plt.legend(['(GM*UT)/ID'])
+	plt.show()
 
-
-
-	#print data2
