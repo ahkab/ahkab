@@ -277,14 +277,14 @@ class ekv_mos_model:
 		if COX is not None: 
 			self.COX = float(COX)
 		elif TOX is not None:
-			self.COX = constants.si.esi/TOX
+			self.COX = constants.si.eox/TOX
 		else:
 			self.COX = COX_DEFAULT
 	
 		if GAMMA is not None:
 			self.GAMMA = float(GAMMA)
 		elif NSUB is not None:
-			math.sqrt(2*constants.e*constants.si.esi*NSUB*10**6/self.COX)
+			self.GAMMA = math.sqrt(2*constants.e*constants.si.esi*NSUB*10**6/self.COX)
 		else:
 			self.GAMMA = GAMMA_DEFAULT
 		if PHI is not None:
@@ -380,17 +380,17 @@ class ekv_mos_model:
 		return  options.iea / (2*constants.Vth(self.TEMP)**2*self.KP*device.M*device.W/device.L)
 
 	def setup_scaling(self, nq, device):
-		"""Calculates and stores in self.scaling the scaling factors:
-		  Ut, 
-		  Is,
-		  Gs,
-		  Qs,
+		"""Calculates and stores in self.scaling the following factors:
+		  Ut, the thermal voltage,
+		  Is, the specific current,
+		  Gs, the specific transconductance,
+		  Qs, the specific charge.
 		"""
 		self.scaling.Ut = constants.Vth()
 		self.scaling.Is = 2 * nq * self.scaling.Ut**2 * self.KP * device.W/device.L
 		self.scaling.Gs = 2 * nq * self.scaling.Ut * self.KP * device.W/device.L
 		self.scaling.Qs = 2 * nq * self.scaling.Ut * self.COX
-		return		
+		return	
 	
 	def get_vp_nv_nq(self, VG):
 		"""Calculates and returns:
@@ -406,7 +406,7 @@ class ekv_mos_model:
 		
 
 		nq = 1 + .5 * self.GAMMA / math.sqrt(self.PHI + .5*VP)
-		nv = 1 + .5 * self.GAMMA / math.sqrt(self.PHI +    VP)
+		nv = 1 + .5 * self.GAMMA / math.sqrt(self.PHI +    VP + 1e-12)
 
 		return VP, nv, nq
 
@@ -611,13 +611,13 @@ class ekv_mos_model:
 		"""Performs sanity check on the model parameters."""
 		ret = True, ""
 		if self.NSUB is not None and self.NSUB < 0:
-			ret = (False, "NSUB")
+			ret = (False, "NSUB "+str(self.NSUB))
 		elif self.U0 is not None and not self.U0 > 0:
-			ret = (False, "UO")
+			ret = (False, "UO "+str(self.U0))
 		elif not self.GAMMA > 0:			 
-			ret = (False, "GAMMA")
+			ret = (False, "GAMMA "+str(self.GAMMA))
 		elif not self.PHI > 0.1:			 
-			ret = (False, "PHI")
+			ret = (False, "PHI "+str(self.PHI))
 		return ret
 
 	def _device_check(self, adev):
