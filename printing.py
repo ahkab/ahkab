@@ -90,7 +90,7 @@ def print_analysis(an):
 	if an["type"] == "op":
 		print ".op"
 	elif an["type"] == "dc":
-		print ".dc", an["source_name"], "start =", an["start"], "stop =", an["stop"], "step =", an["step"]
+		print ".dc", an["source_name"], "start =", an["start"], "stop =", an["stop"], "step =", an["step"], "type =", an["stype"]
 	elif an["type"] == "tran":
 		sys.stdout.write(".tran tstep="+str(an["tstep"])+" tstop="+str(an["tstop"])+" tstart="+str(an["tstart"])+" uic="+str(an["uic"]))
 		if an["uic"] == 3:
