@@ -401,10 +401,10 @@ class ekv_mos_model:
 		VGeff = VG - self.VTO + self.PHI + self.GAMMA*math.sqrt(self.PHI)
 		if VGeff > 0:		
 			VP = VG - self.VTO - self.GAMMA*(math.sqrt(VG -self.VTO +(math.sqrt(self.PHI)+self.GAMMA/2)**2) -(math.sqrt(self.PHI)+self.GAMMA/2))
+			if math.isnan(VP): VP = 0 # the argument of sqrt ^^ went negative
 		else:
 			VP = -self.PHI		
-		
-
+		#print "VG", VG, "VGeff", VGeff, "VP", VP, self.GAMMA, self.PHI, math.sqrt(VG -self.VTO +(math.sqrt(self.PHI)+self.GAMMA/2)**2), VG -self.VTO +(math.sqrt(self.PHI)+self.GAMMA/2)**2
 		nq = 1 + .5 * self.GAMMA / math.sqrt(self.PHI + .5*VP)
 		nv = 1 + .5 * self.GAMMA / math.sqrt(self.PHI +    VP + 1e-12)
 
@@ -434,7 +434,7 @@ class ekv_mos_model:
 		if debug: print "Scaled voltages: vd:", vd, "vp:", vp, "vs:", vs
 
 		v_ifn = vp - vs
-		ifn = self.get_ismall(v_ifn, opdict['ip_abs_err'], opdict['ifn'])
+		ifn = self.get_ismall(v_ifn, opdict['ip_abs_err'], opdict['ifn'], debug=debug)
 
 		Leff = device.L
 
@@ -444,8 +444,10 @@ class ekv_mos_model:
 		if debug:
 			print "vd:", vd, "vg:",vg/self.scaling.Ut, "vs:", vs, "vds:", vd-vs
 			print "v_ifn:", v_ifn, "v_irn:",v_irn
+			print "ifn:", ifn, "irn:",irn
 			print "ip_abs_err:", ip_abs_err
 			print "Vth:", self.scaling.Ut
+			print "nv", nv, "Is", self.scaling.Is
 			print "Weff:", device.W, "Leff:", Leff
 			print "NPMOS:", self.NPMOS, "CS_FACTOR", CS_FACTOR
 
@@ -528,10 +530,15 @@ class ekv_mos_model:
 			if debug: iter_c = iter_c + 1
 			vsmall_iter = self.get_vsmall(ismall)
 
-			deltai = (vsmall - vsmall_iter)/self.get_dvsmall_dismall(ismall)
-
+			dvdi, numeric_problem = self.get_dvsmall_dismall(ismall)
+			deltai = (vsmall - vsmall_iter)/dvdi
+			if debug:
+				print "Numeric problem:", numeric_problem
+				print "ABS: deltai < ip_abs_err", deltai, "<", ip_abs_err, ":", deltai < ip_abs_err
+				print "REL: deltai < ismall*options.ier", deltai, "<", ismall*options.ier, deltai < ismall*options.ier
+				print deltai, ismall
 			# absolute and relative value convergence checks. 
-			if (abs(deltai) < ip_abs_err or abs(deltai) <= abs(ismall)*options.ier):
+			if abs(deltai) < ip_abs_err or (abs(deltai) < ismall*options.ier or numeric_problem):
 				# To make the algorithm more robust, 
 				# the convergence check has to be passed twice in a row
 				# to reach convergence.
@@ -541,7 +548,6 @@ class ekv_mos_model:
 					break
 			else:
 				check = False
-
 			# convergence was not reached, update ismall 
 			if math.isnan(ismall):
 				print "Ismall is NaN!!"
@@ -565,7 +571,6 @@ class ekv_mos_model:
 					ismall = ismall + deltai
 		if debug: 
 			print str(iter_c) + " iterations."
-			print ismall, ismall/iguess
 		return ismall
 	
 	def get_vsmall(self, ismall, verbose=3):
@@ -587,11 +592,14 @@ class ekv_mos_model:
 		This is provided by this module.
 		"""
 		if abs(ismall) < utilities.EPS:
-			ismall = (1-2*(ismall<0))*utilities.EPS
+			ismall = utilities.EPS
+			numeric_problem = True
 			if verbose == 6:
 				print "EKV: Machine precision limited the resolution on dv/di in the NR iteration. (i<EPS)"
+		else:
+			numeric_problem = False
 		dvdi = 1.0/(math.sqrt(.25+ismall)-.5) * .5/math.sqrt(.25 + ismall) + 1.0/math.sqrt(.25 + ismall)
-		return dvdi
+		return dvdi, numeric_problem
 
 	def ismall2qsmall(self, ismall, verbose=0):
 		""" i(f,r) -> q(f,r)
@@ -650,19 +658,32 @@ if __name__ == '__main__':
 	ekv_m.print_model()
 
 	# gmUt/Ids test
+	import mosq
+	msq = mosq.mosq(1, 2, 3, kp=50e-6, w=10e-6, l=1e-6, vt=.4, lambd=0, mos_type='n')
 	data0 = []
 	data1 = []
+	data2 = []
+	data3 = []
 	vs = 2.5
 	if True:
 		vd = 1
-		for Vhel in range(2500):
-			vg = (Vhel+1)/1000.0
+		for Vhel in range(1,2500):
+			vg = Vhel/1000.0
 			ma.update_status_dictionary(((vd, vg, 0),))						
 			data0.append(ma.opdict['Ids'])
 			#print "Current for vd", vd, "vg", vg, "vs", vs
 			data1.append(ma.opdict['TEF'])
-	plt.semilogx(data0, data1)
+			isq = msq.i((vd, vg, 0),)
+			gmsq = msq.g((vd, vg, 0),0)
+			if isq > 0:
+				data2.append(gmsq/isq*constants.Vth())
+			else:
+				data2.append(float('nan'))
+			data3.append(isq)
+	plt.semilogx(data0, data1, data3, data2)
 	plt.title('Transconductance efficiency factor')
 	plt.legend(['(GM*UT)/ID'])
 	plt.show()
+
+
 
