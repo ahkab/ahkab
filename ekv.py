@@ -70,8 +70,10 @@ KP_DEFAULT = 50e-6
 TCV_DEFAULT = 1e-3
 BEX_DEFAULT = -1.5 
 
+ISMALL_GUESS_MIN = 1e-10
+
 class ekv_device:
-	INIT_IFRN_GUESS = 1e-3
+	INIT_IFRN_GUESS = 1
 	def __init__(self, nd, ng, ns, nb, W, L, model, M=1, N=1):
 		""" EKV device
 		Parameters:
@@ -177,7 +179,7 @@ class ekv_device:
 		if ids == 0:
 			TEF = float('nan')
 		else:
-			TEF = -gms*constants.Vth()/ids
+			TEF = abs(gms*constants.Vth()/ids)
 		self.opdict['TEF'] = TEF
 		
 
@@ -199,10 +201,10 @@ class ekv_device:
 		arr = [["M"+self.descr, mos_type.upper()+" ch",wmsi_status, "", "", sat_status, "", "", "", "", "",""],]
 		arr.append(["beta", "[A/V^2]:", self.opdict['beta'], "Weff", "[m]:", str(self.opdict['Weff'])+" ("+str(self.device.W)+")", "Leff", "[m]:", str(self.opdict['Leff'])+ " ("+str(self.device.L)+")", "M/N:", "", str(self.device.M)+"/"+str(self.device.N)])
 		arr.append(["Vdb", "[V]:", float(ports_v[0][0]), "Vgb", "[V]:", float(ports_v[0][1]), "Vsb", "[V]:", float(ports_v[0][2]),  "Vp", "[V]:", self.opdict['Vp'],])
-		arr.append([ "VTH", "[V]:", self.opdict['VTH'], "VOD", "[V]:", self.opdict['VOD'], "", "", "", "VA", "[V]:", str(self.opdict['Ids']/self.opdict['gmd'])])
-		arr.append(["Ids", "[A]:", self.opdict['Ids'], "n: ", "",self.opdict['n'], "Ispec", "[A]:", self.opdict["Ispec"], "TEF:", "", str(self.opdict['TEF']),]) 
+		arr.append([ "VTH", "[V]:", self.opdict['VTH'], "VOD", "[V]:", self.opdict['VOD'], "nq: ", "",self.opdict['nq'], "VA", "[V]:", str(self.opdict['Ids']/self.opdict['gmd'])])
+		arr.append(["Ids", "[A]:", self.opdict['Ids'], "nv: ", "",self.opdict['nv'], "Ispec", "[A]:", self.opdict["Ispec"], "TEF:", "", str(self.opdict['TEF']),]) 
 		arr.append(["gmg", "[S]:", self.opdict['gmg'], "gms", "[S]:", self.opdict['gms'], "rob", "[Ohm]:", 1/self.opdict['gmd'], "", "", ""])
-		arr.append(["if:", "", self.opdict['ifn'],"ir:", "", self.opdict['irn'], "Qf", "[C/m^2]:", self.opdict["qf"], "Qr", "[C/m^2]:", self.opdict["qf"],])
+		arr.append(["if:", "", self.opdict['ifn'],"ir:", "", self.opdict['irn'], "Qf", "[C/m^2]:", self.opdict["qf"], "Qr", "[C/m^2]:", self.opdict["qr"],])
 		#arr.append([  "", "", "", "", "", ""])
 
 		printing.table_print(arr)
@@ -416,7 +418,7 @@ class ekv_mos_model:
 			qs, the (scaled) charge at the source,
 			qr, the (scaled) charge at the drain.
 		"""
-		if debug: print "Current for vd:", vd, "vg:", vg, "vs:", vs
+		if debug: print "=== Current for vd:", vd, "vg:", vg, "vs:", vs
 		ip_abs_err = self.get_ip_abs_err(device) if opdict['ip_abs_err'] is None else opdict['ip_abs_err']
 		
 		(VD, VG, VS), CS_FACTOR = self.get_voltages(vd, vg, vs)	
@@ -434,12 +436,12 @@ class ekv_mos_model:
 		if debug: print "Scaled voltages: vd:", vd, "vp:", vp, "vs:", vs
 
 		v_ifn = vp - vs
-		ifn = self.get_ismall(v_ifn, opdict['ip_abs_err'], opdict['ifn'], debug=debug)
+		ifn = self.get_ismall(v_ifn, opdict['ip_abs_err'], max(opdict['ifn'], ISMALL_GUESS_MIN), debug=debug)
 
 		Leff = device.L
 
 		v_irn = vp - vd
-		irn = self.get_ismall(v_irn, opdict['ip_abs_err'], opdict['irn'])
+		irn = self.get_ismall(v_irn, opdict['ip_abs_err'], max(opdict['irn'], ISMALL_GUESS_MIN), debug=debug)
 		
 		if debug:
 			print "vd:", vd, "vg:",vg/self.scaling.Ut, "vs:", vs, "vds:", vd-vs
@@ -454,20 +456,20 @@ class ekv_mos_model:
 		qf = self.ismall2qsmall(ifn)
 		qr = self.ismall2qsmall(irn)
 
-		Ids = CS_FACTOR* self.NPMOS * device.L/Leff *self.scaling.Is * (ifn - irn)
+		Ids = CS_FACTOR* self.NPMOS * device.L/Leff * device.M * self.scaling.Is * (ifn - irn)
 		
 		vd_real = vd if CS_FACTOR == 1 else vs
 		vs_real = vs if CS_FACTOR == 1 else vd
 
 		opdict.update({'state':(vd_real*self.NPMOS, vg*self.NPMOS, vs_real*self.NPMOS)})
 		opdict.update({'Ids':Ids, "Weff":device.W, "Leff":Leff, 'Vp':VP})
-		opdict.update({'ifn':ifn, "irn":irn, "n":nv, 'beta':.5*self.KP*device.W/Leff, 'Ispec':self.scaling.Is})
+		opdict.update({'ifn':ifn, "irn":irn, "nv":nv, "nq":nq, 'beta':.5*self.KP*device.W/Leff, 'Ispec':self.scaling.Is})
 		opdict.update({'VTH':self.VTO, "VOD":self.NPMOS*nv*(VP-VS), 'SAT':ifn>irn*self.SATLIM})
 		opdict.update({'qf':qf*self.scaling.Qs, 'qr':qr*self.scaling.Qs})
 
-		if Ids > self.WMSI_factor*self.scaling.Is: 
+		if max(ifn, irn) > self.WMSI_factor: 
 			WMSI = 2
-		elif Ids < self.scaling.Is/self.WMSI_factor:
+		elif max(ifn, irn) < 1/self.WMSI_factor:
 			WMSI = 0
 		else:
 			WMSI = 1
@@ -528,17 +530,19 @@ class ekv_mos_model:
 			
 		while True:
 			if debug: iter_c = iter_c + 1
-			vsmall_iter = self.get_vsmall(ismall)
 
-			dvdi, numeric_problem = self.get_dvsmall_dismall(ismall)
+			vsmall_iter, numeric_problem_v = self.get_vsmall(ismall)
+			dvdi, numeric_problem_i = self.get_dvsmall_dismall(ismall)
 			deltai = (vsmall - vsmall_iter)/dvdi
+
+			numeric_problem = numeric_problem_i or numeric_problem_v
 			if debug:
 				print "Numeric problem:", numeric_problem
-				print "ABS: deltai < ip_abs_err", deltai, "<", ip_abs_err, ":", deltai < ip_abs_err
-				print "REL: deltai < ismall*options.ier", deltai, "<", ismall*options.ier, deltai < ismall*options.ier
+				print "ABS: deltai < ip_abs_err", deltai, "<", ip_abs_err, ":", abs(deltai) < ip_abs_err
+				print "REL: deltai < ismall*options.ier", deltai, "<", ismall*options.ier, abs(deltai) < ismall*options.ier
 				print deltai, ismall
 			# absolute and relative value convergence checks. 
-			if abs(deltai) < ip_abs_err or (abs(deltai) < ismall*options.ier or numeric_problem):
+			if (abs(deltai) < ip_abs_err or numeric_problem) or abs(deltai) < ismall*options.ier:
 				# To make the algorithm more robust, 
 				# the convergence check has to be passed twice in a row
 				# to reach convergence.
@@ -579,11 +583,14 @@ class ekv_mos_model:
 			v = ln(q) + 2q
 		"""
 		if abs(ismall) < utilities.EPS:
-			ismall = (1 - 2*(ismall<0))*utilities.EPS
+			ismall = utilities.EPS # otherwise we get log(0)
 			if verbose == 6:
 				print "EKV: Machine precision limited the resolution on i. (i<EPS)"
+			numeric_problem = True
+		else:
+					numeric_problem = False
 		vsmall = math.log(math.sqrt(.25 + ismall) - 0.5) + 2*math.sqrt(.25 + ismall) - 1.0
-		return vsmall
+		return vsmall, numeric_problem
 
 	def get_dvsmall_dismall(self, ismall, verbose=3):
 		"""The Newton algorithm in get_ismall(...) requires the evaluation of the 
@@ -668,6 +675,7 @@ if __name__ == '__main__':
 	if True:
 		vd = 1
 		for Vhel in range(1,2500):
+			print ".",
 			vg = Vhel/1000.0
 			ma.update_status_dictionary(((vd, vg, 0),))						
 			data0.append(ma.opdict['Ids'])
