@@ -23,7 +23,7 @@ of a simulation
 """
 
 import re
-import Gnuplot, numpy
+import numpy, pylab
 import printing, options
 
 def read_data_header(filename):
@@ -55,7 +55,7 @@ def read_data(filename, label, labels=None):
 		data = numpy.array(data)
 	except ValueError:
 		printing.print_general_error("Unrecognized data set: "+label)
-		data =None
+		data = None
 	return data
 
 def split_netlist_label(labels_string):
@@ -83,62 +83,69 @@ def split_netlist_label(labels_string):
 		raise Exception, "Unrecognized plot labels: "+ label
 	return ret_labels			
 
-def setup_plot(title, xlabel, y2y1_list, analysis):
-	g = Gnuplot.Gnuplot()
-	g.title(title)
+def setup_plot(fig, title, xlabel, y2y1_list, analysis, log=False):
+	pylab.title(title)
+	ax = pylab.gca()
 	if xlabel == 'T':
-		g.xlabel('t [s]')
+		pylab.xlabel('t [s]')
 	elif xlabel[0] == 'V':
-		g.xlabel(xlabel + " [V]")
+		pylab.xlabel(xlabel + " [V]")
 	elif xlabel[0] == 'I':
-		g.xlabel(xlabel + " [A]")
+		pylab.xlabel(xlabel + " [A]")
 	# here we hope all variables are of the same type
 	if y2y1_list[0][0] == 'V':
-		g.ylabel("V [V]")
+		pylab.ylabel("V [V]")
 	elif y2y1_list[0][0] == 'I':
-		g.ylabel("I [A]")
-	return g
+		pylab.ylabel("I [A]")
+	if log:
+		ax.set_xscale('log')
+		ax.set_yscale('log')
+	return fig
+
+
+def plot_counts_vs_wins(counts, current, todisk=None):
+	counts_allwin = []
+	for i in range(5):
+		c = counts.get_counts_array(current, bitindex=i)
+		print c
+		counts_allwin.append(c)
+	plotx = [numpy.arange(counts.nwin)]
+
+	plots = zip(plotx*5, counts_allwin)
+
+	# plot!
+	fig = p.figure()
+	p.hold(True)
+	labels = ("Range DEF", "Range 0", "Range 1", "Range 2", "Range 3")
+	fmts = ("b", "g", "r", "c", "m")
+	for i in range(5):
+		p.bar(plots[i][0], plots[i][1], label=labels[i], color=fmts[i])
+	p.hold(False)
+	p.title("Counts vs 40us windows\nIin = "+"{0:.3e}".format(current)+" A" )
+	p.xlabel('#window []')
+	p.ylabel('Counts []')
+	ax = p.gca()
+	ax.set_xlim(plots[i][0][0], plots[i][0][-1])
+	p.legend()
+	if todisk is not None:
+		save_figure(todisk, '_vstime')
+		#p.show()
+	return fig
+
+def save_figure(filename, fig):
+	fig.set_size_inches(20, 10)
+	pylab.savefig(filename, dpi=100, bbox_inches='tight', format=options.plotting_outtype)
+	return
 
 def plot_file(title, x, y2y1_list, filename, analysis, outfilename):
-	g = setup_plot(title, x, y2y1_list, analysis)
-	gfiles = []
-	x_index =  str(get_data_label_index(x, filename) + 1)
-
-	plotting_strings = []
-	title_strings = []
-	for y2label, y1label in y2y1_list:
-		y2_index =  str(get_data_label_index(y2label, filename) + 1)
-		if y1label is not None:
-			y1_index =  str(get_data_label_index(y1label, filename) + 1)
-			plotting_strings.append("($" + y2_index +"-$"+y1_index+")")
-			title_strings.append(y2label+"-"+y1label)
-		else:
-			plotting_strings.append(y2_index)
-			title_strings.append(y2label)
-	
-	files_list = []
-	for pstring, tstring in zip(plotting_strings, title_strings):
-		f = Gnuplot.File(filename, using=x_index+":"+pstring, with_=options.plotting_style, title=tstring+" ("+analysis+")")
-		files_list.append(f)
-	
-	g.plot(*files_list)
-
-	if outfilename is not None and options.plotting_outtype is not None:
-		g.hardcopy(outfilename, terminal=options.plotting_outtype)
-	
-	if options.plotting_wait_after_plot:
-		raw_input('Please press return to continue...\n')
-	g.reset()
-	del g, files_list
-
-def plot_data(title, x, y2y1_list, filename, analysis, outfilename):
 	"""Reads out data from a file and plots it.
 	Deprecated, use plot_file, it passes the file directly to gnuplot.
 	"""
-	
-	g = setup_plot(title, x, y2y1_list, analysis)
+	fig = pylab.figure()
+	setup_plot(fig, title, x, y2y1_list, analysis)
 	gdata = []
 	gx = read_data(filename, x)
+	pylab.hold(True)
 	for y2label, y1label in y2y1_list:
 		if y1label is not None and y1label != '':
 			data1 = read_data(filename, y1label)
@@ -147,18 +154,18 @@ def plot_data(title, x, y2y1_list, filename, analysis, outfilename):
 			ylabel = y2label
 			data1 = 0
 		data2 =  read_data(filename, y2label)
-		d = Gnuplot.Data(gx, data2-data1, title=ylabel+" ("+analysis+")", with_=options.plotting_style)
-		gdata.append(d)
-	
-	g.plot(*gdata)
+		pylab.plot(gx, data2-data1, options.plotting_style, label=ylabel+" ("+analysis+")",)
+	pylab.hold(False)
+	pylab.legend()
 
 	if outfilename is not None and options.plotting_outtype is not None:
-		g.hardcopy(outfilename, terminal=options.plotting_outtype)
-	
-	if options.plotting_wait_after_plot:
-		raw_input('Please press return to continue...\n')
-	g.reset()
-	del data1, data2, g, d, gdata
+		save_figure(outfilename, fig)
+	return
+
+
+def show_plots():
+	pylab.show()
+
 
 if __name__ == '__main__':
 	filename = 'colpitts_graph.tran'
