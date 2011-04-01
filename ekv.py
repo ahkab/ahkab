@@ -66,6 +66,10 @@ VTO_DEFAULT = .5
 GAMMA_DEFAULT = 1
 PHI_DEFAULT = .7
 KP_DEFAULT = 50e-6
+UCRIT_DEFAULT = 2e6
+LAMBDA_DEFAULT = .5
+XJ_DEFAULT = .1e-6
+
 
 TCV_DEFAULT = 1e-3
 BEX_DEFAULT = -1.5 
@@ -259,6 +263,7 @@ class scaling_holder: pass # will hold the scaling factors
 class ekv_mos_model:
 	def __init__(self, name=None, TYPE='n', TNOM=None, COX=None, \
 	GAMMA=None, NSUB=None, PHI=None, VTO=None, KP=None, \
+	XJ=None, LAMBDA=None, \
 	TOX=None, VFB=None, U0=None, TCV=None, BEX=None):
 		
 		self.scaling = scaling_holder()
@@ -308,7 +313,10 @@ class ekv_mos_model:
 			self.KP = (U0*10**-4)*self.COX
 		else:
 			self.KP = KP_DEFAULT
-	
+
+		self.LAMBDA = LAMBDA if LAMBDA is not None else LAMBDA_DEFAULT
+		self.XJ = XJ if XJ is not None else XJ_DEFAULT
+		self.UCRIT = UCRIT_DEFAULT
 		# Intrinsic model temperature parameters
 		self.TCV = self.NPMOS*float(TCV) if TCV is not None else self.NPMOS*TCV_DEFAULT
 		self.BEX = float(BEX) if BEX is not None else BEX_DEFAULT
@@ -401,7 +409,7 @@ class ekv_mos_model:
 			nq, the charge linearization factor.
 		"""
 		VGeff = VG - self.VTO + self.PHI + self.GAMMA*math.sqrt(self.PHI)
-		if VGeff > 0:		
+		if VGeff > 0 and VG - self.VTO + (math.sqrt(self.PHI)+self.GAMMA/2)**2 > 0:
 			VP = VG - self.VTO - self.GAMMA*(math.sqrt(VG -self.VTO +(math.sqrt(self.PHI)+self.GAMMA/2)**2) -(math.sqrt(self.PHI)+self.GAMMA/2))
 			if math.isnan(VP): VP = 0 # the argument of sqrt ^^ went negative
 		else:
@@ -438,9 +446,12 @@ class ekv_mos_model:
 		v_ifn = vp - vs
 		ifn = self.get_ismall(v_ifn, opdict['ip_abs_err'], max(opdict['ifn'], ISMALL_GUESS_MIN), debug=debug)
 
-		Leff = device.L
-
-		v_irn = vp - vd
+		if False:
+			Leff = device.L
+			v_irn = vp - vd
+		else:
+			Leff, v_irn = self.get_leq_virp(device, (vd, vg, vs), VP, device.L, ifn)
+	
 		irn = self.get_ismall(v_irn, opdict['ip_abs_err'], max(opdict['irn'], ISMALL_GUESS_MIN), debug=debug)
 		
 		if debug:
@@ -478,6 +489,42 @@ class ekv_mos_model:
 		if debug: print "current:", Ids
 		
 		return Ids, qf, qr
+
+	def get_leq_virp(self, device, (vd, vg, vs), Vp, Leff, ifn):
+		if ifn > 0:
+			assert vd > vs			
+			Vc = self.UCRIT*device.N*Leff
+			vdss  = Vc * (math.sqrt(.25 + constants.Vth()/Vc*math.sqrt(ifn)) - .5) # eq. 46
+			# Drain-to-source saturation voltage for reverse normalized current, eq. 47		
+			vdssp = Vc * (math.sqrt(.25 +constants.Vth()/Vc *(math.sqrt(ifn) - .75*math.log(ifn))) - .5) + \
+				constants.Vth()*(math.log(Vc/(2*constants.Vth())) - .6)
+
+			# channel length modulation
+			vser_1 = math.sqrt(ifn) - vdss/constants.Vth()
+			#if vser_1 < 0: 
+			#	vser_1 = 0
+			vds = (vd - vs)*.5*constants.Vth()
+			delta_v = 4*constants.Vth()*math.sqrt(self.LAMBDA*vser_1 + 1.0/64) # eq. 48
+			Vip = math.sqrt(vdss**2 + delta_v**2) - math.sqrt((vds - vdss)**2 + delta_v**2) #eq 50
+			Lc = math.sqrt(constants.si.esi*self.XJ/self.COX) #eq. 51
+			delta_l = self.LAMBDA * Lc * math.log(1+ (vds - Vip)/(Lc*self.UCRIT)) #eq. 52
+
+			# Equivalent channel length including channel-length modulation and velocity saturation
+			Lp = device.N*Leff - delta_l + (vds + Vip)/self.UCRIT #eq. 53
+			Lmin = device.N*Leff/10 #eq. 54
+			Leq = .5*(Lp + math.sqrt(Lp**2 + Lmin**2)) #eq. 55
+
+			assert not math.isnan(vdssp)
+			assert not math.isnan(delta_v)
+
+			v_irp = (Vp - vds + vs - math.sqrt(vdssp**2 + delta_v**2)+math.sqrt((vds-vdssp)**2+delta_v**2))/constants.Vth()
+		else:
+			v_irp = Vp/constants.Vth() - vd
+			Leq = Leff
+
+		return Leq, v_irp
+
+	
 
 	def get_gms(self, device, (vd, vg, vs), opdict=None, debug=False):
 		"""Returns the source-bulk transconductance or d(IDS)/d(VS-VB)."""
@@ -523,6 +570,8 @@ class ekv_mos_model:
 		if not ip_abs_err > 0:
 			raise Exception, \
 			"The normalized current absolute error has been set to a negative value."
+		if vsmall < 0:
+			return 0.0
 
 		check = False
 		ismall = iguess
@@ -692,6 +741,4 @@ if __name__ == '__main__':
 	plt.title('Transconductance efficiency factor')
 	plt.legend(['(GM*UT)/ID'])
 	plt.show()
-
-
 
