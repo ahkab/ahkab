@@ -455,7 +455,7 @@ class ekv_mos_model:
 		irn = self.get_ismall(v_irn, opdict['ip_abs_err'], max(opdict['irn'], ISMALL_GUESS_MIN), debug=debug)
 		
 		if debug:
-			print "vd:", vd, "vg:",vg/self.scaling.Ut, "vs:", vs, "vds:", vd-vs
+			print "vd:", vd, "vg:",VG/self.scaling.Ut, "vs:", vs, "vds:", vd-vs
 			print "v_ifn:", v_ifn, "v_irn:",v_irn
 			print "ifn:", ifn, "irn:",irn
 			print "ip_abs_err:", ip_abs_err
