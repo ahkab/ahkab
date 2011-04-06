@@ -467,7 +467,7 @@ class ekv_mos_model:
 		qf = self.ismall2qsmall(ifn)
 		qr = self.ismall2qsmall(irn)
 
-		Ids = CS_FACTOR* self.NPMOS * device.L/Leff * device.M * self.scaling.Is * (ifn - irn)
+		Ids =  self.NPMOS * device.L/Leff * device.M * self.scaling.Is * (ifn - irn)
 		
 		vd_real = vd if CS_FACTOR == 1 else vs
 		vs_real = vs if CS_FACTOR == 1 else vd
@@ -491,36 +491,36 @@ class ekv_mos_model:
 		return Ids, qf, qr
 
 	def get_leq_virp(self, device, (vd, vg, vs), Vp, Leff, ifn):
-		if ifn > 0:
-			assert vd > vs			
-			Vc = self.UCRIT*device.N*Leff
-			vdss  = Vc * (math.sqrt(.25 + constants.Vth()/Vc*math.sqrt(ifn)) - .5) # eq. 46
-			# Drain-to-source saturation voltage for reverse normalized current, eq. 47		
-			vdssp = Vc * (math.sqrt(.25 +constants.Vth()/Vc *(math.sqrt(ifn) - .75*math.log(ifn))) - .5) + \
-				constants.Vth()*(math.log(Vc/(2*constants.Vth())) - .6)
+		#if ifn > 0 and Vp - constants.Vth()*vd > 0:
+		assert vd >= vs			
+		Vc = self.UCRIT * device.N * Leff
+		Vdss  = Vc * (math.sqrt(.25 + constants.Vth()/Vc*math.sqrt(ifn)) - .5) # eq. 46
+		# Drain-to-source saturation voltage for reverse normalized current, eq. 47		
+		Vdssp = Vc * (math.sqrt(.25 +constants.Vth()/Vc *(math.sqrt(ifn) - .75*math.log(ifn))) - .5) + \
+			constants.Vth()*(math.log(.5 * Vc/constants.Vth()) - .6)
 
-			# channel length modulation
-			vser_1 = math.sqrt(ifn) - vdss/constants.Vth()
-			#if vser_1 < 0: 
-			#	vser_1 = 0
-			vds = (vd - vs)*.5*constants.Vth()
-			delta_v = 4*constants.Vth()*math.sqrt(self.LAMBDA*vser_1 + 1.0/64) # eq. 48
-			Vip = math.sqrt(vdss**2 + delta_v**2) - math.sqrt((vds - vdss)**2 + delta_v**2) #eq 50
-			Lc = math.sqrt(constants.si.esi*self.XJ/self.COX) #eq. 51
-			delta_l = self.LAMBDA * Lc * math.log(1+ (vds - Vip)/(Lc*self.UCRIT)) #eq. 52
+		# channel length modulation
+		vser_1 = math.sqrt(ifn) - Vdss/constants.Vth()
+		#if vser_1 < 0: 
+		#	vser_1 = 0
+		Vds = (vd - vs)*.5*constants.Vth()
+		delta_v = 4*constants.Vth()*math.sqrt(self.LAMBDA*vser_1 + 1.0/64) # eq. 48
+		Vip = math.sqrt(Vdss**2 + delta_v**2) - math.sqrt((Vds - Vdss)**2 + delta_v**2) #eq 50
+		Lc = math.sqrt(constants.si.esi*self.XJ/self.COX) #eq. 51
+		delta_l = self.LAMBDA * Lc * math.log(1 + (Vds - Vip)/(Lc*self.UCRIT)) #eq. 52
 
-			# Equivalent channel length including channel-length modulation and velocity saturation
-			Lp = device.N*Leff - delta_l + (vds + Vip)/self.UCRIT #eq. 53
-			Lmin = device.N*Leff/10 #eq. 54
-			Leq = .5*(Lp + math.sqrt(Lp**2 + Lmin**2)) #eq. 55
+		# Equivalent channel length including channel-length modulation and velocity saturation
+		Lp = device.N*Leff - delta_l + (Vds + Vip)/self.UCRIT #eq. 53
+		Lmin = device.N*Leff/10.0 #eq. 54
+		Leq = .5*(Lp + math.sqrt(Lp**2 + Lmin**2)) #eq. 55
 
-			assert not math.isnan(vdssp)
-			assert not math.isnan(delta_v)
+		assert not math.isnan(Vdssp)
+		assert not math.isnan(delta_v)
 
-			v_irp = (Vp - vds + vs - math.sqrt(vdssp**2 + delta_v**2)+math.sqrt((vds-vdssp)**2+delta_v**2))/constants.Vth()
-		else:
-			v_irp = Vp/constants.Vth() - vd
-			Leq = Leff
+		v_irp = (Vp - Vds - vs*constants.Vth() - math.sqrt(Vdssp**2 + delta_v**2) + math.sqrt((Vds-Vdssp)**2+delta_v**2))/constants.Vth()
+		#else:
+		#	v_irp = Vp/constants.Vth() - vd
+		#	Leq = Leff
 
 		return Leq, v_irp
 
@@ -533,7 +533,7 @@ class ekv_mos_model:
 		if CS_FACTOR == +1:
 			gms = -1.0*self.scaling.Gs*qf
 		elif CS_FACTOR == -1:
-			gms = self.scaling.Gs*qr
+			gms = -self.scaling.Gs*qr
 		return gms
 
 	def get_gmd(self, device, (vd, vg, vs), opdict=None, debug=False):
@@ -570,8 +570,8 @@ class ekv_mos_model:
 		if not ip_abs_err > 0:
 			raise Exception, \
 			"The normalized current absolute error has been set to a negative value."
-		if vsmall < 0:
-			return 0.0
+		#if vsmall < 0:
+		#	return 0.0
 
 		check = False
 		ismall = iguess
@@ -591,7 +591,8 @@ class ekv_mos_model:
 				print "REL: deltai < ismall*options.ier", deltai, "<", ismall*options.ier, abs(deltai) < ismall*options.ier
 				print deltai, ismall
 			# absolute and relative value convergence checks. 
-			if (abs(deltai) < ip_abs_err or numeric_problem) or abs(deltai) < ismall*options.ier:
+			if ((abs(deltai) < ip_abs_err or numeric_problem) and abs(deltai) < ismall*options.ier) or \
+				(abs(deltai) < ip_abs_err*1e-6 or numeric_problem):
 				# To make the algorithm more robust, 
 				# the convergence check has to be passed twice in a row
 				# to reach convergence.
@@ -699,46 +700,7 @@ class ekv_mos_model:
 		return ret
 		
 if __name__ == '__main__':
-	# Tests
-	import matplotlib.pyplot as plt
+	import mostest
+	mostest.runall()
 
-	ekv_m = ekv_mos_model(TYPE='n', KP=50e-6, VTO=.4)
-	ma = ekv_device(1, 2, 3, 4, W=10e-6,L=1e-6, model=ekv_m)
-	ma.descr = "1"
-
-	# OP test
-	vd = 0
-	vg = 1
-	vs = 0
-	ma.print_op_info(((vd, vg, vs),))
-	ekv_m.print_model()
-
-	# gmUt/Ids test
-	import mosq
-	msq = mosq.mosq(1, 2, 3, kp=50e-6, w=10e-6, l=1e-6, vt=.4, lambd=0, mos_type='n')
-	data0 = []
-	data1 = []
-	data2 = []
-	data3 = []
-	vs = 2.5
-	if True:
-		vd = 1
-		for Vhel in range(1,2500):
-			print ".",
-			vg = Vhel/1000.0
-			ma.update_status_dictionary(((vd, vg, 0),))						
-			data0.append(ma.opdict['Ids'])
-			#print "Current for vd", vd, "vg", vg, "vs", vs
-			data1.append(ma.opdict['TEF'])
-			isq = msq.i((vd, vg, 0),)
-			gmsq = msq.g((vd, vg, 0),0)
-			if isq > 0:
-				data2.append(gmsq/isq*constants.Vth())
-			else:
-				data2.append(float('nan'))
-			data3.append(isq)
-	plt.semilogx(data0, data1, data3, data2)
-	plt.title('Transconductance efficiency factor')
-	plt.legend(['(GM*UT)/ID'])
-	plt.show()
 
