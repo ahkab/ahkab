@@ -80,7 +80,7 @@ def split_netlist_label(labels_string):
 		l1 = None
 		ret_labels.append((l2,l1))
 	if len(ret_labels) == 0:
-		raise Exception, "Unrecognized plot labels: "+ label
+		raise Exception, "Unrecognized plot labels: "+ labels_string
 	return ret_labels			
 
 def setup_plot(fig, title, xlabel, y2y1_list, analysis, log=False):
