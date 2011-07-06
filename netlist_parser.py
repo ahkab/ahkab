@@ -187,7 +187,7 @@ def main_netlist_parser(circ, netlist_lines, subckts_dict, models):
 				parse_elem_user_defined(line, circ, line_elements)
 			elif line[0] == "x": #User defined module -> MODIFY
 				elements = elements + \
-				parse_sub_instance(line, circ, subckts_dict, line_elements)
+				parse_sub_instance(line, circ, subckts_dict, line_elements, models)
 			else:
 				raise NetlistParseError, "unknown element."
 	except NetlistParseError, (msg,):
@@ -1420,7 +1420,7 @@ def parse_sub_declaration(subckt_lines):
 	subck_inst = circuit.subckt(name, netlist_lines, connected_nodes_list)
 	return subck_inst
 
-def parse_sub_instance(line, circ, subckts_dict, line_elements=None):
+def parse_sub_instance(line, circ, subckts_dict, line_elements=None, models=None):
 	"""Parses a subckt call/instance.
 	
 	1. Gets name and nodes connections
@@ -1472,7 +1472,7 @@ def parse_sub_instance(line, circ, subckts_dict, line_elements=None):
 	
 	wrapped_circ = circuit.circuit_wrapper(circ, connection_nodes_dict, subckt.name, line_elements[0])
 	
-	elements_list = main_netlist_parser(wrapped_circ, subckt.code, subckts_dict)
+	elements_list = main_netlist_parser(wrapped_circ, subckt.code, subckts_dict, models)
 	
 	# Every subckt adds elemets with the _same description_ (elem.descr)
 	# We modify it so that each descr is uniq for every instance
