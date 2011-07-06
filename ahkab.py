@@ -137,6 +137,8 @@ def process_postproc(postproc_list, title, outfilename):
 	for postproc in postproc_list:
 		plotting.plot_file(title, postproc["x"], postproc["l2l1"], outfilename+"."+postproc["analysis"], postproc["analysis"], outfilename+"-"+str(index)+"."+options.plotting_outtype)
 		index = index +1
+	if len(postproc_list):
+		plotting.show_plots()
 	return None
 
 if __name__ == "__main__":
