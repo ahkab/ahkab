@@ -302,6 +302,8 @@ class ekv_mos_model:
 			self.PHI = PHI_DEFAULT
 		if VTO is not None:
 			self.VTO = self.NPMOS*float(VTO)
+			if self.VTO < 0:
+				print "(W): model %s has internal negative VTO (%f V)." % (self.name, self.VTO)
 		elif VFB is not None:
 			self.VTO = VFB + PHI + GAMMA*PHI #inv here??
 		else:
