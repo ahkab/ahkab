@@ -17,14 +17,14 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-""" This module offers the methods required to perform a transient analysis.
+""" This module provides the methods required to perform a transient analysis.
 Our problem can be written as:
 	D*dx/dt + MNA*x + Tv(x) + Tt(t) + N = 0
 We need:
-	1. the mna matrix MNA
+	1. MNA, the static Modified Nodal Analysis matrix
 	2. N
 	3. T(x)
-	4. Tt(t) has to be evaluated step by step
+	4. Tt(t) (to be evaluated at each time step)
 	5. D matrix
 	6. a differentiation method to approximate dx/dt
 """
@@ -88,8 +88,9 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	
 	if verbose > 2 and fdata is not sys.stdout:
 		print "Starting transient analysis: "
-		print "Selected method: "+method
+		print "Selected method: %s" % method
 	#It's a good idea to call transient with prebuilt MNA and N matrix
+	#the analysis will be slightly faster (long netlists). 
 	if mna is None or N is None:
 		(mna, N) = dc_analysis.generate_mna_and_N(circ)
 		mna = utilities.remove_row_and_col(mna)
