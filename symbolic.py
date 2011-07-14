@@ -127,6 +127,7 @@ def apply_options_and_subs(eq_list, opts):
 	opts = {}
 	for key, value in subs.subs.iteritems():
 		opts.update({sympy.Symbol(key, real=True):sympy.Symbol(value, real=True)}) 
+	subs_eq_list = []		
 	running_eq_list = eq_list	
 	for key in opts.keys():
 		subs_eq_list = []		
