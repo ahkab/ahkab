@@ -22,6 +22,7 @@
 import sys
 import numpy
 import transient, implicit_euler, dc_analysis, ticker, options, circuit, printing, utilities
+import results
 
 def bfpss(circ, period, step=None, mna=None, Tf=None, D=None, points=None, autonomous=False, x0=None,  data_filename='stdout', vector_norm=lambda v: max(abs(v)), verbose=3):
 	"""Performs a PSS analysis. 
@@ -45,10 +46,11 @@ def bfpss(circ, period, step=None, mna=None, Tf=None, D=None, points=None, auton
 
 	Returns: nothing
 	"""
-	if data_filename != "stdout":
-		fdata = open(data_filename, "w")
-	else:
-		fdata = sys.stdout
+	#if data_filename != "stdout":
+	#	fdata = open(data_filename, "w")
+	#else:
+	#	fdata = sys.stdout
+	if data_filename == "stdout":
 		verbose = 0
 	
 	if verbose > 2 and data_filename != "stdout": 
@@ -76,6 +78,8 @@ def bfpss(circ, period, step=None, mna=None, Tf=None, D=None, points=None, auton
 	locked_nodes = circ.get_locked_nodes()
 	if verbose > 2: 
 		tick = ticker.ticker(increments_for_step=1)
+	else:
+		tick = None
 
 	CMAT = build_CMAT(mna, D, step, points, tick, n_of_var=n_of_var, \
 		verbose=verbose)
@@ -167,9 +171,13 @@ def bfpss(circ, period, step=None, mna=None, Tf=None, D=None, points=None, auton
 	if converged:
 		if verbose > 2: 
 			print "done."
-		printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_time=True)
-		for index in xrange(points):
-			printing.print_results_on_a_line(time=index*step, x=x[index*n_of_var:(index+1)*n_of_var, 0], fdata=fdata, circ=circ, print_int_nodes=options.print_int_nodes, iter_n=0)
+		t = numpy.mat(numpy.arange(points)*step)
+		t = t.reshape((1, points))
+		x = x.reshape((points, n_of_var))
+		results.pss_solution(circ=circ, method="brute-force", period=period, outfile=data_filename, t_array=t, x_array=x.T)
+		#printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_time=True)
+		#for index in xrange(points):
+		#	printing.print_results_on_a_line(time=index*step, x=x[index*n_of_var:(index+1)*n_of_var, 0], fdata=fdata, circ=circ, print_int_nodes=options.print_int_nodes, iter_n=0)
 	else:
 		if verbose > 2 and data_filename != "stdout": 
 			print "failed."
@@ -275,6 +283,8 @@ def build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
 		tick.display()
 	x = numpy.mat(numpy.zeros((points*n_of_var, 1)))
 	if x0 is not None:
+		if isinstance(x0, results.op_solution):
+			x0 = x0.asmatrix()
 		if x0.shape[0] != n_of_var:
 			print "Warning x0 has the wrong dimensions. Using all 0s."
 		else:

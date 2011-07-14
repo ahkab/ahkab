@@ -42,8 +42,11 @@ def get_data_label_index(label, filename, labels=None):
 	return labels.index(label.upper())
 
 def read_data(filename, label, labels=None):
-	if labels == None:
-		labels = read_data_header(filename)
+	label = label.upper()
+ 	if labels == None:
+ 		labels = read_data_header(filename)
+	else:
+		labels = map(str.upper, labels)
 	try:
 		index = labels.index(label)
 		fp = open(filename, "r")

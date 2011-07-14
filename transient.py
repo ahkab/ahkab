@@ -32,6 +32,7 @@ We need:
 import sys, imp
 import numpy
 import dc_analysis, implicit_euler, ticker, options, circuit, printing, utilities
+import results
 
 
 #methods, add here
@@ -78,15 +79,15 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	locked_nodes = circ.get_locked_nodes()
 	
 	# setup output streams:
-	if data_filename != "stdout":
-		fdata = open(data_filename, "w")
-	else:
-		fdata = sys.stdout
+	#if data_filename != "stdout":
+	#	fdata = open(data_filename, "w")
+	#else:
+	#	fdata = sys.stdout
 	if print_step_and_lte:
 		flte = open("step_and_lte.graph", "w")
 		flte.write("#T\tStep\tLTE\n")
 	
-	if verbose > 2 and fdata is not sys.stdout:
+	if verbose > 2 and data_filename != 'stdout':
 		print "Starting transient analysis: "
 		print "Selected method: %s" % method
 	#It's a good idea to call transient with prebuilt MNA and N matrix
@@ -106,17 +107,24 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 
 	# setup x0
 	if x0 is None:
-		if verbose > 4 and fdata is not sys.stdout: 
+		if verbose > 4 and data_filename != 'stdout': 
 			print "Generating x(t="+str(tstart)+") = 0"
 		x0 = numpy.matrix(numpy.zeros((mna.shape[0], 1)))
+		opsol =  results.op_solution(x=x0, error=x0, circ=circ, outfile=None)
 	else:
-		if verbose > 4 and fdata is not sys.stdout:
+		if isinstance(x0, results.op_solution):
+			opsol = x0
+			x0 = x0.asmatrix()
+		else:
+			opsol =  results.op_solution(x=x0, error=numpy.matrix(numpy.zeros((mna.shape[0], 1))), circ=circ, outfile=None)
+		if verbose > 4 and data_filename != 'stdout':
 			print "Using the supplied op as x(t="+str(tstart)+")."
 
-	if verbose > 4 and fdata is not sys.stdout:
+	if verbose > 4 and data_filename != 'stdout':
 		print "x0:"
-		printing.print_results_header(circ, sys.stdout, print_int_nodes=True, print_time=False)
-		printing.print_results_on_a_line(None, x0, sys.stdout, circ, print_int_nodes=True, iter_n=10)
+		opsol.print_short()
+		#printing.print_results_header(circ, sys.stdout, print_int_nodes=True, print_time=False)
+		#printing.print_results_on_a_line(None, x0, sys.stdout, circ, print_int_nodes=True, iter_n=10)
 		#print x0
 	
 	# setup the df method
@@ -227,10 +235,11 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	
 	iter_n = 0  # contatore d'iterazione
 	lte = None
-	printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_time=True)
-	printing.print_results_on_a_line(time, x0, fdata, circ, print_int_nodes=options.print_int_nodes, iter_n=0)
+	sol = results.tran_solution(circ, tstart, tstop, op=x0, method=method, outfile=data_filename)
+	#printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_time=True)
+	#printing.print_results_on_a_line(time, x0, fdata, circ, print_int_nodes=options.print_int_nodes, iter_n=0)
 	#printing.print_results_at_time(time, x0, fdata, iter_n)
-	if fdata != sys.stdout:
+	if data_filename != 'stdout':
 		if verbose > 2:
 			sys.stdout.write("Solving... ")
 		if verbose > 1:
@@ -289,21 +298,22 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 			time = time + old_step
 			x = x1
 			iter_n = iter_n + 1
-			printing.print_results_on_a_line(time, x, fdata, circ, options.print_int_nodes, iter_n)
+			sol.add_line(time, x)
+			#printing.print_results_on_a_line(time, x, fdata, circ, options.print_int_nodes, iter_n)
 			
 			dxdt = numpy.multiply(x_coeff, x) + const
 			thebuffer.add((time, x, dxdt))
 			if output_buffer is not None:
 				output_buffer.add((x, ))
-			if fdata != sys.stdout:
+			if data_filename != 'stdout':
 				if verbose > 1:
 					tick.step()
 		else:
 			# If we get here, Newton failed to converge. We need to reduce the step...
 			if use_step_control:
-				tstep = tstep/5
+				tstep = tstep/5.0
 				tstep = check_step(tstep, time, tstop, HMAX)
-				if verbose > 4 and fdata is not sys.stdout:
+				if verbose > 4 and data_filename != 'stdout':
 					print "At "+str(time)+" reducing step: "+str(tstep)+" (convergence failed)"
 			else: #we can't reduce the step
 				printing.print_general_error("Can't converge with step "+str(tstep)+".")
@@ -315,17 +325,17 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 			solved = False
 			break
 	#end of while
-	if not fdata == sys.stdout:
-		fdata.close()
+	#if not fdata == sys.stdout:
+	#	fdata.close()
 	
 	if print_step_and_lte:
 		flte.close()
 	
-	if fdata != sys.stdout and verbose > 1:
+	if data_filename != 'stdout' and verbose > 1:
 		tick.hide()
 	
 	if solved:
-		if fdata != sys.stdout and verbose > 2:
+		if data_filename != 'stdout' and verbose > 2:
 			print "done."
 			print "Average time step:", (tstop - tstart)/iter_n
 		if output_buffer:
@@ -333,7 +343,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 		else:
 			ret_value = None
 	else:
-		if fdata != sys.stdout:
+		if data_filename != 'stdout':
 			print "failed."
 		ret_value =  None
 	

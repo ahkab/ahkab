@@ -30,7 +30,7 @@ if there is any non-linear device in the circuit.
 
 import sys
 import numpy
-import dc_analysis, ticker, options, circuit, printing, utilities
+import dc_analysis, ticker, options, circuit, printing, utilities, results
 
 def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 	AC=None, Nac=None, J=None, data_filename="stdout", verbose=3):
@@ -44,8 +44,8 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 	if start > stop:
 		printing.print_general_error("AC analysis has start > stop")
 		sys.exit(1)
-	if nsteps < 0:
-		printing.print_general_error("AC analysis has number of steps <= 0")
+	if nsteps < 1:
+		printing.print_general_error("AC analysis has number of steps <= 1")
 		sys.exit(1)
 	if step_type == options.ac_log_step:
 		omega_iter = log_axis_iterator(stop, start, nsteps)
@@ -60,12 +60,12 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 		options.ier, "max_ac_nr_iter =", options.ac_max_nr_iter
 	
 	# setup output streams:
-	if data_filename != "stdout":
-		fdata = open(data_filename, "w")
-	else:
-		fdata = sys.stdout
+	#if data_filename != "stdout":
+	#	fdata = open(data_filename, "w")
+	#else:
+	#	fdata = sys.stdout
 	
-	if verbose > 2 and fdata is not sys.stdout:
+	if verbose > 2 and data_filename != 'stdout':
 		print "Starting AC analysis: "
 		print "w: start = "+str(start), "stop = " + str(stop)+ ",", nsteps, "steps"
 	#It's a good idea to call AC with prebuilt MNA matrix if the circuit is big
@@ -81,7 +81,7 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 		AC = utilities.remove_row_and_col(AC)
 
 	if J is None and circ.is_nonlinear():
-		if verbose > 4 and fdata is not sys.stdout:
+		if verbose > 4 and data_filename != 'stdout':
 			print "Linearizing the circuit..."
 		if xop is None:
 			if circ.is_nonlinear():
@@ -91,15 +91,15 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 				printing.print_warning("AC failed to find an op to linearize the linear circuit.") 
 				printing.print_warning("Carrying on...")
 		else:	
-			if verbose > 4 and fdata is not sys.stdout:
+			if verbose > 4 and data_filename != 'stdout':
 				print "Linearizing point (xop):"
 				printing.print_results_header(circ, sys.stdout, print_int_nodes=True, print_time=False)
 				printing.print_results_on_a_line(None, xop, sys.stdout, circ, print_int_nodes=True, iter_n=10)
-		J = generate_J(xop=xop, circ=circ, mna=mna, Nac=Nac, fdata=fdata, verbose=verbose)
+		J = generate_J(xop=xop.asmatrix(), circ=circ, mna=mna, Nac=Nac, data_filename=data_filename, verbose=verbose)
 	elif J is None and not circ.is_nonlinear():
 		J = 0
 	
-	if verbose > 4 and fdata is not sys.stdout:
+	if verbose > 4 and data_filename != 'stdout':
 		print "MNA (reduced):"
 		print mna
 		print "AC (reduced):"
@@ -109,6 +109,8 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 		print "Nac (reduced):"
 		print Nac
 	
+	sol = results.ac_solution(circ, ostart=start, ostop=stop, opoints=nsteps, stype=step_type, op=xop, outfile=data_filename)
+
 	# setup the initial values to start the iteration:
 	nv = len(circ.nodes_dict)
 	j = numpy.complex('j')
@@ -116,8 +118,8 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 	Gmin_matrix = dc_analysis.build_gmin_matrix(circ, options.gmin, mna.shape[0], verbose)
 
 	iter_n = 0  # contatore d'iterazione
-	printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_omega=True)
-	if fdata != sys.stdout:
+	#printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_omega=True)
+	if data_filename != 'stdout':
 		if verbose > 2:
 			sys.stdout.write("Solving... ")
 		if verbose > 1:
@@ -126,30 +128,31 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 	x = xop
 	for omega in omega_iter:
 		(x, error, solved) = dc_analysis.dc_solve(mna=(mna + numpy.multiply(j*omega, AC) + J), \
-		Ndc=Nac,  Ntran=0, circ=circuit.circuit(), Gmin=Gmin_matrix, x0=x, \
+		Ndc=Nac,  Ntran=0, circ=circuit.circuit(title="Dummy circuit for AC", filename=None), Gmin=Gmin_matrix, x0=x, \
 		time=None, locked_nodes=None, MAXIT=options.ac_max_nr_iter, skip_Tt=True, verbose=0)
 		if solved:
-			if fdata != sys.stdout and verbose > 1:
+			if verbose > 1 and data_filename != 'stdout':
 				tick.step()
 			# iter_n % 10 == 0 causes the printing function to flush the stream
 			iter_n = iter_n + 1
 			# hooray!
-			printing.print_results_on_a_line(omega, x, fdata, circ, print_int_nodes=options.print_int_nodes, iter_n=iter_n, ac_data=True)
+			sol.add_line(omega, x)
+	#		printing.print_results_on_a_line(omega, x, fdata, circ, print_int_nodes=options.print_int_nodes, iter_n=iter_n, ac_data=True)
 		else:
 			break
 	#end of while
-	if not fdata == sys.stdout:
-		fdata.close()
+	#if not fdata == sys.stdout:
+	#	fdata.close()
 	
-	if fdata != sys.stdout and verbose > 1:
+	if verbose > 1 and data_filename != 'stdout':
 		tick.hide()
 	
 	if solved:
-		if fdata != sys.stdout and verbose > 2:
+		if verbose > 2 and data_filename != 'stdout':
 			print "done."
-		ret_value = x
+		ret_value = sol
 	else:
-		if fdata != sys.stdout:
+		if data_filename != 'stdout':
 			print "failed."
 		ret_value =  None
 	
@@ -298,7 +301,8 @@ class lin_axis_iterator:
 		"""Required iterator method.
 		"""
 		return self
-def generate_J(xop, circ, mna, Nac, fdata, verbose):
+
+def generate_J(xop, circ, mna, Nac, data_filename, verbose):
 	# setup J
 	# build the linearized matrix (stored in J)
 	J = numpy.mat(numpy.zeros(mna.shape))
@@ -308,7 +312,7 @@ def generate_J(xop, circ, mna, Nac, fdata, verbose):
 			dc_analysis.update_J_and_Tx(J, Tlin, xop, elem, time=None)
 	#del Tlin # not needed! **DC**!
 
-	if verbose > 4 and fdata is not sys.stdout:
+	if verbose > 4 and data_filename != 'stdout':
 		sys.stdout.write("done\n")
 
 	return J

@@ -22,6 +22,7 @@
 import sys
 import numpy, numpy.linalg
 import transient, implicit_euler, dc_analysis, ticker, options, circuit, printing, utilities
+import results
 
 def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, autonomous=False, data_filename='stdout', vector_norm=lambda v: max(abs(v)), verbose=3):
 	"""Performs a periodic steady state analysis based on the algorithm described in
@@ -65,11 +66,6 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 
 	Returns: nothing
 	"""
-	if data_filename != "stdout":
-		fdata = open(data_filename, "w")
-	else:
-		fdata = sys.stdout
-		verbose = 0
 	
 	if verbose > 2 and data_filename != "stdout": 
 		print "Starting periodic steady state analysis:"
@@ -190,7 +186,13 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 	if converged:
 		if verbose > 2: 
 			print "done."
-		print_results(circ, x, fdata, points, step)
+		t = numpy.mat(numpy.arange(points)*step)
+		t = t.reshape((1, points))
+		xmat = x[0]
+		for index in xrange(1, points):
+			xmat = numpy.concatenate((xmat, x[index]), axis=1)
+		results.pss_solution(circ=circ, method="shooting", period=period, outfile=data_filename, t_array=t, x_array=xmat)
+		#print_results(circ, x, fdata, points, step)
 	else:
 		if verbose > 2 and data_filename != "stdout": 
 			print "failed."
@@ -334,7 +336,3 @@ def compute_dx(MAass, MBass, Tass, dxi_minus_1):
 	dxi = -1 * numpy.linalg.inv(MAass) * (MBass * dxi_minus_1 + Tass)
 	return dxi
 
-def print_results(circ, x, fdata, points, step):
-	printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_time=True)
-	for index in xrange(points):
-		printing.print_results_on_a_line(time=index*step, x=x[index], fdata=fdata, circ=circ, print_int_nodes=options.print_int_nodes, iter_n=0)

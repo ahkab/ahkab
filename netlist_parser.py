@@ -45,7 +45,7 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 	# .end is not required, but if is used anything following it is ignored
 	# many others, see doc.
 	
-	circ = circuit.circuit()
+	circ = circuit.circuit(title="", filename=filename)
 	
 	if not read_netlist_from_stdin:
 		ffile = open(filename, "r")
@@ -1000,8 +1000,12 @@ def parse_postproc(circ, an_list, postproc_direc):
 							existing_an = True
 							if plot_postproc["analysis"] == "tran" or plot_postproc["analysis"] == "shooting":  	
 								plot_postproc["x"] = "T"
-							else: #dc
+							#elif plot_postproc["analysis"] == "ac":
+							#	plot_postproc["x"] = "w" #UNSUPPORTED FOR THE TIME BEING
+							elif plot_postproc["analysis"] == "dc":
 								plot_postproc["x"] = an["source_name"]
+							else:
+								printing.print_general_error("Plotting is unsupported for analysis type "+plot_postproc["analysis"])
 							break
 					if not existing_an:
 						raise NetlistParseError("Analysis "+plot_postproc["analysis"]+" not found.")

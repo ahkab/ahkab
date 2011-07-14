@@ -187,8 +187,11 @@ class ekv_device:
 		self.opdict['TEF'] = TEF
 		
 
-			
 	def print_op_info(self, ports_v):
+		arr = self.get_op_info(ports_v)
+		print arr,
+
+	def get_op_info(self, ports_v):
 		"""Operating point info, for design/verification. """
 		mos_type = self._get_mos_type()
 
@@ -211,7 +214,7 @@ class ekv_device:
 		arr.append(["if:", "", self.opdict['ifn'],"ir:", "", self.opdict['irn'], "Qf", "[C/m^2]:", self.opdict["qf"], "Qr", "[C/m^2]:", self.opdict["qr"],])
 		#arr.append([  "", "", "", "", "", ""])
 
-		printing.table_print(arr)
+		return printing.table_setup(arr)
 
 	
 	def g(self, op_index, ports_v, port_index, time=0):

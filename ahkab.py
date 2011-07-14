@@ -55,7 +55,7 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 
 		if an["type"] == "op":
 			if an["guess_label"] is None:
-				x0_op = dc_analysis.op_analysis(circ, guess=guess, verbose=verbose)
+				x0_op = dc_analysis.op_analysis(circ, guess=guess, data_filename=data_filename, verbose=verbose)
 			else:
 				if not an["guess_label"] in x0_ic_dict:
 					printing.print_warning("op: guess is set but no matching .ic directive was found.")

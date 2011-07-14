@@ -31,7 +31,7 @@ version of the Newton Rhapson method.
 
 import sys
 import numpy, numpy.linalg
-import constants, ticker, options, circuit, printing, utilities, dc_guess
+import constants, ticker, options, circuit, printing, utilities, dc_guess, results
 
 
 
@@ -92,7 +92,10 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 
 	#initial guess, if specified, otherwise it's zero
 	if x0 is not None:
-		x = x0
+		if isinstance(x0, results.op_solution):
+			x = x0.asmatrix()
+		else:
+			x = x0
 	else:
 		x = numpy.mat(numpy.zeros((mna_size, 1))) # has n-1 rows because of discard of ^^^
 	
@@ -161,7 +164,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 	return (x, error, converged)
 
 def build_gmin_matrix(circ, gmin, mna_size, verbose):
-	if verbose: print "Building Gmin matrix..."
+	if verbose > 3: print "Building Gmin matrix..."
 	Gmin_matrix = numpy.mat(numpy.zeros((mna_size, mna_size)))
 	for index in xrange(len(circ.nodes_dict)-1):
 		Gmin_matrix[index, index] = gmin
@@ -233,6 +236,8 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 	"""
 	if verbose > 1 and data_filename != 'stdout': print "Starting DC analysis:"
 	(elem_type, elem_descr) = type_descr
+	sweep_label = elem_type[0].upper()+elem_descr
+
 	if step == 0:
 		printing.print_general_error("Can't sweep with step=0 !")
 		sys.exit(1)
@@ -245,11 +250,6 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 		printing.print_general_error("Sweeping is possible only with voltage and current sources. (" +str(elem_type)+ ")")
 		sys.exit(1)
 
-	if data_filename == "stdout":
-		fpdata = sys.stdout
-	else:
-		fpdata = open(data_filename, "w")
-			
 	source_elem = None
 	for index in xrange(len(circ.elements)):
 		if circ.elements[index].descr == elem_descr:
@@ -277,9 +277,10 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 	x = None
 	solved = True
 	
-	printing.print_results_header(circ, fpdata, print_int_nodes=print_int_nodes, print_time=False)
+	sol = results.dc_solution(circ, start, stop, sweepvar=sweep_label, stype=stype, outfile=data_filename)
+	#printing.print_results_header(circ, fpdata, print_int_nodes=print_int_nodes, print_time=False)
 	
-	if verbose > 2 and fpdata != sys.stdout: 
+	if verbose > 2 and data_filename != 'stdout': 
 		sys.stdout.write("Solving... ")
 		tick = ticker.ticker(1)
 		tick.display()
@@ -302,8 +303,8 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 		else:
 			source_elem.idc = sweep_value
 		#silently calculate the op
-		x = op_analysis(circ, x0=x, guess=guess, verbose=0)
-		if x is None:
+		op = op_analysis(circ, x0=x, guess=guess, verbose=0)
+		if op is None:
 			if verbose > 2 and fpdata != sys.stdout: 
 				tick.hide()
 			solved = False
@@ -313,31 +314,31 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 			else:
 				print "Skipping sweep value:", start + index*step
 				continue
-		printing.print_results_on_a_line(time=None, x=x, fdata=fpdata, circ=circ, \
-			print_int_nodes=print_int_nodes, iter_n=index)
+		sol.add_op(sweep_value, op)
+		#printing.print_results_on_a_line(time=None, x=x, fdata=fpdata, circ=circ, \
+		#	print_int_nodes=print_int_nodes, iter_n=index)
 		
 		if guess:
 			guess = False
 
-		if verbose > 2 and fpdata != sys.stdout: 
+		if verbose > 2 and data_filename != 'stdout':
 			tick.step()
 	
-	if fpdata != sys.stdout: 
+	if data_filename != 'stdout': 
 		if verbose > 2:
 			tick.hide()
 			if solved:
 				print "done."
-		fpdata.close()
 	
 	# clean up
 	if isinstance(source_elem, circuit.vsource):
 		source_elem.vdc = initial_value
 	else:
 		source_elem.idc = initial_value
-	
+
 	return solved	
 
-def op_analysis(circ, x0=None, guess=True, verbose=3):
+def op_analysis(circ, x0=None, guess=True, data_filename=None, verbose=3):
 	"""Returns a Operation Point solution, if found, None otherwise.
 	circ: is the circuit instance
 	x0: is the initial guess to be used to start the NR mdn_solver
@@ -367,39 +368,44 @@ def op_analysis(circ, x0=None, guess=True, verbose=3):
 		x0 = dc_guess.get_dc_guess(circ, verbose=verbose)
 	# if x0 is not None, use that
 	
-	if verbose:
+	if verbose > 3:
 		print "Solving with Gmin:"
-	Gmin_matrix = build_gmin_matrix(circ, options.gmin, mna.shape[0], verbose)
+	Gmin_matrix = build_gmin_matrix(circ, options.gmin, mna.shape[0], verbose-2)
 	(x1, error1, solved1) = dc_solve(mna, N, circ, Gmin=Gmin_matrix, x0=x0, verbose=verbose)
 	
 	# We'll check the results now. Recalculate them without Gmin (using previsious solution as initial guess)
-	# and check that differences on nodes are not too big
+	# and check that differences on nodes and current do not exceed the tolerances.
 	if solved1:
-		if verbose: print "Solving without Gmin:"
+		op1 = results.op_solution(x1, error1, circ, outfile=data_filename)
+		if verbose > 3: print "Solving without Gmin:"
 		(x2, error2, solved2) = dc_solve(mna, N, circ, Gmin=None, x0=x1, verbose=verbose)
 		
 		if not solved2:
 			printing.print_general_error("Can't solve without Gmin.")
 			if verbose:
 				print "Displaying latest valid results."
-				printing.print_dc_results(x1, error1, circ, print_int_nodes=True, print_error=(verbose>3))
-			opsolution = x1
+				op1.write_to_file(filename='stdout')
+			opsolution = op1
 		else:
-			check_ok = printing.print_result_check(x2, x1, circ, verbose=verbose)
+			op2 = results.op_solution(x2, error2, circ, outfile=data_filename)
+			op2.gmin = 0
+			badvars = results.op_solution.gmin_check(op2, op1)
+			printing.print_result_check(badvars, verbose=verbose)
+			check_ok = not (len(badvars) > 0)
 			if not check_ok and verbose:
 				print "Solution with Gmin:"
-				printing.print_dc_results(x1, error1, circ, print_int_nodes=True, print_error=(verbose>3))
+				op1.write_to_file(filename='stdout')
 			if verbose:
-				print "Solution without Gmin:"
-				printing.print_dc_results(x2, error2, circ, print_int_nodes=True, print_error=(verbose>3))
-			opsolution = x2
-		if verbose >= 3:
-			print_elements_ops(circ, opsolution)
+				if verbose > 4: print "Solution without Gmin:"
+				op2.write_to_file(filename='stdout')
+			opsolution = op2
 	
+		if data_filename != 'stdout' and data_filename is not None:
+			opsolution.write_to_file()
 	else:
 		printing.print_general_error("Couldn't solve the circuit. Giving up.")
 		opsolution = None
-	
+
 	return opsolution
 
 def print_elements_ops(circ, x):

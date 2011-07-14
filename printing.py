@@ -226,45 +226,24 @@ def print_symbolic_equations(eq_list):
 	print "+--"
 	return
 
-def print_result_check(x2, x1, circ, verbose=2): #fixme I don't like it!
-	"""Checks the differences between two sets of results and prints to stdout.
+def print_result_check(badvars, verbose=2):
+	"""Prints out the results of the OP check performed by results.op_solution.gmin_check
 	It assumes one set of results is calculated with Gmin, the other without.
-	x1, x2: the results vectors
-	circ: 	circuit description
+	badvars: the list returned by results.op_solution.gmin_check
 	
-	Returns:
-	True, if the check was passed
-	False, otherwise.
+	Returns: None
 	"""
-	first_time = True
-	nv_1 = len(circ.nodes_dict) - 1
-	
-	# descrizioni dei componenti non definibili in tensione
-	idescr = [ (elem.letter_id.upper() + elem.descr) \
-		for elem in circ.elements if circuit.is_elem_voltage_defined(elem) ] #cleaner ??
-	
-	dxg = x2 - x1
-	for index in xrange(x2.shape[0]):
-		if (index < nv_1 and abs(dxg[index, 0]) > options.ver*max(abs(x1[index, 0]), abs(x2[index, 0])) + \
-		options.vea) or \
-		(index >= nv_1 and abs(dxg[index, 0]) > options.ier*max(abs(x1[index, 0]), abs(x2[index, 0]))+options.iea):
-			if first_time:
-				print "Warning: solution is heavvily dependent on gmin."
-				first_time = False
-				if verbose:
-					print "Affected variables:"
-			if verbose:
-				if index < nv_1:
-					print "V" + str(circ.nodes_dict[index + 1])
-				else:
-					print "I through " + idescr[index - nv_1]
-	if first_time:
+	if len(badvars):
+		print "Warning: solution is heavvily dependent on gmin."
+		print "Affected variables:"
+		for bv in badvars:
+			print bv
+	else:
 		if verbose: 
 			print "Difference check is within margins." 
 			print "(Voltage: er=" + str(options.ver) + ", ea=" + str(options.vea) + \
 			", Current: er=" + str(options.ier) + ", ea=" + str(options.iea) + ")"
-		return True
-	return False
+	return None
 
 def print_results_header(circ, fp, print_int_nodes=False, print_time=False, print_omega=False):
 	"""Prints the header of the results.
@@ -350,6 +329,10 @@ def print_results_on_a_line(time, x, fdata, circ, print_int_nodes=False, iter_n=
 	return None
 
 def table_print(twodarray, separator='  '):
+	print table_setup(twodarray, separator=separator)
+
+def table_setup(twodarray, separator='  '):
+	table_string = ""
 	col_width = []
 	if len(twodarray) == 0 or len(twodarray[0]) == 0:
 		return
@@ -369,6 +352,6 @@ def table_print(twodarray, separator='  '):
 				current_str = current_str + " "*(col_width[ci]-elem_width) + elem + separator
 			else:
 				current_str = current_str + elem + " "*(col_width[ci]-elem_width) +  separator
-		print current_str
-
+		table_string += current_str + "\n"
+	return table_string
 
