@@ -472,7 +472,7 @@ class ekv_mos_model:
 		qf = self.ismall2qsmall(ifn)
 		qr = self.ismall2qsmall(irn)
 
-		Ids =  self.NPMOS * device.L/Leff * device.M * self.scaling.Is * (ifn - irn)
+		Ids =  CS_FACTOR*self.NPMOS * device.L/Leff * device.M * self.scaling.Is * (ifn - irn)
 		
 		vd_real = vd if CS_FACTOR == 1 else vs
 		vs_real = vs if CS_FACTOR == 1 else vd
@@ -705,7 +705,46 @@ class ekv_mos_model:
 		return ret
 		
 if __name__ == '__main__':
-	import mostest
-	mostest.runall()
+	# Tests
+	import matplotlib.pyplot as plt
 
+	ekv_m = ekv_mos_model(TYPE='n', KP=50e-6, VTO=.4)
+	ma = ekv_device(1, 2, 3, 4, W=10e-6,L=1e-6, model=ekv_m)
+	ma.descr = "1"
+
+	# OP test
+	vd = 0
+	vg = 1
+	vs = 0
+	ma.print_op_info(((vd, vg, vs),))
+	ekv_m.print_model()
+
+	# gmUt/Ids test
+	import mosq
+	msq = mosq.mosq(1, 2, 3, kp=50e-6, w=10e-6, l=1e-6, vt=.4, lambd=0, mos_type='n')
+	data0 = []
+	data1 = []
+	data2 = []
+	data3 = []
+	vd = 2.5
+	if True:
+		vs = 1
+		for Vhel in range(1,2500):
+			print ".",
+			vg = Vhel/1000.0
+			ma.update_status_dictionary(((vd, vg, 0),))						
+			data0.append(ma.opdict['Ids'])
+			#print "Current for vd", vd, "vg", vg, "vs", vs
+			data1.append(ma.opdict['TEF'])
+			isq = msq.i((vd, vg, vs),)
+			gmsq = msq.g((vd, vg, vs),0)
+			if isq > 0:
+				data2.append(gmsq/isq*constants.Vth())
+			else:
+				data2.append(float('nan'))
+			data3.append(isq)
+	plt.semilogx(data0, data1, data3, data2)
+	plt.title('Transconductance efficiency factor')
+	plt.legend(['(GM*UT)/ID'])
+	plt.show()
 
