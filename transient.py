@@ -55,6 +55,8 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	element of x will be printed out to step_and_lte.graph in the current directory.
 	
 	"""
+	if data_filename == "stdout":
+		verbose = 0
 	_debug = False
 	if _debug:
 		print_step_and_lte = True
@@ -72,24 +74,18 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 		sys.exit(1)
 
 	if verbose > 4:
-		print "Vea =", options.vea, "Ver =", options.ver, "Iea =", options.iea, "Ier =", \
-		options.ier, "max_time_iter =", options.transient_max_time_iter, "HMIN=",options.hmin
-	#	print "tstart = "+str(tstart), "tstop = " + str(tstop), "tstep = "+str(tstep)
+		tmpstr = "Vea = %g Ver = %g Iea = %g Ier = %g max_time_iter = %g HMIN = %g" % \
+		(options.vea, options.ver, options.iea, options.ier, options.transient_max_time_iter, options.hmin)
+		printing.print_info_line((tmpstr, 5), verbose)
 	
 	locked_nodes = circ.get_locked_nodes()
 	
-	# setup output streams:
-	#if data_filename != "stdout":
-	#	fdata = open(data_filename, "w")
-	#else:
-	#	fdata = sys.stdout
 	if print_step_and_lte:
 		flte = open("step_and_lte.graph", "w")
 		flte.write("#T\tStep\tLTE\n")
 	
-	if verbose > 2 and data_filename != 'stdout':
-		print "Starting transient analysis: "
-		print "Selected method: %s" % method
+	printing.print_info_line(("Starting transient analysis: ", 3), verbose)
+	printing.print_info_line(("Selected method: %s" % (method,), 3), verbose)
 	#It's a good idea to call transient with prebuilt MNA and N matrix
 	#the analysis will be slightly faster (long netlists). 
 	if mna is None or N is None:
@@ -107,8 +103,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 
 	# setup x0
 	if x0 is None:
-		if verbose > 4 and data_filename != 'stdout': 
-			print "Generating x(t="+str(tstart)+") = 0"
+		printing.print_info_line(("Generating x(t=%g) = 0" % (tstart,), 5), verbose)
 		x0 = numpy.matrix(numpy.zeros((mna.shape[0], 1)))
 		opsol =  results.op_solution(x=x0, error=x0, circ=circ, outfile=None)
 	else:
@@ -117,19 +112,14 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 			x0 = x0.asmatrix()
 		else:
 			opsol =  results.op_solution(x=x0, error=numpy.matrix(numpy.zeros((mna.shape[0], 1))), circ=circ, outfile=None)
-		if verbose > 4 and data_filename != 'stdout':
-			print "Using the supplied op as x(t="+str(tstart)+")."
-
-	if verbose > 4 and data_filename != 'stdout':
+		printing.print_info_line(("Using the supplied op as x(t=%g)." % (tstart,), 5), verbose)
+		
+	if verbose > 4:
 		print "x0:"
 		opsol.print_short()
-		#printing.print_results_header(circ, sys.stdout, print_int_nodes=True, print_time=False)
-		#printing.print_results_on_a_line(None, x0, sys.stdout, circ, print_int_nodes=True, iter_n=10)
-		#print x0
 	
 	# setup the df method
-	if verbose > 4: 
-		sys.stdout.write("Selecting the appropriate DF ("+method+")... ")
+	printing.print_info_line(("Selecting the appropriate DF ("+method+")... ", 5), verbose, print_nl=False)
 	if method == IMPLICIT_EULER:
 		import implicit_euler as df
 	elif method == TRAP:
@@ -163,14 +153,13 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 		printing.print_warning("The chosen DF does not support step control. Turning off the feature.")
 		use_step_control = False
 		#use_aposteriori_step_control = False
-	elif verbose > 4:
-		sys.stdout.write("done\n")
-	
+
+	printing.print_info_line(("done.", 5), verbose)
+		
 	# setup the data buffer
 	# if you use the step control, the buffer has to be one point longer.
 	# That's because the excess point is used by a FF in the df module to predict the next value.
-	if verbose > 4:
-		sys.stdout.write("Setting up the buffer... ")
+	printing.print_info_line(("Setting up the buffer... ", 5), verbose, print_nl=False)
 	((max_x, max_dx), (pmax_x, pmax_dx)) = df.get_required_values()
 	if max_x is None and max_dx is None:
 		printing.print_general_error("df doesn't need any value?")
@@ -180,8 +169,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	else:
 		thebuffer = dfbuffer(length=max(max_x, max_dx) + 1, width=3)
 	thebuffer.add((tstart, x0, None)) #setup the first values
-	if verbose > 4: 
-		sys.stdout.write("done\n")
+	printing.print_info_line(("done.", 5), verbose) #FIXME
 	
 	#setup the output buffer
 	if return_req_dict:
@@ -195,11 +183,10 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	if (max_x is not None and max_x > 0) or max_dx is not None:
 		import implicit_euler
 	
-	if verbose > 4:
-		print "MNA (reduced):"
-		print mna
-		print "D (reduced):"
-		print D
+	printing.print_info_line(("MNA (reduced):", 5), verbose)
+	printing.print_info_line((str(mna), 5), verbose)
+	printing.print_info_line(("D (reduced):", 5), verbose)
+	printing.print_info_line((str(D), 5), verbose)
 	
 	# setup the initial values to start the iteration:
 	x = None
@@ -212,10 +199,8 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	if use_step_control:
 		#tstep = min((tstop-tstart)/9999.0, HMAX, 100.0 * options.hmin)
 		tstep = min((tstop-tstart)/9999.0, HMAX)
-		if verbose > 4:
-			print "Initial step:", tstep
-	#else:
-		#tstep = HMAX #should already be so, but, ynk
+	printing.print_info_line(("Initial step: %g"% (tstep,), 5), verbose)
+
 	if max_dx is None:
 		max_dx_plus_1 = None
 	else:
@@ -236,15 +221,9 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	iter_n = 0  # contatore d'iterazione
 	lte = None
 	sol = results.tran_solution(circ, tstart, tstop, op=x0, method=method, outfile=data_filename)
-	#printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_time=True)
-	#printing.print_results_on_a_line(time, x0, fdata, circ, print_int_nodes=options.print_int_nodes, iter_n=0)
-	#printing.print_results_at_time(time, x0, fdata, iter_n)
-	if data_filename != 'stdout':
-		if verbose > 2:
-			sys.stdout.write("Solving... ")
-		if verbose > 1:
-			tick = ticker.ticker(increments_for_step=1)
-			tick.display()
+	printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
+	tick = ticker.ticker(increments_for_step=1)
+	tick.display(verbose > 1)
 	while time < tstop:
 		if iter_n < max(max_x, max_dx_plus_1):
 			x_coeff, const, x_lte_coeff, prediction, pred_lte_coeff = \
@@ -260,7 +239,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 		elif x is not None:
 			x0 = x
 		
-		(x1, error, solved) = dc_analysis.dc_solve(mna=(mna + numpy.multiply(x_coeff, D)) , Ndc=N,  Ntran=D*const, circ=circ, Gmin=Gmin_matrix, x0=x0, time=(time + tstep), locked_nodes=locked_nodes, MAXIT=options.transient_max_nr_iter, verbose=0)
+		(x1, error, solved, n_iter) = dc_analysis.dc_solve(mna=(mna + numpy.multiply(x_coeff, D)) , Ndc=N,  Ntran=D*const, circ=circ, Gmin=Gmin_matrix, x0=x0, time=(time + tstep), locked_nodes=locked_nodes, MAXIT=options.transient_max_nr_iter, verbose=0)
 		
 		if solved:
 			old_step = tstep #we will modify it, if we're using step control otherwise it's the same
@@ -299,22 +278,18 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 			x = x1
 			iter_n = iter_n + 1
 			sol.add_line(time, x)
-			#printing.print_results_on_a_line(time, x, fdata, circ, options.print_int_nodes, iter_n)
 			
 			dxdt = numpy.multiply(x_coeff, x) + const
 			thebuffer.add((time, x, dxdt))
 			if output_buffer is not None:
 				output_buffer.add((x, ))
-			if data_filename != 'stdout':
-				if verbose > 1:
-					tick.step()
+			tick.step(verbose > 1)
 		else:
 			# If we get here, Newton failed to converge. We need to reduce the step...
 			if use_step_control:
 				tstep = tstep/5.0
 				tstep = check_step(tstep, time, tstop, HMAX)
-				if verbose > 4 and data_filename != 'stdout':
-					print "At "+str(time)+" reducing step: "+str(tstep)+" (convergence failed)"
+				printing.print_info_line(("At %g s reducing step: %g s (convergence failed)" % (time, tstep), 5), verbose)
 			else: #we can't reduce the step
 				printing.print_general_error("Can't converge with step "+str(tstep)+".")
 				printing.print_general_error("Try setting --t-max-nr to a higher value or set step to a lower one.")
@@ -324,27 +299,22 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 			printing.print_general_error("MAX_TIME_ITER exceeded ("+str(options.transient_max_time_iter)+"), iteration halted.")
 			solved = False
 			break
-	#end of while
-	#if not fdata == sys.stdout:
-	#	fdata.close()
 	
 	if print_step_and_lte:
 		flte.close()
 	
-	if data_filename != 'stdout' and verbose > 1:
-		tick.hide()
+	tick.hide(verbose > 1)
 	
 	if solved:
-		if data_filename != 'stdout' and verbose > 2:
-			print "done."
-			print "Average time step:", (tstop - tstart)/iter_n
+		printing.print_info_line(("done.", 3), verbose)
+		printing.print_info_line(("Average time step: %g" % ((tstop - tstart)/iter_n,), 3), verbose)
+
 		if output_buffer:
 			ret_value = output_buffer.get_as_matrix()
 		else:
-			ret_value = None
+			ret_value = sol
 	else:
-		if data_filename != 'stdout':
-			print "failed."
+		print "failed."
 		ret_value =  None
 	
 	return ret_value
@@ -387,8 +357,6 @@ def generate_D(circ, shape):
 	
 	Returns: the UNREDUCED D matrix
 	"""
-	#shape[0] = shape[0] + 1
-	#shape[1] = shape[1] + 1
 	D = numpy.matrix(numpy.zeros((shape[0]+1, shape[1]+1)))
 	nv = len(circ.nodes_dict)# - 1
 	i_eq = 0 #each time we find a vsource or vcvs or ccvs, we'll add one to this.
@@ -435,7 +403,6 @@ class dfbuffer:
 		self._width = width
 	
 	def add(self, atuple):
-		#print "len atuple " + str(len(atuple))
 		if not len(atuple) == self._width:
 			printing.print_warning("Attempted to add a element of wrong size to LIFO buffer. BUG?")
 			return False

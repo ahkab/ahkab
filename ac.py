@@ -37,6 +37,9 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 	"""Performs an AC analysis of the circuit (described by circ).
 	"""
 	
+	if data_filename == 'stdout':
+		verbose = 0
+
 	#check step/start/stop parameters
 	if start == 0:
 		printing.print_general_error("AC analysis has start frequency = 0")
@@ -48,26 +51,23 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 		printing.print_general_error("AC analysis has number of steps <= 1")
 		sys.exit(1)
 	if step_type == options.ac_log_step:
-		omega_iter = log_axis_iterator(stop, start, nsteps)
+		omega_iter = utilities.log_axis_iterator(stop, start, nsteps)
 	elif step_type == options.ac_lin_step:
-		omega_iter = lin_axis_iterator(stop, start, nsteps)
+		omega_iter = utilities.lin_axis_iterator(stop, start, nsteps)
 	else:
 		printing.print_general_error("Unknown sweep type.") 
 		sys.exit(1)
 	
-	if verbose > 4:
-		print "Vea =", options.vea, "Ver =", options.ver, "Iea =", options.iea, "Ier =", \
-		options.ier, "max_ac_nr_iter =", options.ac_max_nr_iter
+	tmpstr = "Vea =", options.vea, "Ver =", options.ver, "Iea =", options.iea, "Ier =", \
+	options.ier, "max_ac_nr_iter =", options.ac_max_nr_iter
+	printing.print_info_line((tmpstr, 5), verbose)
+	del tmpstr
 	
-	# setup output streams:
-	#if data_filename != "stdout":
-	#	fdata = open(data_filename, "w")
-	#else:
-	#	fdata = sys.stdout
-	
-	if verbose > 2 and data_filename != 'stdout':
-		print "Starting AC analysis: "
-		print "w: start = "+str(start), "stop = " + str(stop)+ ",", nsteps, "steps"
+	printing.print_info_line(("Starting AC analysis: ", 3), verbose)
+	tmpstr = "w: start = %g Hz, stop = %g Hz, %d steps" % (start, stop, nsteps)
+	printing.print_info_line((tmpstr, 3), verbose)
+	del tmpstr
+
 	#It's a good idea to call AC with prebuilt MNA matrix if the circuit is big
 	if mna is None:
 		(mna, N) = dc_analysis.generate_mna_and_N(circ)
@@ -80,34 +80,40 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 		AC = generate_AC(circ, [mna.shape[0], mna.shape[0]])
 		AC = utilities.remove_row_and_col(AC)
 
-	if J is None and circ.is_nonlinear():
-		if verbose > 4 and data_filename != 'stdout':
-			print "Linearizing the circuit..."
-		if xop is None:
-			if circ.is_nonlinear():
-				printing.print_general_error("AC failed to find an op to linearize the (NL) circuit.") 
-				sys.exit(3)
-			else:
-				printing.print_warning("AC failed to find an op to linearize the linear circuit.") 
-				printing.print_warning("Carrying on...")
-		else:	
-			if verbose > 4 and data_filename != 'stdout':
-				print "Linearizing point (xop):"
-				printing.print_results_header(circ, sys.stdout, print_int_nodes=True, print_time=False)
-				printing.print_results_on_a_line(None, xop, sys.stdout, circ, print_int_nodes=True, iter_n=10)
-		J = generate_J(xop=xop.asmatrix(), circ=circ, mna=mna, Nac=Nac, data_filename=data_filename, verbose=verbose)
-	elif J is None and not circ.is_nonlinear():
+	
+	if circ.is_nonlinear():
+		if J is not None:
+			pass
+			# we used the supplied linearization matrix
+		else:
+			if xop is None:
+				printing.print_info_line(("Starting OP analysis to get a linearization point...", 3), verbose, print_nl=False)
+				#silent OP
+				xop = dc_analysis.op_analysis(circ, verbose=0)
+				if xop is None: #still! Then op_analysis has failed!
+					printing.print_info_line(("failed.", 3), verbose)
+					printing.print_general_error("OP analysis failed, no linearization point available. Quitting.") 
+					sys.exit(3)
+				else:
+					printing.print_info_line(("done.", 3), verbose)
+			printing.print_info_line(("Linearization point (xop):", 5), verbose)
+			if verbose > 4: xop.print_short()
+			printing.print_info_line(("Linearizing the circuit...", 5), verbose, print_nl=False)
+			J = generate_J(xop=xop.asmatrix(), circ=circ, mna=mna, Nac=Nac, data_filename=data_filename, verbose=verbose)
+			printing.print_info_line((" done.", 5), verbose)
+			# we have J, continue
+	else: #not circ.is_nonlinear()
+		# no J matrix is required.
 		J = 0
 	
-	if verbose > 4 and data_filename != 'stdout':
-		print "MNA (reduced):"
-		print mna
-		print "AC (reduced):"
-		print AC
-		print "J (reduced):"
-		print J
-		print "Nac (reduced):"
-		print Nac
+	printing.print_info_line(("MNA (reduced):", 5), verbose)
+	printing.print_info_line((str(mna), 5), verbose)
+	printing.print_info_line(("AC (reduced):", 5), verbose)
+	printing.print_info_line((str(AC), 5), verbose)
+	printing.print_info_line(("J (reduced):", 5), verbose)
+	printing.print_info_line((str(J), 5), verbose)
+	printing.print_info_line(("Nac (reduced):", 5), verbose)
+	printing.print_info_line((str(Nac), 5), verbose)
 	
 	sol = results.ac_solution(circ, ostart=start, ostop=stop, opoints=nsteps, stype=step_type, op=xop, outfile=data_filename)
 
@@ -119,41 +125,30 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 
 	iter_n = 0  # contatore d'iterazione
 	#printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_omega=True)
-	if data_filename != 'stdout':
-		if verbose > 2:
-			sys.stdout.write("Solving... ")
-		if verbose > 1:
-			tick = ticker.ticker(increments_for_step=1)
-			tick.display()
+	printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
+	tick = ticker.ticker(increments_for_step=1)
+	tick.display(verbose > 1)
+
 	x = xop
 	for omega in omega_iter:
-		(x, error, solved) = dc_analysis.dc_solve(mna=(mna + numpy.multiply(j*omega, AC) + J), \
+		(x, error, solved, n_iter) = dc_analysis.dc_solve(mna=(mna + numpy.multiply(j*omega, AC) + J), \
 		Ndc=Nac,  Ntran=0, circ=circuit.circuit(title="Dummy circuit for AC", filename=None), Gmin=Gmin_matrix, x0=x, \
 		time=None, locked_nodes=None, MAXIT=options.ac_max_nr_iter, skip_Tt=True, verbose=0)
 		if solved:
-			if verbose > 1 and data_filename != 'stdout':
-				tick.step()
-			# iter_n % 10 == 0 causes the printing function to flush the stream
+			tick.step(verbose > 1)
 			iter_n = iter_n + 1
 			# hooray!
 			sol.add_line(omega, x)
-	#		printing.print_results_on_a_line(omega, x, fdata, circ, print_int_nodes=options.print_int_nodes, iter_n=iter_n, ac_data=True)
 		else:
 			break
-	#end of while
-	#if not fdata == sys.stdout:
-	#	fdata.close()
 	
-	if verbose > 1 and data_filename != 'stdout':
-		tick.hide()
+	tick.hide(verbose > 1)
 	
 	if solved:
-		if verbose > 2 and data_filename != 'stdout':
-			print "done."
+		printing.print_info_line(("done.", 3), verbose)
 		ret_value = sol
 	else:
-		if data_filename != 'stdout':
-			print "failed."
+		print "failed."
 		ret_value =  None
 	
 	return ret_value
@@ -236,73 +231,7 @@ def generate_Nac(circ):
 				Nac[index, 0] = -1.0*elem.abs_ac*numpy.exp(j*elem.arg_ac)
 	return Nac
 
-class log_axis_iterator:
-	"""This iterator provides the values for a logarithmic sweep.
-	"""
-	def __init__(self, max, min, nsteps):
-		self.inc = 10**((numpy.log10(max)-numpy.log10(min))/nsteps)
-		self.max = max
-		self.min = min
-		self.index = 0
-		self.current = min
-		self.nsteps = nsteps
-	def next(self):
-		"""Iterator method: get the next value
-		"""
-		if self.index < self.nsteps:
-			self.current = self.current * self.inc
-			ret = self.current 
-		else:
-			raise StopIteration
-		self.index = self.index + 1 
-		return ret
-	def __getitem__(self, i):
-		"""Iterator method: get a particular value (n. i)
-		"""
-		if i < self.nsteps:
-			ret = self.min*self.inc**i
-		else:
-			ret = None
-		return ret
-	def __iter__(self):
-		"""Required iterator method.
-		"""
-		return self
-
-class lin_axis_iterator:
-	"""This iterator provides the values for a linear sweep.
-	"""
-	def __init__(self, max, min, nsteps):
-		self.inc = (max - min)/nsteps
-		self.max = max
-		self.min = min
-		self.index = 0
-		self.current = min
-		self.nsteps = nsteps
-	def next(self):
-		"""Iterator method: get the next value
-		"""
-		if self.index < self.nsteps:
-			self.current = self.current + self.inc
-			ret = self.current 
-		else:
-			raise StopIteration
-		self.index = self.index + 1 
-		return ret
-	def __getitem__(self, i):
-		"""Iterator method: get a particular value (n. i)
-		"""
-		if i < self.nsteps:
-			ret = self.min + self.inc*i
-		else:
-			ret = None
-		return ret
-	def __iter__(self):
-		"""Required iterator method.
-		"""
-		return self
-
-def generate_J(xop, circ, mna, Nac, data_filename, verbose):
+def generate_J(xop, circ, mna, Nac, data_filename, verbose=0):
 	# setup J
 	# build the linearized matrix (stored in J)
 	J = numpy.mat(numpy.zeros(mna.shape))
@@ -311,9 +240,6 @@ def generate_J(xop, circ, mna, Nac, data_filename, verbose):
 		if elem.is_nonlinear:
 			dc_analysis.update_J_and_Tx(J, Tlin, xop, elem, time=None)
 	#del Tlin # not needed! **DC**!
-
-	if verbose > 4 and data_filename != 'stdout':
-		sys.stdout.write("done\n")
 
 	return J
 

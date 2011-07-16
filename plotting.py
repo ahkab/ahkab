@@ -86,53 +86,33 @@ def split_netlist_label(labels_string):
 		raise Exception, "Unrecognized plot labels: "+ labels_string
 	return ret_labels			
 
-def setup_plot(fig, title, xlabel, y2y1_list, analysis, log=False):
-	pylab.title(title)
+def setup_plot(fig, title, xvu, yvu, log=False, xlog=False, ylog=False):
+	""" fig: the figure
+	title: plot title:
+	xvu: tuple defined as xvu = (xvar, xunit)
+	yvu: list of tuples defined as yvu += [(yvarN, yunitN)]
+
+	returns: fig
+	"""
+	#xvar, xunit = xvu
+	pylab.title(title.upper())
 	ax = pylab.gca()
-	if xlabel == 'T':
-		pylab.xlabel('t [s]')
-	elif xlabel[0] == 'V':
-		pylab.xlabel(xlabel + " [V]")
-	elif xlabel[0] == 'I':
-		pylab.xlabel(xlabel + " [A]")
-	# here we hope all variables are of the same type
-	if y2y1_list[0][0] == 'V':
-		pylab.ylabel("V [V]")
-	elif y2y1_list[0][0] == 'I':
-		pylab.ylabel("I [A]")
-	if log:
+	pylab.xlabel('%s [%s]' % xvu)
+	yunits = []
+	yinitials = []
+	for yv, yu in yvu:
+		if not yu in yunits:
+			yunits.append(yu)
+			yinitials.append(yv[0])
+	ylabel = ""
+	for yi, yu in zip(yinitials, yunits):
+		ylabel += "%s [%s] / " % (yi, yu)
+	ylabel = ylabel[:-3]
+	pylab.ylabel(ylabel)
+	if log or xlog:
 		ax.set_xscale('log')
+	if log or ylog:
 		ax.set_yscale('log')
-	return fig
-
-
-def plot_counts_vs_wins(counts, current, todisk=None):
-	counts_allwin = []
-	for i in range(5):
-		c = counts.get_counts_array(current, bitindex=i)
-		print c
-		counts_allwin.append(c)
-	plotx = [numpy.arange(counts.nwin)]
-
-	plots = zip(plotx*5, counts_allwin)
-
-	# plot!
-	fig = p.figure()
-	p.hold(True)
-	labels = ("Range DEF", "Range 0", "Range 1", "Range 2", "Range 3")
-	fmts = ("b", "g", "r", "c", "m")
-	for i in range(5):
-		p.bar(plots[i][0], plots[i][1], label=labels[i], color=fmts[i])
-	p.hold(False)
-	p.title("Counts vs 40us windows\nIin = "+"{0:.3e}".format(current)+" A" )
-	p.xlabel('#window []')
-	p.ylabel('Counts []')
-	ax = p.gca()
-	ax.set_xlim(plots[i][0][0], plots[i][0][-1])
-	p.legend()
-	if todisk is not None:
-		save_figure(todisk, '_vstime')
-		#p.show()
 	return fig
 
 def save_figure(filename, fig):
@@ -140,24 +120,33 @@ def save_figure(filename, fig):
 	pylab.savefig(filename, dpi=100, bbox_inches='tight', format=options.plotting_outtype)
 	return
 
-def plot_file(title, x, y2y1_list, filename, analysis, outfilename):
-	"""Reads out data from a file and plots it.
-	Deprecated, use plot_file, it passes the file directly to gnuplot.
+def plot_results(title, xvarname, y2y1_list, results, outfilename):
+	"""Plot the results.
 	"""
 	fig = pylab.figure()
-	setup_plot(fig, title, x, y2y1_list, analysis)
+	analysis = results.get_type().upper()
+	xunit = results.units[xvarname]
 	gdata = []
-	gx = read_data(filename, x)
-	pylab.hold(True)
+	x = results[xvarname]
+	yvu = []
+
 	for y2label, y1label in y2y1_list:
 		if y1label is not None and y1label != '':
-			data1 = read_data(filename, y1label)
-			ylabel = y2label+"-"+y1label
+			data1 = results[y1label]
+			line_label = y2label+"-"+y1label
 		else:
-			ylabel = y2label
+			line_label = y2label
 			data1 = 0
-		data2 =  read_data(filename, y2label)
-		pylab.plot(gx, data2-data1, options.plotting_style, label=ylabel+" ("+analysis+")",)
+		data2 =  results[y2label]
+		yvu += [(line_label, results.units[y2label])]
+		gdata.append((data2-data1, line_label))
+
+	setup_plot(fig, title, (xvarname, xunit), yvu)
+
+	pylab.hold(True)
+	for y, label in gdata:
+		# pylab wants matrices in the form: N,1, while results come as (1, N) -> Transpose
+		pylab.plot(x.T, y.T, options.plotting_style, label=label+" ("+analysis+")",)
 	pylab.hold(False)
 	pylab.legend()
 
@@ -165,10 +154,8 @@ def plot_file(title, x, y2y1_list, filename, analysis, outfilename):
 		save_figure(outfilename, fig)
 	return
 
-
 def show_plots():
 	pylab.show()
-
 
 if __name__ == '__main__':
 	filename = 'colpitts_graph.tran'

@@ -67,9 +67,11 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 	Returns: nothing
 	"""
 	
-	if verbose > 2 and data_filename != "stdout": 
-		print "Starting periodic steady state analysis:"
-		print "Method: shooting"
+	if data_filename == "stdout": 
+		verbose = 0
+
+	printing.print_info_line(("Starting periodic steady state analysis:",3), verbose)
+	printing.print_info_line(("Method: shooting",3), verbose)
 	
 	if mna is None or Tf is None:
 		(mna, Tf) = dc_analysis.generate_mna_and_N(circ)
@@ -93,24 +95,19 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 	n_of_var = mna.shape[0]
 	locked_nodes = circ.get_locked_nodes()
 	
-	if verbose > 2:
-		print "Starting transient analysis for init, tstop="+str(10*points*step)+", tstep="+str(step)
+	printing.print_info_line(("Starting transient analysis for algorithm init: tstop=%g, tstep=%g... " % (10*points*step, step),3), verbose, print_nl=False)
 	xtran = transient.transient_analysis(circ=circ, tstart=0, tstep=step, tstop=10*points*step, method="TRAP", x0=None, mna=mna, N=Tf, \
         D=D, use_step_control=False, data_filename=data_filename+".tran", return_req_dict={"points":points}, verbose=0)
 	if xtran is None:
-		print "Failed."
-		return
-	if verbose >2:
-		print "Done."
+		print "failed."
+		return None
+	printing.print_info_line(("done.",3), verbose)
 	
 	x = []
 	for index in range(points):
 		x.append(xtran[index*n_of_var:(index+1)*n_of_var,0])
 
-	if verbose > 2: 
-		tick = ticker.ticker(increments_for_step=1)
-	else:
-		tick=None
+	tick = ticker.ticker(increments_for_step=1)
 
 	MAass_static, MBass = build_static_MAass_and_MBass(mna, D, step)
 	
@@ -121,10 +118,9 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 	Tass_static_vector = build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose)
 	
 	converged = False
-	if verbose > 2: 
-		sys.stdout.write("Solving... ")
-		tick.reset()
-		tick.display()
+	printing.print_info_line(("Solving... ",3), verbose, print_nl=False)
+	tick.reset()
+	tick.display(verbose > 2)
 	
 	iteration = 0 # newton iteration counter
 	conv_counter = 0
@@ -145,9 +141,7 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 		dxN = compute_dxN(circ, MAass_variable_vector, MBass, Tass_variable_vector, n_of_var, points, verbose=verbose)
 		td = dc_analysis.get_td(dxN, locked_nodes, n=-1)
 		x[points-1] = td * dxN + x[points-1]
-		#print dxN
-		#print Tass_variable_vector
-		#print MAass_variable_vector
+
 		for index in range(points-1):
 			if index == 0:
 				dxi_minus_1 = dxN
@@ -170,8 +164,7 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 			#break
 		else:
 			conv_counter = 0
-			if verbose > 2: 
-				tick.step()
+			tick.step(verbose > 2)
 	
 		if options.shooting_max_nr_iter and iteration == options.shooting_max_nr_iter:
 			printing.print_general_error("Hitted SHOOTING_MAX_NR_ITER (" + str(options.shooting_max_nr_iter) + "), iteration halted.")
@@ -179,24 +172,21 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 			break
 		else:
 			iteration = iteration + 1
-#		if iteration % 5 == 0:
-#			print_results(circ, x, fdata, points, step)
-	if verbose > 2: 
-		tick.hide()
+
+	tick.hide(verbose > 2)
 	if converged:
-		if verbose > 2: 
-			print "done."
+		printing.print_info_line(("done.", 3), verbose)
 		t = numpy.mat(numpy.arange(points)*step)
 		t = t.reshape((1, points))
 		xmat = x[0]
 		for index in xrange(1, points):
 			xmat = numpy.concatenate((xmat, x[index]), axis=1)
-		results.pss_solution(circ=circ, method="shooting", period=period, outfile=data_filename, t_array=t, x_array=xmat)
+		sol = results.pss_solution(circ=circ, method="shooting", period=period, outfile=data_filename, t_array=t, x_array=xmat)
 		#print_results(circ, x, fdata, points, step)
 	else:
-		if verbose > 2 and data_filename != "stdout": 
-			print "failed."
-	return
+		print "failed."
+		sol = None
+	return sol
 
 def vector_norm_wrapper(vector, norm_fun):
 	max = 0
@@ -231,7 +221,6 @@ def check_step_and_points(step, points, period):
 	
 	return (points, step)
 
-#mna, D, step, points, tick, n_of_var=None, verbose=3)
 def build_static_MAass_and_MBass(mna, D, step):
 	(C1, C0) = implicit_euler.get_df_coeff(step)
 	MAass = mna + D*C1
@@ -241,11 +230,10 @@ def build_static_MAass_and_MBass(mna, D, step):
 def build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3):
         Tass_vector = []
 	nv = len(circ.nodes_dict)
-        if verbose > 4:
-                sys.stdout.write("Building Tass... ")
-        if verbose > 2:
-                tick.reset()
-                tick.display()
+	printing.print_info_line(("Building Tass...", 5), verbose, print_nl=False)
+
+        tick.reset()
+        tick.display(verbose > 2)
         for index in xrange(0, points):
                 Tt = numpy.zeros((n_of_var, 1))
                 v_eq = 0
@@ -263,13 +251,10 @@ def build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3):
                                                 Tt[elem.n2-1, 0] - elem.I(time)
                         if circuit.is_elem_voltage_defined(elem):
                                 v_eq = v_eq +1
-                if verbose > 2:
-                        tick.step()
+                tick.step(verbose > 2)
                 Tass_vector.append(Tf+Tt)
-        if verbose > 2:
-                tick.hide()
-                if verbose > 4:
-                        print "done."
+        tick.hide(verbose > 2)
+	printing.print_info_line(("done.", 5), verbose)
 
         return Tass_vector
 

@@ -27,7 +27,7 @@ from ahkab import VERSION
 
 	
 class op_solution:
-	def __init__(self, x, error, circ, outfile):
+	def __init__(self, x, error, circ, outfile, iterations=0):
 		"""Holds a set of Operating Point results.
 			x: the result set
 			error: the residual error after solution,
@@ -45,6 +45,7 @@ class op_solution:
 		self.gmin = options.gmin
 		self.temp = constants.T
 		self.filename = outfile
+		self.iterations = iterations
 
 		#We have mixed current and voltage results
 		# per primi vengono tanti valori di tensioni quanti sono i nodi del circuito meno uno,
@@ -60,7 +61,7 @@ class op_solution:
 		self.x = x
 	
 		for index in range(nv_1):
-			varname = "V" + str(circ.nodes_dict[index + 1])
+			varname = ("V" + str(circ.nodes_dict[index + 1])).upper()
 			self.variables += [varname]
 			self.results.update({varname:x[index, 0]})
 			self.errors.update({varname:error[index, 0]})
@@ -68,9 +69,10 @@ class op_solution:
 			if circ.is_int_node_internal_only(index+1):
 				skip_nodes_list.append(index)
 
-		for elem in circ.elements: 
+		for elem in circ.elements:
 			if circuit.is_elem_voltage_defined(elem):
-				varname = "I("+elem.letter_id.upper()+elem.descr+")"
+				index = index + 1
+				varname = ("I("+elem.letter_id.upper()+elem.descr+")").upper()
 				self.variables += [varname]
 				self.results.update({varname:x[index, 0]})
 				self.errors.update({varname:error[index, 0]})
@@ -87,6 +89,9 @@ class op_solution:
 				self.errors[v], self.units[v], \
 				self.errors[v]/self.results[v]*100.0)
 		return str_repr
+
+	def get_type(self):
+		return "OP"
 
 	def asmatrix(self):
 		return self.x
@@ -175,6 +180,7 @@ class op_solution:
 		fp.write("At %.2f C\n" % (self.temp,))
 		fp.write("Options:\n\tvea = %e\n\tver = %f\n\tiea = %e\n\tier = %f\n\tgmin = %e\n" %\
 			(self.vea, self.ver, self.iea, self.ier, self.gmin))
+		fp.write("\nConvergence reached in %d iterations.\n" % (self.iterations,))
 		fp.write("\nResults:\n")
 		vtable = self.get_table_array()
 		fp.write(printing.table_setup(vtable))
@@ -300,7 +306,7 @@ class ac_solution:
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
 		self.skip_nodes_list = []	# nodi da saltare, solo interni
 		self.variables = ["w"]
-		self.units = {}			# not used for now...
+		self.units = {"w":"rad/s"}	
 	
 		for index in range(nv_1):
 			varname_abs = "|V%s|" % (str(circ.nodes_dict[index + 1]),)
@@ -336,6 +342,9 @@ class ac_solution:
 		data = numpy.concatenate((omega, xsplit), axis=0) 
 		csvlib.write_csv(self.filename, data, self.variables, append=self._init_file_done)
 		self._init_file_done = True
+
+	def get_type(self):
+		return "AC"
 
 	#def asmatrix(self):
 	#	return self.x
@@ -430,7 +439,7 @@ class dc_solution:
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
 		self.skip_nodes_list = []	# nodi da saltare, solo interni
 		self.variables = [sweepvar]
-		self.units = {}			# not used for now...
+		self.units = {}			
 		if self.variables[0][0] == 'V':
 			self.units.update({self.variables[0]:'V'})
 		if self.variables[0][0] == 'I':
@@ -463,6 +472,9 @@ class dc_solution:
 		data = numpy.concatenate((sweepvalue, x), axis=0)
 		csvlib.write_csv(self.filename, data, copy.copy(self.variables), append=self._init_file_done)
 		self._init_file_done = True
+
+	def get_type(self):
+		return "DC"
 
 	#def asmatrix(self):
 	#	return self.x
@@ -557,10 +569,10 @@ class tran_solution:
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
 		self.skip_nodes_list = []	# nodi da saltare, solo interni
 		self.variables = ["T"]
-		self.units = {}			# not used for now...
+		self.units = {"T":"s"}			# not used for now...
 	
 		for index in range(nv_1):
-			varname = "V%s" % (str(circ.nodes_dict[index + 1]),)
+			varname = ("V%s" % (str(circ.nodes_dict[index + 1]),)).upper()
 			self.variables += [varname]
 			self.units.update({varname:"V"})
 			if circ.is_int_node_internal_only(index+1):
@@ -568,7 +580,7 @@ class tran_solution:
 
 		for elem in circ.elements: 
 			if circuit.is_elem_voltage_defined(elem):
-				varname = "I(%s)" % (elem.letter_id.upper()+elem.descr,)
+				varname = ("I(%s)" % (elem.letter_id.upper()+elem.descr,)).upper()
 				self.variables += [varname]
 				self.units.update({varname:"A"})
 
@@ -584,6 +596,9 @@ class tran_solution:
 		csvlib.write_csv(self.filename, data, copy.copy(self.variables), append=self._init_file_done)
 		self._init_file_done = True
 
+	def get_type(self):
+		return "TRAN"
+
 	# Access as a dictionary BY VARIABLE NAME:
 	def __len__(self):
 		"""Get the number of variables in the results set."""
@@ -596,18 +611,18 @@ class tran_solution:
 
 	def get(self, name, default=None):
 		try:
-			data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], nsamples=None, skip=0L)
+			data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name.upper()], nsamples=None, skip=0L)
 		except KeyError:
 			return default
 		return data
 
 	def has_key(self, name):
 		"""Determine whether the result set contains a variable."""
-		return name.upper() in map(str.upper, self.variables)
+		return name in self.variables
 
 	def __contains__(self, name):
 		"""Determine whether the result set contains a variable."""
-		return name.upper() in map(str.upper, self.variables)
+		return name in self.variables
 
 	def keys(self):
 		"""Get all of the results set's variables names."""
@@ -671,7 +686,7 @@ class pss_solution:
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
 		self.skip_nodes_list = []	# nodi da saltare, solo interni
 		self.variables = ["T"]
-		self.units = {}			# not used for now...
+		self.units = {"T":"s"}
 	
 		for index in range(nv_1):
 			varname = "V%s" % (str(circ.nodes_dict[index + 1]),)
@@ -702,6 +717,9 @@ class pss_solution:
 	def asmatrix(self):
 		allvalues = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0L)
 		return allvalues[0, :], allvalues[1:, :]
+
+	def get_type(self):
+		return "PSS"
 
 	# Access as a dictionary BY VARIABLE NAME:
 	def __len__(self):

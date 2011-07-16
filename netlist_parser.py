@@ -1112,7 +1112,7 @@ def parse_an_dc(line, circ, line_elements=None):
 	start = None
 	stop = None
 	step = None
-	stype = "LINEAR"
+	stype = options.dc_lin_step
 	
 	for token in line_elements[1:]:
 		if token[0] == "*":
@@ -1147,7 +1147,7 @@ def parse_an_dc(line, circ, line_elements=None):
 		elif label == 'step':
 			step = convert_units(value)
 		elif label == 'type':
-			stype = value.upper()
+			stype = value[:3].upper()
 		else:
 			raise NetlistParseError("")
 	

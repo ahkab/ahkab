@@ -780,7 +780,7 @@ class sin:
 		self.theta = theta
 	def value(self, time):
 		if not self.ready():
-			print "Error: sin function not well defined. This is a bug."
+			printing.print_general_error("Error: sin function not well defined. This is a bug.")
 		if time < self.td:
 			return self.vo
 		elif self.theta:
@@ -818,7 +818,7 @@ class exp:
 		self.tau2 = tau2
 	def value(self, time):
 		if not self.ready():
-			print "Error: exp function not well defined. This is a bug."
+			printing.print_general_error("Error: exp function not well defined. This is a bug.")
 		if time < self.td1:
 			return self.v1
 		elif time < self.td2:

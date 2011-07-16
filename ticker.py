@@ -41,9 +41,11 @@ class ticker:
 	def __init__(self, increments_for_step=10):
 		self.increments_for_step = increments_for_step
 		
-	def step(self):
+	def step(self, enable):
 		"""After calling this function ticker.increments_for_step times
 		the status is incremented."""
+		if not enable:
+			return
 		if (self._index + 1) % self.increments_for_step == 0:
 			if (self._step + 1) % len(self.progress) == 0:
 				self._step = 0
@@ -56,18 +58,22 @@ class ticker:
 		else:
 			self._index = self._index + 1
 	
-	def hide(self):
+	def hide(self, enable):
 		"""Before printing to screen, call this to hide the progress
 		indicator.
 		"""
+		if not enable:
+			return
 		sys.stdout.write("\b")
 		sys.stdout.flush()
 		self._display = False
 	
-	def display(self):
+	def display(self, enable):
 		"""Print to screen the progress indicator. Call hide to hide it
 		again.
 		"""
+		if not enable:
+			return
 		sys.stdout.write(self.progress[self._step])
 		sys.stdout.flush()
 		self._display = True

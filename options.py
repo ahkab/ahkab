@@ -44,7 +44,8 @@ use_source_stepping = True
 # dc
 dc_max_nr_iter = 10000
 dc_max_guess_effort = 250000
-
+dc_log_step = 'LOG'
+dc_lin_step = 'LIN'
 dc_sweep_skip_allowed = True
 
 # transient

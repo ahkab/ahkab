@@ -43,6 +43,7 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 	"""
 	x0_op = None
 	x0_ic_dict = {}
+	results = {}
 
 	for directive in [ x for x in an_list if x["type"] == "ic" ]:
 		x0_ic_dict.update({directive["name"]:dc_analysis.build_x0_from_user_supplied_ic(circ,  voltages_dict=directive["vdict"], currents_dict=directive["cdict"])})
@@ -63,6 +64,7 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 					x0_op = dc_analysis.op_analysis(circ, guess=guess, verbose=verbose)
 				else:
 					x0_op = dc_analysis.op_analysis(circ, guess=False, x0=x0_ic_dict[an["guess_label"]], verbose=verbose)
+			sol = x0_op
 		
 		elif an["type"] == "dc":
 			if an["source_name"][0].lower() == "v":
@@ -72,7 +74,8 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 			else:
 				printing.print_general_error("Type of sweep source is unknown: " + an[1][0])
 				sys.exit(1)
-			dc_analysis.dc_analysis(circ, start=an["start"], stop=an["stop"], step=an["step"], type_descr=(elem_type, an["source_name"][1:]), xguess=x0_op, data_filename=data_filename, guess=guess, stype=an['stype'], verbose=verbose)
+			sol = dc_analysis.dc_analysis(circ, start=an["start"], stop=an["stop"], step=an["step"], type_descr=(elem_type, an["source_name"][1:]), xguess=x0_op, data_filename=data_filename, guess=guess, stype=an['stype'], verbose=verbose)
+			
 		
 		#{"type":"tran", "tstart":tstart, "tstop":tstop, "tstep":tstep, "uic":uic, "method":method, "ic_label":ic_label}
 		elif an["type"] == "tran":
@@ -107,35 +110,37 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 					sys.exit(54)
 				x0 = x0_ic_dict[an["ic_label"]]
 			
-			transient.transient_analysis(circ, \
+			sol = transient.transient_analysis(circ, \
 				tstart=an["tstart"], tstep=an["tstep"], tstop=an["tstop"], \
 				x0=x0, mna=None, N=None, verbose=verbose, data_filename=data_filename, \
 				use_step_control=(not disable_step_control), method=tran_method)
 		
 		elif an["type"] == "shooting":
 			if an["method"]=="brute-force":
-				bfpss.bfpss(circ, period=an["period"], step=an["step"], mna=None, Tf=None, \
+				sol = bfpss.bfpss(circ, period=an["period"], step=an["step"], mna=None, Tf=None, \
 					D=None, points=an["points"], autonomous=an["autonomous"], x0=x0_op, \
 					data_filename=data_filename, verbose=verbose)
 			elif an["method"]=="shooting":	
-				shooting.shooting(circ, period=an["period"], step=an["step"], mna=None, \
+				sol = shooting.shooting(circ, period=an["period"], step=an["step"], mna=None, \
 					Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], \
 					data_filename=data_filename, verbose=verbose)
 		elif an["type"] == "symbolic":
-			symbolic.solve(circ, an['ac'], an['source'])
+			sol = symbolic.solve(circ, an['ac'], an['source'])
 		elif an["type"] == "ac":
-			ac.ac_analysis(circ=circ, start=an['start'], nsteps=an['nsteps'], \
+			sol = ac.ac_analysis(circ=circ, start=an['start'], nsteps=an['nsteps'], \
 				stop=an['stop'], step_type='LOG', xop=x0_op, mna=None,\
 			        data_filename=data_filename, verbose=verbose)
-	return None
+		results.update({an["type"]:sol})
+	return results
 
-def process_postproc(postproc_list, title, outfilename):
+def process_postproc(postproc_list, title, results, outfilename):
 	index = 0
-	if outfilename is None:
-		print "Plotting and printing the results to stdout are incompatible options. Plotting skipped."
+	if outfilename == 'stdout':
+		printing.print_info_line(("Plotting and printing the results to stdout are incompatible options. Plotting skipped.", 0), 0)
 		return
 	for postproc in postproc_list:
-		plotting.plot_file(title, postproc["x"], postproc["l2l1"], outfilename+"."+postproc["analysis"], postproc["analysis"], outfilename+"-"+str(index)+"."+options.plotting_outtype)
+		#print postproc["analysis"], results.keys(), results.has_key(postproc["analysis"]), results[postproc["analysis"]] is None #DEBUG
+		plotting.plot_results(title, postproc["x"], postproc["l2l1"], results[postproc["analysis"]], "%s-%d.%s" % (outfilename, index, options.plotting_outtype))
 		index = index +1
 	if len(postproc_list):
 		plotting.show_plots()
@@ -225,18 +230,18 @@ if __name__ == "__main__":
 	
 	an_list = netlist_parser.parse_analysis(circ, directives)
 	postproc_list = netlist_parser.parse_postproc(circ, an_list, postproc_direct)
-	if verbose > 3:
-		if len(an_list) > 0:
-			print "Requested an.:"
-			map(printing.print_analysis, an_list)
-		else:
-			printing.print_warning("No analysis requested.")
 	if len(an_list) > 0:
-		process_analysis(an_list, circ, cli_options.outfile, verbose, guess=cli_options.dc_guess.lower()=="guess", cli_tran_method=cli_options.method, \
-		disable_step_control=cli_options.no_step_control)
-		if len(postproc_list) > 0:
-			process_postproc(postproc_list, circ.title, cli_options.outfile)
+		printing.print_info_line(("Requested an.:", 4), verbose)
+		map(printing.print_analysis, an_list)
 	else:
-		if verbose:
-			printing.print_warning("Nothing to do. Quitting.")
+		printing.print_warning("No analysis requested.")
+	if len(an_list) > 0:
+		results = process_analysis(an_list, circ, cli_options.outfile, verbose, guess=cli_options.dc_guess.lower()=="guess", cli_tran_method=cli_options.method, \
+		disable_step_control=cli_options.no_step_control)
+	else:
+		printing.print_warning("Nothing to do. Quitting.")
+
+	if len(an_list) > 0 and len(postproc_list) > 0 and len(results):
+		process_postproc(postproc_list, circ.title, results, cli_options.outfile)
+
 	sys.exit(0)

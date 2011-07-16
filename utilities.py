@@ -157,3 +157,69 @@ class combinations:
 				raise StopIteration
 		
 		return [cur] + nxt
+
+class log_axis_iterator:
+	"""This iterator provides the values for a logarithmic sweep.
+	"""
+	def __init__(self, max, min, nsteps):
+		self.inc = 10**((numpy.log10(max)-numpy.log10(min))/nsteps)
+		self.max = max
+		self.min = min
+		self.index = 0
+		self.current = min
+		self.nsteps = nsteps
+	def next(self):
+		"""Iterator method: get the next value
+		"""
+		if self.index < self.nsteps:
+			self.current = self.current * self.inc
+			ret = self.current 
+		else:
+			raise StopIteration
+		self.index = self.index + 1 
+		return ret
+	def __getitem__(self, i):
+		"""Iterator method: get a particular value (n. i)
+		"""
+		if i < self.nsteps:
+			ret = self.min*self.inc**i
+		else:
+			ret = None
+		return ret
+	def __iter__(self):
+		"""Required iterator method.
+		"""
+		return self
+
+class lin_axis_iterator:
+	"""This iterator provides the values for a linear sweep.
+	"""
+	def __init__(self, max, min, nsteps):
+		self.inc = (max - min)/nsteps
+		self.max = max
+		self.min = min
+		self.index = 0
+		self.current = min
+		self.nsteps = nsteps
+	def next(self):
+		"""Iterator method: get the next value
+		"""
+		if self.index < self.nsteps:
+			self.current = self.current + self.inc
+			ret = self.current 
+		else:
+			raise StopIteration
+		self.index = self.index + 1 
+		return ret
+	def __getitem__(self, i):
+		"""Iterator method: get a particular value (n. i)
+		"""
+		if i < self.nsteps:
+			ret = self.min + self.inc*i
+		else:
+			ret = None
+		return ret
+	def __iter__(self):
+		"""Required iterator method.
+		"""
+		return self

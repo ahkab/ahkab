@@ -46,16 +46,11 @@ def bfpss(circ, period, step=None, mna=None, Tf=None, D=None, points=None, auton
 
 	Returns: nothing
 	"""
-	#if data_filename != "stdout":
-	#	fdata = open(data_filename, "w")
-	#else:
-	#	fdata = sys.stdout
 	if data_filename == "stdout":
 		verbose = 0
 	
-	if verbose > 2 and data_filename != "stdout": 
-		print "Starting periodic steady state analysis:"
-		print "Method: brute-force"
+	printing.print_info_line(("Starting periodic steady state analysis:",3), verbose)
+	printing.print_info_line(("Method: brute-force",3), verbose)
 	
 	if mna is None or Tf is None:
 		(mna, Tf) = dc_analysis.generate_mna_and_N(circ)
@@ -76,10 +71,8 @@ def bfpss(circ, period, step=None, mna=None, Tf=None, D=None, points=None, auton
 	
 	n_of_var = mna.shape[0]
 	locked_nodes = circ.get_locked_nodes()
-	if verbose > 2: 
-		tick = ticker.ticker(increments_for_step=1)
-	else:
-		tick = None
+	tick = ticker.ticker(increments_for_step=1)
+
 
 	CMAT = build_CMAT(mna, D, step, points, tick, n_of_var=n_of_var, \
 		verbose=verbose)
@@ -92,12 +85,21 @@ def bfpss(circ, period, step=None, mna=None, Tf=None, D=None, points=None, auton
 	# time variable component: Tt this is always the same in each iter. So we build it once for all
 	# this holds all time-dependent sources (both V/I).
 	Tt = build_Tt(circ, points, step, tick, n_of_var=n_of_var, verbose=verbose)
-	
+
+	# Indices to differentiate between currents and voltages in the convergence check
+	nv_indices = []
+	ni_indices = []
+	nv_1 = len(circ.nodes_dict) - 1
+	ni = n_of_var - nv_1
+	for i in range(points):
+		nv_indices += (i*mna.shape[0]*numpy.ones(nv_1) + numpy.arange(nv_1)).tolist()
+		ni_indices += (i*mna.shape[0]*numpy.ones(ni) + numpy.arange(nv_1, n_of_var)).tolist()
+
 	converged = False
-	if verbose > 2: 
-		sys.stdout.write("Solving... ")
-		tick.reset()
-		tick.display()
+
+	printing.print_info_line(("Solving... ",3), verbose, print_nl=False)
+	tick.reset()
+	tick.display(verbose > 2)
 	J = numpy.mat(numpy.zeros(CMAT.shape))
 	T = numpy.mat(numpy.zeros((CMAT.shape[0], 1)))
 	# td is a numpy matrix that will hold the damping factors
@@ -149,16 +151,11 @@ def bfpss(circ, period, step=None, mna=None, Tf=None, D=None, points=None, auton
 		for index in xrange(points):
 			td[index, 0] = dc_analysis.get_td(dx[index*n_of_var:(index+1)*n_of_var, 0], locked_nodes, n=-1)
 		x = x + min(abs(td))[0, 0] * dx
-		# convergence and maxit test FIXME: currently we apply the stricter requirements between currents and voltages
-		# to both voktages and currents. Can be fixed.
-		if (vector_norm(dx) < min(options.ver, options.ier)*vector_norm(x) + min(options.vea, options.iea)): 
-			converged = True
+		# convergence check
+		converged = convergence_check(dx, x, nv_indices, ni_indices, vector_norm)
+		if converged:
 			break
-		elif vector_norm(dx) is numpy.nan: #sometimes something diverges... look out
-			raise OverflowError
-		else:
-			if verbose > 2: 
-				tick.step()
+		tick.step(verbose > 2)
 	
 		if options.shooting_max_nr_iter and iteration == options.shooting_max_nr_iter:
 			printing.print_general_error("Hitted SHOOTING_MAX_NR_ITER (" + str(options.shooting_max_nr_iter) + "), iteration halted.")
@@ -166,23 +163,27 @@ def bfpss(circ, period, step=None, mna=None, Tf=None, D=None, points=None, auton
 			break
 		else:
 			iteration = iteration + 1
-	if verbose > 2: 
-		tick.hide()
+
+	tick.hide(verbose > 2)
 	if converged:
-		if verbose > 2: 
-			print "done."
+		printing.print_info_line(("done.", 3), verbose)
 		t = numpy.mat(numpy.arange(points)*step)
 		t = t.reshape((1, points))
 		x = x.reshape((points, n_of_var))
-		results.pss_solution(circ=circ, method="brute-force", period=period, outfile=data_filename, t_array=t, x_array=x.T)
-		#printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_time=True)
-		#for index in xrange(points):
-		#	printing.print_results_on_a_line(time=index*step, x=x[index*n_of_var:(index+1)*n_of_var, 0], fdata=fdata, circ=circ, print_int_nodes=options.print_int_nodes, iter_n=0)
+		sol = results.pss_solution(circ=circ, method="brute-force", period=period, outfile=data_filename, t_array=t, x_array=x.T)
 	else:
-		if verbose > 2 and data_filename != "stdout": 
-			print "failed."
-	return
+		print "failed."
+		sol = None
+	return sol
 
+def convergence_check(dx, x, nv_indices, ni_indices, vector_norm):
+	if vector_norm(dx) is numpy.nan: #sometimes something diverges... look out
+		raise OverflowError
+	dxc = numpy.array(dx)
+	xc = numpy.array(x)
+	ret = (vector_norm(dxc[nv_indices]) < options.ver*vector_norm(xc[nv_indices]) + options.vea) and \
+	(not len(ni_indices) or vector_norm(dxc[ni_indices]) < options.ier*vector_norm(xc[ni_indices]) + options.iea)
+	return ret
 
 def set_submatrix(row, col, dest_matrix, source_matrix):
 	"""Copies the source_matrix in dest_matrix, 
@@ -226,7 +227,7 @@ def check_step_and_points(step, points, period):
 		if points % 1 != 0:
 			step = step + (step * (points % 1)) / int(points)
 			points = int((1.0 * period) / step)
-			print "Warning: adapted step is", step
+			printing.print_warning("adapted step is %g" % (step,))
 		else:
 			points = int(points)
 		points = points + 1 #0 - N where xN is in reality the first point of the second period!!
@@ -236,11 +237,9 @@ def check_step_and_points(step, points, period):
 def build_CMAT(mna, D, step, points, tick, n_of_var=None, verbose=3):
 	if n_of_var is None: 
 		n_of_var = mna.shape[0]
-	if verbose > 4: 
-		sys.stdout.write("Building the CMAT ("+str(n_of_var*points)+"x"+str(n_of_var*points)+")... ")
-	if verbose > 2: 
-		tick.reset()
-		tick.display()
+	printing.print_info_line(("Building CMAT (%dx%d)... " % (n_of_var*points, n_of_var*points), 5), verbose, print_nl=False)
+	tick.reset()
+	tick.display(verbose > 2)
 	(C1, C0) = implicit_euler.get_df_coeff(step)
 	I = numpy.mat(numpy.eye(n_of_var))
 	M = mna + C1*D
@@ -264,23 +263,18 @@ def build_CMAT(mna, D, step, points, tick, n_of_var=None, verbose=3):
 				else:
 					continue #temp = Z
 			CMAT = set_submatrix(row=li*n_of_var, col=ci*n_of_var, dest_matrix=CMAT, source_matrix=temp)
-		if verbose > 2: 
-			tick.step()
-	if verbose > 2: 
-		tick.hide()
-		if verbose > 4: 
-			print "done."
-	#print CMAT
+		tick.step(verbose > 2)
+	tick.hide(verbose > 2)
+	printing.print_info_line(("done.", 5), verbose)
+
 	return CMAT
 	
 def build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
 	if n_of_var is None: 
 		n_of_var = mna.shape[0]
-	if verbose > 4: 
-		sys.stdout.write("Building x...")
-	if verbose > 2: 
-		tick.reset()
-		tick.display()
+	printing.print_info_line(("Building x...", 5), verbose, print_nl=False)
+	tick.reset()
+	tick.display(verbose > 2)
 	x = numpy.mat(numpy.zeros((points*n_of_var, 1)))
 	if x0 is not None:
 		if isinstance(x0, results.op_solution):
@@ -290,42 +284,34 @@ def build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
 		else:
 			for index in xrange(points):
 				x = set_submatrix(row=index*n_of_var, col=0, dest_matrix=x, source_matrix=x0)
-				if verbose > 2: 
-					tick.step()
-	if verbose > 2: 
-		tick.hide()
-		if verbose > 4: 
-			print "done."
+				tick.step(verbose > 2)
+
+	tick.hide(verbose > 2)
+	printing.print_info_line(("done.", 5), verbose)
 	
 	return x
 	
 def build_Tf(sTf, points, tick, n_of_var, verbose=3):
-	if verbose > 4: 
-		sys.stdout.write("Building Tf... ")
-	if verbose > 2: 
-		tick.reset()
-		tick.display()
+	printing.print_info_line(("Building Tf...", 5), verbose, print_nl=False)
+	tick.reset()
+	tick.display(verbose > 2)
 	Tf = numpy.mat(numpy.zeros((points*n_of_var, 1)))
 	
 	for index in xrange(1, points):
 		Tf = set_submatrix(row=index*n_of_var, col=0, dest_matrix=Tf, source_matrix=sTf)
-		if verbose > 2: 
-			tick.step()
+		tick.step(verbose > 2)
 	
-	if verbose > 2: 
-		tick.hide()
-		if verbose > 4: 
-			print "done."
+
+	tick.hide(verbose > 2)
+	printing.print_info_line(("done.", 5), verbose)
 	
 	return Tf
 	
 def build_Tt(circ, points, step, tick, n_of_var, verbose=3):
 	nv = len(circ.nodes_dict)
-	if verbose > 4: 
-		sys.stdout.write("Building Tt... ")
-	if verbose > 2: 
-		tick.reset()
-		tick.display()	
+	printing.print_info_line(("Building Tt...", 5), verbose, print_nl=False)
+	tick.reset()
+	tick.display(verbose > 2)	
 	Tt = numpy.zeros((points*n_of_var, 1))
 	for index in xrange(1, points):
 		v_eq = 0
@@ -344,11 +330,8 @@ def build_Tt(circ, points, step, tick, n_of_var, verbose=3):
 			if circuit.is_elem_voltage_defined(elem):
 				v_eq = v_eq +1
 			#print Tt[index*n_of_var:(index+1)*n_of_var]
-		if verbose > 2: 
-			tick.step()
-	if verbose > 2: 
-		tick.hide()
-		if verbose > 4: 
-			print "done."
+		tick.step(verbose > 2)
+	tick.hide(verbose > 2)
+	printing.print_info_line(("done.", 5), verbose)
 	
 	return Tt

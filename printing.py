@@ -139,6 +139,13 @@ def print_warning(description, print_to_stdout=False):
 		sys.stderr.write(the_warning_message+"\n")
 	return None
 	
+def print_info_line((msg, relevance), verbose, print_nl=True):
+	if verbose >= relevance:
+		if print_nl:
+			print msg
+		else:
+			print msg,
+	# suppressed.
 
 def print_parse_error(nline, line, print_to_stdout=False):
 	"""Prints a parsing error in the netlist to stderr.
