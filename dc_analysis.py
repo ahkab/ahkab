@@ -245,15 +245,15 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 	if start > stop:
 		printing.print_general_error("DC analysis has start > stop")
 		sys.exit(1)
-	if nsteps < 1:
+	if (stop-start)/step < 1:
 		printing.print_general_error("DC analysis has number of steps < 1")
 		sys.exit(1)
-	if step_type == options.dc_log_step:
+	if stype == options.dc_log_step:
 		dc_iter = utilities.log_axis_iterator(stop, start, nsteps=int(stop-start)/step)
-	elif step_type == options.dc_lin_step:
+	elif stype == options.dc_lin_step:
 		dc_iter = utilities.lin_axis_iterator(stop, start, nsteps=int(stop-start)/step)
 	else:
-		printing.print_general_error("Unknown sweep type.") 
+		printing.print_general_error("Unknown sweep type: %s" % (stype,)) 
 		sys.exit(1)
 
 	if elem_type != 'vsource' and elem_type != 'isource':
