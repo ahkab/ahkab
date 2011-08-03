@@ -93,11 +93,11 @@ def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=6):
 	
 	if tf_source is not None:
 		src = sympy.Symbol(tf_source, real=True)
-		if verbose > 2: print "Calculating symbolic transfer functions ("+str(src)+")...",
+		if verbose > 2: print "Calculating small-signal symbolic transfer functions ("+str(src)+")...",
 		tfs = calculate_gains(sol, src)
 		if verbose > 2: print "done!"
 		elif verbose > 1:
-			print "Symbolic transfer functions:"
+			print "Small-signal symbolic transfer functions:"
 		printing.print_symbolic_transfer_functions(tfs)
 	
 
@@ -111,7 +111,7 @@ def calculate_gains(sol, xin, optimize=True):
 		tf.update({'gain0':gain.subs(sympy.Symbol('s', real=False), 0)})
 		tf.update({'poles':ps})
 		tf.update({'zeros':zs})
-		gains.update({"d/d" + str(xin)+" "+str(key):tf})
+		gains.update({"%s/%s" % (str(key), str(xin)):tf})
 	return gains
 
 
