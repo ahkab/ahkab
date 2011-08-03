@@ -48,7 +48,7 @@ def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=6):
 	if verbose > 2:
 		 print "Building equation..."
 	eq = to_real_list(mna * x + N)
-	eq = apply_options_and_subs(eq, opts)
+	#eq = apply_options_and_subs(eq, opts)
 
 	x = to_real_list(x)
 	if verbose > 4:
