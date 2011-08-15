@@ -356,7 +356,7 @@ class ac_solution:
 
 	def __getitem__(self, name):
 		"""Get a specific variable, as from a dictionary."""
-		data, headers, pos, EOF = cslib.load_csv(self.filename, load_headers=[name], nsamples=None, skip=0L)
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], nsamples=None, skip=0L)
 		return data
 
 	def get(self, name, default=None):
@@ -381,7 +381,7 @@ class ac_solution:
 
 	def values(self):
 		"""Get all of the results set's variables values."""
-		data, headers, pos, EOF = cslib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
 		return data
 
 	def items(self):
@@ -510,7 +510,7 @@ class dc_solution:
 
 	def values(self):
 		"""Get all of the results set's variables values."""
-		data, headers, pos, EOF = cslib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
 		return data
 
 	def items(self):
@@ -560,6 +560,7 @@ class tran_solution:
 		self.method = method
 
 		self._init_file_done = False
+		self._lock = False
 
 		#We have mixed current and voltage results
 		# per primi vengono tanti valori di tensioni quanti sono i nodi del circuito meno uno,
@@ -591,10 +592,16 @@ class tran_solution:
 	def add_line(self, time, x):
 		"""This method adds a solution and its corresponding time value to the results set.
 		"""
-		time = numpy.mat(numpy.array([time]))
-		data = numpy.concatenate((time, x), axis=0)
-		csvlib.write_csv(self.filename, data, copy.copy(self.variables), append=self._init_file_done)
-		self._init_file_done = True
+		if not self._lock:
+			time = numpy.mat(numpy.array([time]))
+			data = numpy.concatenate((time, x), axis=0)
+			csvlib.write_csv(self.filename, data, copy.copy(self.variables), append=self._init_file_done)
+			self._init_file_done = True
+		else:
+			printing.print_general_error("Attempting to add values to a complete result set. BUG")
+
+	def lock(self):
+		self._lock = True
 
 	def get_type(self):
 		return "TRAN"
@@ -630,7 +637,7 @@ class tran_solution:
 
 	def values(self):
 		"""Get all of the results set's variables values."""
-		data, headers, pos, EOF = cslib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
 		return data
 
 	def items(self):
@@ -705,7 +712,7 @@ class pss_solution:
 			self.set_results(t_array, x_array)
 
 	def __str__(self):
-		return "PSS simulation results for %s (netlist %s), period %g s. Method: %s. Run on %s, data filename %s." % \
+		return "<PSS simulation results for %s (netlist %s), period %g s. Method: %s. Run on %s, data filename %s.>" % \
 		(self.netlist_title, self.netlist_file, self.period, self.method, self.timestamp, self.filename)
 
 	def set_results(self, t, x):
@@ -752,7 +759,7 @@ class pss_solution:
 
 	def values(self):
 		"""Get all of the results set's variables values."""
-		data, headers, pos, EOF = cslib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
 		return data
 
 	def items(self):
