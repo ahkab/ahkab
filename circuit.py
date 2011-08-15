@@ -882,12 +882,11 @@ class circuit_wrapper:
 	
 	While instatiating/calling a subcircuit wrap circ in this.
 	"""
-	circ = None
-	subckt_node_filter_dict = {}
-	prefix = ""
+
 	def __init__(self, circ, connection_nodes_dict, subckt_name, subckt_label):
 		self.circ = circ
 		self.prefix = subckt_label + "-" + subckt_name + "-"
+		self.subckt_node_filter_dict = {}
 		self.subckt_node_filter_dict.update(connection_nodes_dict)		
 		self.subckt_node_filter_dict.update({'0':'0'})
 	def add_node_to_circ(self, ext_name):
