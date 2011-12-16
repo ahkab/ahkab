@@ -23,7 +23,7 @@ This is the results module of the simulator.
 import sys, time, copy
 import numpy
 import circuit, printing, options, constants, csvlib
-from ahkab import VERSION
+VERSION = "0.05"
 
 	
 class op_solution:
