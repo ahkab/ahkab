@@ -24,7 +24,7 @@ Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
 """
 
 import sys, imp
-import circuit, printing, utilities, mosq, ekv, plotting, options
+import circuit, devices, printing, utilities, mosq, ekv, plotting, options
 
 def parse_circuit(filename, read_netlist_from_stdin=False):
 	"""Parse a SPICE-like netlist and return a circuit instance 
@@ -260,7 +260,7 @@ def parse_elem_resistor(line, circ, line_elements=None):
 	if R == 0:
 		raise NetlistParseError, "ZERO-valued resistors are not allowed." 
 
-	elem = circuit.resistor(n1=n1, n2=n2, R=R)
+	elem = devices.resistor(n1=n1, n2=n2, R=R)
 	elem.descr = line_elements[0][1:]
 	
 	return [elem]
@@ -297,7 +297,7 @@ def parse_elem_capacitor(line, circ, line_elements=None):
 	n1 = circ.add_node_to_circ(ext_n1)
 	n2 = circ.add_node_to_circ(ext_n2)
 	
-	elem = circuit.capacitor(n1=n1, n2=n2, C=convert_units(line_elements[3]), ic=ic)
+	elem = devices.capacitor(n1=n1, n2=n2, C=convert_units(line_elements[3]), ic=ic)
 	elem.descr = line_elements[0][1:]
 	
 	return [elem]
@@ -334,7 +334,7 @@ def parse_elem_inductor(line, circ, line_elements=None):
 	n1 = circ.add_node_to_circ(ext_n1)
 	n2 = circ.add_node_to_circ(ext_n2)
 	
-	elem = circuit.inductor(n1=n1, n2=n2, L=convert_units(line_elements[3]), ic=ic)
+	elem = devices.inductor(n1=n1, n2=n2, L=convert_units(line_elements[3]), ic=ic)
 	elem.descr = line_elements[0][1:]
 	
 	return [elem]
@@ -407,7 +407,7 @@ def parse_elem_vsource(line, circ, line_elements=None):
 	n1 = circ.add_node_to_circ(ext_n1)
 	n2 = circ.add_node_to_circ(ext_n2)
 	
-	elem = circuit.vsource(n1=n1, n2=n2, vdc=vdc, abs_ac=vac)
+	elem = devices.vsource(n1=n1, n2=n2, vdc=vdc, abs_ac=vac)
 	elem.descr = line_elements[0][1:]
 	
 	if function is not None:
@@ -482,7 +482,7 @@ def parse_elem_isource(line, circ, line_elements=None):
 	n1 = circ.add_node_to_circ(ext_n1)
 	n2 = circ.add_node_to_circ(ext_n2)
 	
-	elem = circuit.isource(n1=n1, n2=n2, idc=idc, abs_ac=iac)
+	elem = devices.isource(n1=n1, n2=n2, idc=idc, abs_ac=iac)
 	elem.descr = line_elements[0][1:]
 	
 	if function is not None:
@@ -551,11 +551,11 @@ def parse_elem_diode(line, circ, line_elements=None):
 		new_node = n1
 		n1 = circ.generate_internal_only_node_label()
 		#print "-<<<<<<<<"+str(n1)+" "+str(n2) +" "+str(new_node)
-		rs_elem = circuit.resistor(n1=new_node, n2=n1, R=Rs)
+		rs_elem = devices.resistor(n1=new_node, n2=n1, R=Rs)
 		rs_elem.descr = "INT"
 		return_list = return_list + [rs_elem]
 	
-	elem = circuit.diode(n1=n1, n2=n2, Io=Io, m=m, T=T, ic=ic)
+	elem = devices.diode(n1=n1, n2=n2, Io=Io, m=m, T=T, ic=ic)
 	elem.descr = line_elements[0][1:]
 	return_list = return_list + [elem]
 	
@@ -672,7 +672,7 @@ def parse_elem_vcvs(line, circ, line_elements=None):
 	sn1 = circ.add_node_to_circ(ext_sn1)
 	sn2 = circ.add_node_to_circ(ext_sn2)
 	
-	elem = circuit.evsource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=convert_units(line_elements[5]))
+	elem = devices.evsource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=convert_units(line_elements[5]))
 	elem.descr = line_elements[0][1:]
 	
 	return [elem]
@@ -711,7 +711,7 @@ def parse_elem_vccs(line, circ, line_elements=None):
 	sn1 = circ.add_node_to_circ(ext_sn1)
 	sn2 = circ.add_node_to_circ(ext_sn2)
 	
-	elem = circuit.gisource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=convert_units(line_elements[5]))
+	elem = devices.gisource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=convert_units(line_elements[5]))
 	elem.descr = line_elements[0][1:]
 	
 	return [elem]
@@ -818,7 +818,7 @@ def parse_time_function(ftype, line_elements, stype):
 	line_elements: mustn't hold the "type=<ftype>" element
 	stype: set this to "current" for current sources, "voltage" for voltage sources
 	
-	See circuit.pulse, circuit.sin, circuit.exp for more.
+	See devices.pulse, devices.sin, devices.exp for more.
 	
 	Returns: a time-<function instance
 	"""
@@ -838,7 +838,7 @@ def parse_pulse_time_function(line_elements, stype):
 	"""This is called by parse_time_function() to actually parse this
 	type of functions.
 	"""
-	function = circuit.pulse()
+	function = devices.pulse()
 	for token in line_elements:
 		(param, value) = parse_param_value_from_string(token)
 		if stype == "voltage" and param == 'v1' or stype == "current" \
@@ -869,7 +869,7 @@ def parse_exp_time_function(line_elements, stype):
 	"""This is called by parse_time_function() to actually parse this
 	type of functions.
 	"""
-	function = circuit.exp()
+	function = devices.exp()
 	for token in line_elements:
 		(param, value) = parse_param_value_from_string(token)
 		if stype == "voltage" and param == 'v1' or \
@@ -897,7 +897,7 @@ def parse_sin_time_function(line_elements, stype):
 	"""This is called by parse_time_function() to actually parse this
 	type of functions.
 	"""
-	function = circuit.sin()
+	function = devices.sin()
 	for token in line_elements:
 		(param, value) = parse_param_value_from_string(token)
 		if stype == "voltage" and param == 'vo' \
@@ -1131,10 +1131,10 @@ def parse_an_dc(line, circ, line_elements=None):
 			source_exists = False
 			for elem in circ.elements:
 				if elem.descr == source_name[1:]:
-					if (source_type == 'vsource' and isinstance(elem, circuit.vsource)): 
+					if (source_type == 'vsource' and isinstance(elem, devices.vsource)): 
 						source_exists = True
 						break
-					elif (source_type == 'isource' and isinstance(elem, circuit.isource)):
+					elif (source_type == 'isource' and isinstance(elem, devices.isource)):
 						source_exists = True
 						break
 			if not source_exists:
@@ -1304,10 +1304,10 @@ def parse_an_symbolic(line, circ, line_elements=None):
 			source_exists = False
 			for elem in circ.elements:
 				if elem.descr == source_name[1:]:
-					if (source_type == 'vsource' and isinstance(elem, circuit.vsource)): 
+					if (source_type == 'vsource' and isinstance(elem, devices.vsource)): 
 						source_exists = True
 						break
-					elif (source_type == 'isource' and isinstance(elem, circuit.isource)):
+					elif (source_type == 'isource' and isinstance(elem, devices.isource)):
 						source_exists = True
 						break
 			if not source_exists:

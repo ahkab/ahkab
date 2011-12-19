@@ -24,7 +24,7 @@ be somewhat uniform.
 
 import sys
 import numpy
-import circuit, options, mosq, ekv
+import circuit, devices, options, mosq, ekv
 	
 def print_circuit(circ):
 	"""Prints the whole circuit to stdout, in a format similar to 
@@ -36,7 +36,7 @@ def print_circuit(circ):
 	Returns: None
 	"""
 	if circ.title:
-		print "TITLE:", circ.title
+		print "* TITLE:", circ.title
 		
 	for elem in circ.elements:
 		print_netlist_elem_line(elem, circ)
@@ -57,11 +57,11 @@ def print_netlist_elem_line(elem, circ):
 	ext_n2 = circ.nodes_dict[elem.n2]
 	sys.stdout.write(elem.letter_id.upper() + elem.descr + " ")
 	
-	if isinstance(elem, circuit.resistor) or isinstance(elem, circuit.diode) or \
-	isinstance(elem, circuit.isource) or isinstance(elem, circuit.vsource) or \
-	isinstance(elem, circuit.capacitor) or isinstance(elem, circuit.inductor):
+	if isinstance(elem, devices.resistor) or isinstance(elem, devices.diode) or \
+	isinstance(elem, devices.isource) or isinstance(elem, devices.vsource) or \
+	isinstance(elem, devices.capacitor) or isinstance(elem, devices.inductor):
 		sys.stdout.write(ext_n1 + " " + ext_n2 + " ")
-	elif isinstance(elem, circuit.evsource) or isinstance(elem, circuit.gisource):
+	elif isinstance(elem, devices.evsource) or isinstance(elem, devices.gisource):
 		sys.stdout.write(ext_n1 + " " + ext_n2 + " " + circ.nodes_dict[elem.sn1]+ " " + \
 		circ.nodes_dict[elem.sn2] + " ")
 	elif isinstance(elem, mosq.mosq): #quadratic mos

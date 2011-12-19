@@ -17,64 +17,8 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Holds the circuit class and various element classes.
 
-General form of a _non linear_ element class:
-
-The class must provide:
-
-1. Element terminals:
-elem.n1 # the anode of the element
-elem.n2 # the cathode of the element
-
-Notice: a positive current is a current that flows into the anode and out of
-the cathode. This convention is used throughout the simulator.
-
-2. elem.get_ports()
-This method must return a tuple of pairs of nodes. Something like:
-((na, nb), (nc, nd), (ne, nf), ... )
-
-Each pair of nodes is used to determine a voltage that has effect on the
-current. I referred to them as a 'port' though it may not be a good idea.
-
-For example, an nmos has:
-((n_gate, n_source), (n_drain, n_source))
-
-The positive terminal is the first.
-
-From that, the calling method builds a voltage vector corresponding to the
-ports vector:
-voltages_vector = ( Va-Vb, Vc-Vd, Ve-Vf, ...)
-
-That's passed to:
-3. elem.i(voltages_vector, time)
-
-It returns the current flowing into the element if the voltages specified in
-the voltages_vector are applied to its ports, at the time given.
-
-4. elem.g(voltages_vector, port_index, time) is similar, but returns the 
-differential transconductance between the port at position port_index in the 
-ports_vector (see 2) and the current, when the operating point is specified by
-the voltages in the voltages_vector. 
-
-5. elem.is_nonlinear
-A non linear element must have a elem.is_nonlinear field set to True.
-
-Recommended:
-1. A non linear element may have a list/tuple of the same length of its 
-ports_vector in which there are the recommended guesses for dc analysis. 
-Eg Vgs is set to Vt in mosfets.
-This is obviously useless for linear devices.
-
-2. Every element should have a meaningful __str__ method. 
-It must return a line of paramaters without n1 n2, because a element cannot 
-know the external names of its nodes. It is used to print the parsed netlist.
-
-"""
-
-import math
-import constants, options, printing
+import devices, printing
 
 # will be added here by netlist_parser
 user_defined_modules_dict = {}
@@ -127,12 +71,13 @@ class circuit:
 	"""
 
 	def __init__(self, title, filename):
-		self.title = ""
+		self.title = title
 		self.filename = filename
 		self.nodes_dict = {} # {int_node:ext_node}
 		#_reverse_dict = {}
 		self.elements = []
 		self.internal_nodes = 0
+		self.models = {}
 	
 	def add_node_to_circ(self, ext_name):
 		"""Adds the supplied node to the circuit, if needed.
@@ -267,575 +212,364 @@ class circuit:
 					return True
 		return False
 
-	
-## NOTES ON ELEM CLASSES
-# see above ^^^^^
 
-#class generic:
-	#"""This class is for debugging purposes only."""
-	##generic element
-	#is_nonlinear = False
-	#n1 = None
-	#n2 = None
-	#def __init__(self, n1, n2, is_nonlinear):
-		#self.n1 = n1
-		#self.n2 = n2
-		#self.is_nonlinear = is_nonlinear
-	##must be called to define the element!
-	#def set_char(self, i_function=None, g_function=None):
-		#if i_function:
-			#self.i = i_function
-		#if g_function:
-			#self.g = g_function
-	##def g(self, v):
-	##	return 1/self.R
-	##def i(self, v):
-	##	return 0
+	def get_ground_node(self):
+		"Returns the (external) reference node. AKA GND."
+		return '0'
 
-class resistor:
-	letter_id = "r"
-	is_nonlinear = False
-	def __init__(self, n1, n2, R):
-		self.R = R
-		self.n1 = n1
-		self.n2 = n2
-	def __str__(self):
-		return str(self.R)
-	def g(self, v, time=0):
-		return 1.0/self.R
-	def i(self, v, time=0):
-		return 0
-	def get_op_info(self, ports_v):
-		vn1n2 = float(ports_v[0][0])
-		in1n2 = float(ports_v[0][0]/self.R)
-		power = float(ports_v[0][0]**2/self.R)
-		arr = [[self.letter_id.upper()+self.descr,"V(n1-n2):", vn1n2, "[V]", "I(n2-n1):", in1n2, "[A]", "P:", power, "[W]"]]
-		strarr = printing.table_setup(arr)
-		return strarr
-	def print_op_info(self, ports_v):
-		print self.get_op_info(ports_v),
-class capacitor:
-	letter_id = "c"
-	is_nonlinear = False
-	def __init__(self, n1, n2, C, ic=None):
-		self.C = C
-		self.n1 = n1
-		self.n2 = n2
-		self.ic = ic
-	def __str__(self):
-		return str(self.C)
-	def g(self, v, time=0):
-		return 0
-	def i(self, v, time=0):
-		return 0
-	def d(self, v, time=0):
-		return self.C
-	def get_op_info(self, ports_v):
-		vn1n2 = float(ports_v[0][0])
-		qn1n2 = float(ports_v[0][0]*self.C)
-		energy = float(.5*ports_v[0][0]**2*self.C)
-		arr = [[self.letter_id.upper()+self.descr,"V(n1-n2):", vn1n2, "[V]", "Q:", qn1n2, "[C]", "E:", energy, "[J]"]]
-		strarr = printing.table_setup(arr)
-		return strarr
-	def print_op_info(self, ports_v):
-		print self.get_op_info(ports_v),
-class inductor:
-	letter_id = "l"
-	is_nonlinear = False
-	def __init__(self, n1, n2, L, ic=None):
-		self.L = L
-		self.n1 = n1
-		self.n2 = n2
-		self.ic = ic
-	def __str__(self):
-		return str(self.L)
+	def add_model(self, model_type, model_label, model_parameters):
+		"""Add a model to the available models
+		Inputs:
+		* models (a dictionary, "label":model instance), the available models. None if no model is available/defined.
+		* model_type (string), the model type (eg "ekv")
+		* model_label (string), a unique identifier for the model being added
+		* model_parameters (dict), a dictionary holding the parameters to be 
+		supplied to the model to initialize it.
 
-
-#########################
-## NON LINEAR ELEMENTS
-#########################
-
-class diode:
-	letter_id = "d"
-	is_nonlinear = True
-	dc_guess = [0.4]
-	def __init__(self, n1, n2, Io=1.0e-14, m=1, T=None, ic=None):
-		if Io:
-			self.Io = Io
-		else:
-			self.Io = 1.0e-14
-		
-		self.n1 = n1
-		self.n2 = n2
-		self.ports = ((self.n1, self.n2),)
-		if m:
-			self.m = m
-		else:
-			self.m = 1
-		if T:
-			self.T = T
-		else:
-			self.T = constants.T
-		
-		if ic is not None: #fixme
-			print "(W): ic is ignored in diodes."
-		self.ic = ic #per ora inutilizzato
-	def __str__(self):
-		rep = "Is="+str(self.Io)+" m="+str(self.m)+" T="+str(self.T)
-		if self.ic is not None:
-			rep = rep + " ic="+str(self.ic)
-		return rep
-	def get_output_ports(self):
-		return self.ports
-	def get_drive_ports(self, op):
-		return self.ports
-	def i(self, op_index, ports_v, time=0): #with gmin added
-		v = ports_v[0]
-		return self.Io*(math.exp(v/(self.m*constants.Vth()))-1)
-	def g(self, op_index, ports_v, port_index, time=0):
-		if not port_index == 0: 
-			raise Exception, "Attepted to evaluate a diode's gm on a unknown port."
-		return (self.i(op_index, ports_v)/constants.Vth()/self.m)
-	def get_op_info(self, ports_v_v):
-		vn1n2 = float(ports_v_v[0][0])
-		idiode = self.i(0, (vn1n2,))
-		gmdiode = self.g(0, (vn1n2,), 0)
-		arr = [[self.letter_id.upper()+self.descr,"V(n1-n2):", vn1n2, "[V]", "I(n1-n2):", idiode, "[A]", "g:", gmdiode, "[A/V]"]]
-		strarr = printing.table_setup(arr)
-		return strarr
-	def print_op_info(self, ports_v):
-		print self.get_op_info(ports_v),
-
-#class mosq:
-#	"""Square law MOS model
-#	
-#	nd: drain node
-#	ng: gate node
-#	ns: source node
-#	kp: kp = u0 * C'ox
-#	w: channel width in meters
-#	l: channel length in meters
-#	vt: threshold voltage
-#	lambd: lambd = 1/Va channel length modulation
-#	mos_type: may be 'n' or 'p', identifies the mos type
-#	"""
-#	letter_id = "m"
-#	is_nonlinear = True
-#	dc_guess = None #defined in init
-#	descr = None
-#	
-#	_debug = False
-#	
-#	def __init__(self, nd, ng, ns, kp, w, l, vt, lambd=0, mos_type='n'):
-#		self.ng = ng
-#		self.n1 = nd
-#		self.n2 = ns
-#		self.kp = kp
-#		self.w = float(w)
-#		self.l = float(l)
-#		self.vt = vt
-#		self.ports = ((self.ng, self.n2), (self.ng, self.n1))
-#		if mos_type != 'n' and mos_type != 'p':
-#			raise Exception, "Unknown mos type: " + str(mos_type)
-#		self.mos_type = mos_type.lower()
-#		self.lambd = lambd * w / l
-#		self.dc_guess = [self.vt*(1.1)*(1-2*(self.mos_type=='p')), 0]
-#	
-#	def get_ports(self):
-#		"""Returns a tuple of tuples of ports nodes, as:
-#		(port0, port1, port2...)
-#		Where each port is in the form:
-#		port0 = (nplus, nminus)
-#		"""
-#		return self.ports
-#	
-#	def __str__(self):
-#		rep = "type=" + self.mos_type + " kp=" + str(self.kp)+ " vt="+ str(self.vt)+ " w="+ str(self.w)+ " l=" + str(self.l) + \
-#		" lambda="+ str(self.lambd)
-#		return rep
-#	
-#
-#	def i(self, ports_v, time=0):
-#		"""Returns the current flowing in the element with the voltages applied
-#		as specified in the ports_v vector.
-#		
-#		ports_v: a list in the form: [voltage_across_port0, voltage_across_port1, ...]
-#		time: the simulation time at which the evaluation is performed. Set it to
-#		None during DC analysis.
-#		
-#		"""
-#		v1 = ports_v[0]
-#		v2 = ports_v[1]
-#		
-#		if self.mos_type == 'p':
-#			v1 = -v1
-#			v2 = -v2
-#			sign = -1
-#		else:
-#			sign = +1
-#			
-#			
-#		if v1 <= self.vt and v2 <= self.vt:
-#			# no channel at both sides
-#			idr = 0
-#			if self._debug:
-#				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "OFF"
-#		elif v1 > self.vt and v2 > self.vt:
-#			# zona ohmica: channel at both sides
-#			idr = .5 * self.kp * (v1 - v2)*(-2*self.vt + v1 + v2) * (self.w / self.l)
-#			if self._debug:
-#				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "OHM", "idr:", str(idr)
-#		elif v1 > self.vt and v2 <= self.vt:
-#			# zona di saturazione: canale al s
-#			idr =  0.5 * self.kp * ((v1 - self.vt)**2) * (self.w / self.l) * (1 - self.lambd*(v2 - self.vt))
-#			if self._debug:
-#				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "SAT", "idr:", str(idr)
-#		else:
-#			# zona di saturazione: canale al d
-#			idr =  -0.5 * self.kp * ((v2 - self.vt)**2) * (self.w / self.l) * (1 - self.lambd*(v1 - self.vt))
-#			if self._debug:
-#				print "M"+self.descr+":", "vgs:", str(v1), "vgd:", str(v2), "vds:", str(v1-v2), "SAT", "idr:", str(idr)
-#
-#		return sign*idr
-#	
-#	def g(self, ports_v, port_index, time=0):
-#		"""
-#		Returns the differential (trans)conductance rs the port specified by port_index
-#		when the element has the voltages specified in ports_v across its ports,
-#		at (simulation) time.
-#		
-#		ports_v: a list in the form: [voltage_across_port0, voltage_across_port1, ...]
-#		port_index: an integer, 0 <= port_index < len(self.get_ports())
-#		time: the simulation time at which the evaluation is performed. Set it to
-#		None during DC analysis.
-#		"""
-#		v1 = ports_v[0]
-#		v2 = ports_v[1]
-#		vds = v1 - v2
-#		if self.mos_type == 'p':
-#			v1 = -v1
-##			v2 = -v2
-#			
-#		if port_index == 0: #vgs
-#			if v1 <= self.vt and v2 <= self.vt:
-#				# no channel at both sides
-#				gdr = 0
-#			elif v1 > self.vt and v2 > self.vt:
-#				# zona ohmica: channel at both sides
-#				gdr =  self.kp * (self.w / self.l) * (v1 - self.vt)
-#			elif v1 > self.vt and v2 <= self.vt:
-#				# zona di saturazione: canale al s
-#				gdr =  self.kp * (v1 - self.vt) * (self.w / self.l) * (1 - self.lambd*(v2 - self.vt))
-#			else:
-#				# zona di saturazione: canale al d # era: 3*vgs - vds - 3*self.vt
-#				gdr =  0.5 * self.kp * ((v2 - self.vt)**2) * (self.w / self.l) * self.lambd*v1
-#		elif port_index == 1: #vgd
-#			if v1 <= self.vt and v2 <= self.vt:
-#				# no channel at both sides
-#				gdr = 0
-#			elif v1 > self.vt and v2 > self.vt:
-#				# zona ohmica: channel at both sides
-#				gdr = self.kp * (self.vt - v2) * (self.w / self.l)
-#			elif v1 > self.vt and v2 <= self.vt:
-#				# zona di saturazione: canale al s
-#				gdr = - 0.5 * self.kp * ((v1 - self.vt)**2) * (self.w / self.l) * self.lambd
-#			else:
-#				# zona di saturazione: canale al d
-#				gdr =  - self.kp * (v2 - self.vt) * (self.w / self.l) * (1 - self.lambd*(v1 - self.vt))
-#		
-#		return gdr
-
-
-
-################
-##  SOURCES
-################
-
-class isource:
-	"""Generic (ideal) current source:
-	Defaults to a DC current source. To implement a time-varying source:
-	set _time_function to an appropriate function(time) and is_timedependent=True
-	
-	n1: + node
-	n2: - node
-	idc: DC current (A)
-	
-	Note: if DC voltage is set and is_timedependent == True, idc will be returned
-	if the current is evaluated in a DC analysis. This may be useful to simulate a OP
-	and then perform a transient analysis with the OP as starting point.
-	Otherwise the value in t=0 is used for DC analysis.
-	"""
-	letter_id = "i"
-	is_nonlinear = False
-	is_timedependent = False
-	_time_function = None
-	def __init__(self, n1, n2, idc=None, abs_ac=None, arg_ac=0):
-		self.idc = idc
-		self.abs_ac = abs_ac
-		self.arg_ac = arg_ac
-		self.n1 = n1
-		self.n2 = n2
-		
-	def __str__(self):
-		rep = ""
-		if self.idc is not None:
-			rep = rep + "type=idc idc="+str(self.idc) + " "
-		if self.is_timedependent:
-			rep = rep + str(self._time_function)
-		return rep
-
-	def I(self, time=None):
-		"""Returns the current in A at the time supplied.
-		If time is not supplied, or set to None, or the source is DC, returns idc
-		
-		This simulator uses Normal convention: 
-		A positive currents flows in a element from the + node to the - node
+		returns: the updated models
 		"""
-		if not self.is_timedependent or (self._time_function == None) or (time==None and self.idc is not None):
-			return self.idc
+
+		if model_type == "ekv":
+			model_iter = ekv.ekv_mos_model(**model_parameters)
+			model_iter.name = model_label
 		else:
-			return self._time_function.value(time)
-class vsource:
-	"""Generic (ideal) voltage source:
-	Defaults to a DC voltage source. To implement a time-varying source:
-	set _time_function to an appropriate function(time) and is_timedependent=True
-	
-	n1: + node
-	n2: - node
-	vdc: DC voltage (V)
-	
-	Note: if DC voltage is set and is_timedependent == True, vdc will be returned
-	if the voltage is evaluated in a DC analysis. This may be useful to simulate a OP
-	and then perform a transient analysis with the OP as starting point.
-	Otherwise the value in t=0 is used for DC analysis.
-	"""
-	letter_id = "v"
-	is_nonlinear = False
-	is_timedependent = False
-	_time_function = None
-	dc_guess = None #defined in init
-	def __init__(self, n1, n2, vdc=None, abs_ac=None, arg_ac=0):
-		self.vdc = vdc
-		self.n1 = n1
-		self.n2 = n2
-		self.abs_ac = abs_ac
-		self.arg_ac = arg_ac
-		if vdc is not None:
-			self.dc_guess = [self.vdc]
-	
-	def __str__(self):
-		rep = ""
-		if self.vdc is not None:
-			rep = rep + "type=vdc vdc="+str(self.vdc) + " "
-		if self.is_timedependent:
-			rep = rep + str(self._time_function)
-		return rep
-	
-	def V(self, time=None):
-		"""Returns the voltage in V at the time supplied.
-		If time is not supplied, or set to None, or the source is DC, returns vdc"""
-		if not self.is_timedependent or \
-		(self._time_function is None) or \
-		(time is None and self.vdc is not None):
-			return self.vdc
-		else:
-			return self._time_function.value(time)
+			raise CircuitError, "Unknown model %s" % (model_type,)
+		self.models.update({model_label:model_iter})
+		return models
+			
+	def remove_model(self, model_label):
+		"""Remove a model to the available models
+		Inputs:
+		* models (a dictionary, "label":model instance), the available models or None if no model is available/defined.
+		* model_label (string), the unique identifier corresponding to the model 
+		being removed
 
-class evsource:
-	"""Linear voltage controlled voltage source (ideal)
+		This method currently silently ignores models that are not defined.
 
-	Source port is a open circuit, dest. port is a ideal voltage source:
-	(Vn1 - Vn2) = alpha * (Vsn1 - Vsn2)
+		returns: None
+		"""
+		if self.models is not None and self.models.has_key(model_label):
+			del self.models[model_label]
+		# should print a warning here
+
+	def add_resistor(self, name, ext_n1, ext_n2, R):
+		"""Adds a resistor to the circuit (also takes care that the nodes are
+		added as well).
 	
-	n1: + node, output port
-	n2: - node, output port
-	sn1: + node, source port
-	sn2: - node, source port
-	alpha: prop constant between voltages
+		Parameters:
+		name (string): the resistor name (eg "R1"). The first letter is replaced by an R
+		ext_n1, ext_n2 (string): the nodes to which the resistor is connected. 
+					eg. "in" or "out_a"
+		R (float): resistance (float)
 	
-	"""
-	letter_id = "e"
-	is_nonlinear = False
-	def __init__(self, n1, n2, sn1, sn2, alpha):
-		self.alpha = alpha
-		self.n1 = n1
-		self.n2 = n2
-		self.sn1 = sn1
-		self.sn2 = sn2
-	def __str__(self):
-		return "alpha="+str(self.alpha)
-
-
-class gisource:
-	letter_id = "g"
-	"""Linear voltage controlled current source
+		Returns: True
+		"""
+		n1 = self.add_node_to_circ(ext_n1)
+		n2 = self.add_node_to_circ(ext_n2)
 	
-	Source port is a short circuit, dest. port is a ideal current source:
-	Io = alpha * Is
-		
-	Where a positive I enters in n+ and exits from n-
-	
-	n1: + node, output port
-	n2: - node, output port
-	sn1: + node, source port
-	sn2: - node, source port
-	alpha: prop constant between currents
-	
-	"""
-	is_nonlinear = False
-	def __init__(self, n1, n2, sn1, sn2, alpha):
-		self.alpha = alpha
-		self.n1 = n1
-		self.n2 = n2
-		self.sn1 = sn1
-		self.sn2 = sn2
-	def __str__(self):
-		return "alpha="+str(self.alpha)
-	
-class hvsource: #fixme
-	"""Linear current controlled voltage source
-	fixme: todo
-	
-	"""
-	letter_id = "h"
-	is_nonlinear = False
-	def __init__(self, n1, n2, sn1, sn2, alpha):
-		print "hvsource not implemented. BUG"
-		self.alpha = alpha
-		self.n1 = n1
-		self.n2 = n2
-		self.sn1 = sn1
-		self.sn2 = sn2
-		import sys
-		sys.exit(1)
-	def __str__(self):
-		raise Exception, "hvsource not implemented. BUG"
+		if R == 0:
+			raise CircuitError, "ZERO-valued resistors are not allowed."
 
-# NEEDS TO BE CALLED hvsource, or search for it and modify appropriately
-
-
-
-#########################################
-# Functions for time dependent sources  #
-#########################################
-
-class pulse:
-	#PULSE(V1 V2 TD TR TF PW PER)
-	_type = "V"
-	v1 = None
-	v2 = None
-	td = None
-	per = None
-	tr = None
-	tf = None
-	pw = None
-	def __init__(self, v1=None, v2=None, td=None, tr=None, pw=None, tf=None, per=None):
-		self.v1 = v1
-		self.v2 = v2
-		self.td = td
-		self.per = per
-		self.tr = tr
-		self.tf = tf
-		self.pw = pw
-	def value(self, time):
-		if not self.ready():
-			print "Error: pulse function not well defined. This is a bug."
-		time = time - self.per*int(time/self.per)
-		if time < self.td:
-			return self.v1
-		elif time < self.td+self.tr:
-			return self.v1 + ((self.v2-self.v1)/(self.tr))*(time - self.td)
-		elif time < self.td+self.tr+self.pw:
-			return self.v2
-		elif time < self.td+self.tr+self.pw+self.tf:
-			return self.v2 + ((self.v1-self.v2)/(self.tf))*(time - (self.td+self.tr+self.pw))
-		else:
-			return self.v1
-	def ready(self):
-		if self.v1 == None or self.v2 == None or self.td == None or self.tr == None or self.pw == None or \
-		self.tf == None or self.per == None:
-			return False
-		else:
-			return True
-	def __str__(self):
-		return "type=pulse " + \
-		self._type.lower() + "1="+str(self.v1) + " " + \
-		self._type.lower() + "2=" + str(self.v2) + \
-		" td=" + str(self.td) + " per=" + str(self.per) + \
-		" tr=" + str(self.tr) + " tf=" + str(self.tf) + \
-		" pw=" + str(self.pw)
-class sin:
-	#SIN(VO VA FREQ TD THETA)
-	td = None
-	vo = None
-	va  = None
-	freq  = None
-	theta = None
-	_type = "V"
-	def __init__(self, vo=None, va=None, freq=None, td=None, theta=None):
-		self.vo = vo
-		self.va = va
-		self.freq = freq
-		self.td = td
-		self.theta = theta
-	def value(self, time):
-		if not self.ready():
-			printing.print_general_error("Error: sin function not well defined. This is a bug.")
-		if time < self.td:
-			return self.vo
-		elif self.theta:
-			return self.vo + self.va * math.exp(-1*(time-self.td)/self.theta) * math.sin(2*math.pi*self.freq*(time-self.td))
-		else:
-			return self.vo + self.va * math.sin(2*math.pi*self.freq*(time-self.td))
-	def ready(self):
-		if self.vo == None or self.va == None or self.freq == None or self.td == None or self.theta == None:
-			return False
-		else:
-			return True
-	def __str__(self):
-		return "type=sin " + \
-		self._type.lower() + "o=" + str(self.vo) + " " + \
-		self._type.lower() +"a=" + str(self.va) + \
-		" freq=" + str(self.freq) + " theta=" + str(self.theta) + \
-		" td=" + str(self.td)
-	
-
-class exp:
-	# EXP(V1 V2 TD1 TAU1 TD2 TAU2)
-	v1 = None
-	v2 = None
-	td1  = None
-	tau1  = None
-	td2 = None
-	tau2 = None
-	_type = "V"
-	def __init__(self, v1=None, v2=None, td1=None, tau1=None, td2=None, tau2=None):
-		self.v1 = v1
-		self.v2 = v2
-		self.td1 = td1
-		self.tau1 = tau1
-		self.td2 = td2
-		self.tau2 = tau2
-	def value(self, time):
-		if not self.ready():
-			printing.print_general_error("Error: exp function not well defined. This is a bug.")
-		if time < self.td1:
-			return self.v1
-		elif time < self.td2:
-			return self.v1+(self.v2 - self.v1) * (1-math.exp(-1 * (time - self.td1)/self.tau1))
-		else:
-			return self.v1 + (self.v2 - self.v1) * (1 - math.exp(-1 * (time - self.td1 ) / self.tau1))+(self.v1 - self.v2 ) * ( 1 - math.exp(-1 * (time - self.td2) / self.tau2))
-	def ready(self):
-		if self.v1 == None or self.v2 == None or self.td1 == None or self.tau1 == None or self.td2 == None \
-		or self.tau2 == None:
-			return False
+		elem = devices.resistor(n1=n1, n2=n2, R=R)
+		elem.descr = name[1:]
+		self.elements = self.elements + [elem]
 		return True
-	def __str__(self):
-		return "type=exp " + \
-		self._type.lower() + "1=" + str(self.v1) + " " + \
-		self._type.lower() + "2=" + str(self.v2) + \
-		" td1="+str(self.td1) + " td2=" + str(self.td2) + \
-		" tau1=" + str(self.tau1) + " tau2=" + str(self.tau2)
+	
+	def add_capacitor(self, name, ext_n1, ext_n2, C, ic=None):
+		"""Adds a capacitor to the circuit (also takes care that the nodes are
+		added as well).
+	
+		Parameters:
+		name (string): the capacitor name (eg "C1"). The first letter is always C.
+		ext_n1, ext_n2 (string): the nodes to which the element is connected. 
+					eg. "in" or "out_a"
+		C (float): capacitance (float)
+		ic (float): initial condition, see simulation types for how this affects
+			the results.	
+
+		Returns: True
+		"""
+		if C == 0:
+			raise CircuitError, "ZERO-valued capacitors are not allowed."
+
+		n1 = self.add_node_to_circ(ext_n1)
+		n2 = self.add_node_to_circ(ext_n2)
+	
+		elem = devices.capacitor(n1=n1, n2=n2, C=C, ic=ic)
+		elem.descr = name[1:]
+	
+		self.elements = self.elements + [elem]
+		return True
+
+	def add_inductor(self, name, ext_n1, ext_n2, L, ic=None):
+		"""Adds an inductor to the circuit (also takes care that the nodes are
+		added as well).
+	
+		Parameters:
+		name (string): the inductor name (eg "Lfilter"). The first letter is always L.
+		ext_n1, ext_n2 (string): the nodes to which the element is connected. 
+					eg. "in" or "out_a"
+		C (float): inductance
+		ic (float): initial condition, see simulation types for how this affects
+			the results.	
+
+		Returns: True
+		"""
+
+		n1 = self.add_node_to_circ(ext_n1)
+		n2 = self.add_node_to_circ(ext_n2)
+	
+		elem = devices.inductor(n1=n1, n2=n2, L=L, ic=ic)
+		elem.descr = name[1:]
+	
+		self.elements = self.elements + [elem]
+		return True
+
+	def add_vsource(self, name, ext_n1, ext_n2, vdc, vac, function=None):
+		"""Adds a voltage source to the circuit (also takes care that the nodes 
+		are added as well).
+	
+		Parameters:
+		name (string): the volatge source name (eg "VA"). The first letter is always V.
+		ext_n1, ext_n2 (string): the nodes to which the element is connected. 
+					eg. "in" or "out_a"
+		vdc (float): DC voltage
+		vac (float): AC voltage (optional)
+		function (function): optional time function. See devices.py for built-ins.
+
+		Returns: True
+		"""
+		n1 = self.add_node_to_circ(ext_n1)
+		n2 = self.add_node_to_circ(ext_n2)
+	
+		elem = devices.vsource(n1=n1, n2=n2, vdc=vdc, abs_ac=vac)
+		elem.descr = name[1:]
+	
+		if function is not None:
+			elem.is_timedependent = True
+			elem._time_function = function
+	
+		self.elements = self.elements + [elem]
+		return True
+	
+	def add_isource(self, name, ext_n1, ext_n2, idc, iac, function=None):
+		"""Adds a current source to the circuit (also takes care that the nodes 
+		are added as well).
+	
+		Parameters:
+		name (string): the current source name (eg "IA"). The first letter is always I.
+		ext_n1, ext_n2 (string): the nodes to which the element is connected. 
+					eg. "in" or "out_a"
+		idc (float): DC current
+		iac (float): AC current (optional)
+		function (function): optional time function. See devices.py for built-ins.
+
+		Returns: True
+		"""
+		n1 = self.add_node_to_circ(ext_n1)
+		n2 = self.add_node_to_circ(ext_n2)
+	
+		elem = devices.isource(n1=n1, n2=n2, idc=idc, abs_ac=iac)
+		elem.descr = name[1:]
+	
+		if function is not None:
+			elem.is_timedependent = True
+			elem._time_function = function
+	
+		self.elements = self.elements + [elem]
+		return True
+
+	def add_diode(self, name, ext_n1, ext_n2, Is=None, rs=None, m=None, T=None, ic=None):
+		"""Adds a diode to the circuit (also takes care that the nodes 
+		are added as well).
+	
+		Parameters:
+		name (string): the diode name (eg "D1"). The first letter is always D.
+		ext_n1, ext_n2 (string): the nodes to which the element is connected. 
+					eg. "in" or "out_a"
+		Is (float): Inverse sat current (optional)
+		rs (float): series resistance (optional)
+		m (int): shunt multiplier
+		T (float): temperature
+		ic (float): initial condition (not implemented yet)
+
+		Returns: True
+		"""
+		n1 = self.add_node_to_circ(ext_n1)
+		n2 = self.add_node_to_circ(ext_n2)
+	
+		return_list = []
+	
+		if Rs is not None: #we need to add a Rs on the anode
+			new_node = n1
+			new_node = self.generate_internal_only_node_label()
+			#print "-<<<<<<<<"+str(n1)+" "+str(n2) +" "+str(new_node)
+			rs_elem = devices.resistor(n1=new_node, n2=n1, R=Rs)
+			rs_elem.descr = "INT_"+name
+			return_list = return_list + [rs_elem]
+	
+		elem = devices.diode(n1=n1, n2=n2, Io=Is, m=m, T=T, ic=ic)
+		elem.descr = name[1:]
+		return_list = return_list + [elem]
+
+		self.elements = self.elements + return_list
+		return True
+	
+	def add_mos(self, name, ext_nd, ext_ng, ext_ns, ext_nb, w, l, model_label, models, m=None, n=None):
+		"""Adds a mosfet to the circuit (also takes care that the nodes 
+		are added as well).
+	
+		Parameters:
+
+		name (string): the mos name (eg "M1"). The first letter is always M.
+		ext_nd (string): drain node
+		ext_ng (string): gate node
+		ext_ns (string): source node
+		ext_nb (string): bulk node
+		w (float): gate width
+		l (float): gate length
+		model_label (string): model identifier
+		models (circuit models): circuit models
+		m (int): shunt multiplier (optional)
+		n (int): series multiplier (unsupported)
+
+		Returns: True
+		"""
+		if m is None:
+			m = 1
+		if n is None:
+			n = 1
+
+		nd = self.add_node_to_circ(ext_nd)
+		ng = self.add_node_to_circ(ext_ng)
+		ns = self.add_node_to_circ(ext_ns)
+		nb = self.add_node_to_circ(ext_nb)	
+
+		if not models.has_key(model_label):
+			raise ModelError, "Unknown model id: "+model_label
+		elem = ekv.ekv_device(nd, ng, ns, nb, w, l, models[model_label], m, n)
+
+		#elem = mosq.mosq(nd, ng, ns, kp=kp, w=w, l=l, vt=vt, mos_type=mos_type, lambd=lambd)
+		elem.descr = name[1:]
+	
+		self.elements = self.elements + [elem]
+		return True
+		
+	def add_vcvs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha):
+		"""Parses a voltage controlled voltage source (vcvs) from the line 
+		supplied, adds its nodes to the circuit instance circ and returns a 
+		list holding the vcvs element.
+	
+		Parameters:
+		line: the line, if you have already .split()-ed it, set this to None 
+		and supply the elements through line_elements.
+		circ: the circuit instance.
+		line_elements: will be generated by the function from line.split() 
+		if set to None.
+	
+		Returns: [vcvs_elem]
+		"""
+	
+		n1 = self.add_node_to_circ(ext_n1)
+		n2 = self.add_node_to_circ(ext_n2)
+		sn1 = self.add_node_to_circ(ext_sn1)
+		sn2 = self.add_node_to_circ(ext_sn2)
+	
+		elem = devices.evsource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=alpha)
+		elem.descr = name[1:]
+	
+		self.elements = self.elements + [elem]
+		return True
+	
+	def add_vccs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha):
+		"""
+		"""
+
+		n1 = self.add_node_to_circ(ext_n1)
+		n2 = self.add_node_to_circ(ext_n2)
+		sn1 = self.add_node_to_circ(ext_sn1)
+		sn2 = self.add_node_to_circ(ext_sn2)
+	
+		elem = devices.gisource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=alpha)
+		elem.descr = name[1:]
+	
+		self.elements = self.elements + [elem]
+		return True
+
+	def add_user_defined(self, module, label, param_dict):
+		"""Adds a user defined element.
+	
+		In order for this to work, you should write a module that supplies the
+		elem class.
+
+		XXX WRITE DOC
+		"""
+	
+		if circuit.user_defined_modules_dict.has_key(module_name):
+			module = circuit.user_defined_modules_dict[module_name]
+		else:
+			fp, pathname, description = imp.find_module(module_name)
+			module = imp.load_module(module_name, fp, pathname, description)
+			circuit.user_defined_modules_dict.update({module_name:module})
+
+		elem_class = getattr(module, label)
+		
+		param_dict.update({"convert_units": convert_units})
+		param_dict.update({"circuit_node": self.add_node_to_circ})
+
+	
+		elem = elem_class(**param_dict)
+		elem.descr = name[1:]
+		elem.letter_id = "y"
+	
+		if hasattr(elem, "check"):
+			selfcheck_result, error_msg = elem.check()
+			if not selfcheck_result:
+				raise NetlistParseError, "module: " + module_name + " elem type: "+ elem_type_name+" error: "+\
+				error_msg
+	
+		self.elements = self.elements + [elem]
+		return True
+
+	def remove_elem(self, elem):
+		"""Removes an element from ther circuit and takes care that no
+		"orphan" nodes are left.
+		circ: the circuit instance
+		elem: the element to be removed
+
+		Returns: True if the element was found and removed, False otherwise
+		"""
+		if not elem in self.elements:
+			return False
+
+		self.elements.remove(elem)
+		nodes = []
+		if hasattr(elem, n1) and elem.n1 != 0:
+			nodes = nodes + [n1]
+		if hasattr(elem, n2) and elem.n2 != 0 and not elem.n2 in nodes:
+			nodes = nodes + [n2]
+		if elem.is_nonlinear:
+			for n1, n2 in elem.ports:
+				if n1 != 0 and not n1 in nodes:
+					nodes = nodes + [n1]
+				if n2 != 0 and not n2 in nodes:
+					nodes = nodes + [n2]
+
+		remove_list = copy.copy(nodes)
+		for n in nodes:
+			for e in self.elements:
+				if hasattr(elem, n1) and e.n1 == n or\
+				hasattr(elem, n2) and e.n2 == n:
+					remove_list.remove(n)
+					break
+				if elem.is_nonlinear:
+					for n1, n2 in elem.ports:
+						if n1 == n or n2 == n:
+							remove_list.remove(n)
+		for n in remove_list:
+			self.nodes_dict.pop(n)
+		return True
+
 														
 
 # STATIC METHODS
@@ -844,8 +578,9 @@ def is_elem_voltage_defined(elem):
 	True se the elem is a vsource, inductor, evsource or hvsource
 	False otherwise.
 	"""
-	if isinstance(elem, vsource) or isinstance(elem, evsource) or \
-	isinstance(elem, hvsource) or isinstance(elem, inductor):
+	if isinstance(elem, devices.vsource) or isinstance(elem, devices.evsource) or \
+	isinstance(elem, devices.hvsource) or isinstance(elem, devices.inductor) \
+	or (hasattr(elem, "is_voltagedefined") and elem.is_voltagedefined):
 		return True
 	else:
 		return False

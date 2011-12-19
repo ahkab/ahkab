@@ -22,7 +22,7 @@ This is the results module of the simulator.
 """
 import sys, time, copy
 import numpy
-import circuit, printing, options, constants, csvlib
+import circuit, devices, printing, options, constants, csvlib
 VERSION = "0.05"
 
 	
@@ -137,7 +137,7 @@ class op_solution:
 						tempv = tempv - x[port[1]-1]				
 					ports_v_v = ((tempv,),)
 				op_info += [elem.get_op_info(ports_v_v)]
-			if isinstance(elem, circuit.gisource):
+			if isinstance(elem, devices.gisource):
 				v = 0
 				v = v + x[elem.n1-1] if elem.n1 != 0 else v
 				v = v - x[elem.n2-1] if elem.n2 != 0 else v
@@ -145,12 +145,12 @@ class op_solution:
 				vs = vs + x[elem.n1-1] if elem.n1 != 0 else vs
 				vs = vs - x[elem.n2-1] if elem.n2 != 0 else vs
 				tot_power = tot_power - v*vs*elem.alpha
-			elif isinstance(elem, circuit.isource):
+			elif isinstance(elem, devices.isource):
 				v = 0
 				v = v + x[elem.n1-1] if elem.n1 != 0 else v
 				v = v - x[elem.n2-1] if elem.n2 != 0 else v
 				tot_power = tot_power - v*elem.I()
-			elif isinstance(elem, circuit.vsource) or isinstance(elem, circuit.evsource):
+			elif isinstance(elem, devices.vsource) or isinstance(elem, devices.evsource):
 				v = 0
 				v = v + x[elem.n1-1] if elem.n1 != 0 else v
 				v = v - x[elem.n2-1] if elem.n2 != 0 else v

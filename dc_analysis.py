@@ -31,7 +31,7 @@ version of the Newton Rhapson method.
 
 import sys
 import numpy, numpy.linalg
-import constants, ticker, options, circuit, printing, utilities, dc_guess, results
+import constants, ticker, options, circuit, devices, printing, utilities, dc_guess, results
 
 
 
@@ -81,10 +81,10 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 	v_eq = 0
 	if not skip_Tt:
 		for elem in circ.elements:
-			if (isinstance(elem, circuit.vsource) or isinstance(elem, circuit.isource)) and elem.is_timedependent:
-				if isinstance(elem, circuit.vsource):
+			if (isinstance(elem, devices.vsource) or isinstance(elem, devices.isource)) and elem.is_timedependent:
+				if isinstance(elem, devices.vsource):
 					Tt[nv - 1 + v_eq, 0] = -1 * elem.V(time)
-				elif isinstance(elem, circuit.isource):
+				elif isinstance(elem, devices.isource):
 					if elem.n1:
 						Tt[elem.n1 - 1, 0] = Tt[elem.n1 - 1, 0] + elem.I(time)
 					if elem.n2:
@@ -264,18 +264,18 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 	for index in xrange(len(circ.elements)):
 		if circ.elements[index].descr == elem_descr:
 			if elem_type == 'vsource': 
-				if isinstance(circ.elements[index], circuit.vsource):
+				if isinstance(circ.elements[index], devices.vsource):
 					source_elem = circ.elements[index]
 					break
 			if elem_type == 'isource':
-				if isinstance(circ.elements[index], circuit.isource):
+				if isinstance(circ.elements[index], devices.isource):
 					source_elem = circ.elements[index]
 					break
 	if not source_elem:
 		printing.print_general_error(elem_type + " element with descr. "+ elem_descr +" was not found.")
 		sys.exit(1)
 	
-	if isinstance(source_elem, circuit.vsource):
+	if isinstance(source_elem, devices.vsource):
 		initial_value = source_elem.vdc
 	else:
 		initial_value = source_elem.idc
@@ -299,7 +299,7 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 	index = 0
 	for sweep_value in dc_iter:
 		index = index + 1
-		if isinstance(source_elem, circuit.vsource):
+		if isinstance(source_elem, devices.vsource):
 			source_elem.vdc = sweep_value
 		else:
 			source_elem.idc = sweep_value
@@ -326,7 +326,7 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 		printing.print_info_line(("done", 3), verbose)
 	
 	# clean up
-	if isinstance(source_elem, circuit.vsource):
+	if isinstance(source_elem, devices.vsource):
 		source_elem.vdc = initial_value
 	else:
 		source_elem.idc = initial_value
@@ -431,7 +431,7 @@ def print_elements_ops(circ, x):
 				ports_v_v = ((tempv,),)
 			elem.print_op_info(ports_v_v)
 			print "-------------------"
-		if isinstance(elem, circuit.gisource):
+		if isinstance(elem, devices.gisource):
 			v = 0
 			v = v + x[elem.n1-1] if elem.n1 != 0 else v
 			v = v - x[elem.n2-1] if elem.n2 != 0 else v
@@ -439,12 +439,12 @@ def print_elements_ops(circ, x):
 			vs = vs + x[elem.n1-1] if elem.n1 != 0 else vs
 			vs = vs - x[elem.n2-1] if elem.n2 != 0 else vs
 			tot_power = tot_power - v*vs*elem.alpha
-		elif isinstance(elem, circuit.isource):
+		elif isinstance(elem, devices.isource):
 			v = 0
 			v = v + x[elem.n1-1] if elem.n1 != 0 else v
 			v = v - x[elem.n2-1] if elem.n2 != 0 else v
 			tot_power = tot_power - v*elem.I()
-		elif isinstance(elem, circuit.vsource) or isinstance(elem, circuit.evsource):
+		elif isinstance(elem, devices.vsource) or isinstance(elem, devices.evsource):
 			v = 0
 			v = v + x[elem.n1-1] if elem.n1 != 0 else v
 			v = v - x[elem.n2-1] if elem.n2 != 0 else v
@@ -661,19 +661,19 @@ def generate_mna_and_N(circ):
 	for elem in circ.elements:
 		if elem.is_nonlinear:
 			continue
-		elif isinstance(elem, circuit.resistor):
+		elif isinstance(elem, devices.resistor):
 			mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1.0/elem.R
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1.0/elem.R
 			mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1.0/elem.R
 			mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1.0/elem.R
-		elif isinstance(elem, circuit.capacitor):
+		elif isinstance(elem, devices.capacitor):
 			pass #In a capacitor I(V) = 0
-		elif isinstance(elem, circuit.gisource):
+		elif isinstance(elem, devices.gisource):
 			mna[elem.n1, elem.sn1] = mna[elem.n1, elem.sn1] + elem.alpha
 			mna[elem.n1, elem.sn2] = mna[elem.n1, elem.sn2] - elem.alpha
 			mna[elem.n2, elem.sn1] = mna[elem.n2, elem.sn1] - elem.alpha
 			mna[elem.n2, elem.sn2] = mna[elem.n2, elem.sn2] + elem.alpha
-		elif isinstance(elem, circuit.isource):
+		elif isinstance(elem, devices.isource):
 			if not elem.is_timedependent: #convenzione normale!
 				N[elem.n1, 0] = N[elem.n1, 0] + elem.I()
 				N[elem.n2, 0] = N[elem.n2, 0] - elem.I()
@@ -699,17 +699,17 @@ def generate_mna_and_N(circ):
 			# KVL
 			mna[index, elem.n1] = +1.0
 			mna[index, elem.n2] = -1.0
-			if isinstance(elem, circuit.vsource) and not elem.is_timedependent:
+			if isinstance(elem, devices.vsource) and not elem.is_timedependent:
 				# corretto, se � def una parte tempo-variabile ci pensa
 				# mdn_solver a scegliere quella giusta da usare.
 				N[index, 0] = -1.0*elem.V()
-			elif isinstance(elem, circuit.evsource):
+			elif isinstance(elem, devices.evsource):
 				mna[index, elem.sn1] = -1.0 * elem.alpha
 				mna[index, elem.sn2] = +1.0 * elem.alpha
-			elif isinstance(elem, circuit.inductor):
+			elif isinstance(elem, devices.inductor):
 				#N[index,0] = 0 pass, it's already zero
 				pass
-			elif isinstance(elem, circuit.hvsource):
+			elif isinstance(elem, devices.hvsource):
 				print "dc_analysis.py: BUG - hvsources are not implemented yet."
 				sys.exit(33)
 
@@ -829,12 +829,12 @@ def modify_x0_for_ic(circ, x0):
 	
 	# setup voltages this may _not_ work properly
 	for elem in circ.elements:
-		if isinstance(elem, circuit.capacitor) and elem.ic:
+		if isinstance(elem, devices.capacitor) and elem.ic:
 			x0[elem.n1 - 1, 0] = x0[elem.n2 - 1, 0] + elem.ic
 			
 	# setup the currents
 	for elem in voltage_defined_elements:
-		if isinstance(elem, circuit.inductor) and elem.ic:
+		if isinstance(elem, devices.inductor) and elem.ic:
 			x0[nv - 1 + voltage_defined_elements.index(elem), 0] = elem.ic
 	
 	if return_obj:
