@@ -32,7 +32,7 @@ We need:
 import sys, imp
 import numpy
 import dc_analysis, implicit_euler, ticker, options, circuit, printing, utilities
-import results
+import devices, results
 
 
 #methods, add here
@@ -361,18 +361,18 @@ def generate_D(circ, shape):
 	nv = len(circ.nodes_dict)# - 1
 	i_eq = 0 #each time we find a vsource or vcvs or ccvs, we'll add one to this.
 	for elem in circ.elements:
-		if isinstance(elem, circuit.vsource) or isinstance(elem, circuit.evsource) or \
-		isinstance(elem, circuit.hvsource):
+		if isinstance(elem, devices.vsource) or isinstance(elem, devices.evsource) or \
+		isinstance(elem, devices.hvsource):
 			#notice that hvsources aren't yet implemented now!
 			i_eq = i_eq + 1
-		elif isinstance(elem, circuit.capacitor):
+		elif isinstance(elem, devices.capacitor):
 			n1 = elem.n1
 			n2 = elem.n2
 			D[n1, n1] = D[n1, n1] + elem.C
 			D[n1, n2] = D[n1, n2] - elem.C
 			D[n2, n2] = D[n2, n2] + elem.C
 			D[n2, n1] = D[n2, n1] - elem.C
-		elif isinstance(elem, circuit.inductor):
+		elif isinstance(elem, devices.inductor):
 			D[ nv + i_eq, nv + i_eq ] = -1 * elem.L
 			i_eq = i_eq + 1
 		

@@ -20,7 +20,7 @@
 
 import devices, printing
 
-# will be added here by netlist_parser
+# will be added here by netlist_parser and circuit instances
 user_defined_modules_dict = {}
 
 class circuit:
@@ -53,21 +53,44 @@ class circuit:
 	
 	2. Elements
 	All the elements in the circuit must be appended to the element list.
-	See netlist_parser for examples of how I did it.
 
-	The code to add a element should be something like:
+	The following methods are provided to add and remove elements to the circuit:
 
-		anode = my_circuit.add_node_to_circuit(ext_name_of_anode)
-		cathode = my_circuit.add_node_to_circuit(ext_name_of_cathode)
-		resistance = 1e3 # 1Kohm
-		# new_element = circuit.element( ... ) 
-		new_element = circuit.resitor(n1=anode, n2=cathode, R=resistance)
-		my_circuit.elements.append(new_element)
+	add_resistor(self, name, ext_n1, ext_n2, R)
+	add_capacitor(self, name, ext_n1, ext_n2, C, ic=None)
+	add_inductor(self, name, ext_n1, ext_n2, L, ic=None)
+	add_vsource(self, name, ext_n1, ext_n2, vdc, vac, function=None)
+	add_isource(self, name, ext_n1, ext_n2, idc, iac, function=None)
+	add_diode(self, name, ext_n1, ext_n2, Is=None, rs=None, m=None, T=None, ic=None)
+	add_mos(self, name, ext_nd, ext_ng, ext_ns, ext_nb, w, l, model_label, models, m=None, n=None)
+	add_vcvs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha)
+	add_vccs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha)
+	add_user_defined(self, module, label, param_dict)
+	remove_elem(self, elem)
+
+	Example:
 	
+	mycircuit = circuit.circuit(title="Example circuit", filename=None)
+	# no filename since there will be no deck associated with thios circuit.
+	# get the ref node (gnd)
+	gnd = mycircuit.get_ground_node()
+	# add a node named n1 and a 600 ohm resistor connected between n1 and gnd
+	mycircuit.add_resistor(name="R1", ext_n1="n1", ext_n2=gnd, R=600)
+	
+	Refer to the methods help for addtional info.
+
 	3. Internal only nodes
 	The number of internal only nodes (added automatically by the simulator)
-	is hold in my_circuit.internal_nodes
+	is held in my_circuit.internal_nodes
 	That value shouldn't be changed by hand.
+
+	4. Device models.
+	They are stored in circuit.models (type dict), the following methods
+	are provided to add and remove device models.
+
+	add_model(self, model_type, model_label, model_parameters)
+	remove_model(self, model_label)
+
 	"""
 
 	def __init__(self, title, filename):
@@ -580,13 +603,17 @@ def is_elem_voltage_defined(elem):
 	"""
 	if isinstance(elem, devices.vsource) or isinstance(elem, devices.evsource) or \
 	isinstance(elem, devices.hvsource) or isinstance(elem, devices.inductor) \
-	or (hasattr(elem, "is_voltagedefined") and elem.is_voltagedefined):
+	or (hasattr(elem, "is_voltage_defined") and elem.is_voltage_defined):
 		return True
 	else:
 		return False
 
 class NodeNotFoundError(Exception):
 	"""Circuit Node exception."""
+	pass
+
+class CircuitError(Exception):
+	"""General circuit assembly exception."""
 	pass
 
 class subckt:
