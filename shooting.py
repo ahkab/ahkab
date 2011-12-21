@@ -239,10 +239,10 @@ def build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3):
                 v_eq = 0
                 time = index * step
                 for elem in circ.elements:
-                        if (isinstance(elem, circuit.vsource) or isinstance(elem, circuit.isource)) and elem.is_timedependent:
-                                if isinstance(elem, circuit.vsource):
+                        if (isinstance(elem, devices.vsource) or isinstance(elem, devices.isource)) and elem.is_timedependent:
+                                if isinstance(elem, devices.vsource):
                                         Tt[nv - 1 + v_eq, 0] = -1.0 * elem.V(time)
-                                elif isinstance(elem, circuit.isource):
+                                elif isinstance(elem, devices.isource):
                                         if elem.n1:
                                                 Tt[elem.n1-1, 0] = \
                                                 Tt[elem.n1-1, 0] + elem.I(time)

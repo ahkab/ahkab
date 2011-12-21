@@ -25,7 +25,7 @@ The principal is solve() - which carries out the symbolic solution
 """
 
 import sympy
-import circuit, ekv, mosq, printing, options
+import circuit, devices, ekv, mosq, printing, options
 
 def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=6):
 	#opts = setup_options()	
@@ -208,13 +208,13 @@ def generate_mna_and_N(circ, opts, ac=False):
 		#if elem.is_nonlinear and not (isinstance(elem, mosq.mosq) or isinstance(elem, ekv.ekv_device)): 
 		#	print "Skipped elem "+elem.letter_id+elem.descr + ": not implemented."	
 		#	continue
-		if isinstance(elem, circuit.resistor):
+		if isinstance(elem, devices.resistor):
 			R = sympy.Symbol(elem.letter_id.upper()+elem.descr)
 			mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1/R
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/R
 			mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1/R
 			mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1/R
-		elif isinstance(elem, circuit.capacitor):
+		elif isinstance(elem, devices.capacitor):
 			if ac:
 				capa = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True)
 				mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + s*capa
@@ -223,15 +223,15 @@ def generate_mna_and_N(circ, opts, ac=False):
 				mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - s*capa
 			else:
 				pass
-		elif isinstance(elem, circuit.inductor):
+		elif isinstance(elem, devices.inductor):
 			pass
-		elif isinstance(elem, circuit.gisource):
+		elif isinstance(elem, devices.gisource):
 			alpha = sympy.Symbol(elem.letter_id+elem.descr, real=True)
 			mna[elem.n1, elem.sn1] = mna[elem.n1, elem.sn1] + alpha
 			mna[elem.n1, elem.sn2] = mna[elem.n1, elem.sn2] - alpha
 			mna[elem.n2, elem.sn1] = mna[elem.n2, elem.sn1] - alpha
 			mna[elem.n2, elem.sn2] = mna[elem.n2, elem.sn2] + alpha
-		elif isinstance(elem, circuit.isource):
+		elif isinstance(elem, devices.isource):
 			IDC = sympy.Symbol(elem.letter_id+elem.descr, real=True)
 			N[elem.n1, 0] = N[elem.n1, 0] + IDC
 			N[elem.n2, 0] = N[elem.n2, 0] - IDC
@@ -247,7 +247,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 				mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/r0
 				mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1/r0
 				mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1/r0
-		elif isinstance(elem, circuit.diode):
+		elif isinstance(elem, devices.diode):
 			gd = sympy.Symbol("g"+elem.letter_id+elem.descr)
 			mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + gd
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gd
@@ -270,20 +270,20 @@ def generate_mna_and_N(circ, opts, ac=False):
 			# KVL
 			mna[index, elem.n1] = +1.0
 			mna[index, elem.n2] = -1.0
-			if isinstance(elem, circuit.vsource):
+			if isinstance(elem, devices.vsource):
 				N[index, 0] = -1.0 * sympy.Symbol(elem.letter_id + elem.descr, real=True)
-			elif isinstance(elem, circuit.evsource):
+			elif isinstance(elem, devices.evsource):
 				alpha = sympy.Symbol(elem.letter_id + elem.descr, real=True)
 				mna[index, elem.sn1] = -1.0 * alpha
 				mna[index, elem.sn2] = +1.0 * alpha
-			elif isinstance(elem, circuit.inductor):
+			elif isinstance(elem, devices.inductor):
 				if ac:
 					mna[index, index] = -1*s*sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
 				else: 
 					pass
 					# already so: commented out				
 					# N[index,0] = 0
-			elif isinstance(elem, circuit.hvsource):
+			elif isinstance(elem, devices.hvsource):
 				print "symbolic.py: BUG - hvsources are not implemented yet."
 				sys.exit(33)
 	#all done
@@ -377,7 +377,7 @@ def local_solve_iter(eqs, xs):
 #	new_elem_list = []
 #	for elem in circ.elements:		
 #		if isinstance(elem, mosq.mosq):
-#			circuit.resistor(elem.nd, elem.ns)			
+#			devices.resistor(elem.nd, elem.ns)			
 #			else:
 
 #def build_mos_function(vg, vs, )

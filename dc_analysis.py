@@ -121,7 +121,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 			mna_to_pass = build_gmin_matrix(circ, 10**(gmin_stepping["factors"][gmin_stepping["index"]]), mna_size, verbose) + mna
 			N_to_pass = Ndc + Ntran*(Ntran is not None)
 		elif source_stepping["enabled"]:
-			printing.print_info_line(("Setting sources to ", str(source_stepping["factors"][source_stepping["index"]]*100), "% of their actual value", 6), verbose)
+			printing.print_info_line(("Setting sources to "+ str(source_stepping["factors"][source_stepping["index"]]*100)+ "% of their actual value", 6), verbose)
 			mna_to_pass =  mna + Gmin
 			N_to_pass = source_stepping["factors"][source_stepping["index"]]*Ndc+Ntran*(Ntran is not None)
 		try:
