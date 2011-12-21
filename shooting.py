@@ -22,7 +22,7 @@
 import sys
 import numpy, numpy.linalg
 import transient, implicit_euler, dc_analysis, ticker, options, circuit, printing, utilities
-import results
+import results, devices
 
 def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, autonomous=False, data_filename='stdout', vector_norm=lambda v: max(abs(v)), verbose=3):
 	"""Performs a periodic steady state analysis based on the algorithm described in

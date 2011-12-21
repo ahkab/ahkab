@@ -115,34 +115,40 @@ def bfpss(circ, period, step=None, mna=None, Tf=None, D=None, points=None, auton
 			for elem in circ.elements:
 				# build all dT(xn)/dxn (stored in J) and T(x)
 				if elem.is_nonlinear:
-					ports = elem.get_ports()
-					v_ports = []
-					for port in ports:
-						v = 0 # build v: remember we trashed the 0 row and 0 col of mna -> -1
-						if port[0]:
-							v = v + x[index*n_of_var + port[0] - 1, 0]
-						if port[1]:
-							v = v - x[index*n_of_var + port[1] - 1, 0]
-						v_ports.append(v)
-					if elem.n1:
-						T[index*n_of_var + elem.n1 - 1, 0] = T[index*n_of_var + elem.n1 - 1, 0] + elem.i(v_ports)
-					if elem.n2:
-						T[index*n_of_var + elem.n2 - 1, 0] = T[index*n_of_var + elem.n2 - 1, 0] - elem.i(v_ports)
-					for pindex in xrange(len(ports)):
-						if elem.n1:
-							if ports[pindex][0]:
-								J[index*n_of_var + elem.n1-1, index*n_of_var + ports[pindex][0]-1] = \
-								J[index*n_of_var + elem.n1-1, index*n_of_var + ports[pindex][0]-1] + elem.g(v_ports, pindex)
-							if ports[pindex][1]:
-								J[index*n_of_var + elem.n1-1, index*n_of_var + ports[pindex][1]-1] =\
-								J[index*n_of_var + elem.n1-1, index * n_of_var + ports[pindex][1]-1] - 1.0*elem.g(v_ports, pindex)
-						if elem.n2:
-							if ports[pindex][0]:	
-								J[index*n_of_var + elem.n2-1, index*n_of_var + ports[pindex][0]-1] = \
-								J[index*n_of_var + elem.n2-1, index*n_of_var + ports[pindex][0]-1] - 1.0*elem.g(v_ports, pindex)
-							if ports[pindex][1]:
-								J[index*n_of_var + elem.n2-1, index*n_of_var + ports[pindex][1]-1] =\
-								J[index*n_of_var + elem.n2-1, index*n_of_var + ports[pindex][1]-1] + elem.g(v_ports, pindex)
+					oports = elem.get_output_ports()
+					for opindex in range(len(oports)):
+						dports = elem.get_drive_ports(opindex)
+						v_ports = []
+						for dpindex in range(len(dports)):
+							dn1, dn2 = dports[dpindex]
+							v = 0 # build v: remember we trashed the 0 row and 0 col of mna -> -1
+							if dn1:
+								v = v + x[index*n_of_var + dn1 - 1, 0]
+							if dn2:
+								v = v - x[index*n_of_var + dn2 - 1, 0]
+							v_ports.append(v)
+						# all drive ports are ready.
+						n1, n2 = oports[opindex][0], oports[opindex][1]
+						if n1:
+							T[index*n_of_var + n1 - 1, 0] = T[index*n_of_var + n1 - 1, 0] + elem.i(opindex, v_ports)
+						if n2:
+							T[index*n_of_var + n2 - 1, 0] = T[index*n_of_var + n2 - 1, 0] - elem.i(opindex, v_ports)
+						for dpindex in range(len(dports)):
+							dn1, dn2 = dports[dpindex]
+							if n1:
+								if dn1:
+									J[index*n_of_var + n1-1, index*n_of_var + dn1-1] = \
+									J[index*n_of_var + n1-1, index*n_of_var + dn1-1] + elem.g(opindex, v_ports, dpindex)
+								if dn2:
+									J[index*n_of_var + n1-1, index*n_of_var + dn2-1] =\
+									J[index*n_of_var + n1-1, index * n_of_var + dn2-1] - 1.0*elem.g(opindex, v_ports, dpindex)
+							if n2:
+								if dn1:	
+									J[index*n_of_var + n2-1, index*n_of_var + dn1-1] = \
+									J[index*n_of_var + n2-1, index*n_of_var + dn1-1] - 1.0*elem.g(opindex, v_ports, dpindex)
+								if dn2:
+									J[index*n_of_var + n2-1, index*n_of_var + dn2-1] =\
+									J[index*n_of_var + n2-1, index*n_of_var + dn2-1] + elem.g(opindex, v_ports, dpindex)
 
 		J = J + CMAT
 		residuo = CMAT*x + T + Tf + Tt
