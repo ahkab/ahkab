@@ -82,7 +82,10 @@ def _get_fp(filename, mode="r"):
 	return fp
 
 def _close_fp(fp, filename):
-	fp.flush()
+	try: 
+		fp.flush()
+	except IOError:
+		pass 
 	if filename == 'stdout':
 		pass
 	else:
