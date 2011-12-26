@@ -223,3 +223,10 @@ class lin_axis_iterator:
 		"""Required iterator method.
 		"""
 		return self
+
+def Celsius2Kelvin(cel):
+	return cel + 273.15
+
+def Kelvin2Celsius(kel):
+	return kel - 273.15
+

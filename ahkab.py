@@ -24,7 +24,7 @@
 import sys
 from optparse import OptionParser
 import dc_analysis, transient, shooting, bfpss, symbolic, ac
-import netlist_parser, utilities, options 
+import netlist_parser, utilities, options, constants 
 import plotting, printing 
 
 VERSION = "0.05"
@@ -130,6 +130,8 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 			sol = ac.ac_analysis(circ=circ, start=an['start'], nsteps=an['nsteps'], \
 				stop=an['stop'], step_type='LOG', xop=x0_op, mna=None,\
 			        data_filename=data_filename, verbose=verbose)
+		elif an["type"] == "temp":
+			constants.T = utilities.Celsius2Kelvin(an['temp'])
 		results.update({an["type"]:sol})
 	return results
 

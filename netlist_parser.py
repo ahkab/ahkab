@@ -1065,6 +1065,8 @@ def parse_analysis(circ, directives):
 				# shooting
 				elif line_elements[0] == ".shooting":
 					analysis.append(parse_an_shooting(line, line_elements))
+				elif line_elements[0] == ".temp":
+					analysis.append(parse_temp_directive(line, line_elements))
 				elif line_elements[0] == ".ic":
 					analysis.append(parse_ic_directive(line, line_elements))
 				elif line_elements[0] == ".symbolic":
@@ -1078,6 +1080,22 @@ def parse_analysis(circ, directives):
 				sys.exit(0)
 	return analysis	
 
+def parse_temp_directive(line, line_elements=None):
+	"""Parses a TEMP directive:
+	
+	The syntax is:
+	.TEMP <VALUE>>
+	"""
+	if line_elements is None:
+		line_elements = line.split()
+	
+	for token in line_elements[1:]:
+		if token[0] == "*":
+			break
+		value = convert_units(token)
+		
+	return {"type":"temp", "temp":value}
+	
 def parse_an_op(line, line_elements=None):
 	"""Parses a OP analysis:
 	
