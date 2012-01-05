@@ -18,7 +18,7 @@ Functions:
 
 """
 
-import sys
+import sys, copy
 import numpy
 import netlist_parser
 
@@ -43,6 +43,7 @@ def write_csv(filename, data, headers, append=False):
 		#sys.stdout.write("Writing data in CSV format to "+filename+"... ")
 		#sys.stdout.flush()
 		fp = _get_fp(filename, mode="w")
+		headers = copy.copy(headers)
 		if not headers[0][0] == '#':
 			headers[0] = '#'+headers[0]
 		for hi in range(len(headers)):
