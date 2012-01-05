@@ -1000,8 +1000,8 @@ def parse_postproc(circ, an_list, postproc_direc):
 							existing_an = True
 							if plot_postproc["analysis"] == "tran" or plot_postproc["analysis"] == "shooting":  	
 								plot_postproc["x"] = "T"
-							#elif plot_postproc["analysis"] == "ac":
-							#	plot_postproc["x"] = "w" #UNSUPPORTED FOR THE TIME BEING
+							elif plot_postproc["analysis"] == "ac":
+								plot_postproc["x"] = "w" #QUIRKY FOR THE TIME BEING
 							elif plot_postproc["analysis"] == "dc":
 								plot_postproc["x"] = an["source_name"]
 							else:
@@ -1015,6 +1015,20 @@ def parse_postproc(circ, an_list, postproc_direc):
 						graph_labels = graph_labels + " " + glabel
 					
 					l2l1 = plotting.split_netlist_label(graph_labels)
+
+					if plot_postproc["analysis"] == "ac":
+						l2l1ac = []
+						for l2, l1 in l2l1:
+							if l1 is not None:
+								l1 = "|%s|" % (l1, )
+							else:
+								l1 = None
+							if l2 is not None:
+								l2 = "|%s|" % (l2, )
+							else:
+								l2 = None
+							l2l1ac.append((l2,l1))
+						l2l1 = l2l1ac				
 					plot_postproc["l2l1"] = l2l1
 					postproc_list.append(plot_postproc)
 				else:

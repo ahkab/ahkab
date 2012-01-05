@@ -141,7 +141,11 @@ def plot_results(title, xvarname, y2y1_list, results, outfilename):
 		yvu += [(line_label, results.units[y2label])]
 		gdata.append((data2-data1, line_label))
 
-	setup_plot(fig, title, (xvarname, xunit), yvu)
+	if xvarname == 'w':
+		xlog = True
+	else:
+		xlog = False
+	setup_plot(fig, title, (xvarname, xunit), yvu, xlog=xlog)
 
 	pylab.hold(True)
 	for y, label in gdata:
