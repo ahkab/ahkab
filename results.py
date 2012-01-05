@@ -55,9 +55,9 @@ class op_solution:
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
 		self.skip_nodes_list = []	      # nodi da saltare, solo interni
 		self.variables = []
-		self.results = {}
-		self.errors = {}
-		self.units = {}
+		self.results = case_insensitive_dict()
+		self.errors = case_insensitive_dict()
+		self.units = case_insensitive_dict()
 		self.x = x
 	
 		for index in range(nv_1):
@@ -306,7 +306,8 @@ class ac_solution:
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
 		self.skip_nodes_list = []	# nodi da saltare, solo interni
 		self.variables = ["w"]
-		self.units = {"w":"rad/s"}	
+		self.units = case_insensitive_dict()
+		self.units.update({"w":"rad/s"})
 	
 		for index in range(nv_1):
 			varname_abs = "|V%s|" % (str(circ.nodes_dict[index + 1]),)
@@ -439,7 +440,7 @@ class dc_solution:
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
 		self.skip_nodes_list = []	# nodi da saltare, solo interni
 		self.variables = [sweepvar]
-		self.units = {}			
+		self.units = case_insensitive_dict()		
 		if self.variables[0][0] == 'V':
 			self.units.update({self.variables[0]:'V'})
 		if self.variables[0][0] == 'I':
@@ -570,7 +571,8 @@ class tran_solution:
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
 		self.skip_nodes_list = []	# nodi da saltare, solo interni
 		self.variables = ["T"]
-		self.units = {"T":"s"}			# not used for now...
+		self.units = case_insensitive_dict()
+		self.units.update({"T":"s"})
 	
 		for index in range(nv_1):
 			varname = ("V%s" % (str(circ.nodes_dict[index + 1]),)).upper()
@@ -693,7 +695,8 @@ class pss_solution:
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
 		self.skip_nodes_list = []	# nodi da saltare, solo interni
 		self.variables = ["T"]
-		self.units = {"T":"s"}
+		self.units = case_insensitive_dict()
+		self.units.update({"T":"s"})
 	
 		for index in range(nv_1):
 			varname = "V%s" % (str(circ.nodes_dict[index + 1]),)
@@ -783,3 +786,56 @@ class pss_solution:
 			next = self.iter_headers[self.iter_index], self.iter_data[self.iter_index, :]
 			self.iter_index += 1
 		return next
+
+class case_insensitive_dict:
+	def __init__(self):
+		self._dict = {}
+		# Access as a dictionary BY VARIABLE NAME:
+	def __len__(self):
+		"""Get the number of variables in the results set."""
+		return len(self._dict)
+
+	def __getitem__(self, name):
+		"""Get a specific variable, as from a dictionary."""
+		keys = self._dict.keys()
+		i = map(str.upper, keys).index(name.upper())
+		return self._dict[keys[i]]
+
+	def get(self, name, default=None):
+		try:
+			keys = self._dict.keys()
+			i = map(str.upper, keys).index(name.upper())
+		except KeyError:
+			return default
+		return self._dict[keys[i]]
+
+	def has_key(self, name):
+		"""Determine whether the result set contains a variable."""
+		return name.upper() in map(str.upper, self._dict.keys())
+
+	def __contains__(self, name):
+		"""Determine whether the result set contains a variable."""
+		return name.upper() in map(str.upper, self._dict.keys())
+
+	def keys(self):
+		"""Get all of the results set's variables names."""
+		return self._dict.keys()
+
+	def values(self):
+		return self._dict.values()
+
+	def items(self):
+		return self._dict.items()
+		
+	def update(self, adict):
+		return self._dict.update(adict)
+
+	# iterator methods
+	def __iter__(self):
+		return self._dict.__iter__()
+		
+	def next(self):
+		return self._dict.next()
+	
+
+
