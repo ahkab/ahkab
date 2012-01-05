@@ -27,26 +27,25 @@ The principal is solve() - which carries out the symbolic solution
 import sympy
 import circuit, devices, ekv, mosq, printing, options
 
-def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=6):
+def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=3):
 	#opts = setup_options()	
-	if verbose > 1 and not ac:
-		print "Starting symbolic DC..."
-	elif verbose > 1 and ac:
-		print "Starting symbolic AC..."
+	if not ac:
+
+		printing.print_info_line(("Starting symbolic DC...", 1), verbose)
+	else:
+		printing.print_info_line(("Starting symbolic AC...", 1), verbose)		
 		
-	if verbose > 2:
-		 print "Building symbolic MNA, N and x..."
+	printing.print_info_line(("Building symbolic MNA, N and x...", 2), verbose, print_nl=False)
 	mna, N = generate_mna_and_N(circ, opts, ac)
 	x = generate_variable_names(circ, N.shape[0] - 1)
 	mna = mna[1:, 1:]
 	N = N[1:, :]
-	
-	if verbose > 5:
-		print "MNA matrix (reduced):"
-		print mna
-	
-	if verbose > 2:
-		 print "Building equation..."
+	printing.print_info_line((" done.", 2), verbose)	
+
+	printing.print_info_line(("MNA matrix (reduced):", 5), verbose)	
+	if verbose > 5:	print mna
+
+	printing.print_info_line(("Building equations...", 2), verbose)	
 	eq = to_real_list(mna * x + N)
 	#eq = apply_options_and_subs(eq, opts)
 
@@ -57,8 +56,7 @@ def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=6):
 		print x
 		#print "Matrix is singular: ", (mna.det() == 0)
 	#sol = -1.0*mna.inv()*N #too heavy
-	if verbose > 2:
-		print "Performing auxiliary simplification..."
+	printing.print_info_line(("Performing auxiliary simplification...", 2), verbose)	
 	eq, x, sol_h = help_the_solver(eq, x)
 		
 	if len(eq):
@@ -67,37 +65,37 @@ def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=6):
 			printing.print_symbolic_equations(eq)
 			print "To be solved for:"
 			print x
-		if verbose > 2:
-			print "Solving..."
+			printing.print_info_line(("Solving...", 2), verbose)	
 
 		if options.symb_internal_solver:
 			sol = local_solve(eq, x)
 		else:
 			sol = sympy.solve(eq, x)
-		sol.update(sol_h)
+		if sol is not None:		
+			sol.update(sol_h)
+		else:
+			sol = sol_h
 	else:
-		if verbose > 3:
-			print "Auxiliary simplification solved the problem."
+		printing.print_info_line(("Auxiliary simplification solved the problem.", 3), verbose)	
 		sol = sol_h
-	
-	if verbose > 2:
-	 	print "Success!"
+
+	printing.print_info_line(("Success!", 2), verbose)	
 	#sol = sol_to_dict(sol, x)
-	
+
 	if sol == {}:
-		print "HEY, NO VARIABLES?"
+		printing.print_warning("No solutions. Check the netlist.")
 	else:
 		if verbose > 1:
 			print "Results:"
 		printing.print_symbolic_results(sol)
-	
+
 	if tf_source is not None:
 		src = sympy.Symbol(tf_source, real=True)
-		if verbose > 2: print "Calculating small-signal symbolic transfer functions ("+str(src)+")...",
+		printing.print_info_line(("Calculating small-signal symbolic \
+		transfer functions (%s))..."%(str(src),), 2), verbose, print_nl=False)
 		tfs = calculate_gains(sol, src)
-		if verbose > 2: print "done!"
-		elif verbose > 1:
-			print "Small-signal symbolic transfer functions:"
+		printing.print_info_line(("done.", 2), verbose)	
+		printing.print_info_line(("Small-signal symbolic transfer functions:", 1), verbose)	
 		printing.print_symbolic_transfer_functions(tfs)
 	
 
@@ -257,7 +255,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 			pass
 			#we'll add its lines afterwards
 		else:
-			print "Skipped elem "+elem.letter_id+elem.descr + ": not implemented."	
+			printing.print_warning("Skipped elem %s: not implemented." % (elem.letter_id+elem.descr,))
 
 	for elem in circ.elements:
 		if circuit.is_elem_voltage_defined(elem):
@@ -284,7 +282,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 					# already so: commented out				
 					# N[index,0] = 0
 			elif isinstance(elem, devices.hvsource):
-				print "symbolic.py: BUG - hvsources are not implemented yet."
+				printing.print_warning("symbolic.py: BUG - hvsources are not implemented yet.")
 				sys.exit(33)
 	#all done
 	return (mna, N)
@@ -304,7 +302,7 @@ def get_roots(expr):
 	return sympy.solve(den, s), sympy.solve(num, s)
 
 ############## THESE  WILL BE REMOVED - AS SOON AS SOME SYMPY BUGS ARE FIXED ###########
-def help_the_solver(eqs, xs, debug=True):
+def help_the_solver(eqs, xs, debug=False):
 	iter_flag = True
 	sol = {}
 	while iter_flag:
