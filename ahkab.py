@@ -138,7 +138,7 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 def process_postproc(postproc_list, title, results, outfilename):
 	index = 0
 	if outfilename == 'stdout':
-		printing.print_info_line(("Plotting and printing the results to stdout are incompatible options. Plotting skipped.", 0), 0)
+		printing.print_warning("Plotting and printing the results to stdout are incompatible options. Plotting skipped.")
 		return
 	for postproc in postproc_list:
 		#print postproc["analysis"], results.keys(), results.has_key(postproc["analysis"]), results[postproc["analysis"]] is None #DEBUG
