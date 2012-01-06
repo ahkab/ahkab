@@ -53,8 +53,10 @@ def print_netlist_elem_line(elem, circ):
 	
 	Returns: None
 	"""
-	ext_n1 = circ.nodes_dict[elem.n1]
-	ext_n2 = circ.nodes_dict[elem.n2]
+	if hasattr(elem, "n1") and hasattr(elem, "n2"):
+		ext_n1 = circ.nodes_dict[elem.n1]
+		ext_n2 = circ.nodes_dict[elem.n2]
+	
 	sys.stdout.write(elem.letter_id.upper() + elem.descr + " ")
 	
 	if isinstance(elem, devices.resistor) or isinstance(elem, devices.diode) or \
@@ -64,6 +66,8 @@ def print_netlist_elem_line(elem, circ):
 	elif isinstance(elem, devices.evsource) or isinstance(elem, devices.gisource):
 		sys.stdout.write(ext_n1 + " " + ext_n2 + " " + circ.nodes_dict[elem.sn1]+ " " + \
 		circ.nodes_dict[elem.sn2] + " ")
+	elif isinstance(elem, devices.inductor_coupling):
+		sys.stdout.write(" ")
 	elif isinstance(elem, mosq.mosq): #quadratic mos
 		sys.stdout.write(ext_n1 + " " + circ.nodes_dict[elem.ng] + " " + ext_n2 + " ")
 	elif isinstance(elem, ekv.ekv_device):

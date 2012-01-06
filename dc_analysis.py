@@ -679,6 +679,9 @@ def generate_mna_and_N(circ):
 				N[elem.n2, 0] = N[elem.n2, 0] - elem.I()
 			else:
 				pass #vengono aggiunti volta per volta
+		elif isinstance(elem, devices.inductor_coupling):
+			pass
+			# this is taken care of within the inductors
 		elif circuit.is_elem_voltage_defined(elem):
 			pass
 			#we'll add its lines afterwards
@@ -703,6 +706,8 @@ def generate_mna_and_N(circ):
 				# corretto, se � def una parte tempo-variabile ci pensa
 				# mdn_solver a scegliere quella giusta da usare.
 				N[index, 0] = -1.0*elem.V()
+			elif isinstance(elem, devices.vsource) and elem.is_timedependent:
+				pass # taken care step by step
 			elif isinstance(elem, devices.evsource):
 				mna[index, elem.sn1] = -1.0 * elem.alpha
 				mna[index, elem.sn2] = +1.0 * elem.alpha
@@ -711,6 +716,10 @@ def generate_mna_and_N(circ):
 				pass
 			elif isinstance(elem, devices.hvsource):
 				print "dc_analysis.py: BUG - hvsources are not implemented yet."
+				sys.exit(33)
+			else:
+				print "dc_analysis.py: BUG - found an unknown voltage_def elem."
+				print elem
 				sys.exit(33)
 
 	# Seems a good place to run some sanity check

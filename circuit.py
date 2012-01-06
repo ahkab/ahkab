@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import sys
 import devices, printing
 
 # will be added here by netlist_parser and circuit instances
@@ -61,7 +61,7 @@ class circuit:
 	add_inductor(self, name, ext_n1, ext_n2, L, ic=None)
 	add_vsource(self, name, ext_n1, ext_n2, vdc, vac, function=None)
 	add_isource(self, name, ext_n1, ext_n2, idc, iac, function=None)
-	add_diode(self, name, ext_n1, ext_n2, Is=None, rs=None, m=None, T=None, ic=None)
+	add_diode(self, name, ext_n1, ext_n2, Is=None, Rs=None, m=None, T=None, ic=None)
 	add_mos(self, name, ext_nd, ext_ng, ext_ns, ext_nb, w, l, model_label, models, m=None, n=None)
 	add_vcvs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha)
 	add_vccs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha)
@@ -348,7 +348,36 @@ class circuit:
 		self.elements = self.elements + [elem]
 		return True
 
-	def add_vsource(self, name, ext_n1, ext_n2, vdc, vac, function=None):
+	def add_inductor_coupling(self, name, L1, L2, Kvalue):
+		""" Write DOC XXX
+		"""
+		L1descr = L1[1:]
+		L2descr = L2[1:]
+		L1elem, L2elem = None, None
+
+		for e in self.elements:
+			if isinstance(e, devices.inductor) and L1descr == e.descr:
+				L1elem = e
+			elif isinstance(e, devices.inductor) and L2descr == e.descr:
+				L2elem = e
+
+		if L1elem is None or L2elem is None:
+			error_msg = "One or more coupled inductors for %s were not found: %s (found: %s), %s (found: %s)." % \
+			(name, L1, L1elem is not None, L2, L2elem is not None)
+			printing.print_general_error(error_msg)
+			printing.print_general_error("Quitting.")
+			sys.exit(30)
+
+		M = math.sqrt(L1elem.L * L2elem.L) * Kvalue
+
+		elem = devices.inductor_coupling(L1=L1, L2=L2, K=Kvalue, M=M)
+		elem.descr = name[1:]
+		L1elem.coupling_devices.append(elem)
+		L2elem.coupling_devices.append(elem)
+
+		self.elements = self.elements + [elem]
+
+	def add_vsource(self, name, ext_n1, ext_n2, vdc, vac=0, function=None):
 		"""Adds a voltage source to the circuit (also takes care that the nodes 
 		are added as well).
 	
@@ -402,7 +431,7 @@ class circuit:
 		self.elements = self.elements + [elem]
 		return True
 
-	def add_diode(self, name, ext_n1, ext_n2, Is=None, rs=None, m=None, T=None, ic=None):
+	def add_diode(self, name, ext_n1, ext_n2, Is=None, Rs=None, m=None, T=None, ic=None):
 		"""Adds a diode to the circuit (also takes care that the nodes 
 		are added as well).
 	
@@ -421,21 +450,15 @@ class circuit:
 		n1 = self.add_node_to_circ(ext_n1)
 		n2 = self.add_node_to_circ(ext_n2)
 	
-		return_list = []
-	
-		if Rs is not None: #we need to add a Rs on the anode
-			new_node = n1
+		if Rs is not None: #we add a Rs on the anode
 			new_node = self.generate_internal_only_node_label()
-			#print "-<<<<<<<<"+str(n1)+" "+str(n2) +" "+str(new_node)
-			rs_elem = devices.resistor(n1=new_node, n2=n1, R=Rs)
-			rs_elem.descr = "INT_"+name
-			return_list = return_list + [rs_elem]
+			self.add_resistor(name="RS_"+name, ext_n1=ext_n1, ext_n2=new_node, R=Rs)
+			n1 = self.add_node_to_circ(new_node)
 	
 		elem = devices.diode(n1=n1, n2=n2, Io=Is, m=m, T=T, ic=ic)
 		elem.descr = name[1:]
-		return_list = return_list + [elem]
+		self.elements = self.elements + [elem]
 
-		self.elements = self.elements + return_list
 		return True
 	
 	def add_mos(self, name, ext_nd, ext_ng, ext_ns, ext_nb, w, l, model_label, models, m=None, n=None):
@@ -593,7 +616,16 @@ class circuit:
 			self.nodes_dict.pop(n)
 		return True
 
-														
+	def find_vde_index(self, id_wdescr):
+		vde_index = 0
+		for elem in self.elements:
+			if is_elem_voltage_defined(elem):
+				if (elem.letter_id + elem.descr).upper() == id_wdescr.upper():
+					break
+				else:
+					vde_index += 1
+		print "%s found at index %d" % (id_wdescr, vde_index)
+		return vde_index
 
 # STATIC METHODS
 def is_elem_voltage_defined(elem):

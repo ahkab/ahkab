@@ -154,9 +154,29 @@ class inductor:
 		self.n1 = n1
 		self.n2 = n2
 		self.ic = ic
+		self.coupling_devices = []
 	def __str__(self):
 		return str(self.L)
 
+class inductor_coupling:
+	letter_id = "k"
+	is_nonlinear = False
+	def __init__(self, L1, L2, K, M):
+		self.K = K
+		self.M = M
+		self.L1 = L1
+		self.L2 = L2
+	def __str__(self):
+		return "%s %s %g" % (self.L1, self.L2, self.K)
+	def get_other_inductor(self, Lselected):
+		Lret = None
+		if Lselected.upper() == self.L1.upper():
+			Lret = self.L2
+		elif Lselected.upper() == self.L2.upper():
+			Lret = self.L1
+		if Lret is None:
+			raise Exception, "Mutual inductors bug."
+		return Lret
 
 #########################
 ## NON LINEAR ELEMENTS

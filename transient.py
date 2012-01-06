@@ -374,6 +374,17 @@ def generate_D(circ, shape):
 			D[n2, n1] = D[n2, n1] - elem.C
 		elif isinstance(elem, devices.inductor):
 			D[ nv + i_eq, nv + i_eq ] = -1 * elem.L
+			# Mutual inductors (coupled inductors)
+			# need to add a -M dI/dt where I is the current in the OTHER inductor.
+			if len(elem.coupling_devices):
+				for cd in elem.coupling_devices:
+					# get id+descr of the other inductor (eg. "L32")
+					other_id_wdescr = cd.get_other_inductor("L"+elem.descr)
+					# find its index to know which column corresponds to its current
+					other_index = circ.find_vde_index(other_id_wdescr)
+					# add the term.
+					D[ nv + i_eq, nv + other_index ] += -1 * cd.M
+			# carry on as usual
 			i_eq = i_eq + 1
 		
 	if options.cmin > 0:
