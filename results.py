@@ -66,8 +66,8 @@ class op_solution:
 			self.results.update({varname:x[index, 0]})
 			self.errors.update({varname:error[index, 0]})
 			self.units.update({varname:"V"})
-			if circ.is_int_node_internal_only(index+1):
-				skip_nodes_list.append(index)
+			#if circ.is_int_node_internal_only(index+1):
+			#	self.skip_nodes_list.append(index)
 
 		for elem in circ.elements:
 			if circuit.is_elem_voltage_defined(elem):
@@ -792,8 +792,19 @@ class case_insensitive_dict:
 		self._dict = {}
 		# Access as a dictionary BY VARIABLE NAME:
 	def __len__(self):
-		"""Get the number of variables in the results set."""
+		"""Get the number of elements in the set."""
 		return len(self._dict)
+
+	def __repr__(self):
+		rpr = "{"
+		keys = self._dict.keys()
+		for i in range(len(keys)):
+			rpr += "%s: %s" % (keys[i], self._dict[keys[i]])
+			if i < len(keys) - 1:
+				rpr += ", "
+			else:
+				rpr += "}"
+		return rpr
 
 	def __getitem__(self, name):
 		"""Get a specific variable, as from a dictionary."""
