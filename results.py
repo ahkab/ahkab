@@ -24,6 +24,7 @@ import sys, time, copy
 import numpy
 import circuit, devices, printing, options, constants, csvlib
 VERSION = "0.05"
+csvlib.SEPARATOR = "\t"
 
 	
 class op_solution:
@@ -80,11 +81,14 @@ class op_solution:
 
 		self.op_info = self.get_elements_op(circ, x)
 
+	def __repr__(self):
+		return self.results.__repr__()
+
 	def __str__(self):
-		str_repr = "OP simulation results for %s (netlist %s). Run on %s, data filename %s.\n" % \
+		str_repr = "OP simulation results for %s (netlist %s).\nRun on %s, data filename %s.\n" % \
 		(self.netlist_title, self.netlist_file, self.timestamp, self.filename)
 		for v in self.variables:
-			str_repr += "%s:\t%e\t%s\t(%e %s, %f perc)\n" % \
+			str_repr += "%s:\t%e\t%s\t(%e %s, %f %%)\n" % \
 				(v, self.results[v], self.units[v], \
 				self.errors[v], self.units[v], \
 				self.errors[v]/self.results[v]*100.0)
@@ -100,7 +104,7 @@ class op_solution:
 		table = [("Variable", "Value", "", "Error")]
 		for v in self.variables:
 			line = (v, self.results[v], self.units[v],\
-				"(% .2g %s, %.0f perc)" % (self.errors[v], 
+				"(% .2g %s, %.0f %%)" % (self.errors[v], 
 				self.units[v], \
 				self.errors[v]/self.results[v]*100.0))
 			line = map(str, line)
@@ -615,7 +619,7 @@ class tran_solution:
 
 	def __getitem__(self, name):
 		"""Get a specific variable, as from a dictionary."""
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], nsamples=None, skip=0L)
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name.upper()], nsamples=None, skip=0L)
 		return data
 
 	def get(self, name, default=None):
