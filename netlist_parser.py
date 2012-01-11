@@ -577,6 +577,7 @@ def parse_elem_diode(line, circ, line_elements=None):
 	Rs = None
 	T  = None
 	ic = None
+	off = False
 	
 	if (len(line_elements) < 3):
 		raise NetlistParseError, ""
@@ -597,6 +598,11 @@ def parse_elem_diode(line, circ, line_elements=None):
 			T = value
 		elif param == "ic":
 			ic = value
+		elif param == "off":
+			if not len(value):
+				off = True
+			else:
+				off = convert_boolean(value)
 		else:
 			raise NetlistParseError, "unknown parameter " + param
 		
@@ -615,7 +621,7 @@ def parse_elem_diode(line, circ, line_elements=None):
 		rs_elem.descr = "INT"
 		return_list = return_list + [rs_elem]
 	
-	elem = devices.diode(n1=n1, n2=n2, Io=Io, m=m, T=T, ic=ic)
+	elem = devices.diode(n1=n1, n2=n2, Io=Io, m=m, T=T, ic=ic, off=off)
 	elem.descr = line_elements[0][1:]
 	return_list = return_list + [elem]
 	
@@ -994,6 +1000,10 @@ def convert_units(string_value):
 	
 	Returns a float.
 	"""
+
+	if not len(string_value):
+		raise NetlistParseError("")
+
 	index = 0
 	string_value = string_value.strip().upper()
 	while(True):
@@ -1434,7 +1444,7 @@ def parse_param_value_from_string(astr):
 	Returns: [param, value] where param and value are both strings.
 	"""
 	if not is_valid_value_param_string(astr):
-		raise NetlistParseError("")
+		return (astr, "")
 	return astr.strip().split("=")
 	
 class NetlistParseError(Exception):

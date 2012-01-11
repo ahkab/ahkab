@@ -186,7 +186,7 @@ class diode:
 	letter_id = "d"
 	is_nonlinear = True
 	dc_guess = [0.4]
-	def __init__(self, n1, n2, Io=1.0e-14, m=1, T=None, ic=None):
+	def __init__(self, n1, n2, Io=1.0e-14, m=1, T=None, ic=None, off=False):
 		if Io:
 			self.Io = Io
 		else:
@@ -202,32 +202,55 @@ class diode:
 		if T:
 			self.T = T
 		else:
-			self.T = constants.T
+			self.T = None
 		
 		if ic is not None: #fixme
-			print "(W): ic is ignored in diodes."
-		self.ic = ic #per ora inutilizzato
+			print "(W): ic support in diodes is very experimental."
+			self.dc_guess = ic
+		self.ic = ic
+		self.off = off
+		if self.off:
+			if self.ic is None:
+				self.ic = 0
+			else:
+				print "(W): IC statement in diodes takes precedence over OFF."
+				print "(W): If you are performing a transient simulation with uic=2,"
+				print "(W): you may want to check the initial value."
+
+	def _get_T(self):
+		if self.T is None: 
+			return constants.T
+		else:
+			return self.T
+
 	def __str__(self):
-		rep = "Is="+str(self.Io)+" m="+str(self.m)+" T="+str(self.T)
+		T = self._get_T()
+		rep = "Is="+str(self.Io)+" m="+str(self.m)+" T="+str(T)
 		if self.ic is not None:
 			rep = rep + " ic="+str(self.ic)
 		return rep
+
 	def get_output_ports(self):
 		return self.ports
+
 	def get_drive_ports(self, op):
 		return self.ports
+
 	def i(self, op_index, ports_v, time=0): #with gmin added
 		v = ports_v[0]
-		return self.Io*(math.exp(v/(self.m*constants.Vth()))-1)
+		return self.Io*(math.exp(v/(self.m*constants.Vth(self._get_T())))-1)
+
 	def g(self, op_index, ports_v, port_index, time=0):
 		if not port_index == 0: 
 			raise Exception, "Attepted to evaluate a diode's gm on a unknown port."
-		return (self.i(op_index, ports_v)/constants.Vth()/self.m)
+		return (self.i(op_index, ports_v)/constants.Vth(self._get_T())/self.m)
+
 	def get_op_info(self, ports_v_v):
 		vn1n2 = float(ports_v_v[0][0])
 		idiode = self.i(0, (vn1n2,))
 		gmdiode = self.g(0, (vn1n2,), 0)
-		arr = [[self.letter_id.upper()+self.descr,"V(n1-n2):", vn1n2, "[V]", "I(n1-n2):", idiode, "[A]", "g:", gmdiode, "[A/V]"]]
+		info = ["V(n1-n2): %g ", vn1n2, "[V]", "I(n1-n2):", idiode, "[A]", "P:", vn1n2*idiode, "g:", gmdiode, "[A/V]", "T:", self._get_T(), "K" ]
+		arr = [[self.letter_id.upper()+self.descr] + info]
 		strarr = printing.table_setup(arr)
 		return strarr
 	def print_op_info(self, ports_v):

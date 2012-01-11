@@ -431,7 +431,7 @@ class circuit:
 		self.elements = self.elements + [elem]
 		return True
 
-	def add_diode(self, name, ext_n1, ext_n2, Is=None, Rs=None, m=None, T=None, ic=None):
+	def add_diode(self, name, ext_n1, ext_n2, Is=None, Rs=None, m=None, T=None, ic=None, off=False):
 		"""Adds a diode to the circuit (also takes care that the nodes 
 		are added as well).
 	
@@ -455,7 +455,7 @@ class circuit:
 			self.add_resistor(name="RS_"+name, ext_n1=ext_n1, ext_n2=new_node, R=Rs)
 			n1 = self.add_node_to_circ(new_node)
 	
-		elem = devices.diode(n1=n1, n2=n2, Io=Is, m=m, T=T, ic=ic)
+		elem = devices.diode(n1=n1, n2=n2, Io=Is, m=m, T=T, ic=ic, off=off)
 		elem.descr = name[1:]
 		self.elements = self.elements + [elem]
 

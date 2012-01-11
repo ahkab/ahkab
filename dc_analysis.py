@@ -838,7 +838,8 @@ def modify_x0_for_ic(circ, x0):
 	
 	# setup voltages this may _not_ work properly
 	for elem in circ.elements:
-		if isinstance(elem, devices.capacitor) and elem.ic:
+		if isinstance(elem, devices.capacitor) and elem.ic or \
+			isinstance(elem, devices.diode) and elem.ic:
 			x0[elem.n1 - 1, 0] = x0[elem.n2 - 1, 0] + elem.ic
 			
 	# setup the currents
