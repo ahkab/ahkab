@@ -22,6 +22,8 @@ import sys, copy
 import numpy
 import netlist_parser
 
+SEPARATOR = "\t"
+
 def write_csv(filename, data, headers, append=False):
 	"""Writes data in CVS format to filename.
 	The headers have to be ordered according to the data order.
@@ -49,7 +51,7 @@ def write_csv(filename, data, headers, append=False):
 		for hi in range(len(headers)):
 			fp.write(headers[hi])
 			if hi < len(headers) - 1:
-				fp.write("\t")
+				fp.write(SEPARATOR)
 			else:
 				fp.write("\n")
 	else:
@@ -66,7 +68,7 @@ def write_csv(filename, data, headers, append=False):
 		for i in range(len(headers)):
 			fp.write("{0:g}".format(data[i, j]))
 			if i < len(headers) - 1:
-				fp.write("\t")
+				fp.write(SEPARATOR)
 		fp.write("\n")
 	_close_fp(fp, filename)
 	#print "done."
@@ -125,7 +127,7 @@ def get_csv_headers(filename):
 		line = line.strip()
 		if line[0] == '#':
 			line = line[1:]
-	headers = line.split(",")
+	headers = line.split(SEPARATOR)
 	return headers
 
 
@@ -165,7 +167,7 @@ def load_csv(filename, load_headers=[], nsamples=None, skip=0L):
 	line_index = 0
 	EOF = False
 
-	for line in fp.readlines():
+	for line in fp:#.readlines():
 		line = line.strip()
 		if line == '':
 			continue
@@ -174,7 +176,7 @@ def load_csv(filename, load_headers=[], nsamples=None, skip=0L):
 		if line[0] == '#' and headers is not None:
 			continue #comment
 		if headers is None:		
-			headers = line.split("\t")
+			headers = line.split(SEPARATOR)
 			if len(load_headers):
 				his = get_headers_index(headers, load_headers)
 			else:
@@ -187,7 +189,7 @@ def load_csv(filename, load_headers=[], nsamples=None, skip=0L):
 				data = numpy.zeros((len(his), 1))
 			else:
 				data = numpy.concatenate((data, numpy.zeros((len(his), 1))), axis=1)
-			data_values = line.split("\t")
+			data_values = line.split(SEPARATOR)
 			for i in range(len(data_values)):
 				if his.count(i) > 0:
 					data[his.index(i),-1] = parse_value(data_values[i])
