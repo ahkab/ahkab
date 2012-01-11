@@ -251,6 +251,9 @@ def generate_mna_and_N(circ, opts, ac=False):
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gd
 			mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - gd
 			mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + gd
+		elif isinstance(elem, devices.inductor_coupling):
+			pass
+			# this is taken care of within the inductors
 		elif circuit.is_elem_voltage_defined(elem):
 			pass
 			#we'll add its lines afterwards
@@ -277,6 +280,13 @@ def generate_mna_and_N(circ, opts, ac=False):
 			elif isinstance(elem, devices.inductor):
 				if ac:
 					mna[index, index] = -1*s*sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
+					for cd in elem.coupling_devices:
+						# get id+descr of the other inductor (eg. "L32")
+						other_id_wdescr = cd.get_other_inductor("L"+elem.descr)
+						# find its index to know which column corresponds to its current
+						other_index = circ.find_vde_index(other_id_wdescr)
+						# add the term.
+						AC[nv + i_eq, nv + other_index] += -1*s*sympy.Symbol("M" + cd.descr, real=True)
 				else: 
 					pass
 					# already so: commented out				
