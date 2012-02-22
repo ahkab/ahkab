@@ -97,7 +97,10 @@ def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=3):
 		printing.print_info_line(("done.", 2), verbose)	
 		printing.print_info_line(("Small-signal symbolic transfer functions:", 1), verbose)	
 		printing.print_symbolic_transfer_functions(tfs)
+	else:
+		tfs = None
 	
+	return sol, tfs
 
 def calculate_gains(sol, xin, optimize=True):
 	gains = {}
@@ -260,6 +263,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 		else:
 			printing.print_warning("Skipped elem %s: not implemented." % (elem.letter_id+elem.descr,))
 
+	pre_vde = mna.shape[0]
 	for elem in circ.elements:
 		if circuit.is_elem_voltage_defined(elem):
 			index = mna.shape[0] #get_matrix_size(mna)[0]
@@ -280,13 +284,6 @@ def generate_mna_and_N(circ, opts, ac=False):
 			elif isinstance(elem, devices.inductor):
 				if ac:
 					mna[index, index] = -1*s*sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
-					for cd in elem.coupling_devices:
-						# get id+descr of the other inductor (eg. "L32")
-						other_id_wdescr = cd.get_other_inductor("L"+elem.descr)
-						# find its index to know which column corresponds to its current
-						other_index = circ.find_vde_index(other_id_wdescr)
-						# add the term.
-						AC[nv + i_eq, nv + other_index] += -1*s*sympy.Symbol("M" + cd.descr, real=True)
 				else: 
 					pass
 					# already so: commented out				
@@ -294,6 +291,29 @@ def generate_mna_and_N(circ, opts, ac=False):
 			elif isinstance(elem, devices.hvsource):
 				printing.print_warning("symbolic.py: BUG - hvsources are not implemented yet.")
 				sys.exit(33)
+	
+	for elem in circ.elements:
+		if circuit.is_elem_voltage_defined(elem):
+			if isinstance(elem, devices.inductor):
+				if ac:
+					# find its index to know which column corresponds to its current
+					this_index = circ.find_vde_index("L"+elem.descr)
+					for cd in elem.coupling_devices:
+						# get id+descr of the other inductor (eg. "L32")
+						other_id_wdescr = cd.get_other_inductor("L"+elem.descr)
+						# find its index to know which column corresponds to its current
+						other_index = circ.find_vde_index(other_id_wdescr)
+						# add the term.
+						#print "other_index: "+str(other_index)
+						#print "this_index: "+str(this_index)
+						mna[pre_vde+this_index,pre_vde+other_index] += -1*s*sympy.Symbol("M" + cd.descr, real=True)
+						#print mna
+				else: 
+					pass
+					# already so: commented out				
+					# N[index,0] = 0
+			
+	
 	#all done
 	return (mna, N)
 
