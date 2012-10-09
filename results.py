@@ -201,7 +201,7 @@ class op_solution:
 		for v in self.variables:
 			str_repr += "%s: %e %s,\t" % \
 				(v, self.results[v], self.units[v])
-		print str_repr[:-1]
+		print str_repr[:-2]
 
 	def gmin_check(op2, op1):
 		"""Checks the differences between two sets of OP results.
@@ -413,11 +413,12 @@ class ac_solution:
 
 class dc_solution:
 	def __init__(self, circ, start, stop, sweepvar, stype, outfile):
-		"""Holds a set of TRANSIENT results.
+		"""Holds a set of DC results.
 			circ: the circuit instance of the simulated circuit
-			tstart: the sweep starting angular frequency
-			tstop: the sweep stopping frequency
-			op: the op used to start the tran analysis
+			start: the sweep start value
+			stop: the sweep stop value
+			sweepvar: the swept variable
+			stype: type of sweep
 			outfile: the file to write the results to. 
 			         (Use "stdout" to write to std output)
 		"""
@@ -480,6 +481,132 @@ class dc_solution:
 
 	def get_type(self):
 		return "DC"
+
+	#def asmatrix(self):
+	#	return self.x
+
+	# Access as a dictionary BY VARIABLE NAME:
+	def __len__(self):
+		"""Get the number of variables in the results set."""
+		return len(self.variables)
+
+	def __getitem__(self, name):
+		"""Get a specific variable, as from a dictionary."""
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], nsamples=None, skip=0L)
+		return data
+
+	def get(self, name, default=None):
+		try:
+			data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], nsamples=None, skip=0L)
+		except KeyError:
+			return default
+		return data
+
+	def has_key(self, name):
+		"""Determine whether the result set contains a variable."""
+		return name.upper() in map(str.upper, self.variables)
+
+	def __contains__(self, name):
+		"""Determine whether the result set contains a variable."""
+		return name.upper() in map(str.upper, self.variables)
+
+	def keys(self):
+		"""Get all of the results set's variables names."""
+		return self.variables
+
+	def values(self):
+		"""Get all of the results set's variables values."""
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
+		return data
+
+	def items(self):
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
+		vlist = []
+		for j in range(data.shape[0]):
+			vlist.append(data[j, :])
+		return zip(headers, vlist)
+
+	# iterator methods
+	def __iter__(self):
+		self.iter_index = 0
+		self.iter_data, self.iter_headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0L)
+		return self
+
+	def next(self):
+		if self.iter_index == len(self.iter_headers):
+			self.iter_index = 0
+			raise StopIteration
+		else:
+			next = self.iter_headers[self.iter_index], self.iter_data[self.iter_index, :]
+			self.iter_index += 1
+		return next
+
+class mc_solution:
+	def __init__(self, circ, nkeys, outfile):
+		"""Holds a set of MONTE CARLO results.
+			circ: the circuit instance of the simulated circuit
+			nkeys: number of random number needed for each point
+			outfile: the file to write the results to. 
+			         (Use "stdout" to write to std output)
+		"""
+		self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+		self.netlist_file = circ.filename
+		self.netlist_title = circ.title
+		self.vea = options.vea
+		self.ver = options.ver
+		self.iea = options.iea
+		self.ier = options.ier
+		self.gmin = options.gmin
+		self.temp = constants.T
+		self.nkeys = nkeys
+		self.filename = outfile
+
+		#We have mixed current and voltage results
+		# per primi vengono tanti valori di tensioni quanti sono i nodi del circuito meno uno,
+		# quindi tante correnti quanti sono gli elementi definiti in tensione presenti
+		# (per questo, per misurare una corrente, si può fare uso di generatori di tensione da 0V)
+	
+		self.variables = []
+		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
+		self.skip_nodes_list = []	# nodi da saltare, solo interni
+		self.units = case_insensitive_dict()		
+	
+		for index in range(nv_1):
+			varname = "V%s" % (str(circ.nodes_dict[index + 1]),)
+			self.variables += [varname]
+			self.units.update({varname:"V"})
+			if circ.is_int_node_internal_only(index+1):
+				skip_nodes_list.append(index)
+
+		for elem in circ.elements: 
+			if circuit.is_elem_voltage_defined(elem):
+				varname = "I(%s)" % (elem.letter_id.upper()+elem.descr,)
+				self.variables += [varname]
+				self.units.update({varname:"A"})
+
+		# the keys get stored along with the simulation results
+		for i in range(self.nkeys):
+			varname = "MCKEY%d" % (i,)
+			self.variables += [varname]
+			self.units.update({varname:""})
+		csvlib.write_headers(self.filename, copy.copy(self.variables))
+
+	def __str__(self):
+		return "<MONTE CARLO OP simulation results for %s (netlist %s). %s sweep of %s from %g %s to %g %s. Run on %s, data filename %s.>" % \
+		(self.netlist_title, self.netlist_file, self.stype, self.variables[0].upper(), \
+		self.start, self.units[self.variables[0]], self.stop, self.units[self.variables[0]], self.timestamp, self.filename)
+
+	def add_op(self, keys, op):
+		"""A MONTE CARLO OP is made of a set of OP points. This method adds an OP solution and its corresponding 
+		key values to the results set.
+		"""
+		keys = numpy.mat(numpy.array(keys)).T
+		x = op.asmatrix()
+		data = numpy.concatenate((keys, x), axis=0)
+		csvlib.write_csv(self.filename, data, copy.copy(self.variables), append=True)
+
+	def get_type(self):
+		return "MC"
 
 	#def asmatrix(self):
 	#	return self.x
