@@ -602,7 +602,7 @@ class mc_solution:
 		"""
 		keys = numpy.mat(numpy.array(keys)).T
 		x = op.asmatrix()
-		data = numpy.concatenate((keys, x), axis=0)
+		data = numpy.concatenate((x, keys), axis=0)
 		csvlib.write_csv(self.filename, data, copy.copy(self.variables), append=True)
 
 	def get_type(self):
