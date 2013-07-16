@@ -54,6 +54,9 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 		else:
 			data_filename = outfile
 
+		if an["type"] == "ic":
+			continue
+
 		if an["type"] == "op":
 			if an["guess_label"] is None:
 				x0_op = dc_analysis.op_analysis(circ, guess=guess, data_filename=data_filename, verbose=verbose)
