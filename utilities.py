@@ -21,8 +21,12 @@
 This file holds miscellaneous utility functions needed by the simulator.
 """
 
-import os.path, operator
+import os
+import os.path
+import operator
+
 import numpy
+
 import printing
 
 # this is the machine precision on my Intel x86
@@ -230,3 +234,22 @@ def Celsius2Kelvin(cel):
 def Kelvin2Celsius(kel):
 	return kel - 273.15
 
+def _set_execution_lock():
+	pid = str(os.getpid())
+	pidfile = "/tmp/mydaemon.pid"
+	if os.path.isfile(pidfile):
+		print "%s already exists, unable to set execution lock." % pidfile
+		ret = False
+	else:
+		file(pidfile, 'w').write(pid)
+		ret = True
+	return ret
+
+def _unset_execution_lock():
+	pid = str(os.getpid())
+	pidfile = "/tmp/mydaemon.pid"
+	if os.path.isfile(pidfile):
+		os.unlink(pidfile)
+	else:
+		print "%s not found so not removed." % pidfile
+	return 

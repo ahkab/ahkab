@@ -36,7 +36,7 @@ def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=3):
 		printing.print_info_line(("Starting symbolic AC...", 1), verbose)		
 		
 	printing.print_info_line(("Building symbolic MNA, N and x...", 2), verbose, print_nl=False)
-	mna, N = generate_mna_and_N(circ, opts, ac)
+	mna, N, subs_g = generate_mna_and_N(circ, opts, ac)
 	x = generate_variable_names(circ, N.shape[0] - 1)
 	mna = mna[1:, 1:]
 	N = N[1:, :]
@@ -79,6 +79,9 @@ def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=3):
 		printing.print_info_line(("Auxiliary simplification solved the problem.", 3), verbose)	
 		sol = sol_h
 
+	for ks in sol.keys():
+		sol.update({ks:sol[ks].subs(subs_g)})
+
 	printing.print_info_line(("Success!", 2), verbose)	
 	#sol = sol_to_dict(sol, x)
 
@@ -91,8 +94,7 @@ def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=3):
 
 	if tf_source is not None:
 		src = sympy.Symbol(tf_source, real=True)
-		printing.print_info_line(("Calculating small-signal symbolic \
-		transfer functions (%s))..."%(str(src),), 2), verbose, print_nl=False)
+		printing.print_info_line(("Calculating small-signal symbolic transfer functions (%s))..."%(str(src),), 2), verbose, print_nl=False)
 		tfs = calculate_gains(sol, src)
 		printing.print_info_line(("done.", 2), verbose)	
 		printing.print_info_line(("Small-signal symbolic transfer functions:", 1), verbose)	
@@ -204,6 +206,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 	mna = sympy.matrices.zeros(n_of_nodes)
 	N = sympy.matrices.zeros((n_of_nodes, 1))
 	s = sympy.Symbol("s", real=False)
+	subs_g = {}
 	#process_elements() 	
 	for elem in circ.elements:
 		#if elem.is_nonlinear and not (isinstance(elem, mosq.mosq) or isinstance(elem, ekv.ekv_device)): 
@@ -211,10 +214,16 @@ def generate_mna_and_N(circ, opts, ac=False):
 		#	continue
 		if isinstance(elem, devices.resistor):
 			R = sympy.Symbol(elem.letter_id.upper()+elem.descr)
-			mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1/R
-			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/R
-			mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1/R
-			mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1/R
+			#mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1/R
+			#mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/R
+			#mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1/R
+			#mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1/R
+			G = sympy.Symbol("G_"+elem.descr)
+			mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + G
+			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - G
+			mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - G
+			mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + G
+			subs_g.update({G:1/R})
 		elif isinstance(elem, devices.capacitor):
 			if ac:
 				capa = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True)
@@ -315,7 +324,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 			
 	
 	#all done
-	return (mna, N)
+	return (mna, N, subs_g)
 
 def expand_matrix(mat, add_a_row=False, add_a_col=False):
 	if add_a_row:

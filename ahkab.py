@@ -138,7 +138,7 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 		results.update({an["type"]:sol})
 	return results
 
-def process_postproc(postproc_list, title, results, outfilename):
+def process_postproc(postproc_list, title, results, outfilename, remote=False):
 	index = 0
 	if outfilename == 'stdout':
 		printing.print_warning("Plotting and printing the results to stdout are incompatible options. Plotting skipped.")
@@ -147,18 +147,60 @@ def process_postproc(postproc_list, title, results, outfilename):
 		#print postproc["analysis"], results.keys(), results.has_key(postproc["analysis"]), results[postproc["analysis"]] is None #DEBUG
 		plotting.plot_results(title, postproc["x"], postproc["l2l1"], results[postproc["analysis"]], "%s-%d.%s" % (outfilename, index, options.plotting_outtype))
 		index = index +1
-	if len(postproc_list):
+	if len(postproc_list) and not remote:
 		plotting.show_plots()
 	return None
 
-if __name__ == "__main__":
+def main(filename, outfile="stdout", tran_method=transient.TRAP.lower(), no_step_control=False, dc_guess='guess', print_circuit=False, remote=True, verbose=3):
+	"""This method allows calling ahkab from a Python script.
+	"""
 	# Import Psyco if available
 	try:
 		import psyco
 		psyco.full()
+		psyco_enabled = True
 	except ImportError:
-		pass
+		psyco_enabled = False
+	printing.print_info_line(("(II) psyco support: " + str(psyco_enabled), 6), verbose,)
+
+	utilities._set_execution_lock()
+
+	read_netlist_from_stdin = (filename is None or filename == "-")
+	(circ, directives, postproc_direct) = netlist_parser.parse_circuit(filename, read_netlist_from_stdin)
 	
+	check, reason = dc_analysis.check_circuit(circ)
+	if not check:
+		printing.print_general_error(reason)
+		printing.print_circuit(circ)
+		sys.exit(3)
+	
+	if verbose > 3 or print_circuit:
+		print "Parsed circuit:"
+		printing.print_circuit(circ)
+	elif verbose > 1:
+		print circ.title.upper()
+	
+	an_list = netlist_parser.parse_analysis(circ, directives)
+	postproc_list = netlist_parser.parse_postproc(circ, an_list, postproc_direct)
+	if len(an_list) > 0:
+		printing.print_info_line(("Requested an.:", 4), verbose)
+		map(printing.print_analysis, an_list)
+	else:
+		printing.print_warning("No analysis requested.")
+	if len(an_list) > 0:
+		results = process_analysis(an_list, circ, outfile, verbose, guess=dc_guess.lower()=="guess", \
+		cli_tran_method=tran_method, disable_step_control=no_step_control)
+	else:
+		printing.print_warning("Nothing to do. Quitting.")
+
+	if len(an_list) > 0 and len(postproc_list) > 0 and len(results):
+		process_postproc(postproc_list, circ.title, results, outfile, remote)
+
+	utilities._unset_execution_lock()
+
+	return results
+
+if __name__ == "__main__":
 	parser = OptionParser(usage="usage: \t%prog [options] <filename>\n\nThe filename is the netlist to be open. Use - (a dash) to read from stdin.",  version="%prog "+VERSION+u" (c) 2006-2010 Giuseppe Venturini")
 	
 	#general options
@@ -166,7 +208,7 @@ if __name__ == "__main__":
 	parser.add_option("-p", "--print", action="store_true", dest="print_circuit", default=False, help="Print the parsed circuit")
 	parser.add_option("-o", "--outfile", action="store", type="string", dest="outfile", default="stdout", help="Data output file. Defaults to stdout.")
 	parser.add_option("", "--dc-guess", action="store", type="string", dest="dc_guess", default="guess", help="Guess to be used to start a op or dc analysis: none or guess. Defaults to guess.")
-	parser.add_option("-t", "--tran-method", action="store", type="string", dest="method", default=None, help="Method to be used in transient analysis: " +transient.IMPLICIT_EULER.lower()+", "+transient.TRAP.lower()+", "+transient.GEAR2.lower()+", "+transient.GEAR3.lower()+", "+transient.GEAR4.lower()+", "+transient.GEAR5.lower()+" or "+transient.GEAR6.lower()+". Defaults to IE.")
+	parser.add_option("-t", "--tran-method", action="store", type="string", dest="method", default=transient.TRAP.lower(), help="Method to be used in transient analysis: " +transient.IMPLICIT_EULER.lower()+", "+transient.TRAP.lower()+", "+transient.GEAR2.lower()+", "+transient.GEAR3.lower()+", "+transient.GEAR4.lower()+", "+transient.GEAR5.lower()+" or "+transient.GEAR6.lower()+". Defaults to TRAP.")
 	parser.add_option("", "--t-fixed-step", action="store_true", dest="no_step_control", default=False, help="Disables the step control in transient analysis. Useful if you want to perform a FFT on the results.")
 	parser.add_option("", "--v-absolute-tolerance", action="store", type="string", dest="vea", default=None, help="Voltage absolute tolerance. Default: "+str(options.vea)+" V")
 	parser.add_option("", "--v-relative-tolerance", action="store", type="string", dest="ver", default=None, help="Voltage relative tolerance. Default: "+str(options.ver))
@@ -208,7 +250,7 @@ if __name__ == "__main__":
 	if cli_options.eps:
 		utilities.EPS = utilities.calc_eps()
 		print "Detected machine precision: " + str(utilities.EPS)
-	
+
 	if not len(remaning_args) == 1:
 		print "Usage: ./ahkab.py [options] <filename>\n./ahkab.py -h for help"
 		sys.exit(1)
@@ -219,34 +261,9 @@ if __name__ == "__main__":
 	if not read_netlist_from_stdin and not utilities.check_file(remaning_args[0]):
 		sys.exit(23)
 	
-	(circ, directives, postproc_direct) = netlist_parser.parse_circuit(remaning_args[0], read_netlist_from_stdin)
-	
-	check, reason = dc_analysis.check_circuit(circ)
-	if not check:
-		printing.print_general_error(reason)
-		printing.print_circuit(circ)
-		sys.exit(3)
-	
-	if verbose > 3 or cli_options.print_circuit:
-		print "Parsed circuit:"
-		printing.print_circuit(circ)
-	elif verbose > 1:
-		print circ.title.upper()
-	
-	an_list = netlist_parser.parse_analysis(circ, directives)
-	postproc_list = netlist_parser.parse_postproc(circ, an_list, postproc_direct)
-	if len(an_list) > 0:
-		printing.print_info_line(("Requested an.:", 4), verbose)
-		map(printing.print_analysis, an_list)
-	else:
-		printing.print_warning("No analysis requested.")
-	if len(an_list) > 0:
-		results = process_analysis(an_list, circ, cli_options.outfile, verbose, guess=cli_options.dc_guess.lower()=="guess", cli_tran_method=cli_options.method, \
-		disable_step_control=cli_options.no_step_control)
-	else:
-		printing.print_warning("Nothing to do. Quitting.")
-
-	if len(an_list) > 0 and len(postproc_list) > 0 and len(results):
-		process_postproc(postproc_list, circ.title, results, cli_options.outfile)
+	# Program execution
+	main(filename=remaning_args[0], outfile=cli_options.outfile, tran_method=cli_options.method, \
+		no_step_control=cli_options.no_step_control, dc_guess=cli_options.dc_guess, \
+		print_circuit=cli_options.print_circuit, remote=False, verbose=verbose)
 
 	sys.exit(0)
