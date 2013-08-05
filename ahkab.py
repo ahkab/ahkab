@@ -182,11 +182,13 @@ def main(filename, outfile="stdout", tran_method=transient.TRAP.lower(), no_step
 	
 	an_list = netlist_parser.parse_analysis(circ, directives)
 	postproc_list = netlist_parser.parse_postproc(circ, an_list, postproc_direct)
-	if len(an_list) > 0:
+	if len(an_list) > 0: 
 		printing.print_info_line(("Requested an.:", 4), verbose)
-		map(printing.print_analysis, an_list)
+		if verbose >= 4:
+			map(printing.print_analysis, an_list)
 	else:
-		printing.print_warning("No analysis requested.")
+		if verbose:
+			printing.print_warning("No analysis requested.")
 	if len(an_list) > 0:
 		results = process_analysis(an_list, circ, outfile, verbose, guess=dc_guess.lower()=="guess", \
 		cli_tran_method=tran_method, disable_step_control=no_step_control)
