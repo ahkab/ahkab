@@ -151,6 +151,7 @@ def plot_results(title, xvarname, y2y1_list, results, outfilename):
 	for y, label in gdata:
 		# pylab wants matrices in the form: N,1, while results come as (1, N) -> Transpose
 		pylab.plot(x.T, y.T, options.plotting_style, label=label+" ("+analysis+")",)
+	pylab.xlim((x.min(), x.max()))
 	pylab.hold(False)
 	pylab.legend()
 
