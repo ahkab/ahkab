@@ -103,10 +103,13 @@ class op_solution:
 	def get_table_array(self):
 		table = [("Variable", "Value", "", "Error")]
 		for v in self.variables:
+			if self.results[v] != 0:
+				relerror = self.errors[v]/self.results[v]*100.0
+			else:
+				relerror = 0.0
 			line = (v, self.results[v], self.units[v],\
 				"(% .2g %s, %.0f %%)" % (self.errors[v], 
-				self.units[v], \
-				self.errors[v]/self.results[v]*100.0))
+				self.units[v], relerror))
 			line = map(str, line)
 			table.append(line)
 		return table
