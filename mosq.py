@@ -59,7 +59,7 @@ ISMALL_GUESS_MIN = 1e-10
 
 class mosq_device:
 	def __init__(self, nd, ng, ns, nb, W, L, model, M=1, N=1):
-		""" EKV device
+		"""Quadratic Law MOSFET device
 		Parameters:
 			nd: drain node
 			ng: gate node
@@ -69,7 +69,7 @@ class mosq_device:
 			W: element length [m]
 			M: multiplier (n. of shunt devices)
 			N: series mult. (n. of series devices)
-			model: pass an instance of ekv_mos_model
+			model: pass an instance of mosq_mos_model
 		
 		Selected methods:
 		- get_output_ports() -> (nd, ns)
