@@ -185,7 +185,9 @@ class log_axis_iterator:
 	def __getitem__(self, i):
 		"""Iterator method: get a particular value (n. i)
 		"""
-		if i < self.nsteps:
+		if i == 0:
+			ret = self.min
+		elif i < self.nsteps:
 			ret = self.min*self.inc**i
 		else:
 			ret = None
@@ -208,7 +210,9 @@ class lin_axis_iterator:
 	def next(self):
 		"""Iterator method: get the next value
 		"""
-		if self.index < self.nsteps:
+		if self.index == 0:
+			pass #return min
+		elif self.index < self.nsteps:
 			self.current = self.current + self.inc
 			ret = self.current 
 		else:
