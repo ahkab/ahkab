@@ -165,6 +165,15 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 	return results
 
 def process_postproc(postproc_list, title, results, outfilename, remote=False):
+	"""Runs the post-processing operations, such as plotting.
+	postproc_list: list of post processing operations as returned by main()
+	title: the deck title
+	results: the results to be plotted (including the ones that are not needed)
+	outfilename: if the plots are saved to disk, this is the filename without extension
+	remote: boolean, do not show plots if True (such as ssh without X11 forwarding)
+
+	Returns: None
+	"""
 	index = 0
 	if outfilename == 'stdout':
 		printing.print_warning("Plotting and printing the results to stdout are incompatible options. Plotting skipped.")
