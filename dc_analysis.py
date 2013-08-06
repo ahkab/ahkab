@@ -125,8 +125,8 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 			mna_to_pass =  mna + Gmin
 			N_to_pass = source_stepping["factors"][source_stepping["index"]]*Ndc+Ntran*(Ntran is not None)
 		try:
-			(x, error, converged, n_iter) = mdn_solver(x, mna_to_pass, circ, T=N_to_pass, \
-			 nv=nv, print_steps=(verbose > 0), locked_nodes=locked_nodes, time=time, MAXIT=MAXIT)
+			(x, error, converged, n_iter, convergence_by_node) = mdn_solver(x, mna_to_pass, circ, T=N_to_pass, \
+			 nv=nv, print_steps=(verbose > 0), locked_nodes=locked_nodes, time=time, MAXIT=MAXIT, debug=(verbose==6))
 			tot_iterations += n_iter
 		except numpy.linalg.linalg.LinAlgError:
 			n_iter = 0
@@ -140,15 +140,22 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 			printing.print_general_error("Overflow")
 	
 		if not converged:
+			if verbose == 6:
+				for ivalue in range(len(convergence_by_node)):
+					if not convergence_by_node[ivalue] and ivalue < nv-1:
+						print "Convergence problem node %s" % (circ.int_node_to_ext(ivalue),)
+					elif not convergence_by_node[ivalue] and ivalue >= nv-1:
+						e = circ.find_vde(ivalue)
+						print "Convergence problem current in %s%s" % (e.letter_id, e.descr)
 			if n_iter == MAXIT-1:
 				printing.print_general_error("Error: MAXIT exceeded ("+str(MAXIT)+")")
 			if more_solve_methods_available(standard_solving, gmin_stepping, source_stepping):
-				standard_solving, gmin_stepping, source_stepping = set_next_solve_method(standard_solving, gmin_stepping, source_stepping, verbose)
+				standard_solving, gmin_stepping, source_stepping = set_next_solve_method(standard_solving, gmin_stepping, source_stepping)
 			else:
 				#print "Giving up."
 				x = None
 				error = None
-				break		
+				break
 		else:
 			printing.print_info_line(("[%d iterations]" % (n_iter,), 6), verbose)
 			if (source_stepping["enabled"] and source_stepping["index"] != 9): 
@@ -457,7 +464,7 @@ def print_elements_ops(circ, x):
 	return None
 
 
-def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=False, vector_norm=lambda v: max(abs(v))):
+def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=False, vector_norm=lambda v: max(abs(v)), debug=True):
 	"""
 	Solves a problem like F(x) = 0 using the Newton Algorithm with a variable damping td.
 	
@@ -538,13 +545,17 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
 		dx = numpy.linalg.inv(J) * (-1 * residuo)
 		x = x + get_td(dx, locked_nodes, n=iteration)*dx
 		if iteration > 0: 
-			if convergence_check(x, dx, residuo, nv-1):
+			if convergence_check(x, dx, residuo, nv-1)[0]:
 				converged = True
 				break
 		if vector_norm(dx) is numpy.nan: #Overflow
 			raise OverflowError
 	tick.hide(print_steps)
-	return (x, residuo, converged, iteration+1)
+	if debug and not converged:
+		convergence_by_node = convergence_check(x, dx, residuo, nv-1, debug=True)[1]
+	else:
+		convergence_by_node = []
+	return (x, residuo, converged, iteration+1, convergence_by_node)
 
 def build_J_and_Tx(x, mna_size, element_list, time):
 	J = numpy.mat(numpy.zeros((mna_size, mna_size)))
@@ -856,28 +867,36 @@ def modify_x0_for_ic(circ, x0):
 
 	return xnew
 
-def convergence_check(x, dx, residuum, nv_minus_one):
-	return (voltage_convergence_check(x[:nv_minus_one, 0], dx[:nv_minus_one, 0], residuum[:nv_minus_one, 0]) and \
-		   current_convergence_check(x[nv_minus_one:], dx[nv_minus_one:], residuum[nv_minus_one:]))
+def convergence_check(x, dx, residuum, nv_minus_one, debug=False):
+	vcheck, vresults = voltage_convergence_check(x[:nv_minus_one, 0], dx[:nv_minus_one, 0], residuum[:nv_minus_one, 0])
+	icheck, iresults = current_convergence_check(x[nv_minus_one:], dx[nv_minus_one:], residuum[nv_minus_one:])
+	return vcheck and icheck, vresults+iresults
 	
-def voltage_convergence_check(x, dx, residuum):
-	return custom_convergence_check(x, dx, residuum, er=options.ver, ea=options.vea, eresiduum=options.iea)
+def voltage_convergence_check(x, dx, residuum, debug=False):
+	return custom_convergence_check(x, dx, residuum, er=options.ver, ea=options.vea, eresiduum=options.iea, debug=debug)
 
-def current_convergence_check(x, dx, residuum):
-	return custom_convergence_check(x, dx, residuum, er=options.ier, ea=options.iea, eresiduum=options.vea)
+def current_convergence_check(x, dx, residuum, debug=False):
+	return custom_convergence_check(x, dx, residuum, er=options.ier, ea=options.iea, eresiduum=options.vea, debug=debug)
 
-def custom_convergence_check(x, dx, residuum, er, ea, eresiduum, vector_norm=lambda v: abs(v)):
+def custom_convergence_check(x, dx, residuum, er, ea, eresiduum, vector_norm=lambda v: abs(v), debug=False):
+	all_check_results = []
 	if x.shape[0]:
 		for i in range(x.shape[0]):
 			if vector_norm(dx[i,0]) < er*vector_norm(x[i,0]) + ea and vector_norm(residuum[i,0]) < eresiduum:
 				ret = True
+				if debug: all_check_results.append(ret)
 			else:
 				ret = False
+				if debug: all_check_results.append(ret)
+			if (not debug) and (not ret):
 				break
+		if debug:
+			ret = not (False in all_check_results)
 	else:
 		# We get here when there's no variable to be checked. This is because there aren't variables 
 		# of this type. 
 		# Eg. the circuit has no voltage sources nor voltage defined elements. In this case, the actual check is done
 		#only by current_convergence_check, voltage_convergence_check always returns True.
 		ret = True
-	return ret
+
+	return ret, all_check_results
