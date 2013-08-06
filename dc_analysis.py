@@ -150,7 +150,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 			if n_iter == MAXIT-1:
 				printing.print_general_error("Error: MAXIT exceeded ("+str(MAXIT)+")")
 			if more_solve_methods_available(standard_solving, gmin_stepping, source_stepping):
-				standard_solving, gmin_stepping, source_stepping = set_next_solve_method(standard_solving, gmin_stepping, source_stepping)
+				standard_solving, gmin_stepping, source_stepping = set_next_solve_method(standard_solving, gmin_stepping, source_stepping, verbose)
 			else:
 				#print "Giving up."
 				x = None
