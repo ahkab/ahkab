@@ -259,8 +259,8 @@ def parse_elem_resistor(line, circ, line_elements=None):
 
 	ext_n1 = line_elements[1]
 	ext_n2 = line_elements[2]
-	n1 = circ.add_node_to_circ(ext_n1)
-	n2 = circ.add_node_to_circ(ext_n2)
+	n1 = circ.add_node(ext_n1)
+	n2 = circ.add_node(ext_n2)
 	
 	R = convert_units(line_elements[3])
 
@@ -301,8 +301,8 @@ def parse_elem_capacitor(line, circ, line_elements=None):
 
 	ext_n1 = line_elements[1]
 	ext_n2 = line_elements[2]
-	n1 = circ.add_node_to_circ(ext_n1)
-	n2 = circ.add_node_to_circ(ext_n2)
+	n1 = circ.add_node(ext_n1)
+	n2 = circ.add_node(ext_n2)
 	
 	elem = devices.capacitor(n1=n1, n2=n2, C=convert_units(line_elements[3]), ic=ic)
 	elem.descr = line_elements[0][1:]
@@ -338,8 +338,8 @@ def parse_elem_inductor(line, circ, line_elements=None):
 		
 	ext_n1 = line_elements[1]
 	ext_n2 = line_elements[2]
-	n1 = circ.add_node_to_circ(ext_n1)
-	n2 = circ.add_node_to_circ(ext_n2)
+	n1 = circ.add_node(ext_n1)
+	n2 = circ.add_node(ext_n2)
 	
 	elem = devices.inductor(n1=n1, n2=n2, L=convert_units(line_elements[3]), ic=ic)
 	elem.descr = line_elements[0][1:]
@@ -467,8 +467,8 @@ def parse_elem_vsource(line, circ, line_elements=None):
 	#usual
 	ext_n1 = line_elements[1]
 	ext_n2 = line_elements[2]
-	n1 = circ.add_node_to_circ(ext_n1)
-	n2 = circ.add_node_to_circ(ext_n2)
+	n1 = circ.add_node(ext_n1)
+	n2 = circ.add_node(ext_n2)
 	
 	elem = devices.vsource(n1=n1, n2=n2, vdc=vdc, abs_ac=vac)
 	elem.descr = line_elements[0][1:]
@@ -542,8 +542,8 @@ def parse_elem_isource(line, circ, line_elements=None):
 	
 	ext_n1 = line_elements[1]
 	ext_n2 = line_elements[2]
-	n1 = circ.add_node_to_circ(ext_n1)
-	n2 = circ.add_node_to_circ(ext_n2)
+	n1 = circ.add_node(ext_n1)
+	n2 = circ.add_node(ext_n2)
 	
 	elem = devices.isource(n1=n1, n2=n2, idc=idc, abs_ac=iac)
 	elem.descr = line_elements[0][1:]
@@ -611,8 +611,8 @@ def parse_elem_diode(line, circ, line_elements=None):
 		
 	ext_n1 = line_elements[1]
 	ext_n2 = line_elements[2]
-	n1 = circ.add_node_to_circ(ext_n1)
-	n2 = circ.add_node_to_circ(ext_n2)
+	n1 = circ.add_node(ext_n1)
+	n2 = circ.add_node(ext_n2)
 	
 	return_list = []
 	
@@ -698,10 +698,10 @@ def parse_elem_mos(line, circ, line_elements, models):
 	ext_ng = line_elements[2]
 	ext_ns = line_elements[3]
 	ext_nb = line_elements[4]
-	nd = circ.add_node_to_circ(ext_nd)
-	ng = circ.add_node_to_circ(ext_ng)
-	ns = circ.add_node_to_circ(ext_ns)
-	nb = circ.add_node_to_circ(ext_nb)	
+	nd = circ.add_node(ext_nd)
+	ng = circ.add_node(ext_ng)
+	ns = circ.add_node(ext_ns)
+	nb = circ.add_node(ext_nb)	
 
 	if not models.has_key(model_label):
 		raise NetlistParseError, "Unknown model id: "+model_label
@@ -740,10 +740,10 @@ def parse_elem_vcvs(line, circ, line_elements=None):
 	ext_n2 = line_elements[2]
 	ext_sn1 = line_elements[3]
 	ext_sn2 = line_elements[4]
-	n1 = circ.add_node_to_circ(ext_n1)
-	n2 = circ.add_node_to_circ(ext_n2)
-	sn1 = circ.add_node_to_circ(ext_sn1)
-	sn2 = circ.add_node_to_circ(ext_sn2)
+	n1 = circ.add_node(ext_n1)
+	n2 = circ.add_node(ext_n2)
+	sn1 = circ.add_node(ext_sn1)
+	sn2 = circ.add_node(ext_sn2)
 	
 	elem = devices.evsource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=convert_units(line_elements[5]))
 	elem.descr = line_elements[0][1:]
@@ -779,10 +779,10 @@ def parse_elem_vccs(line, circ, line_elements=None):
 	ext_n2 = line_elements[2]
 	ext_sn1 = line_elements[3]
 	ext_sn2 = line_elements[4]
-	n1 = circ.add_node_to_circ(ext_n1)
-	n2 = circ.add_node_to_circ(ext_n2)
-	sn1 = circ.add_node_to_circ(ext_sn1)
-	sn2 = circ.add_node_to_circ(ext_sn2)
+	n1 = circ.add_node(ext_n1)
+	n2 = circ.add_node(ext_n2)
+	sn1 = circ.add_node(ext_sn1)
+	sn2 = circ.add_node(ext_sn2)
 	
 	elem = devices.gisource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=convert_units(line_elements[5]))
 	elem.descr = line_elements[0][1:]
@@ -868,10 +868,10 @@ def parse_elem_user_defined(line, circ, line_elements=None):
 		
 	ext_n1 = line_elements[1]
 	ext_n2 = line_elements[2]
-	n1 = circ.add_node_to_circ(ext_n1)
-	n2 = circ.add_node_to_circ(ext_n2)
+	n1 = circ.add_node(ext_n1)
+	n2 = circ.add_node(ext_n2)
 	
-	elem = elem_class(n1, n2, param_dict, circ.add_node_to_circ, convert_units)
+	elem = elem_class(n1, n2, param_dict, circ.add_node, convert_units)
 	elem.descr = line_elements[0][1:]
 	elem.letter_id = "y"
 	

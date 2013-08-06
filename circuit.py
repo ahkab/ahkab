@@ -18,7 +18,10 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-import devices, printing, ekv, mosq
+
+import devices
+import ekv, mosq
+import printing 
 
 # will be added here by netlist_parser and circuit instances
 user_defined_modules_dict = {}
@@ -102,10 +105,36 @@ class circuit:
 		self.internal_nodes = 0
 		self.models = {}
 	
-	def add_node_to_circ(self, ext_name):
+	def create_node(self, name):
+		"""Creates a new node, adds it to the circuit and returns it to the user
+		(to be used for subsequent declaration of elements, for example).
+
+		If there is a node in the circuit with the same name, ValueError is 
+		raised.
+
+		Parameters:
+		name: a string that is used as _unique_ identifier of the node.
+
+		Returns:
+		node: a string that identifies the node. 
+		"""
+		got_ref = self.nodes_dict.has_key(0)
+		try:
+			self.nodes_dict.values().index(name)
+		except ValueError:
+			if name == '0':
+				int_node = 0
+			else:
+				int_node = len(self.nodes_dict) + 1*(not got_ref)
+			self.nodes_dict.update({int_node:name})
+		else:
+			raise ValueError
+		return name
+
+	def add_node(self, ext_name):
 		"""Adds the supplied node to the circuit, if needed.
 		
-		When a 'normal' (not ref) node is added through add_node_to_circ(), a internal-only 
+		When a 'normal' (not ref) node is added through add_node(), a internal-only 
 		name (or label) is assigned to it.
 		
 		The nodes labels are stored this way: self.nodes_dict is a dictionary of pairs 
@@ -235,13 +264,12 @@ class circuit:
 					return True
 		return False
 
-
 	def get_ground_node(self):
 		"Returns the (external) reference node. AKA GND."
 		return '0'
 	def get_elem_by_name(self, name):
 		for e in self.elements:
-			if e.name == name:
+			if i(e.letter_id + elem.descr).lower() == name.lower():
 				return e
 		return None
 
@@ -271,9 +299,10 @@ class circuit:
 	def remove_model(self, model_label):
 		"""Remove a model to the available models
 		Inputs:
-		* models (a dictionary, "label":model instance), the available models or None if no model is available/defined.
-		* model_label (string), the unique identifier corresponding to the model 
-		being removed
+		models (a dictionary: "label":model instance), the available models 
+		                      or None if no model is available/defined.
+		model_label (string): the unique identifier corresponding to the model 
+		                      being removed
 
 		This method currently silently ignores models that are not defined.
 
@@ -295,8 +324,8 @@ class circuit:
 	
 		Returns: True
 		"""
-		n1 = self.add_node_to_circ(ext_n1)
-		n2 = self.add_node_to_circ(ext_n2)
+		n1 = self.add_node(ext_n1)
+		n2 = self.add_node(ext_n2)
 	
 		if R == 0:
 			raise CircuitError, "ZERO-valued resistors are not allowed."
@@ -323,8 +352,8 @@ class circuit:
 		if C == 0:
 			raise CircuitError, "ZERO-valued capacitors are not allowed."
 
-		n1 = self.add_node_to_circ(ext_n1)
-		n2 = self.add_node_to_circ(ext_n2)
+		n1 = self.add_node(ext_n1)
+		n2 = self.add_node(ext_n2)
 	
 		elem = devices.capacitor(n1=n1, n2=n2, C=C, ic=ic)
 		elem.descr = name[1:]
@@ -347,8 +376,8 @@ class circuit:
 		Returns: True
 		"""
 
-		n1 = self.add_node_to_circ(ext_n1)
-		n2 = self.add_node_to_circ(ext_n2)
+		n1 = self.add_node(ext_n1)
+		n2 = self.add_node(ext_n2)
 	
 		elem = devices.inductor(n1=n1, n2=n2, L=L, ic=ic)
 		elem.descr = name[1:]
@@ -399,8 +428,8 @@ class circuit:
 
 		Returns: True
 		"""
-		n1 = self.add_node_to_circ(ext_n1)
-		n2 = self.add_node_to_circ(ext_n2)
+		n1 = self.add_node(ext_n1)
+		n2 = self.add_node(ext_n2)
 	
 		elem = devices.vsource(n1=n1, n2=n2, vdc=vdc, abs_ac=vac)
 		elem.descr = name[1:]
@@ -426,8 +455,8 @@ class circuit:
 
 		Returns: True
 		"""
-		n1 = self.add_node_to_circ(ext_n1)
-		n2 = self.add_node_to_circ(ext_n2)
+		n1 = self.add_node(ext_n1)
+		n2 = self.add_node(ext_n2)
 	
 		elem = devices.isource(n1=n1, n2=n2, idc=idc, abs_ac=iac)
 		elem.descr = name[1:]
@@ -455,13 +484,13 @@ class circuit:
 
 		Returns: True
 		"""
-		n1 = self.add_node_to_circ(ext_n1)
-		n2 = self.add_node_to_circ(ext_n2)
+		n1 = self.add_node(ext_n1)
+		n2 = self.add_node(ext_n2)
 	
 		if Rs is not None: #we add a Rs on the anode
 			new_node = self.generate_internal_only_node_label()
 			self.add_resistor(name="RS_"+name, ext_n1=ext_n1, ext_n2=new_node, R=Rs)
-			n1 = self.add_node_to_circ(new_node)
+			n1 = self.add_node(new_node)
 	
 		elem = devices.diode(n1=n1, n2=n2, Io=Is, m=m, T=T, ic=ic, off=off)
 		elem.descr = name[1:]
@@ -494,10 +523,10 @@ class circuit:
 		if n is None:
 			n = 1
 
-		nd = self.add_node_to_circ(ext_nd)
-		ng = self.add_node_to_circ(ext_ng)
-		ns = self.add_node_to_circ(ext_ns)
-		nb = self.add_node_to_circ(ext_nb)	
+		nd = self.add_node(ext_nd)
+		ng = self.add_node(ext_ng)
+		ns = self.add_node(ext_ns)
+		nb = self.add_node(ext_nb)	
 
 		if not models.has_key(model_label):
 			raise ModelError, "Unknown model id: "+model_label
@@ -529,10 +558,10 @@ class circuit:
 		Returns: [vcvs_elem]
 		"""
 	
-		n1 = self.add_node_to_circ(ext_n1)
-		n2 = self.add_node_to_circ(ext_n2)
-		sn1 = self.add_node_to_circ(ext_sn1)
-		sn2 = self.add_node_to_circ(ext_sn2)
+		n1 = self.add_node(ext_n1)
+		n2 = self.add_node(ext_n2)
+		sn1 = self.add_node(ext_sn1)
+		sn2 = self.add_node(ext_sn2)
 	
 		elem = devices.evsource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=alpha)
 		elem.descr = name[1:]
@@ -544,10 +573,10 @@ class circuit:
 		"""
 		"""
 
-		n1 = self.add_node_to_circ(ext_n1)
-		n2 = self.add_node_to_circ(ext_n2)
-		sn1 = self.add_node_to_circ(ext_sn1)
-		sn2 = self.add_node_to_circ(ext_sn2)
+		n1 = self.add_node(ext_n1)
+		n2 = self.add_node(ext_n2)
+		sn1 = self.add_node(ext_sn1)
+		sn2 = self.add_node(ext_sn2)
 	
 		elem = devices.gisource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=alpha)
 		elem.descr = name[1:]
@@ -574,7 +603,7 @@ class circuit:
 		elem_class = getattr(module, label)
 		
 		param_dict.update({"convert_units": convert_units})
-		param_dict.update({"circuit_node": self.add_node_to_circ})
+		param_dict.update({"circuit_node": self.add_node})
 
 	
 		elem = elem_class(**param_dict)
@@ -629,18 +658,44 @@ class circuit:
 			self.nodes_dict.pop(n)
 		return True
 
-	def find_vde_index(self, id_wdescr):
+	def find_vde_index(self, id_wdescr, verbose=3):
+		"""Finds a voltage defined element MNA index.
+
+		Parameters:
+		id_wdescr (string): the element name, eg. 'V1'. Notice it includes
+		                    both the id ('V') and the description ('1').
+		verbose (int): verbosity level, from 0 (silent) to 6 (debug).
+
+		Returns:
+		the index (int)
+		"""
 		vde_index = 0
+		found = False
 		for elem in self.elements:
 			if is_elem_voltage_defined(elem):
 				if (elem.letter_id + elem.descr).upper() == id_wdescr.upper():
+					found = True
 					break
 				else:
 					vde_index += 1
-		print "%s found at index %d" % (id_wdescr, vde_index)
+		
+		if not found:
+			printing.print_warning("find_vde_index(): element %s was not found. This is a bug."%(id_wdescr,))
+		else:
+			printing.print_info_line(("%s found at index %d" % (id_wdescr, vde_index), 6), verbose)
 		return vde_index
 
 	def find_vde(self, index):
+		"""Finds a voltage defined element MNA index.
+
+		Parameters:
+		id_wdescr (string): the element name, eg. 'V1'. Notice it includes
+		                    both the id ('V') and the description ('1').
+		                    The search term is case insensitive.
+
+		Returns:
+		the index (int)
+		"""
 		index = index - len(circ.nodes) + 1
 		ni = 0
 		found = False
@@ -682,7 +737,7 @@ class CircuitError(Exception):
 
 class subckt:
 	"""This class holds the necessary information about a circuit.
-	An instance of this class is returned by 
+	An instance of this class is returned by:
 	  
 	  netlist_parser.parse_sub_declaration(subckt_lines)
 	  
@@ -704,7 +759,7 @@ class circuit_wrapper:
 	others have to be renamed too.
 	
 	This class wraps a circuit object and performs the conversion
-	_before_ calling circ.add_node_to_circ()
+	_before_ calling circ.add_node()
 	
 	While instatiating/calling a subcircuit wrap circ in this.
 	"""
@@ -715,15 +770,15 @@ class circuit_wrapper:
 		self.subckt_node_filter_dict = {}
 		self.subckt_node_filter_dict.update(connection_nodes_dict)		
 		self.subckt_node_filter_dict.update({'0':'0'})
-	def add_node_to_circ(self, ext_name):
+	def add_node(self, ext_name):
 		"""We want to perform the following conversions:
 		connected node in the subcircuit -> node in the upper circuit
 		local-only node of the subcircuit -> rename it to something uniq
 		REF (0) -> REF (0)
 		
-		And then call circ.add_node_to_circ()
+		And then call circ.add_node()
 		"""
 		if not self.subckt_node_filter_dict.has_key(ext_name):
 			self.subckt_node_filter_dict.update({ext_name:self.prefix+ext_name})
-		int_node = self.circ.add_node_to_circ(self.subckt_node_filter_dict[ext_name])
+		int_node = self.circ.add_node(self.subckt_node_filter_dict[ext_name])
 		return int_node

@@ -353,7 +353,7 @@ def generate_D(circ, shape):
 	
 	For every time t, the D matrix is used (elsewhere) to solve the following system:
 	
-	D*dx/dt + MNA*x + N  + T(x) = 0
+	D*dx/dt + MNA*x + N + T(x) = 0
 	
 	Returns: the UNREDUCED D matrix
 	"""
@@ -381,7 +381,7 @@ def generate_D(circ, shape):
 					# get id+descr of the other inductor (eg. "L32")
 					other_id_wdescr = cd.get_other_inductor("L"+elem.descr)
 					# find its index to know which column corresponds to its current
-					other_index = circ.find_vde_index(other_id_wdescr)
+					other_index = circ.find_vde_index(other_id_wdescr, verbose=0)
 					# add the term.
 					D[ nv + i_eq, nv + other_index ] += -1 * cd.M
 			# carry on as usual
@@ -392,10 +392,7 @@ def generate_D(circ, shape):
 		cmin_mat[0, 1:] = 1
 		cmin_mat[1:, 0] = 1
 		cmin_mat[0, 0] = cmin_mat.shape[0]-1
-		if i_eq > 0:
-			D[:-i_eq, :-i_eq] += options.cmin*cmin_mat
-		else:
-			D[:, :] += options.cmin*cmin_mat
+		D[:-i_eq, :-i_eq] += options.cmin*cmin_mat
 
 	return D
 

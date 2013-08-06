@@ -341,11 +341,13 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 	return solved	
 
 def op_analysis(circ, x0=None, guess=True, data_filename=None, verbose=3):
-	"""Returns a Operation Point solution, if found, None otherwise.
-	circ: is the circuit instance
+	"""Runs an Operating Point (OP) analysis
+	circ: the circuit instance on which the simulation is run
 	x0: is the initial guess to be used to start the NR mdn_solver
-	guess: if set to True and x0 is None, it will generate a smart guess
-	verbose: verbosity
+	guess: if set to True and x0 is None, it will generate a 'smart' guess
+	verbose: verbosity level from 0 (silent) to 6 (debug).
+
+	Returns a Operation Point result, if successful, None otherwise.
 	"""
 	#use_gmin = True
 	#solved=False
