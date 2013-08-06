@@ -68,7 +68,7 @@ def print_netlist_elem_line(elem, circ):
 		circ.nodes_dict[elem.sn2] + " ")
 	elif isinstance(elem, devices.inductor_coupling):
 		sys.stdout.write(" ")
-	elif isinstance(elem, mosq.mosq): #quadratic mos
+	elif isinstance(elem, mosq.mosq_device): #quadratic mos
 		sys.stdout.write(ext_n1 + " " + circ.nodes_dict[elem.ng] + " " + ext_n2 + " ")
 	elif isinstance(elem, ekv.ekv_device):
 		sys.stdout.write(ext_n1 + " " + circ.nodes_dict[elem.ng] + " " + ext_n2 + " " + circ.nodes_dict[elem.nb] + " ")

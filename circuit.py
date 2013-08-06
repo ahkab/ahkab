@@ -18,7 +18,7 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-import devices, printing
+import devices, printing, ekv, mosq
 
 # will be added here by netlist_parser and circuit instances
 user_defined_modules_dict = {}
@@ -239,6 +239,11 @@ class circuit:
 	def get_ground_node(self):
 		"Returns the (external) reference node. AKA GND."
 		return '0'
+	def get_elem_by_name(self, name):
+		for e in self.elements:
+			if e.name == name:
+				return e
+		return None
 
 	def add_model(self, model_type, model_label, model_parameters):
 		"""Add a model to the available models
@@ -255,10 +260,13 @@ class circuit:
 		if model_type == "ekv":
 			model_iter = ekv.ekv_mos_model(**model_parameters)
 			model_iter.name = model_label
+		elif model_type == "mosq":
+			model_iter = mosq.mosq_mos_model(**model_parameters)
+			model_iter.name = model_label
 		else:
 			raise CircuitError, "Unknown model %s" % (model_type,)
 		self.models.update({model_label:model_iter})
-		return models
+		return self.models
 			
 	def remove_model(self, model_label):
 		"""Remove a model to the available models
@@ -404,7 +412,7 @@ class circuit:
 		self.elements = self.elements + [elem]
 		return True
 	
-	def add_isource(self, name, ext_n1, ext_n2, idc, iac, function=None):
+	def add_isource(self, name, ext_n1, ext_n2, idc, iac=0, function=None):
 		"""Adds a current source to the circuit (also takes care that the nodes 
 		are added as well).
 	
@@ -493,7 +501,12 @@ class circuit:
 
 		if not models.has_key(model_label):
 			raise ModelError, "Unknown model id: "+model_label
-		elem = ekv.ekv_device(nd, ng, ns, nb, w, l, models[model_label], m, n)
+		if isinstance(models[model_label], ekv.ekv_mos_model):
+			elem = ekv.ekv_device(nd, ng, ns, nb, w, l, models[model_label], m, n)
+		elif isinstance(models[model_label], mosq.mosq_mos_model):
+			elem =  mosq.mosq_device(nd, ng, ns, nb, w, l, models[model_label], m, n)
+		else:
+			raise Exception, "Unknown model type for "+model_label
 
 		#elem = mosq.mosq(nd, ng, ns, kp=kp, w=w, l=l, vt=vt, mos_type=mos_type, lambd=lambd)
 		elem.descr = name[1:]
@@ -626,6 +639,25 @@ class circuit:
 					vde_index += 1
 		print "%s found at index %d" % (id_wdescr, vde_index)
 		return vde_index
+
+	def find_vde(self, index):
+		index = index - len(circ.nodes) + 1
+		ni = 0
+		found = False
+		for e in self.elements:
+			if circuit.is_elem_voltage_defined(e):
+				if index == ni:
+					found = True
+				else:
+					ni = ni + 1
+				if found:
+					break
+		if found: 
+			ret = e
+		else:
+			ret = None
+		return ret
+		
 
 # STATIC METHODS
 def is_elem_voltage_defined(elem):

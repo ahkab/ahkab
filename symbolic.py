@@ -209,7 +209,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 	subs_g = {}
 	#process_elements() 	
 	for elem in circ.elements:
-		#if elem.is_nonlinear and not (isinstance(elem, mosq.mosq) or isinstance(elem, ekv.ekv_device)): 
+		#if elem.is_nonlinear and not (isinstance(elem, mosq.mosq_device) or isinstance(elem, ekv.ekv_device)): 
 		#	print "Skipped elem "+elem.letter_id+elem.descr + ": not implemented."	
 		#	continue
 		if isinstance(elem, devices.resistor):
@@ -245,7 +245,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 			IDC = sympy.Symbol(elem.letter_id+elem.descr, real=True)
 			N[elem.n1, 0] = N[elem.n1, 0] + IDC
 			N[elem.n2, 0] = N[elem.n2, 0] - IDC
-		elif isinstance(elem, mosq.mosq) or isinstance(elem, ekv.ekv_device):
+		elif isinstance(elem, mosq.mosq_device) or isinstance(elem, ekv.ekv_device):
 			gm = sympy.Symbol('gm_'+elem.letter_id+elem.descr, real=True)
 			mna[elem.n1, elem.ng] = mna[elem.n1, elem.ng] + gm
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gm

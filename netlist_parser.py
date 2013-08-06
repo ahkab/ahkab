@@ -229,6 +229,9 @@ def parse_models(models_lines):
 		if model_type == "ekv":
 			model_iter = ekv.ekv_mos_model(**model_parameters)
 			model_iter.name = model_label
+		elif model_type == "mosq":
+			model_iter = mosq.mosq_mos_model(**model_parameters)
+			model_iter.name = model_label
 		else:
 			raise NetlistParseError, ("Unknown model ("+model_type+") on line " + str(line_n) + ".\n\t"+line,)
 		models.update({model_label:model_iter})
@@ -702,9 +705,13 @@ def parse_elem_mos(line, circ, line_elements, models):
 
 	if not models.has_key(model_label):
 		raise NetlistParseError, "Unknown model id: "+model_label
-	elem = ekv.ekv_device(nd, ng, ns, nb, w, l, models[model_label], m, n)
+	if isinstance(models[model_label], ekv.ekv_mos_model):
+		elem = ekv.ekv_device(nd, ng, ns, nb, w, l, models[model_label], m, n)
+	elif isinstance(models[model_label], mosq.mosq_mos_model):
+		elem = mosq.mosq_device(nd, ng, ns, nb, w, l, models[model_label], m, n)
+	else:
+		raise NetlistParseError, "Unknown model type: "+model_label
 
-	#elem = mosq.mosq(nd, ng, ns, kp=kp, w=w, l=l, vt=vt, mos_type=mos_type, lambd=lambd)
 	elem.descr = line_elements[0][1:]
 	
 	return [elem]
