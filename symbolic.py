@@ -82,12 +82,12 @@ def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=3):
 	for ks in sol.keys():
 		sol.update({ks:sol[ks].subs(subs_g)})
 
-	printing.print_info_line(("Success!", 2), verbose)	
 	#sol = sol_to_dict(sol, x)
 
 	if sol == {}:
 		printing.print_warning("No solutions. Check the netlist.")
 	else:
+		printing.print_info_line(("Success!", 2), verbose)	
 		if verbose > 1:
 			print "Results:"
 		printing.print_symbolic_results(sol)
