@@ -23,11 +23,25 @@
 
 import sys
 from optparse import OptionParser
-import dc_analysis, transient, shooting, bfpss, symbolic, ac
-import netlist_parser, utilities, options, constants 
-import plotting, printing 
 
-VERSION = "0.05"
+# analyses
+import dc_analysis
+import transient
+import ac
+import shooting
+import bfpss
+import symbolic
+
+import netlist_parser
+
+import options
+import constants 
+import utilities
+
+import plotting
+import printing 
+
+VERSION = "0.06"
 
 
 def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, guess=True, disable_step_control=False):
@@ -46,7 +60,10 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 	results = {}
 
 	for directive in [ x for x in an_list if x["type"] == "ic" ]:
-		x0_ic_dict.update({directive["name"]:dc_analysis.build_x0_from_user_supplied_ic(circ,  voltages_dict=directive["vdict"], currents_dict=directive["cdict"])})
+		x0_ic_dict.update({
+			directive["name"]:\
+			dc_analysis.build_x0_from_user_supplied_ic(circ, voltages_dict=directive["vdict"], currents_dict=directive["cdict"])
+			})
 	
 	for an in an_list:
 		if outfile != 'stdout':
@@ -77,7 +94,11 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 			else:
 				printing.print_general_error("Type of sweep source is unknown: " + an[1][0])
 				sys.exit(1)
-			sol = dc_analysis.dc_analysis(circ, start=an["start"], stop=an["stop"], step=an["step"], type_descr=(elem_type, an["source_name"][1:]), xguess=x0_op, data_filename=data_filename, guess=guess, stype=an['stype'], verbose=verbose)
+			sol = dc_analysis.dc_analysis(
+					circ, start=an["start"], stop=an["stop"], step=an["step"], \
+					type_descr=(elem_type, an["source_name"][1:]), 
+					xguess=x0_op, data_filename=data_filename, guess=guess, 
+					stype=an['stype'], verbose=verbose)
 			
 		
 		#{"type":"tran", "tstart":tstart, "tstop":tstop, "tstep":tstep, "uic":uic, "method":method, "ic_label":ic_label}
@@ -89,16 +110,20 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 			else:
 				tran_method = options.default_tran_method
 			
-			# setup the initial condition according to uic
-			# uic = 0 -> parti con tutto zero
-			# uic = 1 -> parti con l'op, se disponibile.
-			# uic = 2 -> parti con l'op, tieni conto delle ic di condensatori e induttori
-			# uic = 3 -> carica un ic definito dall'utente
+			# setup the initial condition (t=0) according to uic
+			# uic = 0 -> all node voltages and currents are zero
+			# uic = 1 -> node voltages and currents are those computed in the last OP analysis
+			# uic = 2 -> node voltages and currents are those computed in the last OP analysis
+			#            combined with the ic=XX directive found in capacitors and inductors
+			# uic = 3 -> use a .ic directive defined by the user
 			uic = an["uic"]
 			if uic == 0:
 				x0 = None
 			elif uic == 1:
-				x0 = x0_op # if there's no x0_op, it's the same as uic=0
+				if x0_op is None:
+					printing.print_general_error("uic is set to 1, but no op has been calculated yet.")
+					sys.exit(51)
+				x0 = x0_op
 			elif uic == 2:
 				if x0_op is None:
 					printing.print_general_error("uic is set to 2, but no op has been calculated yet.")
@@ -109,7 +134,8 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 					printing.print_general_error("uic is set to 3, but param ic=<ic_label> was not defined.")
 					sys.exit(53)
 				elif not an["ic_label"] in x0_ic_dict:
-					printing.print_general_error("uic is set to 3, but no .ic directive named "+str(an["ic_label"])+" was found.")
+					printing.print_general_error("uic is set to 3, but no .ic directive named %s was found." \
+						%(str(an["ic_label"]),))
 					sys.exit(54)
 				x0 = x0_ic_dict[an["ic_label"]]
 			
