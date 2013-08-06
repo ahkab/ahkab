@@ -73,6 +73,20 @@ def write_csv(filename, data, headers, append=False):
 	_close_fp(fp, filename)
 	#print "done."
 
+def write_headers(filename, headers):
+        """Writes headers in CVS format to filename."""
+	fp = _get_fp(filename, mode="w")
+	headers = copy.copy(headers)
+	if not headers[0][0] == '#':
+		headers[0] = '#'+headers[0]
+	for hi in range(len(headers)):
+		fp.write(headers[hi])
+		if hi < len(headers) - 1:
+			fp.write(SEPARATOR)
+		else:
+			fp.write("\n")
+
+
 def _get_fp(filename, mode="r"):
 	if filename == 'stdout':
 		if mode == 'w' or mode == 'a':
