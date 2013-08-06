@@ -33,6 +33,7 @@ def read_data_header(filename):
 		labels = line[1:].upper().split()
 	else:
 		printing.print_general_error("Unrecognized file: "+filename)
+		labels = None
 	fp.close()
 	return labels
 
