@@ -189,14 +189,6 @@ def process_postproc(postproc_list, title, results, outfilename, remote=False):
 def main(filename, outfile="stdout", tran_method=transient.TRAP.lower(), no_step_control=False, dc_guess='guess', print_circuit=False, remote=True, verbose=3):
 	"""This method allows calling ahkab from a Python script.
 	"""
-	# Import Psyco if available
-	try:
-		import psyco
-		psyco.full()
-		psyco_enabled = True
-	except ImportError:
-		psyco_enabled = False
-	printing.print_info_line(("(II) psyco support: " + str(psyco_enabled), 6), verbose,)
 
 	utilities._set_execution_lock()
 
