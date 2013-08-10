@@ -248,7 +248,8 @@ if __name__ == "__main__":
 	parser.add_option("", "--t-max-nr", action="store", type="string", dest="transient_max_nr_iter", default=None, help="Maximum nr of NR iterations for each time step during transient analysis. Default: "+str(options.transient_max_nr_iter))
 	parser.add_option("", "--t-max-time", action="store", type="string", dest="transient_max_time_iter", default=None, help="Maximum nr of time iterations during transient analysis. Setting it to 0 (zero) disables the limit. Default: "+str(options.transient_max_time_iter))
 	parser.add_option("", "--s-max-nr", action="store", type="string", dest="shooting_max_nr_iter", default=None, help="Maximum nr of NR iterations during shooting analysis. Setting it to 0 (zero) disables the limit. Default: "+str(options.shooting_max_nr_iter))
-	parser.add_option("", "--gmin", action="store", type="string", dest="gmin", default=None, help="The minimum conductance to ground to be inserted (when requested). Default: "+str(options.gmin))
+	parser.add_option("", "--gmin", action="store", type="string", dest="gmin", default=None, help="The minimum conductance to ground. Inserted when requested. Default: "+str(options.gmin))
+	parser.add_option("", "--cmin", action="store", type="string", dest="cmin", default=None, help="The minimum capacitance to ground. Default: "+str(options.cmin))
 	parser.add_option("", "--eps", action="store_true", dest="eps", default=False, help="Calculate the machine precision. The machine precision defaults to "+str(utilities.EPS))
 	
 	(cli_options, remaning_args) = parser.parse_args()
@@ -276,6 +277,8 @@ if __name__ == "__main__":
 		options.shooting_max_nr_iter = int(float(cli_options.shooting_max_nr_iter))
 	if cli_options.gmin is not None:
 		options.gmin = float(cli_options.gmin)
+	if cli_options.cmin is not None:
+		options.cmin = float(cli_options.cmin)
 	if cli_options.eps:
 		utilities.EPS = utilities.calc_eps()
 		print "Detected machine precision: " + str(utilities.EPS)
