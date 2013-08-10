@@ -25,6 +25,7 @@ The principal is solve() - which carries out the symbolic solution
 """
 
 import sympy
+from sympy.matrices import zeros as smzeros
 import circuit, devices, ekv, mosq, printing, options
 
 def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=3):
@@ -165,7 +166,7 @@ def setup_options():
 	return opts
 
 def generate_variable_names(circ, mna_size):
-	x = sympy.matrices.zeros((mna_size, 1))
+	x = smzeros((mna_size, 1))
 
 	nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
 	
@@ -203,8 +204,8 @@ def generate_mna_and_N(circ, opts, ac=False):
 	"""
 	#print options
 	n_of_nodes = len(circ.nodes_dict)
-	mna = sympy.matrices.zeros(n_of_nodes)
-	N = sympy.matrices.zeros((n_of_nodes, 1))
+	mna = smzeros(n_of_nodes)
+	N = smzeros((n_of_nodes, 1))
 	s = sympy.Symbol("s", real=False)
 	subs_g = {}
 	#process_elements() 	
