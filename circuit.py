@@ -65,7 +65,7 @@ class circuit:
 	add_vsource(self, name, ext_n1, ext_n2, vdc, vac, function=None)
 	add_isource(self, name, ext_n1, ext_n2, idc, iac, function=None)
 	add_diode(self, name, ext_n1, ext_n2, Is=None, Rs=None, m=None, T=None, ic=None)
-	add_mos(self, name, ext_nd, ext_ng, ext_ns, ext_nb, w, l, model_label, models, m=None, n=None)
+	add_mos(self, name, ext_nd, ext_ng, ext_ns, ext_nb, w, l, model_label, models=None, m=None, n=None)
 	add_vcvs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha)
 	add_vccs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha)
 	add_user_defined(self, module, label, param_dict)
@@ -276,13 +276,13 @@ class circuit:
 	def add_model(self, model_type, model_label, model_parameters):
 		"""Add a model to the available models
 		Inputs:
-		* models (a dictionary, "label":model instance), the available models. None if no model is available/defined.
 		* model_type (string), the model type (eg "ekv")
 		* model_label (string), a unique identifier for the model being added
 		* model_parameters (dict), a dictionary holding the parameters to be 
 		supplied to the model to initialize it.
 
 		returns: the updated models
+
 		"""
 
 		if model_type == "ekv":
@@ -498,7 +498,7 @@ class circuit:
 
 		return True
 	
-	def add_mos(self, name, ext_nd, ext_ng, ext_ns, ext_nb, w, l, model_label, models, m=None, n=None):
+	def add_mos(self, name, ext_nd, ext_ng, ext_ns, ext_nb, w, l, model_label, models=None, m=None, n=None):
 		"""Adds a mosfet to the circuit (also takes care that the nodes 
 		are added as well).
 	
@@ -528,6 +528,8 @@ class circuit:
 		ns = self.add_node(ext_ns)
 		nb = self.add_node(ext_nb)	
 
+		if models is None:
+			models = self.models
 		if not models.has_key(model_label):
 			raise ModelError, "Unknown model id: "+model_label
 		if isinstance(models[model_label], ekv.ekv_mos_model):
