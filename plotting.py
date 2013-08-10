@@ -124,6 +124,9 @@ def save_figure(filename, fig):
 def plot_results(title, xvarname, y2y1_list, results, outfilename):
 	"""Plot the results.
 	"""
+	if results is None:
+		printing.print_warning("No results available for plotting. Skipping.")
+		return
 	fig = pylab.figure()
 	analysis = results.get_type().upper()
 	xunit = results.units[xvarname]
