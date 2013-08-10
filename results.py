@@ -44,7 +44,7 @@ class op_solution:
 		self.iea = options.iea
 		self.ier = options.ier
 		self.gmin = options.gmin
-		self.temp = constants.T
+		self.temp = constants.T # in Kelvin
 		self.filename = outfile
 		self.iterations = iterations
 
@@ -184,7 +184,7 @@ class op_solution:
 		fp.write("ahkab v. "+VERSION+u" (c) 2006-2011 Giuseppe Venturini\n\n")
 		fp.write("Operating Point (OP) analysis\n\n")
 		fp.write("Netlist: %s\nTitle: %s\n" % (self.netlist_file, self.netlist_title))
-		fp.write("At %.2f C\n" % (self.temp,))
+		fp.write("At %.2f K\n" % (self.temp,))
 		fp.write("Options:\n\tvea = %e\n\tver = %f\n\tiea = %e\n\tier = %f\n\tgmin = %e\n" %\
 			(self.vea, self.ver, self.iea, self.ier, self.gmin))
 		fp.write("\nConvergence reached in %d iterations.\n" % (self.iterations,))
