@@ -38,13 +38,13 @@ def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=3):
 		
 	printing.print_info_line(("Building symbolic MNA, N and x...", 2), verbose, print_nl=False)
 	mna, N, subs_g = generate_mna_and_N(circ, opts, ac)
-	x = generate_variable_names(circ, N.shape[0] - 1)
+	x = get_variables(circ)
 	mna = mna[1:, 1:]
 	N = N[1:, :]
 	printing.print_info_line((" done.", 2), verbose)	
 
 	printing.print_info_line(("MNA matrix (reduced):", 5), verbose)	
-	if verbose > 5:	print mna
+	if verbose > 5:	print sympy.sstr(mna)
 
 	printing.print_info_line(("Building equations...", 2), verbose)	
 	eq = to_real_list(mna * x + N)
@@ -71,7 +71,7 @@ def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=3):
 		if options.symb_internal_solver:
 			sol = local_solve(eq, x)
 		else:
-			sol = sympy.solve(eq, x)
+			sol = sympy.solve(eq, x, manual=options.symb_sympy_manual_solver)
 		if sol is not None:		
 			sol.update(sol_h)
 		else:
@@ -165,17 +165,19 @@ def setup_options():
 	opts = {}	
 	return opts
 
-def generate_variable_names(circ, mna_size):
-	x = smzeros((mna_size, 1))
-
+def get_variables(circ):
+	"""Returns a list with the circuit variables to be solved for.
+	"""
 	nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
 	
 	# descrizioni dei componenti non definibili in tensione
 	idescr = [ (elem.letter_id.upper() + elem.descr) \
 		for elem in circ.elements if circuit.is_elem_voltage_defined(elem) ]
 
-	for i in range(mna_size):
+	mna_size = nv_1 + len(idescr)
+	x = smzeros((mna_size, 1))
 
+	for i in range(mna_size):
 		if i < nv_1:
 			x[i, 0] = sympy.Symbol("V" + str(circ.nodes_dict[i + 1]))
 		else:
