@@ -67,7 +67,7 @@ shooting_max_nr_iter = 10000
 
 #symbolic
 symb_internal_solver = False
-symb_sympy_manual_solver = True
+symb_sympy_manual_solver = False
 
 ac_log_step = 'LOG'
 ac_lin_step = 'LIN'
