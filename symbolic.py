@@ -1,7 +1,7 @@
 # -*- coding: iso-8859-1 -*-
 # symbolic.py
 # Symbolic simulation module
-# Copyright 2010 Giuseppe Venturini
+# Copyright 2010-2013 Giuseppe Venturini
 
 # This file is part of the ahkab simulator.
 #
@@ -21,34 +21,63 @@
 This module offers the functions needed to perform a symbolic simulation,
 AC or DC.
 
-The principal is solve() - which carries out the symbolic solution
+The principal method is solve(), which carries out the symbolic circuit solution.
 """
 
 import sympy
 from sympy.matrices import zeros as smzeros
-import circuit, devices, ekv, mosq, printing, options
 
-def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=3):
-	#opts = setup_options()	
-	if not ac:
+import circuit
+import devices 
+import ekv 
+import mosq
+import printing
+import options
 
+def solve(circ, tf_source=None, subs=None, opts=None, verbose=3):
+	"""Attempt a symbolic solution of the circuit.
+	circ: the circuit instance to be simulated.
+	tf_source: the name (string) of the source to be used as input for the transfer
+		   function. If None, no transfer function is evaluated.
+	subs: a dictionary of sympy Symbols to be substituted. It makes solving the circuit 
+	      easier. Eg. {R1:R2} - replace R1 with R2. It can be generated with 
+	      parse_substitutions()
+	opts: dict of 'option':boolean to be taken into account in simulation.
+	      currently 'r0s' and 'ac' are the only options considered.
+	verbose: verbosity level 0 (silent) to 6 (painful).
+	
+	Returns: a dictionary with the solutions.
+	"""
+	if opts is None:
+		# load the defaults
+		opts = {'r0s':True, 'ac':False}
+	if not 'r0s' in opts.keys():
+		opts.update({'r0s':True})
+	if not 'ac' in opts.keys():
+		opts.update({'ac':False})
+	if subs is None:
+		subs = {} # no subs by default
+
+	if not opts['ac']:
 		printing.print_info_line(("Starting symbolic DC...", 1), verbose)
 	else:
 		printing.print_info_line(("Starting symbolic AC...", 1), verbose)		
 		
 	printing.print_info_line(("Building symbolic MNA, N and x...", 2), verbose, print_nl=False)
-	mna, N, subs_g = generate_mna_and_N(circ, opts, ac)
+	mna, N, subs_g = generate_mna_and_N(circ, opts, opts['ac'])
 	x = get_variables(circ)
 	mna = mna[1:, 1:]
 	N = N[1:, :]
 	printing.print_info_line((" done.", 2), verbose)	
+
+	printing.print_info_line(("Performing variable substitutions...", 5), verbose)
+	mna, N = apply_substitutions(mna, N, subs)
 
 	printing.print_info_line(("MNA matrix (reduced):", 5), verbose)	
 	if verbose > 5:	print sympy.sstr(mna)
 
 	printing.print_info_line(("Building equations...", 2), verbose)	
 	eq = to_real_list(mna * x + N)
-	#eq = apply_options_and_subs(eq, opts)
 
 	x = to_real_list(x)
 	if verbose > 4:
@@ -56,7 +85,8 @@ def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=3):
 		print "To be solved for:"
 		print x
 		#print "Matrix is singular: ", (mna.det() == 0)
-	#sol = -1.0*mna.inv()*N #too heavy
+	#print -1.0*mna.inv()*N #too heavy
+	#print sympy.solve_linear_system(mna, x)
 	printing.print_info_line(("Performing auxiliary simplification...", 2), verbose)	
 	eq, x, sol_h = help_the_solver(eq, x)
 		
@@ -71,7 +101,7 @@ def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=3):
 		if options.symb_internal_solver:
 			sol = local_solve(eq, x)
 		else:
-			sol = sympy.solve(eq, x, manual=options.symb_sympy_manual_solver)
+			sol = sympy.solve(eq, x, manual=options.symb_sympy_manual_solver, simplify=False)
 		if sol is not None:		
 			sol.update(sol_h)
 		else:
@@ -94,7 +124,7 @@ def solve(circ, ac=False, tf_source=None, opts={'r0s':True}, verbose=3):
 		printing.print_symbolic_results(sol)
 
 	if tf_source is not None:
-		src = sympy.Symbol(tf_source, real=True)
+		src = sympy.Symbol(tf_source.lower(), real=True)
 		printing.print_info_line(("Calculating small-signal symbolic transfer functions (%s))..."%(str(src),), 2), verbose, print_nl=False)
 		tfs = calculate_gains(sol, src)
 		printing.print_info_line(("done.", 2), verbose)	
@@ -112,7 +142,7 @@ def calculate_gains(sol, xin, optimize=True):
 		gain = sympy.together(value.diff(xin)) if optimize else value.diff(xin)
 		(ps, zs) = get_roots(gain)
 		tf.update({'gain':gain})
-		tf.update({'gain0':gain.subs(sympy.Symbol('s', real=False), 0)})
+		tf.update({'gain0':gain.subs(sympy.Symbol('s', complex=True), 0)})
 		tf.update({'poles':ps})
 		tf.update({'zeros':zs})
 		gains.update({"%s/%s" % (str(key), str(xin)):tf})
@@ -126,44 +156,10 @@ def sol_to_dict(sol, x, optimize=True):
 		ret.update({str(x[index]):sol_current})
 	return ret
 
-def apply_options_and_subs(eq_list, opts):
-	import subs
-	opts = {}
-	for key, value in subs.subs.iteritems():
-		opts.update({sympy.Symbol(key, real=True):sympy.Symbol(value, real=True)}) 
-	subs_eq_list = []		
-	running_eq_list = eq_list	
-	for key in opts.keys():
-		subs_eq_list = []		
-		for eq in running_eq_list:
-			subs_eq_list.append(eq.subs(key, opts[key]))
-		running_eq_list = subs_eq_list
-	print subs_eq_list
-	return subs_eq_list
-
-def setup_options():
-	"""options = {}	
-	r1 = sympy.Symbol('r1')
-	r2 = sympy.Symbol('r2')
-	r3 = sympy.Symbol('r3')
-	r4 = sympy.Symbol('r4')
-	r5 = sympy.Symbol('r5')
-	r6 = sympy.Symbol('r6')
-	r7 = sympy.Symbol('r7')
-	r8 = sympy.Symbol('r8')
-	r9 = sympy.Symbol('r9')
-	r10 = sympy.Symbol('r10')
-	options.update({r2:2*r1})
-	options.update({r3:r1})
-	options.update({r4:2*r1})
-	options.update({r5:r1})
-	options.update({r6:2*r1})
-	options.update({r7:r1})
-	options.update({r8:2*r1})
-	options.update({r9:r1})
-	options.update({r10:r1})"""
-	opts = {}	
-	return opts
+def apply_substitutions(mna, N, opts):
+	mna = mna.subs(opts)
+	N = N.subs(opts)
+	return (mna, N)
 
 def get_variables(circ):
 	"""Returns a list with the circuit variables to be solved for.
@@ -202,13 +198,13 @@ def to_real_list(M):
 	return reallist
 
 def generate_mna_and_N(circ, opts, ac=False):
-	"""Generates a symbolic Modified Nodal Analysis matrix and the N vector.
+	"""Generates a symbolic Modified Nodal Analysis matrix and N vector.
 	"""
 	#print options
 	n_of_nodes = len(circ.nodes_dict)
 	mna = smzeros(n_of_nodes)
 	N = smzeros((n_of_nodes, 1))
-	s = sympy.Symbol("s", real=False)
+	s = sympy.Symbol("s", complex=True)
 	subs_g = {}
 	#process_elements() 	
 	for elem in circ.elements:
@@ -216,16 +212,19 @@ def generate_mna_and_N(circ, opts, ac=False):
 		#	print "Skipped elem "+elem.letter_id+elem.descr + ": not implemented."	
 		#	continue
 		if isinstance(elem, devices.resistor):
-			R = sympy.Symbol(elem.letter_id.upper()+elem.descr)
+			# we use conductances instead of 1/R because there is a significant
+			# overhead handling many 1/R terms in sympy.
+			R = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True)
 			#mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1/R
 			#mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/R
 			#mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1/R
 			#mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1/R
-			G = sympy.Symbol("G_"+elem.descr)
+			G = sympy.Symbol("G"+elem.descr, real=True)
 			mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + G
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - G
 			mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - G
 			mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + G
+			# but we keep track of which is which and substitute back after solving.
 			subs_g.update({G:1/R})
 		elif isinstance(elem, devices.capacitor):
 			if ac:
@@ -282,17 +281,17 @@ def generate_mna_and_N(circ, opts, ac=False):
 			mna = expand_matrix(mna, add_a_row=True, add_a_col=True)
 			N = expand_matrix(N, add_a_row=True, add_a_col=False)
 			# KCL
-			mna[elem.n1, index] = +1.0
-			mna[elem.n2, index] = -1.0
+			mna[elem.n1, index] = +1
+			mna[elem.n2, index] = -1
 			# KVL
-			mna[index, elem.n1] = +1.0
-			mna[index, elem.n2] = -1.0
+			mna[index, elem.n1] = +1
+			mna[index, elem.n2] = -1
 			if isinstance(elem, devices.vsource):
-				N[index, 0] = -1.0 * sympy.Symbol(elem.letter_id + elem.descr, real=True)
+				N[index, 0] = -sympy.Symbol(elem.letter_id + elem.descr, real=True)
 			elif isinstance(elem, devices.evsource):
-				alpha = sympy.Symbol(elem.letter_id + elem.descr, real=True)
-				mna[index, elem.sn1] = -1.0 * alpha
-				mna[index, elem.sn2] = +1.0 * alpha
+				alpha = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
+				mna[index, elem.sn1] = -alpha
+				mna[index, elem.sn2] = +alpha
 			elif isinstance(elem, devices.inductor):
 				if ac:
 					mna[index, index] = -1*s*sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
@@ -340,8 +339,27 @@ def expand_matrix(mat, add_a_row=False, add_a_col=False):
 
 def get_roots(expr):
 	num, den = sympy.fraction(expr)
-	s = sympy.Symbol('s', real=False)
+	s = sympy.Symbol('s', complex=True)
 	return sympy.solve(den, s), sympy.solve(num, s)
+
+def parse_substitutions(slist):
+	"""Generates a substitution dictionary to be passed to solve()
+	
+	slist is a list of strings like 'R2=R1', instructing the simulator
+	to use the value of R1 (R1) instead of R2.
+
+	returns: the dictionary of symbols to be passed to solve()
+	"""
+	subs = {}
+	for l in slist:
+		v1, v2 = l.split("=")
+		letter_id1 = v1[0].upper() if v1[0].upper() != 'R' else 'G'
+		letter_id2 = v2[0].upper() if v2[0].upper() != 'R' else 'G'
+		subs.update({
+			sympy.Symbol(letter_id1+v1[1:].lower(), real=True):
+			sympy.Symbol(letter_id2+v2[1:].lower(), real=True)
+			})
+	return subs
 
 ############## THESE  WILL BE REMOVED - AS SOON AS SOME SYMPY BUGS ARE FIXED ###########
 def help_the_solver(eqs, xs, debug=False):

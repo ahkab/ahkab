@@ -154,7 +154,9 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 					Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], \
 					data_filename=data_filename, verbose=verbose)
 		elif an["type"] == "symbolic":
-			sol = symbolic.solve(circ, an['ac'], an['source'], verbose=verbose)
+			if not 'subs' in an.keys():
+				an.update({'subs':None})
+			sol = symbolic.solve(circ, an['source'], opts={'ac':an['ac']}, subs=an['subs'], verbose=verbose)
 		elif an["type"] == "ac":
 			sol = ac.ac_analysis(circ=circ, start=an['start'], nsteps=an['nsteps'], \
 				stop=an['stop'], step_type='LOG', xop=x0_op, mna=None,\
