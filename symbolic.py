@@ -75,9 +75,13 @@ def solve(circ, tf_source=None, subs=None, opts=None, verbose=3):
 
 	printing.print_info_line(("MNA matrix (reduced):", 5), verbose)	
 	if verbose > 5:	print sympy.sstr(mna)
+	printing.print_info_line(("N matrix (reduced):", 5), verbose)	
+	if verbose > 5:	print sympy.sstr(N)
 
 	printing.print_info_line(("Building equations...", 2), verbose)	
-	eq = to_real_list(mna * x + N)
+	eq = []
+	for i in to_real_list(mna * x + N):
+		eq.append(sympy.Eq(i, 0))
 
 	x = to_real_list(x)
 	if verbose > 4:
@@ -86,7 +90,7 @@ def solve(circ, tf_source=None, subs=None, opts=None, verbose=3):
 		print x
 		#print "Matrix is singular: ", (mna.det() == 0)
 	#print -1.0*mna.inv()*N #too heavy
-	#print sympy.solve_linear_system(mna, x)
+	#print sympy.solve_linear_system(mna.row_join(-N), x)
 	printing.print_info_line(("Performing auxiliary simplification...", 2), verbose)	
 	eq, x, sol_h = help_the_solver(eq, x)
 		
@@ -355,6 +359,8 @@ def parse_substitutions(slist):
 		v1, v2 = l.split("=")
 		letter_id1 = v1[0].upper() if v1[0].upper() != 'R' else 'G'
 		letter_id2 = v2[0].upper() if v2[0].upper() != 'R' else 'G'
+		#pos1 = True if letter_id1 in ('G', 'C', 'L', 'M') else None
+		#pos2 = True if letter_id2 in ('G', 'C', 'L', 'M') else None
 		subs.update({
 			sympy.Symbol(letter_id1+v1[1:].lower(), real=True):
 			sympy.Symbol(letter_id2+v2[1:].lower(), real=True)

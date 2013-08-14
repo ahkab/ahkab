@@ -232,7 +232,7 @@ def main(filename, outfile="stdout", tran_method=transient.TRAP.lower(), no_step
 	return results
 
 if __name__ == "__main__":
-	parser = OptionParser(usage="usage: \t%prog [options] <filename>\n\nThe filename is the netlist to be open. Use - (a dash) to read from stdin.",  version="%prog "+VERSION+u" (c) 2006-2010 Giuseppe Venturini")
+	parser = OptionParser(usage="usage: \t%prog [options] <filename>\n\nThe filename is the netlist to be open. Use - (a dash) to read from stdin.",  version="%prog "+VERSION+u" (c) 2006-2013 Giuseppe Venturini")
 	
 	#general options
 	parser.add_option("-v", "--verbose", action="store", type="string", dest="verbose", default="3", help="Verbose level: from 0 (almost silent) to 5 (debug)")

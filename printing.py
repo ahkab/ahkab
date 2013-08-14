@@ -233,7 +233,7 @@ def print_symbolic_transfer_functions(x):
 def print_symbolic_equations(eq_list):
 	print "+--"	
 	for eq in eq_list:
-		print "| " + str(eq) + " = 0"
+		print "| " + str(eq)
 	print "+--"
 	return
 
