@@ -64,6 +64,11 @@ the voltages in the voltages_vector.
 5. elem.is_nonlinear
 A non linear element must have a elem.is_nonlinear field set to True.
 
+6. elem.is_symbolic
+This boolean flag is used to know whether the element should be treated 
+symbolically by the ymbolic solver or not. It is meant to be toggled
+by the user at will.
+
 Recommended:
 1. A non linear element may have a list/tuple of the same length of its 
 ports_vector in which there are the recommended guesses for dc analysis. 
@@ -82,6 +87,8 @@ know the external names of its nodes. It is used to print the parsed netlist.
 	#"""This class is for debugging purposes only."""
 	##generic element
 	#is_nonlinear = False
+	#is_symbolic = True # without corresponding code in symbolic.py
+	                    # this is useless.
 	#n1 = None
 	#n2 = None
 	#def __init__(self, n1, n2, is_nonlinear):
@@ -102,6 +109,7 @@ know the external names of its nodes. It is used to print the parsed netlist.
 class resistor:
 	letter_id = "r"
 	is_nonlinear = False
+	is_symbolic = True
 	def __init__(self, n1, n2, R):
 		self.R = R
 		self.n1 = n1
@@ -124,6 +132,7 @@ class resistor:
 class capacitor:
 	letter_id = "c"
 	is_nonlinear = False
+	is_symbolic = True
 	def __init__(self, n1, n2, C, ic=None):
 		self.C = C
 		self.n1 = n1
@@ -149,6 +158,7 @@ class capacitor:
 class inductor:
 	letter_id = "l"
 	is_nonlinear = False
+	is_symbolic = True
 	def __init__(self, n1, n2, L, ic=None):
 		self.L = L
 		self.n1 = n1
@@ -161,6 +171,7 @@ class inductor:
 class inductor_coupling:
 	letter_id = "k"
 	is_nonlinear = False
+	is_symbolic = True
 	def __init__(self, L1, L2, K, M):
 		self.K = K
 		self.M = M
@@ -185,6 +196,7 @@ class inductor_coupling:
 class diode:
 	letter_id = "d"
 	is_nonlinear = True
+	is_symbolic = True
 	dc_guess = [0.4]
 	def __init__(self, n1, n2, Io=1.0e-14, m=1, T=None, ic=None, off=False):
 		if Io:
@@ -417,6 +429,7 @@ class isource:
 	"""
 	letter_id = "i"
 	is_nonlinear = False
+	is_symbolic = True
 	is_timedependent = False
 	_time_function = None
 	def __init__(self, n1, n2, idc=None, abs_ac=None, arg_ac=0):
@@ -463,6 +476,7 @@ class vsource:
 	"""
 	letter_id = "v"
 	is_nonlinear = False
+	is_symbolic = True
 	is_timedependent = False
 	_time_function = None
 	dc_guess = None #defined in init
@@ -510,6 +524,7 @@ class evsource:
 	"""
 	letter_id = "e"
 	is_nonlinear = False
+	is_symbolic = True
 	def __init__(self, n1, n2, sn1, sn2, alpha):
 		self.alpha = alpha
 		self.n1 = n1
@@ -537,6 +552,7 @@ class gisource:
 	
 	"""
 	is_nonlinear = False
+	is_symbolic = True
 	def __init__(self, n1, n2, sn1, sn2, alpha):
 		self.alpha = alpha
 		self.n1 = n1
@@ -553,6 +569,7 @@ class hvsource: #fixme
 	"""
 	letter_id = "h"
 	is_nonlinear = False
+	is_symbolic = True
 	def __init__(self, n1, n2, sn1, sn2, alpha):
 		print "hvsource not implemented. BUG"
 		self.alpha = alpha

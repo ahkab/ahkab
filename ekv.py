@@ -116,6 +116,7 @@ class ekv_device:
 		self.opdict.update({'ip_abs_err':self.ekv_model.get_ip_abs_err(self.device)})
 		self.letter_id = 'M'
 		self.is_nonlinear = True
+		self.is_symbolic = True
 		self.dc_guess = [self.ekv_model.VTO*(0.1)*self.ekv_model.NPMOS, self.ekv_model.VTO*(1.1)*self.ekv_model.NPMOS, 0]
 
 		devcheck, reason =  self.ekv_model._device_check(self.device)

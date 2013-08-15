@@ -95,6 +95,7 @@ class mosq_device:
 		self.opdict.update({'state':(float('nan'), float('nan'), float('nan'))})
 		self.letter_id = 'M'
 		self.is_nonlinear = True
+		self.is_symbolic = True
 		self.dc_guess = [self.mosq_model.VTO*(0.4)*self.mosq_model.NPMOS, self.mosq_model.VTO*(1.1)*self.mosq_model.NPMOS, 0]
 
 		devcheck, reason =  self.mosq_model._device_check(self.device)

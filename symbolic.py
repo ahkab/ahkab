@@ -128,7 +128,7 @@ def solve(circ, tf_source=None, subs=None, opts=None, verbose=3):
 		printing.print_symbolic_results(sol)
 
 	if tf_source is not None:
-		src = sympy.Symbol(tf_source.lower(), real=True)
+		src = sympy.Symbol(tf_source.upper(), real=True)
 		printing.print_info_line(("Calculating small-signal symbolic transfer functions (%s))..."%(str(src),), 2), verbose, print_nl=False)
 		tfs = calculate_gains(sol, src)
 		printing.print_info_line(("done.", 2), verbose)	
@@ -166,7 +166,7 @@ def apply_substitutions(mna, N, opts):
 	return (mna, N)
 
 def get_variables(circ):
-	"""Returns a list with the circuit variables to be solved for.
+	"""Returns a sympy matrix with the circuit variables to be solved for.
 	"""
 	nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
 	
@@ -213,26 +213,33 @@ def generate_mna_and_N(circ, opts, ac=False):
 	#process_elements() 	
 	for elem in circ.elements:
 		#if elem.is_nonlinear and not (isinstance(elem, mosq.mosq_device) or isinstance(elem, ekv.ekv_device)): 
-		#	print "Skipped elem "+elem.letter_id+elem.descr + ": not implemented."	
+		#	print "Skipped elem "+elem.letter_id.upper()+elem.descr + ": not implemented."	
 		#	continue
 		if isinstance(elem, devices.resistor):
 			# we use conductances instead of 1/R because there is a significant
 			# overhead handling many 1/R terms in sympy.
-			R = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True)
+			if elem.is_symbolic:
+				R = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True)
+				G = sympy.Symbol("G"+elem.descr, real=True)
+				# but we keep track of which is which and substitute back after solving.
+				subs_g.update({G:1/R})
+			else:
+				R = elem.R
+				G = 1.0/R
 			#mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1/R
 			#mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/R
 			#mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1/R
 			#mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1/R
-			G = sympy.Symbol("G"+elem.descr, real=True)
 			mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + G
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - G
 			mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - G
 			mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + G
-			# but we keep track of which is which and substitute back after solving.
-			subs_g.update({G:1/R})
 		elif isinstance(elem, devices.capacitor):
 			if ac:
-				capa = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True)
+				if elem.is_symbolic:
+					capa = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True)
+				else:
+					capa = elem.C
 				mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + s*capa
 				mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - s*capa
 				mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + s*capa
@@ -242,13 +249,19 @@ def generate_mna_and_N(circ, opts, ac=False):
 		elif isinstance(elem, devices.inductor):
 			pass
 		elif isinstance(elem, devices.gisource):
-			alpha = sympy.Symbol(elem.letter_id+elem.descr, real=True)
+			if elem.is_symbolic:
+				alpha = sympy.Symbol(elem.letter_id+elem.descr, real=True)
+			else:
+				alpha = elem.alpha
 			mna[elem.n1, elem.sn1] = mna[elem.n1, elem.sn1] + alpha
 			mna[elem.n1, elem.sn2] = mna[elem.n1, elem.sn2] - alpha
 			mna[elem.n2, elem.sn1] = mna[elem.n2, elem.sn1] - alpha
 			mna[elem.n2, elem.sn2] = mna[elem.n2, elem.sn2] + alpha
 		elif isinstance(elem, devices.isource):
-			IDC = sympy.Symbol(elem.letter_id+elem.descr, real=True)
+			if elem.is_symbolic:
+				IDC = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True)
+			else:
+				IDC = elem.idc
 			N[elem.n1, 0] = N[elem.n1, 0] + IDC
 			N[elem.n2, 0] = N[elem.n2, 0] - IDC
 		elif isinstance(elem, mosq.mosq_device) or isinstance(elem, ekv.ekv_device):
@@ -276,7 +289,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 			pass
 			#we'll add its lines afterwards
 		else:
-			printing.print_warning("Skipped elem %s: not implemented." % (elem.letter_id+elem.descr,))
+			printing.print_warning("Skipped elem %s: not implemented." % (elem.letter_id.upper()+elem.descr,))
 
 	pre_vde = mna.shape[0]
 	for elem in circ.elements:
@@ -291,14 +304,25 @@ def generate_mna_and_N(circ, opts, ac=False):
 			mna[index, elem.n1] = +1
 			mna[index, elem.n2] = -1
 			if isinstance(elem, devices.vsource):
-				N[index, 0] = -sympy.Symbol(elem.letter_id + elem.descr, real=True)
+				if elem.is_symbolic:
+					VDC = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
+				else:
+					VDC = elem.vdc
+				N[index, 0] = -VDC
 			elif isinstance(elem, devices.evsource):
-				alpha = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
+				if elem.is_symbolic:
+					alpha = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
+				else:
+					alpha = elem.alpha
 				mna[index, elem.sn1] = -alpha
 				mna[index, elem.sn2] = +alpha
 			elif isinstance(elem, devices.inductor):
 				if ac:
-					mna[index, index] = -1*s*sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
+					if elem.is_symbolic:
+						L = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
+					else:
+						L = elem.L
+					mna[index, index] = -s*L
 				else: 
 					pass
 					# already so: commented out				
@@ -314,6 +338,10 @@ def generate_mna_and_N(circ, opts, ac=False):
 					# find its index to know which column corresponds to its current
 					this_index = circ.find_vde_index("L"+elem.descr, verbose=0)
 					for cd in elem.coupling_devices:
+						if cd.is_symbolic:
+							M = sympy.Symbol("M" + cd.descr, real=True)
+						else:
+							M = cd.K
 						# get id+descr of the other inductor (eg. "L32")
 						other_id_wdescr = cd.get_other_inductor("L"+elem.descr)
 						# find its index to know which column corresponds to its current
@@ -321,7 +349,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 						# add the term.
 						#print "other_index: "+str(other_index)
 						#print "this_index: "+str(this_index)
-						mna[pre_vde+this_index,pre_vde+other_index] += -1*s*sympy.Symbol("M" + cd.descr, real=True)
+						mna[pre_vde+this_index,pre_vde+other_index] += -s*M
 						#print mna
 				else: 
 					pass
