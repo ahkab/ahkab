@@ -214,9 +214,9 @@ class lin_axis_iterator:
 			pass #return min
 		elif self.index < self.nsteps:
 			self.current = self.current + self.inc
-			ret = self.current 
 		else:
 			raise StopIteration
+		ret = self.current 
 		self.index = self.index + 1 
 		return ret
 	def __getitem__(self, i):
