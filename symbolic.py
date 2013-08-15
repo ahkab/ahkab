@@ -105,7 +105,7 @@ def solve(circ, tf_source=None, subs=None, opts=None, verbose=3):
 		if options.symb_internal_solver:
 			sol = local_solve(eq, x)
 		else:
-			sol = sympy.solve(eq, x, manual=options.symb_sympy_manual_solver, simplify=False)
+			sol = sympy.solve(eq, x, manual=options.symb_sympy_manual_solver, simplify=True)
 		if sol is not None:		
 			sol.update(sol_h)
 		else:
