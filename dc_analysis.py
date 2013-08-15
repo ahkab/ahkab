@@ -235,9 +235,9 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 	verbose: verbosity level
 	
 	Returns:
-	True, if a solution was found for each sweep value
-	False, if an error occurred (eg invalid start/stop/step values) or there was no solution
-	for a sweep value
+	A results.dc_solution instance, if a solution was found for at least one sweep value.
+	None, if an error occurred (eg invalid start/stop/step values) or there was no solution
+	for any sweep value.
 	"""
 	if data_filename == 'stdout':
 		verbose = 0
@@ -292,7 +292,6 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 	# For each iteration over the source voltage (current) value, the last result is used as x0.
 	# op_analysis will not attempt to guess the op if x0 is not None
 	x = None
-	solved = True
 	
 	sol = results.dc_solution(circ, start, stop, sweepvar=sweep_label, stype=stype, outfile=data_filename)
 	
@@ -314,13 +313,14 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 		op = op_analysis(circ, x0=x, guess=guess, verbose=0)
 		if op is None:
 			tick.hide(verbose>2)
-			solved = False
 			if not options.dc_sweep_skip_allowed:
 				print "Could't solve the circuit for sweep value:", start + index*step
+				solved = False
 				break
 			else:
 				print "Skipping sweep value:", start + index*step
 				continue
+		solved = True
 		sol.add_op(sweep_value, op)
 		
 		if guess:
@@ -338,7 +338,7 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 	else:
 		source_elem.idc = initial_value
 
-	return solved	
+	return sol if solved else None
 
 def op_analysis(circ, x0=None, guess=True, data_filename=None, verbose=3):
 	"""Runs an Operating Point (OP) analysis
