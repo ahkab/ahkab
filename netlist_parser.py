@@ -24,7 +24,7 @@ Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
 """
 
 import sys, imp, math
-import circuit, devices, printing, utilities, mosq, ekv, plotting, options
+import circuit, devices, printing, utilities, diode, mosq, ekv, plotting, options
 
 def parse_circuit(filename, read_netlist_from_stdin=False):
 	"""Parse a SPICE-like netlist and return a circuit instance 
@@ -176,7 +176,7 @@ def main_netlist_parser(circ, netlist_lines, subckts_dict, models):
 				parse_elem_isource(line, circ, line_elements)
 			elif line[0] == "d":
 				elements = elements + \
-				parse_elem_diode(line, circ, line_elements)
+				parse_elem_diode(line, circ, line_elements, models)
 			elif line[0] == 'm': #mosfet
 				elements = elements + \
 				parse_elem_mos(line, circ, line_elements, models)
@@ -232,6 +232,9 @@ def parse_models(models_lines):
 		elif model_type == "mosq":
 			model_iter = mosq.mosq_mos_model(**model_parameters)
 			model_iter.name = model_label
+		elif model_type == "diode":
+			model_parameters.update({'name':model_label})
+			model_iter = diode.diode_model(**model_parameters)
 		else:
 			raise NetlistParseError, ("Unknown model ("+model_type+") on line " + str(line_n) + ".\n\t"+line,)
 		models.update({model_label:model_iter})
@@ -554,13 +557,13 @@ def parse_elem_isource(line, circ, line_elements=None):
 	
 	return [elem]
 
-def parse_elem_diode(line, circ, line_elements=None):
+def parse_elem_diode(line, circ, line_elements=None, models=None):
 	"""Parses a diode from the line supplied, adds its nodes to the circuit
 	instance circ and returns a list holding the diode element and a resistor,
 	if the diode has Rs != 0.
 	
 	Diode syntax:
-	#DX N+ N- <IS=xxx> <M=xxx> <RS=xxx>
+	#DX N+ N- <MODEL_LABEL> <AREA=xxx>
 	
 	Parameters:
 	line: the line, if you have already .split()-ed it, set this to None 
@@ -575,28 +578,24 @@ def parse_elem_diode(line, circ, line_elements=None):
 	if line_elements is None:
 		line_elements = line.split()
 	
-	Io = None
-	m  = None
-	Rs = None
+	Area = None
 	T  = None
 	ic = None
 	off = False
 	
-	if (len(line_elements) < 3):
+	if (len(line_elements) < 4):
 		raise NetlistParseError, ""
 	
-	for index in range(3, len(line_elements)):
+	model_label = line_elements[3] 
+
+	for index in range(4, len(line_elements)):
 		if line_elements[index][0] == '*':
 			break
 		(param, value) = parse_param_value_from_string(line_elements[index])
 		
 		value = convert_units(value)
-		if param == 'is':
-			Io = value
-		elif param == "rs":
-			Rs = value
-		elif param == "m":
-			m = value
+		if param == "area":
+			Area = value
 		elif param == "t":
 			T = value
 		elif param == "ic":
@@ -614,21 +613,19 @@ def parse_elem_diode(line, circ, line_elements=None):
 	n1 = circ.add_node(ext_n1)
 	n2 = circ.add_node(ext_n2)
 	
-	return_list = []
+	#if Rs: #we need to add a Rs on the anode
+	#	new_node = n1
+	#	n1 = circ.generate_internal_only_node_label()
+	#	#print "-<<<<<<<<"+str(n1)+" "+str(n2) +" "+str(new_node)
+	#	rs_elem = devices.resistor(n1=new_node, n2=n1, R=Rs)
+	#	rs_elem.descr = "INT"
+	#	return_list = return_list + [rs_elem]
 	
-	if Rs: #we need to add a Rs on the anode
-		new_node = n1
-		n1 = circ.generate_internal_only_node_label()
-		#print "-<<<<<<<<"+str(n1)+" "+str(n2) +" "+str(new_node)
-		rs_elem = devices.resistor(n1=new_node, n2=n1, R=Rs)
-		rs_elem.descr = "INT"
-		return_list = return_list + [rs_elem]
-	
-	elem = devices.diode(n1=n1, n2=n2, Io=Io, m=m, T=T, ic=ic, off=off)
+	if not models.has_key(model_label):
+		raise NetlistParseError, "Unknown model id: "+model_label
+	elem = diode.diode(n1=n1, n2=n2, model=models[model_label], AREA=Area, T=T, ic=ic, off=off)
 	elem.descr = line_elements[0][1:]
-	return_list = return_list + [elem]
-	
-	return return_list
+	return [elem]
 
 def parse_elem_mos(line, circ, line_elements, models):
 	"""Parses a mos from the line supplied, adds its nodes to the circuit
@@ -710,7 +707,7 @@ def parse_elem_mos(line, circ, line_elements, models):
 	elif isinstance(models[model_label], mosq.mosq_mos_model):
 		elem = mosq.mosq_device(nd, ng, ns, nb, w, l, models[model_label], m, n)
 	else:
-		raise NetlistParseError, "Unknown model type: "+model_label
+		raise NetlistParseError, "Unknown MOS model type: "+model_label
 
 	elem.descr = line_elements[0][1:]
 	

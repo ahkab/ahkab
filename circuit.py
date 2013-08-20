@@ -20,7 +20,7 @@
 import sys
 
 import devices
-import ekv, mosq
+import diode, ekv, mosq
 import printing 
 
 # will be added here by netlist_parser and circuit instances
@@ -74,7 +74,7 @@ class circuit:
 	Example:
 	
 	mycircuit = circuit.circuit(title="Example circuit", filename=None)
-	# no filename since there will be no deck associated with thios circuit.
+	# no filename since there will be no deck associated with this circuit.
 	# get the ref node (gnd)
 	gnd = mycircuit.get_ground_node()
 	# add a node named n1 and a 600 ohm resistor connected between n1 and gnd
@@ -96,7 +96,7 @@ class circuit:
 
 	"""
 
-	def __init__(self, title, filename):
+	def __init__(self, title, filename=None):
 		self.title = title
 		self.filename = filename
 		self.nodes_dict = {} # {int_node:ext_node}
@@ -291,8 +291,11 @@ class circuit:
 		elif model_type == "mosq":
 			model_iter = mosq.mosq_mos_model(**model_parameters)
 			model_iter.name = model_label
+		elif model_type == "diode":
+			model_iter = diode.diode_model(**model_parameters)
+			model_iter.name = model_label
 		else:
-			raise CircuitError, "Unknown model %s" % (model_type,)
+			raise CircuitError, "Unknown model type %s" % (model_type,)
 		self.models.update({model_label:model_iter})
 		return self.models
 			
@@ -468,7 +471,7 @@ class circuit:
 		self.elements = self.elements + [elem]
 		return True
 
-	def add_diode(self, name, ext_n1, ext_n2, Is=None, Rs=None, m=None, T=None, ic=None, off=False):
+	def add_diode(self, name, ext_n1, ext_n2, model_label, models=None, Area=None, T=None, ic=None, off=False):
 		"""Adds a diode to the circuit (also takes care that the nodes 
 		are added as well).
 	
@@ -476,23 +479,21 @@ class circuit:
 		name (string): the diode name (eg "D1"). The first letter is always D.
 		ext_n1, ext_n2 (string): the nodes to which the element is connected. 
 					eg. "in" or "out_a"
-		Is (float): Inverse sat current (optional)
-		rs (float): series resistance (optional)
-		m (int): shunt multiplier
-		T (float): temperature
-		ic (float): initial condition (not implemented yet)
+		Area (float): Scaled device area (optional, defaults to 1.0)
+		T (float): operating temperature (no temperature dependence yet)
+		ic (float): initial condition (not really mplemented yet)
 
 		Returns: True
 		"""
 		n1 = self.add_node(ext_n1)
 		n2 = self.add_node(ext_n2)
+
+		if models is None:
+			models = self.models
+		if not models.has_key(model_label):
+			raise ModelError, "Unknown diode model id: "+model_label
 	
-		if Rs is not None: #we add a Rs on the anode
-			new_node = self.generate_internal_only_node_label()
-			self.add_resistor(name="RS_"+name, ext_n1=ext_n1, ext_n2=new_node, R=Rs)
-			n1 = self.add_node(new_node)
-	
-		elem = devices.diode(n1=n1, n2=n2, Io=Is, m=m, T=T, ic=ic, off=off)
+		elem = diode.diode(n1=n1, n2=n2, model=models[model_label], AREA=Area, T=T, ic=ic, off=off)
 		elem.descr = name[1:]
 		self.elements = self.elements + [elem]
 

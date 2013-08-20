@@ -24,7 +24,8 @@ be somewhat uniform.
 
 import sys
 import numpy
-import circuit, devices, options, mosq, ekv
+import circuit, devices, options
+import diode, mosq, ekv
 	
 def print_circuit(circ):
 	"""Prints the whole circuit to stdout, in a format similar to 
@@ -41,7 +42,7 @@ def print_circuit(circ):
 	for elem in circ.elements:
 		print_netlist_elem_line(elem, circ)
 	
-	print "(analysis directives are omitted)"
+	print "(models and analysis directives are omitted)"
 	return None
 	
 def print_netlist_elem_line(elem, circ):
@@ -59,7 +60,7 @@ def print_netlist_elem_line(elem, circ):
 	
 	sys.stdout.write(elem.letter_id.upper() + elem.descr + " ")
 	
-	if isinstance(elem, devices.resistor) or isinstance(elem, devices.diode) or \
+	if isinstance(elem, devices.resistor) or isinstance(elem, diode.diode) or \
 	isinstance(elem, devices.isource) or isinstance(elem, devices.vsource) or \
 	isinstance(elem, devices.capacitor) or isinstance(elem, devices.inductor):
 		sys.stdout.write(ext_n1 + " " + ext_n2 + " ")

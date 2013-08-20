@@ -870,6 +870,10 @@ def modify_x0_for_ic(circ, x0):
 	return xnew
 
 def convergence_check(x, dx, residuum, nv_minus_one, debug=False):
+	if not hasattr(x, 'shape'):
+		x = numpy.mat(numpy.array(x))
+		dx = numpy.mat(numpy.array(dx))
+		residuum = numpy.mat(numpy.array(residuum))
 	vcheck, vresults = voltage_convergence_check(x[:nv_minus_one, 0], dx[:nv_minus_one, 0], residuum[:nv_minus_one, 0])
 	icheck, iresults = current_convergence_check(x[nv_minus_one:], dx[nv_minus_one:], residuum[nv_minus_one:])
 	return vcheck and icheck, vresults+iresults
@@ -882,6 +886,10 @@ def current_convergence_check(x, dx, residuum, debug=False):
 
 def custom_convergence_check(x, dx, residuum, er, ea, eresiduum, vector_norm=lambda v: abs(v), debug=False):
 	all_check_results = []
+	if not hasattr(x, 'shape'):
+		x = numpy.mat(numpy.array(x))
+		dx = numpy.mat(numpy.array(dx))
+		residuum = numpy.mat(numpy.array(residuum))
 	if x.shape[0]:
 		for i in range(x.shape[0]):
 			if vector_norm(dx[i,0]) < er*vector_norm(x[i,0]) + ea and vector_norm(residuum[i,0]) < eresiduum:
