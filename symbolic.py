@@ -31,6 +31,7 @@ import circuit
 import devices 
 import ekv 
 import mosq
+import diode
 import printing
 import options
 
@@ -276,7 +277,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 				mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/r0
 				mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1/r0
 				mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1/r0
-		elif isinstance(elem, devices.diode):
+		elif isinstance(elem, diode.diode):
 			gd = sympy.Symbol("g"+elem.letter_id+elem.descr)
 			mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + gd
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gd
