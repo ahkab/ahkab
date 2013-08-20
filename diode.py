@@ -64,7 +64,7 @@ class diode:
 	def _get_T(self):
 		return self.device.T
 	def set_temperature(self, T):
-		"""Set the operating temperature IN KELVIN degrees"
+		"""Set the operating temperature IN KELVIN degrees"""
 		self.device.T = T
 	def __str__(self):
 		T = self._get_T()
@@ -210,7 +210,6 @@ class diode_model:
 	def __str__(self):
 		pass
 	def set_temperature(self, T):
-		#print "T:%g => Eg: %g, IS: %g, BV:%g, RS:%g" % (self.T, self.EG, self.IS, self.BV, self.RS)
 		T = float(T)
 		self.EG = constants.si.Eg(T)
 		ni = constants.si.ni(T)
@@ -219,4 +218,4 @@ class diode_model:
 		self.BV = self.BV - self.TBV*(T-self.T)
 		self.RS = self.RS*(1+self.TRS*(T - self.T))
 		self.T = T
-		#print "T:%g => Eg: %g, IS: %g, BV:%g, RS:%g" % (self.T, self.EG, self.IS, self.BV, self.RS)
+
