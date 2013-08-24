@@ -63,7 +63,7 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 	printing.print_info_line((tmpstr, 5), verbose)
 	del tmpstr
 	
-	printing.print_info_line(("Starting AC analysis: ", 3), verbose)
+	printing.print_info_line(("Starting AC analysis: ", 1), verbose)
 	tmpstr = "w: start = %g Hz, stop = %g Hz, %d steps" % (start, stop, nsteps)
 	printing.print_info_line((tmpstr, 3), verbose)
 	del tmpstr
@@ -145,10 +145,10 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 	tick.hide(verbose > 1)
 	
 	if solved:
-		printing.print_info_line(("done.", 3), verbose)
+		printing.print_info_line(("done.", 1), verbose)
 		ret_value = sol
 	else:
-		print "failed."
+		printing.print_info_line(("failed.", 1), verbose)
 		ret_value =  None
 	
 	return ret_value
