@@ -23,7 +23,8 @@ This is the results module of the simulator.
 import sys, time, copy
 import numpy
 import circuit, devices, printing, options, constants, csvlib
-VERSION = "0.05"
+from ahkab import __version__
+VERSION = __version__
 csvlib.SEPARATOR = "\t"
 
 	
