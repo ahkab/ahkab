@@ -123,6 +123,8 @@ def get_headers_index(headers, load_headers):
 			his = his + [lowcase_headers.index(lh.lower())]
 		except ValueError:
 			print "(W): header "+lh+" not found. Skipping."
+		except AttributeError:
+			print "(W): got spurious header "+str(lh)+" (not a string). Skipping."
 	return his
 
 def get_csv_headers(filename):
