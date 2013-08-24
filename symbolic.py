@@ -33,6 +33,7 @@ import ekv
 import mosq
 import diode
 import printing
+import results
 import options
 
 def solve(circ, tf_source=None, subs=None, opts=None, verbose=3):
@@ -60,16 +61,16 @@ def solve(circ, tf_source=None, subs=None, opts=None, verbose=3):
 		subs = {} # no subs by default
 
 	if not opts['ac']:
-		printing.print_info_line(("Starting symbolic DC...", 1), verbose)
+		printing.print_info_line(("Starting symbolic DC analysis...", 1), verbose)
 	else:
-		printing.print_info_line(("Starting symbolic AC...", 1), verbose)		
+		printing.print_info_line(("Starting symbolic AC analysis...", 1), verbose)		
 		
-	printing.print_info_line(("Building symbolic MNA, N and x...", 2), verbose, print_nl=False)
+	printing.print_info_line(("Building symbolic MNA, N and x...", 3), verbose, print_nl=False)
 	mna, N, subs_g = generate_mna_and_N(circ, opts, opts['ac'])
 	x = get_variables(circ)
 	mna = mna[1:, 1:]
 	N = N[1:, :]
-	printing.print_info_line((" done.", 2), verbose)	
+	printing.print_info_line((" done.", 3), verbose)	
 
 	printing.print_info_line(("Performing variable substitutions...", 5), verbose)
 	mna, N = apply_substitutions(mna, N, subs)
@@ -79,7 +80,7 @@ def solve(circ, tf_source=None, subs=None, opts=None, verbose=3):
 	printing.print_info_line(("N matrix (reduced):", 5), verbose)	
 	if verbose > 5:	print sympy.sstr(N)
 
-	printing.print_info_line(("Building equations...", 2), verbose)	
+	printing.print_info_line(("Building equations...", 3), verbose)	
 	eq = []
 	for i in to_real_list(mna * x + N):
 		eq.append(sympy.Eq(i, 0))
@@ -92,7 +93,7 @@ def solve(circ, tf_source=None, subs=None, opts=None, verbose=3):
 		#print "Matrix is singular: ", (mna.det() == 0)
 	#print -1.0*mna.inv()*N #too heavy
 	#print sympy.solve_linear_system(mna.row_join(-N), x)
-	printing.print_info_line(("Performing auxiliary simplification...", 2), verbose)	
+	printing.print_info_line(("Performing auxiliary simplification...", 3), verbose)	
 	eq, x, sol_h = help_the_solver(eq, x)
 		
 	if len(eq):
@@ -101,7 +102,7 @@ def solve(circ, tf_source=None, subs=None, opts=None, verbose=3):
 			printing.print_symbolic_equations(eq)
 			print "To be solved for:"
 			print x
-			printing.print_info_line(("Solving...", 2), verbose)	
+			printing.print_info_line(("Solving...", 1), verbose)	
 
 		if options.symb_internal_solver:
 			sol = local_solve(eq, x)
@@ -138,6 +139,8 @@ def solve(circ, tf_source=None, subs=None, opts=None, verbose=3):
 	else:
 		tfs = None
 	
+	# convert to a results instance
+	sol = results.symbolic_solution(sol, subs, circ)
 	return sol, tfs
 
 def calculate_gains(sol, xin, optimize=True):

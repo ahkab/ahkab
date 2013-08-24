@@ -23,8 +23,7 @@ This is the results module of the simulator.
 import sys, time, copy
 import numpy
 import circuit, devices, printing, options, constants, csvlib
-from ahkab import __version__
-VERSION = __version__
+VERSION = "0.06"
 csvlib.SEPARATOR = "\t"
 
 	
@@ -921,6 +920,107 @@ class pss_solution:
 			next = self.iter_headers[self.iter_index], self.iter_data[self.iter_index, :]
 			self.iter_index += 1
 		return next
+
+class symbolic_solution:
+	def __init__(self, results_dict, substitutions, circ):
+		"""Holds a set of Symbolic results.
+			results_dict: the results dict returned by sympy.solve(),
+			substitutions: the substitutions (dict) employed before solving,
+			circ: the circuit instance of the simulated circuit.
+		"""
+		self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+		self.netlist_file = circ.filename
+		self.netlist_title = circ.title
+		self.substitutions = substitutions
+
+		# the keys are strings
+		#self.symbols = map(str, results_dict.keys())
+		self.results = case_insensitive_dict()
+		for symbol, result in results_dict.iteritems():
+			self.results.update({str(symbol):result})
+		
+		self._symbols = results_dict.keys() # keep them, they're useful
+		for expr in results_dict.values():
+			for symb in expr.atoms():
+				if symb.is_Symbol and not symb in self._symbols:
+					self._symbols.append(symb)
+
+	def as_symbol(self, variable):
+		symbs = filter(lambda x: x.name.lower() == variable.lower(), self._symbols)
+		if len(symbs) == 0:
+			raise ValueError, "No symbol %s in the results set."%(variable,)
+		else:
+			return symbs[0]
+			
+	def as_symbols(self, spacedstr):
+		return map(self.as_symbol, spacedstr.split())
+
+	def __repr__(self):
+		return self.results.__repr__()
+
+	def __str__(self):
+		str_repr = "Symbolic simulation results for %s (netlist %s).\nRun on %s.\n" % \
+		(self.netlist_title, self.netlist_file, self.timestamp)
+		keys = self.results.keys()
+		keys.sort()	
+		for key in keys:
+			str_repr +=  str(key) + "\t = " + str(self.results[key]) +"\n"
+		return str_repr
+
+	def get_type(self):
+		return "Symbolic"
+
+	# do we need this method?
+	#def asmatrix(self):
+	#	return self.x
+
+	# Access as a dictionary:
+	def __len__(self):
+		"""Get the number of variables in the results set."""
+		return len(self.results)
+
+	def __getitem__(self, name):
+		"""Get a specific header, as from a dictionary."""
+		return self.results[str(name).upper()]
+
+	def get(self, name, default=None):
+		name = str(name).upper()
+		try:
+			return self.results[name]
+		except KeyError:
+			return default
+
+	def has_key(self, name):
+		"""Determine whether the result set contains a variable."""
+		return str(name).upper() in self.results
+
+	def __contains__(self, name):
+		"""Determine whether the result set contains a variable."""
+		return str(name).upper() in self.results
+
+	def keys(self):
+		"""Get all of the results set's variable's names."""
+		return self.results.keys()
+
+	def values(self):
+		"""Get all of the results set's variable's values."""
+		return self.results.values()
+
+	def items(self):
+		return self.results.items()
+
+	# iterator methods
+	def __iter__(self):
+		return self
+
+	def next(self):
+		if self.iter_index == len(self.results.keys())-1:
+			self.iter_index = 0
+			raise StopIteration
+		else:
+			self.iter_index += 1
+		return self.results.keys()[self.iter_index], self.results[self.symbols[self.iter_index]]
+
 
 class case_insensitive_dict:
 	def __init__(self):
