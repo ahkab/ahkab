@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7-32
+#!/usr/bin/env python
 # -*- coding: iso-8859-1 -*-
 # ahkab.py
 # The frontend of the simulator
