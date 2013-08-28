@@ -215,7 +215,7 @@ def get_next_file_and_close_current(file_list, file_index):
 def parse_models(models_lines):
 	models = {}
 	for line, line_n in models_lines:
-		tokens = line.split()
+		tokens = line.replace("(","").replace(")", "").split()
 		if len(tokens) < 3:
 			raise NetlistParseError, ("Syntax error in model declaration on line " + str(line_n) + ".\n\t"+line,)
 		model_label = tokens[2]
