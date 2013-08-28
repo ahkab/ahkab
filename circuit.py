@@ -18,6 +18,7 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import math
 
 import devices
 import diode, ekv, mosq
@@ -487,7 +488,6 @@ class circuit:
 		"""
 		n1 = self.add_node(ext_n1)
 		n2 = self.add_node(ext_n2)
-
 		if models is None:
 			models = self.models
 		if not models.has_key(model_label):
@@ -751,6 +751,10 @@ class NodeNotFoundError(Exception):
 
 class CircuitError(Exception):
 	"""General circuit assembly exception."""
+	pass
+
+class ModelError(Exception):
+	"""Model not found exception."""
 	pass
 
 class subckt:
