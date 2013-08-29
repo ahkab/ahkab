@@ -270,7 +270,7 @@ class circuit:
 		return '0'
 	def get_elem_by_name(self, name):
 		for e in self.elements:
-			if i(e.letter_id + elem.descr).lower() == name.lower():
+			if (e.letter_id + e.descr).lower() == name.lower():
 				return e
 		return None
 
@@ -718,7 +718,7 @@ class circuit:
 		Returns:
 		the index (int)
 		"""
-		index = index - len(circ.nodes) + 1
+		index = index - len(self.nodes) + 1
 		ni = 0
 		found = False
 		for e in self.elements:
