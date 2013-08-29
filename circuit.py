@@ -482,7 +482,11 @@ class circuit:
 					eg. "in" or "out_a"
 		Area (float): Scaled device area (optional, defaults to 1.0)
 		T (float): operating temperature (no temperature dependence yet)
-		ic (float): initial condition (not really mplemented yet)
+		ic (float): initial condition (not really implemented yet)
+		model_label (string): the diode model identifier. The model needs to be added 
+		                      first, then the elements using it.
+		models (dict(identifier:instance), optional): list of available model 
+		    instances. If not set or None, the circuit models will be used (recommended).
 
 		Returns: True
 		"""
