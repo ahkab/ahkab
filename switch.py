@@ -27,7 +27,7 @@ sn1 o--+         +--o n1
       +-+      \ o  
       |R|       \ 
       +-+        +
-       |  R=Inf  |
+       |         |
 sn2 o--+         +--o n2
 
 
@@ -38,6 +38,29 @@ import constants, options, utilities, printing
 import math 
 
 class switch_device:
+	"""This is a general switch element.
+
+	It has the following structure:
+
+	sn1 o--+         +--o n1
+	       |         |
+	      +-+      \ o  
+	      |R|       \ 
+	      +-+        +
+	       |         |
+	sn2 o--+         +--o n2
+
+	The behavior is set by the model supplied.
+
+	The device instance calls the following methods in the model:
+	get_i(ports_v, device) - output current
+	get_go(ports_v, device) - ouput conductance
+	get_gm(ports_v, device) - output transconductance
+	get_dc_guess(self, is_on) - guesses for OP
+
+	The device instance accesses the following attributes:
+	name, string, the device label
+	"""
 	def __init__(self, n1, n2, sn1, sn2, model, ic=None):
 		"""Voltage controlled switch device
 		Parameters:
@@ -45,7 +68,7 @@ class switch_device:
 			n2: output node (-)
 			sn1: input node (+)
 			sn2: input node (-)
-			model: pass an instance of switch_model
+			model: pass an instance of (v)switch_model
 			ic (optional): the initial conditions: True->on, False->off.
 		
 		Selected methods:
@@ -68,11 +91,13 @@ class switch_device:
 		self.letter_id = 'S'
 		self.is_nonlinear = True
 		self.is_symbolic = True
-		self.dc_guess = [self.model.VT*(.9+self.device.is_on*.2)]*2 
+		self.dc_guess = self.model.get_dc_guess()
 
 	
 	def get_drive_ports(self, op):
-		"""Returns a tuple of tuples of ports nodes, as:
+		"""Get the ports that drive the output ports.
+
+		Returns a tuple of tuples of ports nodes, as:
 		(port0, port1, port2...)
 		Where each port is in the form:
 		port0 = (nplus, nminus)
@@ -80,6 +105,12 @@ class switch_device:
 		return self.ports
 
 	def get_output_ports(self):
+		"""Get the output port, which is (n1,n2) in this case.
+		Returns a tuple of tuples of ports nodes, as:
+		(port0, port1, port2...)
+		Where each port is in the form:
+		port0 = (nplus, nminus)
+		"""
 		return ((self.n1, self.n2),)
 	
 	def __str__(self):
@@ -96,19 +127,29 @@ class switch_device:
 		
 		"""
 		ret = self.model.get_i(ports_v, self.device)
-		
+		print str(ports_v)+" Isw: %g\tRo: %g\tgm: %g" % (ret, 1/self.g(0, ports_v, 0), self.g(0, ports_v, 1))
 		return ret
 
 	def update_status_dictionary(self, ports_v):
+		"""Updates an internal dictionary that can then be used to provide
+		information to the user regarding the status of the element.
+		
+		Normally, one would call either:
+		
+		get_op_info(ports_v)
+		print_op_info(ports_v)
+		"""
 		if self.opdict is None:
 			self.opdict = {}
 		if not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('R')): 
 			self.opdict['state'] = ports_v[0]		
-			self.opdict['R'] = 1.0/self.g(0, ports_v[0], 0)
-			self.opdict['I'] = self.i(0, ports_v[0])
+			self.opdict['R'] = float(1.0/self.g(0, ports_v[0], 0))
+			self.opdict['I'] = float(self.i(0, ports_v[0]))
 			self.opdict['STATUS'] = self.device.is_on
 		
 	def print_op_info(self, ports_v):
+		"""Prints out the information regarding the OP status.
+		"""
 		arr = self.get_op_info(ports_v)
 		print arr,
 
@@ -116,8 +157,11 @@ class switch_device:
 		"""Operating point info, for design/verification. """
 		self.update_status_dictionary(ports_v)
 
-		arr = [["S"+self.descr, self.opdict['STATUS'], "VO [V]:", self.opdict['state'][0], \
-                      "VS [V]:", self.opdict['state'][1], "R [ohm]:", self.opdict["R"], \
+		arr = [["S"+self.descr, 'STATUS:', \
+                      "ON"*self.opdict['STATUS']+"OFF"*(not self.opdict['STATUS']), \
+                      "VO [V]:", float(self.opdict['state'][0]), \
+                      "VS [V]:", float(self.opdict['state'][1]), \
+                      "R [ohm]:", self.opdict["R"], \
                       "I [A]:", self.opdict['I'], "",""],]
 		#arr.append([  "", "", "", "", "", ""])
 
@@ -157,6 +201,28 @@ ROFF_DEFAULT = 1./options.gmin
 
 class vswitch_model:
 	"""Voltage-controlled switch model.
+
+	sn1 o--+         +--o n1
+	       |         |
+	      +-+      \ o  
+	      |R|       \ 
+	      +-+        +
+	       |         |
+	sn2 o--+         +--o n2
+
+
+	* R is infinite.
+	* The voltage needed to close the switch is: V(sn1)-V(sn2) > VT+VH
+	* To re-open it, one needs: V(sn1)-V(sn2) < VT-VH
+
+	The switch commutes between two statuses:
+
+	* ROUT = ROFF
+	* ROUT = RON
+
+	None of which can be set to zero or infinite.
+
+	The switching characteristics are modeled with tanh(x).
 	"""
 	def __init__(self, name, VT=None, VH=None, RON=None, ROFF=None):
 		self.name = name
@@ -171,13 +237,19 @@ class vswitch_model:
 		self.SLOPE = 1e2
 
 	def _get_V(self, is_on):
+		"""Get the effective switching voltage (hyst taken into account)
+		"""
 		return self.VT + self.VH*2*(not is_on) - self.VH
 
 	def _set_status(self, is_on): 
+		"""Set the switch status, which meeans setting the effective 
+		switching voltage self.V (w hyst taken into account) 
+		"""
 		self.V = self.VT + self.VH*2*(not is_on) - self.VH
-		#print "Setting VT to", self.V
 
 	def _update_status(self, vin, dev, debug=False):
+		"""Check the switch status and move to the other if needed. 
+		"""
 		Vtest = self._get_V(dev.is_on) 
 		R1 = self.A*math.tanh((vin - Vtest)*self.SLOPE) + self.B
 		Vtest = self._get_V(not dev.is_on) 
@@ -193,6 +265,11 @@ class vswitch_model:
 			self._set_status(dev.is_on) 
 		self.is_on = dev.is_on
 		
+	def get_dc_guess(self, is_on):
+		"""Returns a list of two floats to be used as initial guesses for the OP analysis
+		"""
+		return [self.VT*(.9 + is_on*.2)]*2 
+
 	def print_model(self):
 		"""All the internal parameters of the model get printed out, 
 		for visual inspection. 
@@ -219,31 +296,71 @@ class vswitch_model:
 		"""Returns the source to output transconductance or d(I)/d(Vsn1-Vsn2)."""
 		self._update_status(vin, dev)
 		gm = self.A*self.SLOPE*(math.tanh(self.SLOPE*(self.V - vin))**2 - 1)/(self.A*math.tanh(self.SLOPE*(self.V - vin)) - self.B)**2
-		return gm
+		return gm+options.gmin
 
 if __name__ == '__main__':
-	import pylab, numpy
-	VT = 0.; VH=1.; RON=100;
-	m = vswitch_model(name='test', VT=VT, VH=VH, RON=RON, ROFF=1e12)
-	VO = 5.
-	VMAX = 2.
-	vo = VO
-	i = []
-	go = []
+	# This is a small test to check all is OK
+	import pylab, numpy, numpy.random
+	VT = 10*numpy.random.randn()
+	VH = abs(2*numpy.random.randn())
+	RON = abs(1e3*numpy.random.randn())
+	ROFF = abs(1e4*numpy.random.randn())
+	#VT = 0.; VH=1.; RON=100;
+	print "Testing a switch with:"
+	print "VT: %g\tVH: %g\tRON:%g\tROFF:%g"%(VT, VH, RON, ROFF)
+	m = vswitch_model(name='test', VT=VT, VH=VH, RON=RON, ROFF=ROFF)
+	VOs = [-12.5, -7.5, -2.5, 2.5, 7.5, 12.5]
+	VIs = [-12.5, -7.5, -2.5, 2.5, 7.5, 12.5]
+	VMAX = 12.5
 	POINTS = 200
 	class dev_class: pass
 	device = dev_class()
+	#TEST 1, VO
+	vsweep = (2*VMAX*numpy.arange(POINTS)/float(POINTS)-VMAX)
+	vsweep = numpy.concatenate((vsweep, vsweep[::-1]))
+	vsweep = vsweep.tolist()
 	device.is_on = False
-	vos = (2*VMAX*numpy.arange(POINTS)/float(POINTS)-VMAX)
-	vos = numpy.concatenate((vos, vos[::-1]))
-	for vin in vos.tolist():
-		i += [m.get_i((vo, vin), device)]
-		go += [1./m.get_go((vo, vin), device)]
-	pylab.subplot(211)
-	pylab.plot(vos, i, 'o-')
-	pylab.ylabel('Output current [V]')
-	pylab.subplot(212)
-	pylab.plot(vos, go, 'o-', color='g')
-	pylab.ylabel('Output resistance [V]')
-	pylab.xlabel('Input voltage [V]')
+	pylab.hold(True)
+	for vin in VIs:
+		i = []
+		go = []
+		gon = []
+		for vo in vsweep: 
+			i += [m.get_i((vo, vin), device)]
+			go += [m.get_go((vo, vin), device)]
+			gon += [i[-1]/(vo+1e-12)]
+		pylab.subplot(221)
+		pylab.plot(vsweep, i, 'o-', label='VIN=%g'%(vin,))
+		pylab.ylabel('Output current [A]')
+		pylab.xlabel('Output voltage [V]')
+		pylab.subplot(222)
+		pylab.plot(vsweep, go, 'o', color='g')
+		pylab.plot(vsweep, gon, '-')
+		pylab.ylabel('Output g [1/V]')
+		pylab.xlabel('Output voltage [V]')
+	for vo in VOs:
+		i = []
+		go = []
+		gon = []
+		for vin in vsweep: 
+			i += [m.get_i((vo, vin), device)]
+			go += [m.get_go((vo, vin), device)]
+			gon += [i[-1]/(vo+1e-12)]
+		pylab.subplot(223)
+		pylab.plot(vsweep, i, 'o-', label='VO=%g'%(vo,))
+		pylab.xlabel('Input voltage [V]')
+		pylab.ylabel('Output current [A]')
+		pylab.subplot(224)
+		pylab.plot(vsweep, go, 'o', color='g', label='VO=%g'%(vo,))
+		pylab.plot(vsweep, gon, '-', label='VO=%g'%(vo,))
+		pylab.ylabel('Output g [1/V]')
+		pylab.xlabel('Input voltage [V]')
+	pylab.subplot(221)
+	pylab.legend()
+	pylab.subplot(222)
+	pylab.legend()
+	pylab.subplot(223)
+	pylab.legend()
+	pylab.subplot(224)
+	pylab.legend()
 	pylab.show()
