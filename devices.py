@@ -112,6 +112,7 @@ class resistor:
 	is_symbolic = True
 	def __init__(self, n1, n2, R):
 		self.R = R
+		self.v = R
 		self.n1 = n1
 		self.n2 = n2
 	def __str__(self):
@@ -135,6 +136,7 @@ class capacitor:
 	is_symbolic = True
 	def __init__(self, n1, n2, C, ic=None):
 		self.C = C
+		self.v = C
 		self.n1 = n1
 		self.n2 = n2
 		self.ic = ic
@@ -161,6 +163,7 @@ class inductor:
 	is_symbolic = True
 	def __init__(self, n1, n2, L, ic=None):
 		self.L = L
+		self.v = L
 		self.n1 = n1
 		self.n2 = n2
 		self.ic = ic
@@ -268,6 +271,7 @@ class vsource:
 	dc_guess = None #defined in init
 	def __init__(self, n1, n2, vdc=None, abs_ac=None, arg_ac=0):
 		self.vdc = vdc
+		self.v = 1.0
 		self.n1 = n1
 		self.n2 = n2
 		self.abs_ac = abs_ac
