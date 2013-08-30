@@ -95,7 +95,6 @@ class switch_device:
 		      It has no effect here. Set it to None during DC analysis.
 		
 		"""
-		#print ports_v
 		ret = self.model.get_i(ports_v, self.device)
 		
 		return ret
@@ -169,25 +168,27 @@ class vswitch_model:
 		self.B = (self.RON + self.ROFF)/2.
 		self.is_on = False
 		self._set_status(self.is_on)
-		self.SLOPE = 1e1
+		self.SLOPE = 1e2
+
+	def _get_V(self, is_on):
+		return self.VT + self.VH*2*(not is_on) - self.VH
 
 	def _set_status(self, is_on): 
 		self.V = self.VT + self.VH*2*(not is_on) - self.VH
-		#print self.V, self.VT
+		#print "Setting VT to", self.V
 
-	def _update_status(self, vin, dev):
-		self._set_status(dev.is_on) 
-		R1 = self.A*math.tanh((vin - self.V)*self.SLOPE) + self.B
-		self._set_status(not dev.is_on) 
-		R2 = self.A*math.tanh((vin - self.V)*self.SLOPE) + self.B
+	def _update_status(self, vin, dev, debug=False):
+		Vtest = self._get_V(dev.is_on) 
+		R1 = self.A*math.tanh((vin - Vtest)*self.SLOPE) + self.B
+		Vtest = self._get_V(not dev.is_on) 
+		R2 = self.A*math.tanh((vin - Vtest)*self.SLOPE) + self.B
 		self._set_status(dev.is_on) 
 		if vin > self.V and not dev.is_on and R1-R2 == 0.0:
+			if debug: print "Switching ON: %g" %(vin,)
 			dev.is_on = True
 			self._set_status(dev.is_on) 
-		else:
-			print vin > self.V, not dev.is_on,  R1-R2 
-			print R1, R2
 		if vin < self.V and dev.is_on and R1-R2 == 0.0:
+			if debug: print "Switching OFF: %g" %(vin,)
 			dev.is_on = False
 			self._set_status(dev.is_on) 
 		self.is_on = dev.is_on
@@ -206,8 +207,6 @@ class vswitch_model:
 		"""
 		self._update_status(vin, dev)
 		R = self.A*math.tanh((vin - self.V)*self.SLOPE) + self.B
-		#print vout/R, dev.is_on
-		#if dev.is_on: raise Exception
 		return vout/R
 		
 	def get_go(self, (vout, vin), dev, debug=False):
@@ -220,26 +219,31 @@ class vswitch_model:
 		"""Returns the source to output transconductance or d(I)/d(Vsn1-Vsn2)."""
 		self._update_status(vin, dev)
 		gm = self.A*self.SLOPE*(math.tanh(self.SLOPE*(self.V - vin))**2 - 1)/(self.A*math.tanh(self.SLOPE*(self.V - vin)) - self.B)**2
-		#gm = -vout*self.A*self.SLOPE/((self.A*math.tanh(self.SLOPE*(self.V - vin)) - self.B)**2*(self.SLOPE**2*(self.V - vin)**2 + 1))
 		return gm
 
 if __name__ == '__main__':
 	import pylab, numpy
-	VT = 1.; VH=0.; RON=100;
+	VT = 0.; VH=1.; RON=100;
 	m = vswitch_model(name='test', VT=VT, VH=VH, RON=RON, ROFF=1e12)
 	VO = 5.
-	VMAX = 5.
+	VMAX = 2.
 	vo = VO
 	i = []
 	go = []
+	POINTS = 200
 	class dev_class: pass
 	device = dev_class()
 	device.is_on = False
-	vos = (2*VMAX*numpy.arange(100)/100.-VMAX)
+	vos = (2*VMAX*numpy.arange(POINTS)/float(POINTS)-VMAX)
 	vos = numpy.concatenate((vos, vos[::-1]))
 	for vin in vos.tolist():
 		i += [m.get_i((vo, vin), device)]
-		go += [m.get_go((vo, vin), device)]
-	pylab.plot(vos, i)
-	pylab.plot(vos, go)
+		go += [1./m.get_go((vo, vin), device)]
+	pylab.subplot(211)
+	pylab.plot(vos, i, 'o-')
+	pylab.ylabel('Output current [V]')
+	pylab.subplot(212)
+	pylab.plot(vos, go, 'o-', color='g')
+	pylab.ylabel('Output resistance [V]')
+	pylab.xlabel('Input voltage [V]')
 	pylab.show()
