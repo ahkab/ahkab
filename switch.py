@@ -91,7 +91,7 @@ class switch_device:
 		self.letter_id = 'S'
 		self.is_nonlinear = True
 		self.is_symbolic = True
-		self.dc_guess = self.model.get_dc_guess()
+		self.dc_guess = self.model.get_dc_guess(self.device.is_on)
 
 	
 	def get_drive_ports(self, op):
@@ -127,7 +127,8 @@ class switch_device:
 		
 		"""
 		ret = self.model.get_i(ports_v, self.device)
-		print str(ports_v)+" Isw: %g\tRo: %g\tgm: %g" % (ret, 1/self.g(0, ports_v, 0), self.g(0, ports_v, 1))
+		# This may be used for debugging
+		#print str(ports_v)+" Isw: %g\tRo: %g\tgm: %g" % (ret, 1/self.g(0, ports_v, 0), self.g(0, ports_v, 1))
 		return ret
 
 	def update_status_dictionary(self, ports_v):
