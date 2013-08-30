@@ -78,7 +78,7 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 			continue
 
 		if an["type"] == "op":
-			if an["guess_label"] is None:
+			if not an.has_key('guess_label') or an["guess_label"] is None:
 				x0_op = dc_analysis.op_analysis(circ, guess=guess, data_filename=data_filename, verbose=verbose)
 			else:
 				if not an["guess_label"] in x0_ic_dict:
