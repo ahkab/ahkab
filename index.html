@@ -28,32 +28,86 @@
         </ul>
       </header>
       <section>
-        <h3>
-<a name="ahkab" class="anchor" href="#ahkab"><span class="octicon octicon-link"></span></a>Ahkab</h3>
+        <p><img src="https://github.com/ahkab/ahkab/wiki/images/logo.png" alt="logo"></p>
 
-<p>This project aims to develop a SPICE-like electronic circuit simulator. The code should be easy to read and modify, the main language is Python and it is platform-independent.</p>
+<p>The code should be easy to read and modify, the main language is Python 2.x and it is platform-independent.</p>
 
 <h3>
-<a name="news" class="anchor" href="#news"><span class="octicon octicon-link"></span></a>News</h3>
+<a name="news" class="anchor" href="#news"><span class="octicon octicon-link"></span></a>News!</h3>
 
 <ul>
-<li>(21/08) Hi GitHub! The project moved from the old storage at Google Code to GH.</li>
-<li>ahkab can now be run stand-alone with a netlist file or within Python scripts as a library. This will likely become the preferred way in the future, but there are no plans to discontinue the command line interface.</li>
-</ul><h3>
+<li>The project <a href="https://github.com/ahkab/ahkab">moved to GitHub</a>!</li>
+<li>
+<code>ahkab</code> can now be run stand-alone with a netlist file or <em>within Python scripts as a library</em>. This will likely become the preferred way in the future.</li>
+</ul><p>See <strong><a href="https://github.com/ahkab/ahkab/wiki/SimulatingThePythonWay">this butterworth filter simulation</a></strong> for an example/tentative tutorial.</p>
+
+<h3>
+<a name="supported-simulations" class="anchor" href="#supported-simulations"><span class="octicon octicon-link"></span></a>Supported simulations:</h3>
+
+<ul>
+<li>Numeric:
+
+<ul>
+<li>
+<strong>Operating point</strong>, with guess computation to speed up the solution. See example: <a href="https://github.com/ahkab/ahkab/wiki/OPexample">Downscaling current mirror</a>
+</li>
+<li><strong>DC sweep</strong></li>
+<li>
+<strong>Transient analysis</strong>, available differentiation formulas: implicit Euler, trapezoidal, gear orders from 2 to 5. See for example the [<a href="https://github.com/ahkab/ahkab/wiki/Transient_simulation_example">simulation of a Colpitts Oscillator</a>.</li>
+<li><strong>AC analysis</strong></li>
+<li>
+<strong>Periodic steady state analysis</strong> of non-autonomous circuits, <em>time</em> <em>domain</em> shooting and brute-force algorithms.</li>
+</ul>
+</li>
+<li>Symbolic: 
+
+<ul>
+<li>
+<strong>Small signal analysis</strong>, AC or DC, with extraction of transfer functions, DC gain, poles and zeros. Various <a href="https://github.com/ahkab/ahkab/wiki/SymbolicExamples">symbolic analysis examples on this page</a>.</li>
+</ul>
+</li>
+</ul><p>The results are saved to disk, plotted or printed to stdout and can be read/processed by the most common tools (eg. <a href="http://www.gnu.org/software/octave/">Octave</a>, <a href="http://www.gnuplot.info/">gnuplot</a>, <a href="http://www.mathworks.com/products/matlab/">Matlab</a>, <a href="http://www.telltronics.org/software/gwave/">gwave</a> and others)</p>
+
+<h3>
+<a name="download-and-install" class="anchor" href="#download-and-install"><span class="octicon octicon-link"></span></a>Download and install</h3>
+
+<p>There are no packages for the time being (this program is at an early development stage). Go to <a href="https://github.com/ahkab/ahkab">ahkab on github</a> and follow the instructions to check out the code. You can find the list of the dependencies in the <a href="https://github.com/ahkab/ahkab/wiki/Install_Notes">Install notes</a>.</p>
+
+<h3>
+<a name="run-standalone" class="anchor" href="#run-standalone"><span class="octicon octicon-link"></span></a>Run standalone</h3>
+
+<pre><code>$ python ahkab -o graph.dat &lt;netlist file&gt;`
+</code></pre>
+
+<p>See <code>ahkab --help</code> for command line switches.</p>
+
+<h3>
+<a name="documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation</h3>
+
+<p>The simulator can either be run from the command line with a netlist file or included in a python script. Both possibilities will be maintained for the foreseeable future.</p>
+
+<p>Availabe documentation and examples can be found in the <a href="https://github.com/ahkab/ahkab/wiki/">project wiki</a>.</p>
+
+<p>Refer to the <a href="https://github.com/ahkab/ahkab/wiki/NetlistSyntax">netlist syntax page</a> for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.</p>
+
+<p>The latter option is shown briefly in the <strong><a href="https://github.com/ahkab/ahkab/wiki/SimulatingThePythonWay">Simulating the Python way</a></strong> wiki page. The code comes with docstrings associated with <em>most</em> functions, type <code>help(ahkab.function_name)</code>.</p>
+
+<h3>
+<a name="contributors" class="anchor" href="#contributors"><span class="octicon octicon-link"></span></a>Contributors</h3>
+
+<p>Giuseppe Venturini (<a href="https://github.com/ggventurini" class="user-mention">@ggventurini</a> on GH) Ian Daniher (<a href="https://github.com/itdaniher" class="user-mention">@itdaniher</a>, also on GH)</p>
+
+<h3>
 <a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h3>
 
 <p>The code is released under GPLv2.</p>
 
 <h3>
-<a name="contributors" class="anchor" href="#contributors"><span class="octicon octicon-link"></span></a>Contributors</h3>
+<a name="bugs-and-patches" class="anchor" href="#bugs-and-patches"><span class="octicon octicon-link"></span></a>Bugs and patches</h3>
 
-<p>Giuseppe Venturini (<a href="https://github.com/ggventurini" class="user-mention">@ggventurini</a>)
-I.T. Daniher (<a href="https://github.com/itdaniher" class="user-mention">@itdaniher</a>)</p>
+<p>Note that <em>I often add new functionality at the expense of breaking stuff</em>. Most likely I will introduce a new feature even if that means breaking a couple of others. It should get fixed soon, but if you have a bit of time to spare, you can send me a pull request or a patch. :)</p>
 
-<h3>
-<a name="contact" class="anchor" href="#contact"><span class="octicon octicon-link"></span></a>Contact</h3>
-
-<p>Get in touch through GitHub or by email (<a href="http://tinymailto.com/5310">ggventurini</a>)</p>
+<p>Does it work? Bugs? Do you have patches? Did you run some noteworthy simulation? Let me know! Feedback is very welcome, my <a href="http://tinymailto.com/5310">email address</a> is available after a captcha.</p>
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/ahkab">ahkab</a></p>
