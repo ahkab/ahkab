@@ -225,8 +225,11 @@ class vswitch_model:
 
 	The switching characteristics are modeled with tanh(x).
 	"""
-	def __init__(self, name, VT=None, VH=None, RON=None, ROFF=None):
+	def __init__(self, name, VT=None, VH=None, VON=None, VOFF=None, RON=None, ROFF=None):
 		self.name = name
+		# convert to VT and VH
+		if VON is not None or VOFF is not None:
+			VT, VH = self._get_VTVH_from_VONVOFF(float(VON), float(VOFF))
 		self.VT = float(VT) if VT is not None else VT_DEFAULT
 		self.VH = float(VH) if VH is not None else VH_DEFAULT
 		self.RON = float(RON) if RON is not None else RON_DEFAULT
@@ -236,6 +239,12 @@ class vswitch_model:
 		self.is_on = False
 		self._set_status(self.is_on)
 		self.SLOPE = 1e2
+
+	def _get_VTVH_from_VONVOFF(self, VON, VOFF):
+		if VON is None or VOFF is None:
+			raise CircuitError
+		VT = (VON-VOFF)/2.0
+		return VT, 0. #VT*1e-2
 
 	def _get_V(self, is_on):
 		"""Get the effective switching voltage (hyst taken into account)
