@@ -243,8 +243,8 @@ class vswitch_model:
 	def _get_VTVH_from_VONVOFF(self, VON, VOFF):
 		if VON is None or VOFF is None:
 			raise CircuitError
-		VT = (VON-VOFF)/2.0
-		return VT, 0. #VT*1e-2
+		VT = (VON-VOFF)/2.0 + VOFF
+		return VT, VT*1e-3
 
 	def _get_V(self, is_on):
 		"""Get the effective switching voltage (hyst taken into account)
