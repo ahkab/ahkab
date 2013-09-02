@@ -25,7 +25,7 @@ be somewhat uniform.
 import sys
 import numpy
 import circuit, devices, options
-import diode, mosq, ekv
+import diode, mosq, ekv, switch
 	
 def print_circuit(circ):
 	"""Prints the whole circuit to stdout, in a format similar to 
@@ -64,7 +64,8 @@ def print_netlist_elem_line(elem, circ):
 	isinstance(elem, devices.isource) or isinstance(elem, devices.vsource) or \
 	isinstance(elem, devices.capacitor) or isinstance(elem, devices.inductor):
 		sys.stdout.write(ext_n1 + " " + ext_n2 + " ")
-	elif isinstance(elem, devices.evsource) or isinstance(elem, devices.gisource):
+	elif isinstance(elem, devices.evsource) or isinstance(elem, devices.gisource) or \
+	     isinstance(elem, switch.switch_device):
 		sys.stdout.write(ext_n1 + " " + ext_n2 + " " + circ.nodes_dict[elem.sn1]+ " " + \
 		circ.nodes_dict[elem.sn2] + " ")
 	elif isinstance(elem, devices.inductor_coupling):

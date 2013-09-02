@@ -107,7 +107,7 @@ def setup_plot(fig, title, xvu, yvu, log=False, xlog=False, ylog=False):
 			yinitials.append(yv[0])
 	ylabel = ""
 	for yi, yu in zip(yinitials, yunits):
-		ylabel += "%s [%s] / " % (yi, yu)
+		ylabel += "%s [%s] , " % (yi, yu)
 	ylabel = ylabel[:-3]
 	pylab.ylabel(ylabel)
 	if log or xlog:
@@ -154,7 +154,7 @@ def plot_results(title, xvarname, y2y1_list, results, outfilename):
 	pylab.hold(True)
 	for y, label in gdata:
 		# pylab wants matrices in the form: N,1, while results come as (1, N) -> Transpose
-		pylab.plot(x.T, y.T, options.plotting_style, label=label+" ("+analysis+")",)
+		pylab.plot(x.T, y.T, options.plotting_style, label=label+" ("+analysis+")", mec='none')
 	pylab.xlim((x.min(), x.max()))
 	pylab.hold(False)
 	pylab.legend()

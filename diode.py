@@ -18,7 +18,7 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 import math, numpy
-import constants, printing, dc_analysis, utilities
+import constants, printing, dc_analysis, utilities, options
 
 """
 Contains a diode element and its model class.
@@ -204,8 +204,8 @@ class diode_model:
 			self._safe_exp(ports_v[0]/(self.N*self.VT)) +\
 			self.ISR/(self.NR*self.VT)*\
 			self._safe_exp(ports_v[0]/(self.NR*self.VT))
-		if rs:
-			gm = 1./(self.RS + 1./gm)
+		if rs and self.RS != 0.0:
+			gm = 1./(self.RS + 1./(gm+options.gmin*1e-1))
 		return dev.AREA*gm
 	def __str__(self):
 		pass

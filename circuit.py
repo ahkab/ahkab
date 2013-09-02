@@ -21,7 +21,7 @@ import sys
 import math
 
 import devices
-import diode, ekv, mosq
+import diode, ekv, mosq, switch
 import printing
 
 # will be added here by netlist_parser and circuit instances
@@ -294,6 +294,9 @@ class circuit:
 			model_iter.name = model_label
 		elif model_type == "diode":
 			model_iter = diode.diode_model(**model_parameters)
+			model_iter.name = model_label
+		elif model_type == "sw":
+			model_iter = switch.vswitch_model(**model_parameters)
 			model_iter.name = model_label
 		else:
 			raise CircuitError, "Unknown model type %s" % (model_type,)
@@ -603,6 +606,51 @@ class circuit:
 		elem = devices.gisource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=alpha)
 		elem.descr = name[1:]
 
+		self.elements = self.elements + [elem]
+		return True
+
+	def add_switch(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, ic, model_label, models=None):
+		"""Adds a voltage-controlled or current-controlled switch to the circuit
+		(also takes care that its nodes are added as well).
+
+		Notice:
+		- Current-controlled switches are not yet implemented. If you try to add one
+		  you'll trigger an error.
+		- The switches name should begin with 'S' for voltage-controlled switches
+		  and with 'W' for current-controlled switches.
+		- The actual behavior is set by the model. Make sure you supply a voltage-controlled
+		  switch model for a voltage-controlled switch and the same for the
+		  current-controlled switch. Mixing them up will go undetected.
+
+		Parameters:
+		name (string): the switch name (eg "S1" - voltage-controlled - or 'W1' -
+		               current-controlled). The first letter is always S or W.
+		ext_n1, ext_n2 (string): the output port nodes, where the switch is connected.
+					 Eg. "outp", "outm" or "out_a", "out_b".
+		ext_sn1, ext_sn2 (string): the input port nodes, where the input voltage is
+					   read. Eg. "inp", "inm" or "in_a", "in_b".
+		ic (boolean): the initial conditions for transient simulation. Not currently
+		              implemented!
+		model_label (string): the switch model identifier. The model needs to be added
+		                      first, then the elements using it.
+		models (dict(identifier:instance), optional): list of available model
+		    instances. If not set or None, the circuit models will be used (recommended).
+
+		Returns: True
+		"""
+
+		n1 = self.add_node(ext_n1)
+		n2 = self.add_node(ext_n2)
+		sn1 = self.add_node(ext_sn1)
+		sn2 = self.add_node(ext_sn2)
+
+		if models is None:
+			models = self.models
+		if not models.has_key(model_label):
+			raise ModelError, "Unknown switch model id: "+model_label
+
+		elem = switch.switch_device(n1=n1, n2=n2, sn1=sn1, sn2=sn2, model=models[model_label])
+		elem.descr = name[1:]
 		self.elements = self.elements + [elem]
 		return True
 
