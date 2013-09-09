@@ -8,15 +8,13 @@ The code should be easy to read and modify, the main language is Python 2.x and 
 ### News! ###
 
  * The project [moved to GitHub](https://github.com/ahkab/ahkab). 
- * `ahkab` can now be run stand-alone with a netlist file or _within Python scripts as a library_. This will likely become the preferred way in the future.
-
-See **[this butterworth filter simulation](https://github.com/ahkab/ahkab/wiki/SimulatingThePythonWay)** for an example/tentative tutorial.
+ * `ahkab` can now be run stand-alone with a netlist file or _within Python scripts as a library_. This will likely become the preferred way in the future. See **[this butterworth filter simulation](https://github.com/ahkab/ahkab/wiki/Example:-Python-API)** for an example/tentative tutorial.
 
 ### Supported simulations: ###
   * Numeric:
-    * **Operating point**, with guess computation to speed up the solution. See example: [Downscaling current mirror](https://github.com/ahkab/ahkab/wiki/Example:-OP-simulation
+    * **Operating point**, with guess computation to speed up the solution. See example: [Downscaling current mirror](https://github.com/ahkab/ahkab/wiki/Example:-OP-simulation)
     * **DC sweep**
-    * **Transient analysis**, available differentiation formulas: implicit Euler, trapezoidal, gear orders from 2 to 5. See for example the [[simulation of a Colpitts Oscillator](https://github.com/ahkab/ahkab/wiki/Example:-Transient-simulation-1).
+    * **Transient analysis**, available differentiation formulas: implicit Euler, trapezoidal, gear orders from 2 to 5. See for example the [simulation of a Colpitts Oscillator](https://github.com/ahkab/ahkab/wiki/Example:-Transient-simulation-1).
     * **AC analysis**
     * **Periodic steady state analysis** of non-autonomous circuits, _time_ _domain_ shooting and brute-force algorithms.
   * Symbolic: 
@@ -40,7 +38,7 @@ The simulator can either be run from the command line with a netlist file or inc
 
 Refer to the [netlist syntax page](https://github.com/ahkab/ahkab/wiki/Help:-Netlist-Syntax) for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.
 
-The latter option is shown briefly in the **[Simulating the Python way](https://github.com/ahkab/ahkab/wiki/SimulatingThePythonWay)** wiki page. The code comes with docstrings associated with _most_ functions, type `help(ahkab.function_name)`.
+The latter option is shown briefly in the **[Python API](https://github.com/ahkab/ahkab/wiki/Help:-Python-API)** wiki page. The code comes with docstrings associated with _most_ functions, type `help(ahkab.function_name)`.
 
 ### Contributors ###
 Giuseppe Venturini (@ggventurini on GH) Ian Daniher (@itdaniher, also on GH)
