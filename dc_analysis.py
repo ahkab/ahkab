@@ -33,7 +33,7 @@ import sys
 import numpy, numpy.linalg
 import devices, diode
 import constants, ticker, options, circuit, printing, utilities, dc_guess, results
-
+from printing import NetlistParseException
 
 
 def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=None, locked_nodes=None, skip_Tt=False, verbose=3):
@@ -811,35 +811,52 @@ def check_ground_paths(mna, circ, reduced_mna=True):
 			test_passed = False
 	return test_passed
 
-def build_x0_from_user_supplied_ic(circ, voltages_dict, currents_dict):
+def build_x0_from_user_supplied_ic(circ, icdict):
 	"""Builds a numpy.matrix of appropriate size (reduced!) from the values supplied
-	in voltages_dict and currents_dict. What is not found in the dictionary is set to 0.
+	in voltages_dict and currents_dict.
 	
+	Supplying a custom x0 can be useful:
+	- To aid convergence in tough circuits.
+	- To start a transient simulation from a particular x0
+
 	Parameters:
 	circ: the circuit instance
-	voltages_dict: keys are the external nodes, values are the node voltages.
-	currents_dict: keys are the elements names (eg l1, v4), the values are the currents
+	icdict: a dictionary assembled as follows:
+	        - to specify a nodal voltage: {'V(node)':<voltage value>}
+	          Eg {'V(n1)':2.3, 'V(n2)':0.45, ...}
+	          All unspecified voltages default to 0.
+	        - to specify a branch current: 'I(<element>)':<voltage value>}
+	          ie. the elements names are sorrounded by I(...).
+	          Eg. {'I(L1)':1.03e-3, I(V4):2.3e-6, ...}
+	          All unspecified currents default to 0.
 		
-	Note: this simulator uses the normal convention.
+	Notes: this simulator uses the normal convention.
 	
 	Returns:
-	The x0 matrix
+	The x0 matrix assembled according to icdict
 	"""
+	Vregex = re.compile("V.*?((?:[a-z][a-z]*[0-9]+[a-z0-9]*))",re.IGNORECASE|re.DOTALL)
+	Iregex = re.compile("I.*?((?:[a-z][a-z]*[0-9]+[a-z0-9]*))",re.IGNORECASE|re.DOTALL)
+	label = label.lower()
 	nv = len(circ.nodes_dict) #number of voltage variables
-	voltage_defined_elements = [ x for x in circ.elements if circuit.is_elem_voltage_defined(x) ]
-	ni = len(voltage_defined_elements) #number of current variables
-	current_labels_list = [ elem.letter_id + elem.descr for elem in voltage_defined_elements ]
-	
+	voltage_defined_elem_names = [ elem.letter_id + elem.descr \
+	                               for elem in circ.elements \
+	                               if circuit.is_elem_voltage_defined(x) \
+	                             ]
+	voltage_defined_elem_names = map(str.lower, voltage_defined_elem_names)
+	ni = len(voltage_defined_elem_names) #number of current variables
 	x0 = numpy.mat(numpy.zeros((nv + ni, 1)))
-	
-	for ext_node, value in voltages_dict.iteritems():
-		int_node = circ.ext_node_to_int(ext_node)
-		x0[int_node, 0] = value
-	
-	for current_label, value in currents_dict.iteritems():
-		index = current_labels_list.index(current_label)
-		x0[nv + index, 0] = value
-
+	for label, value in icdict.iteritems():
+		if Vregex.search(label):
+			ext_node = regex.findall(label)[0]
+			int_node = circ.ext_node_to_int(ext_node)
+			x0[int_node, 0] = value
+		elif Iregex.search(label):
+			element_name = regex.findall(label)[0]
+			index = voltage_defined_elem_names.index(element_name)
+			x0[nv + index, 0] = value
+		else:
+			raise NetlistParseException, "Unrecognized label "+label
 	return x0[1:, :]
 
 def modify_x0_for_ic(circ, x0):
