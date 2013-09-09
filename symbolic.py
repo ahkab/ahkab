@@ -36,7 +36,7 @@ import printing
 import results
 import options
 
-def solve(circ, tf_source=None, subs=None, opts=None, verbose=3):
+def symbolic_analysis(circ, tf_source=None, subs=None, opts=None, verbose=3):
 	"""Attempt a symbolic solution of the circuit.
 	circ: the circuit instance to be simulated.
 	tf_source: the name (string) of the source to be used as input for the transfer
