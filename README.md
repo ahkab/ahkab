@@ -14,19 +14,19 @@ See **[this butterworth filter simulation](https://github.com/ahkab/ahkab/wiki/S
 
 ### Supported simulations: ###
   * Numeric:
-    * **Operating point**, with guess computation to speed up the solution. See example: [Downscaling current mirror](https://github.com/ahkab/ahkab/wiki/OPexample)
+    * **Operating point**, with guess computation to speed up the solution. See example: [Downscaling current mirror](https://github.com/ahkab/ahkab/wiki/Example:-OP-simulation
     * **DC sweep**
-    * **Transient analysis**, available differentiation formulas: implicit Euler, trapezoidal, gear orders from 2 to 5. See for example the [[simulation of a Colpitts Oscillator](https://github.com/ahkab/ahkab/wiki/Transient_simulation_example).
+    * **Transient analysis**, available differentiation formulas: implicit Euler, trapezoidal, gear orders from 2 to 5. See for example the [[simulation of a Colpitts Oscillator](https://github.com/ahkab/ahkab/wiki/Example:-Transient-simulation-1).
     * **AC analysis**
     * **Periodic steady state analysis** of non-autonomous circuits, _time_ _domain_ shooting and brute-force algorithms.
   * Symbolic: 
-    * **Small signal analysis**, AC or DC, with extraction of transfer functions, DC gain, poles and zeros. Various [symbolic analysis examples on this page](https://github.com/ahkab/ahkab/wiki/SymbolicExamples).
+    * **Small signal analysis**, AC or DC, with extraction of transfer functions, DC gain, poles and zeros. Various [symbolic analysis examples on this page](https://github.com/ahkab/ahkab/wiki/Example:-Symbolic-simulation).
 
 The results are saved to disk, plotted or printed to stdout and can be read/processed by the most common tools (eg. [Octave](http://www.gnu.org/software/octave/), [gnuplot](http://www.gnuplot.info/), [Matlab](http://www.mathworks.com/products/matlab/), [gwave](http://www.telltronics.org/software/gwave/) and others)
 
 ###Download and install###
 
-There are no packages for the time being (this program is at an early development stage). Go to [ahkab on github](https://github.com/ahkab/ahkab) and follow the instructions to check out the code. You can find the list of the dependencies in the [Install notes](https://github.com/ahkab/ahkab/wiki/Install_Notes).
+There are no packages for the time being (this program is at an early development stage). Go to [ahkab on github](https://github.com/ahkab/ahkab) and follow the instructions to check out the code. You can find the list of the dependencies in the [Install notes](https://github.com/ahkab/ahkab/wiki/Install:-Notes).
 
 ###Run standalone###
 
@@ -38,7 +38,7 @@ See `ahkab --help` for command line switches.
 
 The simulator can either be run from the command line with a netlist file or included in a python script. Both possibilities will be maintained for the foreseeable future. 
 
-Refer to the [netlist syntax page](https://github.com/ahkab/ahkab/wiki/NetlistSyntax) for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.
+Refer to the [netlist syntax page](https://github.com/ahkab/ahkab/wiki/Help:-Netlist-Syntax) for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.
 
 The latter option is shown briefly in the **[Simulating the Python way](https://github.com/ahkab/ahkab/wiki/SimulatingThePythonWay)** wiki page. The code comes with docstrings associated with _most_ functions, type `help(ahkab.function_name)`.
 
