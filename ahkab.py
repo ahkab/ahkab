@@ -31,8 +31,7 @@ from optparse import OptionParser
 import dc_analysis
 import transient
 import ac
-import shooting
-import bfpss
+
 import symbolic
 
 import netlist_parser
@@ -44,24 +43,230 @@ import utilities
 import plotting
 import printing 
 
-__version__ = "0.06"
+__version__ = "0.06a"
 
+analysis = {'op':dc_analysis.op_analysis, 'dc': dc_analysis.dc_analysis, 
+            'tran': transient.transient_analysis, 'ac': ac.ac_analysis,
+            'pss': pss.pss_analysis, 'symbolic': symbolic.symbolic_analysis}
+queue = []
 
-def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, guess=True, disable_step_control=False):
-	""" Processes an analysis vector:
-	an_list: the list of analysis to be performed, as returned by netlist_parser
-	circ: the circuit instance, returned by netlist_parser
-	outfile: a filename. Results will be written to it. If set to stdout, prints to stdout
-	verbose: verbosity level
-	cli_tran_method: force the specified method in each tran analysis (see transient.py)
-	guess: use the builtin method get_dc_guess to guess x0
+def new_op(guess=True, x0=None, outfile='-', verbose=3):
+	"""Assembles an OP analysis and returns the analysis object.
+	The analysis itself can be run with:
+	ahkab.run(...)
+	or queued and then run subsequently.
 	
-	Returns: None
+	Parameters:
+	guess (boolean): if set to True, the analysis will start from an initial guess,
+	                 hopefully speeding up the convergence of stiff circuits.
+	x0 (numpy matrix): if the 'guess' option above is not used, one can provide 
+	                   a starting point directly, setting x0 to an opportunely sized
+	                   numpy array. FIXME help method here
+	                   If both x0 and guess are set, x0 takes the precedence.
+	outfile (string): the filename of the output file where the results will be written.
+	                  '.op' is automatically added at the end to prevent different 
+	                  analyses from overwriting each-other's results.
+	verbose (int): the verbosity level, from 0 (silent) to 6 (debug).
+	
+	Returns: the analysis object (a dict)
 	"""
-	x0_op = None
-	x0_ic_dict = {}
-	results = {}
+	return {'type':'op', 'guess':guess, 'x0':x0, 'outfile':outfile+(outfile is not None)*'.op', 'verbose':verbose}
+	
+def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None, outfile='-', verbose=3):
+	"""Assembles a DC sweep analysis and returns the analysis object.
 
+	The analysis itself can be run with:
+	ahkab.run(...)
+	or queued and then run subsequently.
+	
+	Parameters:
+	start (float): the start value for the sweep
+	stop (float): the stop value for the sweep, included in the sweep
+	points (int): the number of sweep points
+	source (string): the independent current or voltage source to be swept. 
+	sweep_type (string): can be set to either options.dc_lin_step (LINEAR) or 
+	                     options.dc_log_step (LOG). Defaults to linear.
+	guess (boolean): if set to True, the analysis will start from an initial guess,
+	                 hopefully speeding up the convergence of stiff circuits.
+	x0 (numpy matrix): if the 'guess' option above is not used, one can provide 
+	                   a starting point directly, setting x0 to an opportunely sized
+	                   numpy array. FIXME help method here
+	                   If both x0 and guess are set, x0 takes the precedence.
+	outfile (string): the filename of the output file where the results will be written.
+	                  '.dc' is automatically added at the end to prevent different 
+	                  analyses from overwriting each-other's results.
+	verbose (int): the verbosity level, from 0 (silent) to 6 (debug).
+	
+	Returns: the analysis object (a dict)
+	"""
+	{'type':'dc', 'start':float(start), 'stop':float(stop), 'points':float(points), 
+	'source':source, 'x0':x0, 'outfile':outfile+(outfile is not None)*'.dc', 
+	'guess':guess, 'sweep_type':sweep_type,	verbose:verbose}
+	
+def new_tran(tstart, tstop, tstep, x0, method='trap', use_step_control=True, guess=True, outfile='-', verbose=3):
+	"""Assembles a TRAN analysis and returns the analysis object.
+
+	The analysis itself can be run with:
+	ahkab.run(...)
+	or queued with ahakab.queue(...) and then run subsequently.
+	
+	Parameters:
+	tstart (float): the start time for the transient analysis
+	tstop (float): its stop time
+	tstep (float): the time step. If the step control is active, this is the 
+	               minimum time step value.
+	x0 (numpy matrix): the optional starting point x0 = x(t=0). 
+	                   FIXME help method here
+	method (string): the differentiation method to be used. Can be set to 
+	                 'IMPLICIT_EULER', 'TRAP', 'GEAR4', 'GEAR5' or 'GEAR6'.
+	                 Defaults to 'TRAP'.
+	use_step_control (boolean): if False, use a fixed time step equal to tstep.
+	guess (boolean): if set to True, the guessing algorithm will be available to
+	                 help with building x0.
+	outfile (string): the filename of the output file where the results will be written.
+	                  '.tran' is automatically added at the end to prevent different 
+	                  analyses from overwriting each-other's results.
+	verbose (int): the verbosity level, from 0 (silent) to 6 (debug).
+	
+	Returns: the analysis object (a dict)
+	"""
+	return {"type":"tran", "tstart":tstart, "tstop":tstop, "tstep":tstep, 
+	       "method":method, "use_step_control":use_step_control, 'guess':guess, 
+	       'x0':x0, 'data_filename':outfile+(outfile is not None)*'.tran', 'verbose':verbose}
+	
+def new_ac(start, stop, points, x0, sweep_type='LOG', outfile=None, verbose=3):
+	"""Assembles an AC analysis and returns the analysis object.
+
+	The analysis itself can be run with:
+	ahkab.run(...)
+	or queued with ahakab.queue(...) and then run subsequently.
+	
+	Parameters:
+	start (float): the start angular frequency for the AC analysis
+	stop (float): stop angular frequency
+	points (float): the number of points to be use the discretize the 
+					[start, stop] interval.
+	sweep_type (string): Either 'LOG' or 'LINEAR', defaults to 'LOG'.
+	outfile (string): the filename of the output file where the results will be written.
+	                  '.ac' is automatically added at the end to prevent different 
+	                  analyses from overwriting each-other's results.
+	                  If unset or set to None, defaults to stdout.
+	verbose (int): the verbosity level, from 0 (silent) to 6 (debug).
+	
+	Returns: the analysis object (a dict)
+	"""
+	return {'type':'ac', 'start':start, 'stop':stop, nsteps:points-1, 'sweep_type':sweep_type, \
+	'x0':x0, 'data_filename':outfile+(outfile is not None)*'.ac', 'verbose':verbose}
+			
+def new_pss(period, x0, points=None, method='brute-force', autonomous=False, mna=None,
+            Tf=None, D=None, outfile=None, verbose=3):
+	"""Assembles a Periodic Steady State (PSS) analysis and 
+	returns the analysis object.
+
+	The analysis itself can be run with:
+	ahkab.run(...)
+	or queued with ahakab.queue(...) and then run subsequently.
+
+	Parameters:
+	period (float): the time period of the solution
+	x0 (numpy matrix): the starting point solution, used at t=0.
+	points (int): the number of points to use to discretize the PSS solution
+	              If not set, if method is 'shooting', defaults to 
+	              options.shooting_max_nr_iter
+	method (string): can be either ahkab.BFPSS or ahkab.SHOOTING.
+	autonomous (boolean): whether the circuit is autonomous or not.
+	                      Non-autonomous circuits are currently unsupported!
+	mna, Tf, D (numpy matrices): the numpy matrices to be used to solve the circuit.
+	                             they are optional, but if they have already been 
+	                             computed reusing them saves time.
+	outfile (string): the filename of the output file where the results will be written.
+	                  '.tran' is automatically added at the end to prevent different 
+	                  analyses from overwriting each-other's results.
+                      If unset defaults to stdout.
+	verbose (int): the verbosity level, from 0 (silent) to 6 (debug).
+
+	Returns: the analysis object (a dict)
+	"""
+	return {'type':"pss", "method":"brute-force", 'period':period, 'points'=points,
+	        'autonomous':autonomous, 'mna':mna, 'Tf':Tf, 'D':D, 'x0':x0,
+		'data_filename':outfile+(outfile is not None)*('.'+method.lower()),
+		'verbose':verbose}
+
+def new_symbolic(source=None, ac=True, r0s=False, subs=None, outfile=None, verbose=3):
+	"""Assembles a Symbolic analysis and 
+	returns the analysis object.
+
+	The analysis itself can be run with:
+	ahkab.run(...)
+	or queued with ahakab.queue(...) and then run subsequently.
+
+	Parameters:
+	source (string): if source is set, the transfer function between 'source'
+	                 and each expression will be evaluated, including poles
+	                 and zeros extraction. 'source' is to be set to the name
+	                 of am independent current or voltage source present in 
+	                 the circuit, eg. 'V1' or 'Iin'.
+	ac (boolean): if set True (default) the frequency-dependent elements will
+	              be considered, otherwise the algorithm will focus on 
+	              DC solutions (usually easier).
+	r0s (boolean): if set to True, the finite output conductances of 
+	               transistors go (where go = 1/r0) will be taken into 
+	               account, otherwise it will be considered infinite (default).
+	               In complex circuits, considering all gos may significanly 
+	               complicate the solution - consider explicitly introducing
+	               them where needed.
+	subs (dict): is a dictionary of substitutions to be performed before 
+	             attempting to solve the circuit. For example if two 
+	             resistances R1 and R2 are to be equal, set subs={'R2':'R1'}
+	             and R1 will be replaced by an instance of R2. This may 
+	             simplify the solution (or allow finding one in reasonable 
+	             time).
+	outfile (string): the filename of the output file where the results will
+	                  be written. '.symbolic' is automatically added at the 
+	                  end to prevent different analyses from overwriting 
+	                  each-other's results. If unset defaults to stdout.
+	verbose (int): the verbosity level, from 0 (silent) to 6 (debug).
+
+	Returns: the analysis object (a dict)
+	"""
+	return {'type':"symbolic", 'source'=source, 'ac'=ac, 'r0s'=r0s, 'subs'=subs, 
+		'data_filename':outfile+(outfile is not None)*'.symbolic',
+		'verbose':verbose}
+		
+def queue_analysis(analysis):
+	queue += [analysis]
+	
+def run(circ, an_list=None):
+	""" Processes an analysis vector:
+	circ: the circuit instance
+	an_queue: the list of analyses to be performed, if unset defaults to those queued
+		      with queue_analysis()
+	
+	Returns: the results (in dict form)
+	"""
+	results = {}
+	
+	if not an_list:
+		an_list = queue
+	
+	while len(an_list):
+		an = an_list.pop(0)
+		an_type = an.pop('type')
+		r = analysis[an_type](cir, **an)
+		results.update({an_type:r})
+	
+	return results
+
+def new_x0(circ, icdict):
+	return dc_analysis.build_x0_from_user_supplied_ic(circ, icdict)
+
+def icmodified_x0(circ, x0):
+	return dc_analysis.modify_x0_for_ic(circ, x0)
+	
+def get_op_x0(circ):
+	return run(circ, [new_op()])
+
+def old():
 	for directive in [ x for x in an_list if x["type"] == "ic" ]:
 		x0_ic_dict.update({
 			directive["name"]:\
@@ -169,6 +374,12 @@ def process_analysis(an_list, circ, outfile, verbose, cli_tran_method=None, gues
 		results.update({an["type"]:sol})
 	return results
 
+def set_temperature(T):
+	T = float(T)
+	if T > 300: 
+		printing.print_warning(u"The temperature will be set to %f \xB0 C.")
+	constants.T = utilities.Celsius2Kelvin(T)
+
 def process_postproc(postproc_list, title, results, outfilename, remote=False):
 	"""Runs the post-processing operations, such as plotting.
 	postproc_list: list of post processing operations as returned by main()
@@ -217,7 +428,7 @@ def main(filename, outfile="stdout", tran_method=transient.TRAP.lower(), no_step
 	elif verbose > 1:
 		print circ.title.upper()
 	
-	an_list = netlist_parser.parse_analysis(circ, directives)
+	an_list, ic_list = netlist_parser.parse_analysis(circ, directives)
 	postproc_list = netlist_parser.parse_postproc(circ, an_list, postproc_direct)
 	if len(an_list) > 0: 
 		printing.print_info_line(("Requested an.:", 4), verbose)
