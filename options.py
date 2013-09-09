@@ -61,6 +61,10 @@ transient_use_aposteriori_step_control = True
 transient_aposteriori_step_threshold = 0.9
 cmin=1e-18
 
+# pss
+BFPSS = 'bfpss'
+SHOOTINGPSS = 'shooting'
+
 # shooting
 shooting_default_points = 100
 shooting_max_nr_iter = 10000
