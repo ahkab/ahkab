@@ -534,11 +534,12 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
 		T = numpy.mat(numpy.zeros((mna_size, 1)))
 
 	converged = False
-	iteration = 0
-	for iteration in xrange(MAXIT): # newton iteration counter
+	iteration = 0L
+	while iteration < MAXIT: # newton iteration counter
+		iteration += 1
 		tick.step(print_steps)
 		if nonlinear_circuit:
-		# build dT(x)/dx (stored in J) and Tx(x)
+			# build dT(x)/dx (stored in J) and Tx(x)
 			J, Tx = build_J_and_Tx(x, mna_size, circ.elements, time)
 			J = J + mna
 		else:
@@ -547,18 +548,22 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
 		residuo = mna*x + T + Tx
 		dx = numpy.linalg.inv(J) * (-1 * residuo)
 		x = x + get_td(dx, locked_nodes, n=iteration)*dx
-		if iteration > 0: 
-			if convergence_check(x, dx, residuo, nv-1)[0]:
-				converged = True
-				break
-		if vector_norm(dx) is numpy.nan: #Overflow
-			raise OverflowError
+		if not nonlinear_circuit:
+			converged = True
+			break
+		elif convergence_check(x, dx, residuo, nv-1)[0]:
+			converged = True
+			break
+		#if vector_norm(dx) == numpy.nan: #Overflow
+		#	raise OverflowError
 	tick.hide(print_steps)
 	if debug and not converged:
-		convergence_by_node = convergence_check(x, dx, residuo, nv-1, debug=True)[1]
+		# re-run the convergence check, only this time get the results 
+		# by node, so we can show to the users which nodes are misbehaving.
+		converged, convergence_by_node = convergence_check(x, dx, residuo, nv-1, debug=True)[1]
 	else:
 		convergence_by_node = []
-	return (x, residuo, converged, iteration+1, convergence_by_node)
+	return (x, residuo, converged, iteration, convergence_by_node)
 
 def build_J_and_Tx(x, mna_size, element_list, time):
 	J = numpy.mat(numpy.zeros((mna_size, mna_size)))
@@ -892,16 +897,18 @@ def custom_convergence_check(x, dx, residuum, er, ea, eresiduum, vector_norm=lam
 		dx = numpy.mat(numpy.array(dx))
 		residuum = numpy.mat(numpy.array(residuum))
 	if x.shape[0]:
-		for i in range(x.shape[0]):
-			if vector_norm(dx[i,0]) < er*vector_norm(x[i,0]) + ea and vector_norm(residuum[i,0]) < eresiduum:
-				ret = True
-				if debug: all_check_results.append(ret)
-			else:
-				ret = False
-				if debug: all_check_results.append(ret)
-			if (not debug) and (not ret):
-				break
-		if debug:
+		if not debug:
+			ret = numpy.allclose(x, x+dx, rtol=er, atol=ea) and \
+			      numpy.allclose(residuum, numpy.zeros(residuum.shape), atol=eresiduum, rtol=0)
+		else:
+			for i in range(x.shape[0]):
+				if vector_norm(dx[i,0]) < er*vector_norm(x[i,0]) + ea and vector_norm(residuum[i,0]) < eresiduum:
+					all_check_results.append(True)
+				else:
+					all_check_results.append(False)
+				if not all_check_results[-1]:
+					break
+		
 			ret = not (False in all_check_results)
 	else:
 		# We get here when there's no variable to be checked. This is because there aren't variables 
