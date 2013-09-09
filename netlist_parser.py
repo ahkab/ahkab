@@ -70,7 +70,6 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 		while ffile is not None:
 			for line in ffile:
 				line_n = line_n + 1
-				
 				line = line.strip().lower()
 				if line_n == 1:
 					# the first line is always the title
@@ -1182,7 +1181,7 @@ def parse_analysis(circ, directives):
 	Parameters:
 	circ: a circuit class instance that descirbes the circuit.
 	directives: a list of tuples: (line, line_number). Those lines are taken 
-	from the netlistand are the ones that hold the information about the 
+	from the netlist and are the ones that hold the information about the 
 	simulations to be performed.
 	
 	Both of them are returned by parse_circuit()
@@ -1190,36 +1189,37 @@ def parse_analysis(circ, directives):
 	Returns:
 	a list of the analysis, see the code.
 	"""
-	
+	import ahkab
 	analysis = []
 	for line, line_n in directives:
-		line = line.strip().lower()
-		#if len(line) == 0:
-		#	continue
+		if line[:3] == '.ic':
+			label, x0 = parse_ic_directive(line)
+			ahkab.x0s.update({label:x0})
+	for line, line_n in directives:
 		if line[0] == ".":
 			try:
 				line_elements = line.split()
 				# operating point
 				if line_elements[0] == ".op":
-					analysis.append(parse_an_op(line, line_elements))
+					yield parse_an_op(line, line_elements)
 				# DC (direct current) sweep
 				elif line_elements[0] == ".dc":
-					analysis.append(parse_an_dc(line, circ, line_elements))
+					yield parse_an_dc(line, circ, line_elements)
 				# AC (alternating current) sweep
 				elif line_elements[0] == ".ac":
-					analysis.append(parse_an_ac(line, circ, line_elements))
+					yield parse_an_ac(line, circ, line_elements)
 				# transient analysis
 				elif line_elements[0] == ".tran":
-					analysis.append(parse_an_tran(line, line_elements))
+					yield parse_an_tran(line, line_elements)
 				# shooting
 				elif line_elements[0] == ".shooting":
-					analysis.append(parse_an_shooting(line, line_elements))
+					yield parse_an_shooting(line, line_elements)
 				elif line_elements[0] == ".temp":
-					analysis.append(parse_temp_directive(line, line_elements))
-				elif line_elements[0] == ".ic":
-					analysis.append(parse_ic_directive(line, line_elements))
+					yield parse_temp_directive(line, line_elements)
+				#elif line_elements[0] == ".ic":
+				#	analysis.append(parse_ic_directive(line, line_elements))
 				elif line_elements[0] == ".symbolic":
-					analysis.append(parse_an_symbolic(line, circ, line_elements))
+					yield parse_an_symbolic(line, circ, line_elements)
 				else:
 					raise NetlistParseError("Unknown directive.")
 			except NetlistParseError, (msg,):
@@ -1227,13 +1227,13 @@ def parse_analysis(circ, directives):
 					printing.print_general_error(msg)
 				printing.print_parse_error(line_n, line)
 				sys.exit(0)
-	return analysis	
+	return 
 
 def parse_temp_directive(line, line_elements=None):
 	"""Parses a TEMP directive:
 	
 	The syntax is:
-	.TEMP <VALUE>>
+	.TEMP <VALUE>
 	"""
 	if line_elements is None:
 		line_elements = line.split()
@@ -1540,14 +1540,12 @@ def convert_boolean(value):
 	return return_value
 
 def parse_ic_directive(line, line_elements=None):
-	"""Parses a ic directives and assembles two dictionaries accordingly.
-	
+	"""Parses an ic directive and assembles a dictionary accordingly.
 	"""
 	if line_elements is None:
 		line_elements = line.split()
 	
-	voltages_dict = {}
-	currents_dict = {}
+	ic_dict = {}
 	name = None
 	for token in line_elements[1:]:
 		if token[0] == "*":
@@ -1556,17 +1554,18 @@ def parse_ic_directive(line, line_elements=None):
 		(label, value) = parse_param_value_from_string(token)
 		if label == "name" and name is None:
 			name = value
-		elif label[0] == 'v' and len(label) > 1 and not label[1:] in voltages_dict:
-			voltages_dict.update({label[1:]:convert_units(value)})	
-		elif label[0] == 'i' and len(label) > 1 and not label[1:] in currents_dict:
-			currents_dict.update({label[1:]:convert_units(value)})
-		else:
-			raise NetlistParseError, ""
+		# the user should have specified either something like:
+		# V(node)=10u
+		# or something like:
+		# I(Vtest)=100e-6
+		ic_dict.update({label:convert_units(value)})	
+		# We may decide to check if the node exists and/or if the syntax
+		# is correct and raise NetlistParseError if needed.
 	
 	if name is None:
-		raise NetlistParseError("name parameter is missing")
+		raise NetlistParseError, "name parameter is missing"
 	
-	return {"type":"ic", "name":name, "vdict":voltages_dict, "cdict":currents_dict}
+	return {"type":"ic", "name":name, "dict":ic_dict}
 
 def parse_sub_declaration(subckt_lines):
 	"""Returns a circuit.subckt instance that holds the subckt 
