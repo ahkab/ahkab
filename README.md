@@ -38,7 +38,7 @@ The simulator can either be run from the command line with a netlist file or inc
 
 Refer to the [netlist syntax page](https://github.com/ahkab/ahkab/wiki/Help:-Netlist-Syntax) for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.
 
-The latter option is shown briefly in the **[Python API](https://github.com/ahkab/ahkab/wiki/Help:-Python-API)** wiki page. The code comes with docstrings associated with _most_ functions, type `help(ahkab.function_name)`.
+The latter option is shown briefly in the **[Python API](https://github.com/ahkab/ahkab/wiki/Example:-Python-API)** wiki page. The code comes with docstrings associated with _most_ functions, type `help(ahkab.function_name)`.
 
 ### Contributors ###
 Giuseppe Venturini (@ggventurini on GH) Ian Daniher (@itdaniher, also on GH)
