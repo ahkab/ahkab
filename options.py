@@ -79,3 +79,4 @@ ac_phase_in_deg = False
 plotting_outtype = "png"
 plotting_wait_after_plot = True
 plotting_style = "-o"
+plotting_lw = 1.25

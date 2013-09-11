@@ -98,6 +98,17 @@ def setup_plot(fig, title, xvu, yvu, log=False, xlog=False, ylog=False):
 	#xvar, xunit = xvu
 	pylab.title(title.upper())
 	ax = pylab.gca()
+
+	ax.spines['right'].set_color('none')
+	ax.spines['top'].set_color('none')
+	ax.xaxis.set_ticks_position('bottom')
+	ax.yaxis.set_ticks_position('left')
+
+	ax.xaxis.grid(False)
+	ax.yaxis.grid(False)
+
+	if log or xlog:
+		ax.set_xscale('log')
 	pylab.xlabel('%s [%s]' % xvu)
 	yunits = []
 	yinitials = []
@@ -110,10 +121,10 @@ def setup_plot(fig, title, xvu, yvu, log=False, xlog=False, ylog=False):
 		ylabel += "%s [%s] , " % (yi, yu)
 	ylabel = ylabel[:-3]
 	pylab.ylabel(ylabel)
-	if log or xlog:
-		ax.set_xscale('log')
+
 	if log or ylog:
 		ax.set_yscale('log')
+	#fig.tight_layout()
 	return fig
 
 def save_figure(filename, fig):
@@ -152,10 +163,16 @@ def plot_results(title, xvarname, y2y1_list, results, outfilename):
 	setup_plot(fig, title, (xvarname, xunit), yvu, xlog=xlog)
 
 	pylab.hold(True)
+	ymax, ymin = None, None
 	for y, label in gdata:
 		# pylab wants matrices in the form: N,1, while results come as (1, N) -> Transpose
-		pylab.plot(x.T, y.T, options.plotting_style, label=label+" ("+analysis+")", mec='none')
+		[line] = pylab.plot(x.T, y.T, options.plotting_style, label=label+" ("+analysis+")", 
+                                    mfc='w', lw=options.plotting_lw, mew=options.plotting_lw)
+		line.set_mec(line.get_color()) # nice empty circles
+		ymax = y.max() if ymax is None or y.max() > ymax else ymax
+		ymin = y.min() if ymin is None or y.min() < ymin else ymin
 	pylab.xlim((x.min(), x.max()))
+	pylab.ylim((ymin - (ymax-ymin)*.01, ymax + (ymax-ymin)*.01))
 	pylab.hold(False)
 	pylab.legend()
 
