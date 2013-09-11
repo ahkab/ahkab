@@ -233,7 +233,7 @@ class circuit:
 		try:
 			index = values.index(ext_node)
 		except ValueError:
-			raise NodeNotFoundError, ""
+			raise NodeNotFoundError, "Node %s not found in the circuit." % ext_node
 
 		return items[index][0]
 

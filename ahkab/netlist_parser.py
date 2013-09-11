@@ -1500,9 +1500,14 @@ def is_valid_value_param_string(astr):
 	return ret_value
 		
 
-def parse_param_value_from_string(astr):
-	""" Searches the string for a <param>=<value> couple and
-	returns a list.
+def parse_param_value_from_string(astr, rtype=float):
+	""" Searches the string for a <param>=<value> couple and returns a list.
+	if rtype is float (type), default value, the method will attempt converting 
+	the value to float. If the conversion fails, a string is returned. 
+	If set to str (type), a string will be returned, as if the conversion failed.
+
+	This prevents value being '0' (str) -> converted to 0.0 -> converted (somewhere 
+	else) to '0.0' (str), ending up being a new node instead fo the reference.
 	
 	Notice that in <param>=<value> there is no space before or after the equal sign.
 	
@@ -1511,9 +1516,12 @@ def parse_param_value_from_string(astr):
 	if not is_valid_value_param_string(astr):
 		return (astr, "")
 	p, v = astr.strip().split("=")
-	try:
-		v = convert_units(v)
-	except ValueError:
+	if rtype == float:
+		try:
+			v = convert_units(v)
+		except ValueError:
+			pass
+	elif rtype == str:
 		pass
 	return p, v 
 	
@@ -1620,7 +1628,7 @@ def parse_sub_instance(line, circ, subckts_dict, line_elements=None, models=None
 		if line_elements[index][0] == '*':
 			break
 		
-		(param, value) = parse_param_value_from_string(line_elements[index])
+		(param, value) = parse_param_value_from_string(line_elements[index], rtype=str)
 		param_value_dict.update({param:value})
 	
 	if not param_value_dict.has_key("name"):
