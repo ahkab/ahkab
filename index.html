@@ -1,34 +1,39 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
+
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Ahkab by ahkab</title>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Ahkab : a SPICE-like electronic circuit simulator written in Python" />
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Ahkab</title>
   </head>
+
   <body>
-    <div class="wrapper">
-      <header>
-        <h1>Ahkab</h1>
-        <p>a SPICE-like electronic circuit simulator written in Python</p>
 
-        <p class="view"><a href="https://github.com/ahkab/ahkab">View the Project on GitHub <small>ahkab/ahkab</small></a></p>
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/ahkab/ahkab">View on GitHub</a>
 
+          <h1 id="project_title">Ahkab</h1>
+          <h2 id="project_tagline">a SPICE-like electronic circuit simulator written in Python</h2>
 
-        <ul>
-          <li><a href="https://github.com/ahkab/ahkab/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/ahkab/ahkab/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/ahkab/ahkab">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
-      <section>
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/ahkab/ahkab/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/ahkab/ahkab/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
         <p><img src="https://github.com/ahkab/ahkab/wiki/images/logo.png" alt="logo"></p>
+
+<p>a SPICE-like electronic circuit simulator written in Python</p>
 
 <p>The code should be easy to read and modify, the main language is Python 2.x and it is platform-independent.</p>
 
@@ -36,12 +41,10 @@
 <a name="news" class="anchor" href="#news"><span class="octicon octicon-link"></span></a>News!</h3>
 
 <ul>
-<li>The project <a href="https://github.com/ahkab/ahkab">moved to GitHub</a>!</li>
+<li>The project <a href="https://github.com/ahkab/ahkab">moved to GitHub</a>. </li>
 <li>
-<code>ahkab</code> can now be run stand-alone with a netlist file or <em>within Python scripts as a library</em>. This will likely become the preferred way in the future.</li>
-</ul><p>See <strong><a href="https://github.com/ahkab/ahkab/wiki/SimulatingThePythonWay">this butterworth filter simulation</a></strong> for an example/tentative tutorial.</p>
-
-<h3>
+<code>ahkab</code> can now be run stand-alone with a netlist file or <em>within Python scripts as a library</em>. This will likely become the preferred way in the future. See <strong><a href="https://github.com/ahkab/ahkab/wiki/Example:-Python-API">this butterworth filter simulation</a></strong> for an example/tentative tutorial.</li>
+</ul><h3>
 <a name="supported-simulations" class="anchor" href="#supported-simulations"><span class="octicon octicon-link"></span></a>Supported simulations:</h3>
 
 <ul>
@@ -49,11 +52,11 @@
 
 <ul>
 <li>
-<strong>Operating point</strong>, with guess computation to speed up the solution. See example: <a href="https://github.com/ahkab/ahkab/wiki/OPexample">Downscaling current mirror</a>
+<strong>Operating point</strong>, with guess computation to speed up the solution. See example: <a href="https://github.com/ahkab/ahkab/wiki/Example:-OP-simulation">Downscaling current mirror</a>
 </li>
 <li><strong>DC sweep</strong></li>
 <li>
-<strong>Transient analysis</strong>, available differentiation formulas: implicit Euler, trapezoidal, gear orders from 2 to 5. See for example the [<a href="https://github.com/ahkab/ahkab/wiki/Transient_simulation_example">simulation of a Colpitts Oscillator</a>.</li>
+<strong>Transient analysis</strong>, available differentiation formulas: implicit Euler, trapezoidal, gear orders from 2 to 5. See for example the <a href="https://github.com/ahkab/ahkab/wiki/Example:-Transient-simulation-1">simulation of a Colpitts Oscillator</a>.</li>
 <li><strong>AC analysis</strong></li>
 <li>
 <strong>Periodic steady state analysis</strong> of non-autonomous circuits, <em>time</em> <em>domain</em> shooting and brute-force algorithms.</li>
@@ -63,7 +66,7 @@
 
 <ul>
 <li>
-<strong>Small signal analysis</strong>, AC or DC, with extraction of transfer functions, DC gain, poles and zeros. Various <a href="https://github.com/ahkab/ahkab/wiki/SymbolicExamples">symbolic analysis examples on this page</a>.</li>
+<strong>Small signal analysis</strong>, AC or DC, with extraction of transfer functions, DC gain, poles and zeros. Various <a href="https://github.com/ahkab/ahkab/wiki/Example:-Symbolic-simulation">symbolic analysis examples on this page</a>.</li>
 </ul>
 </li>
 </ul><p>The results are saved to disk, plotted or printed to stdout and can be read/processed by the most common tools (eg. <a href="http://www.gnu.org/software/octave/">Octave</a>, <a href="http://www.gnuplot.info/">gnuplot</a>, <a href="http://www.mathworks.com/products/matlab/">Matlab</a>, <a href="http://www.telltronics.org/software/gwave/">gwave</a> and others)</p>
@@ -71,7 +74,7 @@
 <h3>
 <a name="download-and-install" class="anchor" href="#download-and-install"><span class="octicon octicon-link"></span></a>Download and install</h3>
 
-<p>There are no packages for the time being (this program is at an early development stage). Go to <a href="https://github.com/ahkab/ahkab">ahkab on github</a> and follow the instructions to check out the code. You can find the list of the dependencies in the <a href="https://github.com/ahkab/ahkab/wiki/Install_Notes">Install notes</a>.</p>
+<p>There are no packages for the time being (this program is at an early development stage). Go to <a href="https://github.com/ahkab/ahkab">ahkab on github</a> and follow the instructions to check out the code. You can find the list of the dependencies in the <a href="https://github.com/ahkab/ahkab/wiki/Install:-Notes">Install notes</a>.</p>
 
 <h3>
 <a name="run-standalone" class="anchor" href="#run-standalone"><span class="octicon octicon-link"></span></a>Run standalone</h3>
@@ -84,23 +87,16 @@
 <h3>
 <a name="documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation</h3>
 
-<p>The simulator can either be run from the command line with a netlist file or included in a python script. Both possibilities will be maintained for the foreseeable future.</p>
+<p>The simulator can either be run from the command line with a netlist file or included in a python script. Both possibilities will be maintained for the foreseeable future. </p>
 
-<p>Availabe documentation and examples can be found in the <a href="https://github.com/ahkab/ahkab/wiki/">project wiki</a>.</p>
+<p>Refer to the <a href="https://github.com/ahkab/ahkab/wiki/Help:-Netlist-Syntax">netlist syntax page</a> for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.</p>
 
-<p>Refer to the <a href="https://github.com/ahkab/ahkab/wiki/NetlistSyntax">netlist syntax page</a> for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.</p>
-
-<p>The latter option is shown briefly in the <strong><a href="https://github.com/ahkab/ahkab/wiki/SimulatingThePythonWay">Simulating the Python way</a></strong> wiki page. The code comes with docstrings associated with <em>most</em> functions, type <code>help(ahkab.function_name)</code>.</p>
+<p>The latter option is shown briefly in the <strong><a href="https://github.com/ahkab/ahkab/wiki/Example:-Python-API">Python API</a></strong> wiki page. The code comes with docstrings associated with <em>most</em> functions, type <code>help(ahkab.function_name)</code>.</p>
 
 <h3>
 <a name="contributors" class="anchor" href="#contributors"><span class="octicon octicon-link"></span></a>Contributors</h3>
 
 <p>Giuseppe Venturini (<a href="https://github.com/ggventurini" class="user-mention">@ggventurini</a> on GH) Ian Daniher (<a href="https://github.com/itdaniher" class="user-mention">@itdaniher</a>, also on GH)</p>
-
-<h3>
-<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h3>
-
-<p>The code is released under GPLv2.</p>
 
 <h3>
 <a name="bugs-and-patches" class="anchor" href="#bugs-and-patches"><span class="octicon octicon-link"></span></a>Bugs and patches</h3>
@@ -109,12 +105,16 @@
 
 <p>Does it work? Bugs? Do you have patches? Did you run some noteworthy simulation? Let me know! Feedback is very welcome, my <a href="http://tinymailto.com/5310">email address</a> is available after a captcha.</p>
       </section>
-      <footer>
-        <p>This project is maintained by <a href="https://github.com/ahkab">ahkab</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Ahkab maintained by <a href="https://github.com/ahkab">ahkab</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
       </footer>
     </div>
-    <script src="javascripts/scale.fix.js"></script>
+
               <script type="text/javascript">
             var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
             document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
@@ -125,6 +125,7 @@
             pageTracker._trackPageview();
             } catch(err) {}
           </script>
+
 
   </body>
 </html>
