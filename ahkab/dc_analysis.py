@@ -33,7 +33,7 @@ import sys
 import numpy, numpy.linalg
 import devices, diode
 import constants, ticker, options, circuit, printing, utilities, dc_guess, results
-from printing import NetlistParseException
+from netlist_parser import NetlistParseError
 
 
 def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=None, locked_nodes=None, skip_Tt=False, verbose=3):
@@ -856,7 +856,7 @@ def build_x0_from_user_supplied_ic(circ, icdict):
 			index = voltage_defined_elem_names.index(element_name)
 			x0[nv + index, 0] = value
 		else:
-			raise NetlistParseException, "Unrecognized label "+label
+			raise NetlistParseError, "Unrecognized label "+label
 	return x0[1:, :]
 
 def modify_x0_for_ic(circ, x0):

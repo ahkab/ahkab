@@ -22,16 +22,20 @@
 """
 
 import sys
+import os
+from optparse import OptionParser
+
 import numpy
 import sympy
 import matplotlib
-from optparse import OptionParser
+
+import ahkab
 
 # analyses
 import dc_analysis
 import transient
 import ac
-
+import pss
 import symbolic
 
 import netlist_parser
@@ -49,6 +53,7 @@ analysis = {'op':dc_analysis.op_analysis, 'dc': dc_analysis.dc_analysis,
             'tran': transient.transient_analysis, 'ac': ac.ac_analysis,
             'pss': pss.pss_analysis, 'symbolic': symbolic.symbolic_analysis}
 queue = []
+_print = False
 
 def new_op(guess=True, x0=None, outfile='-', verbose=3):
 	"""Assembles an OP analysis and returns the analysis object.
@@ -187,7 +192,7 @@ def new_pss(period, x0, points=None, method='brute-force', autonomous=False, mna
 
 	Returns: the analysis object (a dict)
 	"""
-	return {'type':"pss", "method":"brute-force", 'period':period, 'points'=points,
+	return {'type':"pss", "method":"brute-force", 'period':period, 'points':points,
 	        'autonomous':autonomous, 'mna':mna, 'Tf':Tf, 'D':D, 'x0':x0,
 		'data_filename':outfile+(outfile is not None)*('.'+method.lower()),
 		'verbose':verbose}
@@ -229,7 +234,7 @@ def new_symbolic(source=None, ac=True, r0s=False, subs=None, outfile=None, verbo
 
 	Returns: the analysis object (a dict)
 	"""
-	return {'type':"symbolic", 'source'=source, 'ac'=ac, 'r0s'=r0s, 'subs'=subs, 
+	return {'type':"symbolic", 'source':source, 'ac':ac, 'r0s':r0s, 'subs':subs, 
 		'data_filename':outfile+(outfile is not None)*'.symbolic',
 		'verbose':verbose}
 		
@@ -380,13 +385,12 @@ def set_temperature(T):
 		printing.print_warning(u"The temperature will be set to %f \xB0 C.")
 	constants.T = utilities.Celsius2Kelvin(T)
 
-def process_postproc(postproc_list, title, results, outfilename, remote=False):
+def process_postproc(postproc_list, title, results, outfilename):
 	"""Runs the post-processing operations, such as plotting.
 	postproc_list: list of post processing operations as returned by main()
 	title: the deck title
 	results: the results to be plotted (including the ones that are not needed)
 	outfilename: if the plots are saved to disk, this is the filename without extension
-	remote: boolean, do not show plots if True (such as ssh without X11 forwarding)
 
 	Returns: None
 	"""
@@ -395,14 +399,13 @@ def process_postproc(postproc_list, title, results, outfilename, remote=False):
 		printing.print_warning("Plotting and printing the results to stdout are incompatible options. Plotting skipped.")
 		return
 	for postproc in postproc_list:
-		#print postproc["analysis"], results.keys(), results.has_key(postproc["analysis"]), results[postproc["analysis"]] is None #DEBUG
 		plotting.plot_results(title, postproc["x"], postproc["l2l1"], results[postproc["analysis"]], "%s-%d.%s" % (outfilename, index, options.plotting_outtype))
 		index = index +1
-	if len(postproc_list) and not remote:
+	if len(postproc_list) and not options.plotting_show_plots:
 		plotting.show_plots()
 	return None
 
-def main(filename, outfile="stdout", tran_method=transient.TRAP.lower(), no_step_control=False, dc_guess='guess', print_circuit=False, remote=True, verbose=3):
+def main(filename, outfile="stdout", tran_method=transient.TRAP.lower(), no_step_control=False, dc_guess='guess', print_circuit=False, verbose=3):
 	"""This method allows calling ahkab from a Python script.
 	"""
 	printing.print_info_line(("This is ahkab %s running with:" %(__version__),6), verbose)
@@ -410,8 +413,6 @@ def main(filename, outfile="stdout", tran_method=transient.TRAP.lower(), no_step
 	printing.print_info_line(("  Numpy %s"  % (numpy.__version__),6), verbose)
 	printing.print_info_line(("  Sympy %s"  % (sympy.__version__),6), verbose)
 	printing.print_info_line(("  Matplotlib %s"  % (matplotlib.__version__),6), verbose)
-
-	utilities._set_execution_lock()
 
 	read_netlist_from_stdin = (filename is None or filename == "-")
 	(circ, directives, postproc_direct) = netlist_parser.parse_circuit(filename, read_netlist_from_stdin)
@@ -438,25 +439,24 @@ def main(filename, outfile="stdout", tran_method=transient.TRAP.lower(), no_step
 		if verbose:
 			printing.print_warning("No analysis requested.")
 	if len(an_list) > 0:
-		results = process_analysis(an_list, circ, outfile, verbose, guess=dc_guess.lower()=="guess", \
-		cli_tran_method=tran_method, disable_step_control=no_step_control)
+		results = run(circ, an_list)
 	else:
 		printing.print_warning("Nothing to do. Quitting.")
 
 	if len(an_list) > 0 and len(postproc_list) > 0 and len(results):
-		process_postproc(postproc_list, circ.title, results, outfile, remote)
-
-	utilities._unset_execution_lock()
+		process_postproc(postproc_list, circ.title, results, outfile)
 
 	return results
 
 if __name__ == "__main__":
-	parser = OptionParser(usage="usage: \t%prog [options] <filename>\n\nThe filename is the netlist to be open. Use - (a dash) to read from stdin.",  version="%prog "+__version__+u" (c) 2006-2013 Giuseppe Venturini")
+	parser = OptionParser(usage="usage: \t%prog [options] <filename>\n\nThe filename is the \
+	                             netlist to be open. Use - (a dash) to read from stdin.",  \
+	                             version="%prog "+__version__+" (c) 2006-2013 Giuseppe Venturini")
 	
 	#general options
 	parser.add_option("-v", "--verbose", action="store", type="string", dest="verbose", default="3", help="Verbose level: from 0 (almost silent) to 5 (debug)")
 	parser.add_option("-p", "--print", action="store_true", dest="print_circuit", default=False, help="Print the parsed circuit")
-	parser.add_option("-o", "--outfile", action="store", type="string", dest="outfile", default="stdout", help="Data output file. Defaults to stdout.")
+	parser.add_option("-o", "--outfile", action="store", type="string", dest="outfile", default=options.default_output_file, help="Data output file. Defaults to stdout.")
 	parser.add_option("", "--dc-guess", action="store", type="string", dest="dc_guess", default="guess", help="Guess to be used to start a op or dc analysis: none or guess. Defaults to guess.")
 	parser.add_option("-t", "--tran-method", action="store", type="string", dest="method", default=transient.TRAP.lower(), help="Method to be used in transient analysis: " +transient.IMPLICIT_EULER.lower()+", "+transient.TRAP.lower()+", "+transient.GEAR2.lower()+", "+transient.GEAR3.lower()+", "+transient.GEAR4.lower()+", "+transient.GEAR5.lower()+" or "+transient.GEAR6.lower()+". Defaults to TRAP.")
 	parser.add_option("", "--t-fixed-step", action="store_true", dest="no_step_control", default=False, help="Disables the step control in transient analysis. Useful if you want to perform a FFT on the results.")
@@ -477,7 +477,7 @@ if __name__ == "__main__":
 	
 	verbose = int(cli_options.verbose)
 	if cli_options.method is not None:
-		method = cli_options.method.upper()
+		options.default_tran_method = cli_options.method.upper()
 	if cli_options.vea is not None:
 		options.vea = float(cli_options.vea)
 	if cli_options.ver is not None:
@@ -513,10 +513,13 @@ if __name__ == "__main__":
 		read_netlist_from_stdin = False
 	if not read_netlist_from_stdin and not utilities.check_file(remaning_args[0]):
 		sys.exit(23)
-	
+
+	options.default_output_file = cli_options.outfile
+	options.transient_no_step_control = cli_options.no_step_control
+	options.dc_use_guess = cli_options.dc_guess
+	_print = cli_options.print_circuit
+
 	# Program execution
-	main(filename=remaning_args[0], outfile=cli_options.outfile, tran_method=cli_options.method, \
-		no_step_control=cli_options.no_step_control, dc_guess=cli_options.dc_guess, \
-		print_circuit=cli_options.print_circuit, remote=False, verbose=verbose)
+	main(filename=remaning_args[0])
 
 	sys.exit(0)

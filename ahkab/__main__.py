@@ -27,6 +27,8 @@ import sympy
 import matplotlib
 from optparse import OptionParser
 
+import ahkab
+
 # analyses
 import dc_analysis
 import transient

@@ -16,6 +16,7 @@
 #
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
+import os
 
 # global: errors
 # voltage: absolute and relative tolerances
@@ -43,6 +44,7 @@ use_source_stepping = True
 
 # dc
 dc_max_nr_iter = 10000
+dc_use_guess = True
 dc_max_guess_effort = 250000
 dc_log_step = 'LOG'
 dc_lin_step = 'LIN'
@@ -56,6 +58,7 @@ transient_max_nr_iter = 20
 # use the prediction value as first guess for x(n+1), otherwise uses x(n)
 transient_prediction_as_x0 = True
 transient_use_aposteriori_step_control = True
+transient_no_step_control = False
 # we do not want to redo the iteraction if the aposteriori check suggests a step that is 
 # very close to the one we already used. 0.9 seems to be a good idea.
 transient_aposteriori_step_threshold = 0.9
@@ -69,7 +72,7 @@ SHOOTINGPSS = 'shooting'
 shooting_default_points = 100
 shooting_max_nr_iter = 10000
 
-#symbolic
+# symbolic
 symb_internal_solver = False
 symb_sympy_manual_solver = False
 
@@ -78,8 +81,12 @@ ac_lin_step = 'LIN'
 ac_max_nr_iter = 20
 ac_phase_in_deg = False
 
-#plotting
+# printing
+default_output_file = 'stdout'
+
+# plotting
 # Set to None to disable writing plots to disk
+plotting_show_plots = ('DISPLAY' in os.environ)
 plotting_outtype = "png"
 plotting_wait_after_plot = True
 plotting_style = "-o"
