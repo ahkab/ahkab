@@ -182,11 +182,3 @@ def plot_results(title, xvarname, y2y1_list, results, outfilename):
 
 def show_plots():
 	pylab.show()
-
-if __name__ == '__main__':
-	filename = 'colpitts_graph.tran'
-	labels = read_data_header(filename)
-	print labels
-	for label in labels[1:]:
-                print label
-		plot_file("Plot "+label, labels[0], [label], [None], filename, "tran", "plot-"+label+".png")

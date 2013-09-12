@@ -32,6 +32,7 @@ Contains a diode element and its model class.
 
 class diode:
 	letter_id = "d"
+	descr = None
 	is_nonlinear = True
 	is_symbolic = True
 	dc_guess = [0.425]

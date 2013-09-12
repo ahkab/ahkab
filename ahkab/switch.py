@@ -33,9 +33,9 @@ sn2 o--+         +--o n2
 
 """
 
-import ahkab
-import constants, options, utilities, printing
 import math 
+import options, printing
+from circuit import CircuitError
 
 class switch_device:
 	"""This is a general switch element.
@@ -89,6 +89,7 @@ class switch_device:
 		self.opdict = {}
 		self.opdict.update({'state':(float('nan'), float('nan'))})
 		self.letter_id = 'S'
+		self.descr = None
 		self.is_nonlinear = True
 		self.is_symbolic = True
 		self.dc_guess = self.model.get_dc_guess(self.device.is_on)
@@ -266,11 +267,11 @@ class vswitch_model:
 		R2 = self.A*math.tanh((vin - Vtest)*self.SLOPE) + self.B
 		self._set_status(dev.is_on) 
 		if vin > self.V and not dev.is_on and R1-R2 == 0.0:
-			if debug: print "Switching ON: %g" %(vin,)
+			if debug: print "Switching ON: %g" % (vin,)
 			dev.is_on = True
 			self._set_status(dev.is_on) 
 		if vin < self.V and dev.is_on and R1-R2 == 0.0:
-			if debug: print "Switching OFF: %g" %(vin,)
+			if debug: print "Switching OFF: %g" % (vin,)
 			dev.is_on = False
 			self._set_status(dev.is_on) 
 		self.is_on = dev.is_on
@@ -317,7 +318,7 @@ if __name__ == '__main__':
 	ROFF = abs(1e4*numpy.random.randn())
 	#VT = 0.; VH=1.; RON=100;
 	print "Testing a switch with:"
-	print "VT: %g\tVH: %g\tRON:%g\tROFF:%g"%(VT, VH, RON, ROFF)
+	print "VT: %g\tVH: %g\tRON:%g\tROFF:%g" % (VT, VH, RON, ROFF)
 	m = vswitch_model(name='test', VT=VT, VH=VH, RON=RON, ROFF=ROFF)
 	VOs = [-12.5, -7.5, -2.5, 2.5, 7.5, 12.5]
 	VIs = [-12.5, -7.5, -2.5, 2.5, 7.5, 12.5]
@@ -340,7 +341,7 @@ if __name__ == '__main__':
 			go += [m.get_go((vo, vin), device)]
 			gon += [i[-1]/(vo+1e-12)]
 		pylab.subplot(221)
-		pylab.plot(vsweep, i, 'o-', label='VIN=%g'%(vin,))
+		pylab.plot(vsweep, i, 'o-', label='VIN=%g' % (vin,))
 		pylab.ylabel('Output current [A]')
 		pylab.xlabel('Output voltage [V]')
 		pylab.subplot(222)
@@ -357,12 +358,12 @@ if __name__ == '__main__':
 			go += [m.get_go((vo, vin), device)]
 			gon += [i[-1]/(vo+1e-12)]
 		pylab.subplot(223)
-		pylab.plot(vsweep, i, 'o-', label='VO=%g'%(vo,))
+		pylab.plot(vsweep, i, 'o-', label='VO=%g' % (vo,))
 		pylab.xlabel('Input voltage [V]')
 		pylab.ylabel('Output current [A]')
 		pylab.subplot(224)
-		pylab.plot(vsweep, go, 'o', color='g', label='VO=%g'%(vo,))
-		pylab.plot(vsweep, gon, '-', label='VO=%g'%(vo,))
+		pylab.plot(vsweep, go, 'o', color='g', label='VO=%g' % (vo,))
+		pylab.plot(vsweep, gon, '-', label='VO=%g' % (vo,))
 		pylab.ylabel('Output g [1/V]')
 		pylab.xlabel('Input voltage [V]')
 	pylab.subplot(221)
