@@ -35,7 +35,6 @@ sn2 o--+         +--o n2
 
 import math 
 import options, printing
-from circuit import CircuitError
 
 class switch_device:
 	"""This is a general switch element.
@@ -243,7 +242,7 @@ class vswitch_model:
 
 	def _get_VTVH_from_VONVOFF(self, VON, VOFF):
 		if VON is None or VOFF is None:
-			raise CircuitError
+			raise ValueError
 		VT = (VON-VOFF)/2.0 + VOFF
 		return VT, VT*1e-3
 
