@@ -1,6 +1,5 @@
 import time
 import os, os.path
-import pickle
 import subprocess
 import numpy
 from nose.tools import ok_, nottest, with_setup
