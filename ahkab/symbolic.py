@@ -36,7 +36,7 @@ import printing
 import results
 import options
 
-def solve(circ, tf_source=None, subs=None, opts=None, verbose=3):
+def solve(circ, tf_source=None, subs=None, opts=None, outfile=None, verbose=3):
 	"""Attempt a symbolic solution of the circuit.
 	circ: the circuit instance to be simulated.
 	tf_source: the name (string) of the source to be used as input for the transfer
@@ -140,7 +140,7 @@ def solve(circ, tf_source=None, subs=None, opts=None, verbose=3):
 		tfs = None
 	
 	# convert to a results instance
-	sol = results.symbolic_solution(sol, subs, circ)
+	sol = results.symbolic_solution(sol, subs, circ, outfile)
 	return sol, tfs
 
 def calculate_gains(sol, xin, optimize=True):
