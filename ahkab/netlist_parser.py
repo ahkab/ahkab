@@ -24,6 +24,7 @@ Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
 """
 
 import sys, imp, math
+import ahkab
 import circuit
 import devices
 import diode, mosq, ekv, switch
@@ -44,7 +45,6 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 	"""
 	# Lots of differences with spice's syntax:
 	# Support for alphanumeric node names, but the ref has to be 0. always
-	# Do not break lines with + 
 	# .end is not required, but if is used anything following it is ignored
 	# many others, see doc.
 	
@@ -77,7 +77,8 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 					continue
 				elif len(line) == 0:
 					continue #empty line
-				elif line[0] == "*": # comments start with *
+				line = join_lines(fp, line)
+				if line[0] == "*": # comments start with *
 					continue
 				
 				# directives are grouped together and evaluated after
@@ -1263,8 +1264,10 @@ def parse_an_op(line, line_elements=None):
 		
 		if label == 'guess':
 			guess_label = value
+		else:
+			raise NetlistParseError
 			
-	return {"type":"op", "guess_label":guess_label}
+	return {"x0":guess_label}
 	
 def parse_an_dc(line, circ, line_elements=None):
 	"""Parses a DC analysis:
@@ -1275,53 +1278,54 @@ def parse_an_dc(line, circ, line_elements=None):
 	if line_elements is None:
 		line_elements = line.split()
 	
-	source_name = None
-	start = None
-	stop = None
-	step = None
-	stype = options.dc_lin_step
+	an = {}
+	params = {'start'
+	an['source_name'] = None
+	an['start'] = None
+	an['stop'] = None
+	an['step'] = None
+	an['sweep_type'] = options.dc_lin_step
 	
 	for token in line_elements[1:]:
 		if token[0] == "*":
 			break
 		(label, value) = parse_param_value_from_string(token)
 		if label == 'src':
-			source_name = value
-			if value[0] == "v":
-				source_type = "vsource"
-			elif value[0] == "i":
-				source_type = "isource"
-			else:
-				raise NetlistParseError("Stepping is only" + \
-				"supported with Voltage and Current sources")
-			
+			source = value
+			# check we got a current source or a voltage source
+			if not value[0] == "v" or value[0] == "i":
+				raise NetlistParseError, "Stepping is only " + \
+				"supported with Voltage and Current sources"
+			# check we got an EXISTING current source or a voltage source
 			source_exists = False
 			for elem in circ.elements:
-				if elem.descr == source_name[1:]:
-					if (source_type == 'vsource' and isinstance(elem, devices.vsource)): 
-						source_exists = True
-						break
-					elif (source_type == 'isource' and isinstance(elem, devices.isource)):
+				if elem.descr == source[1:]:
+					if (value[0] == "v" and isinstance(elem, devices.vsource)) or \
+					(value[0] == "i" and isinstance(elem, devices.isource)): 
 						source_exists = True
 						break
 			if not source_exists:
 				raise NetlistParseError("Source "+source_name+" not found in circuit.")
+
 		
-		elif label == 'start':
-			start = convert_units(value)
+		elif label in an:
+			an[label] = convert_units(value)
 		elif label == 'stop':
 			stop = convert_units(value)
 		elif label == 'step':
 			step = convert_units(value)
 		elif label == 'type':
-			stype = value[:3].upper()
+			sweep_type = value[:3].upper()
 		else:
-			raise NetlistParseError("")
+			raise NetlistParseError, "Unknown DC parameter %s" % label
 	
 	if start is None or stop is None or step is None or not source_exists:
-		raise NetlistParseError("Required parameters are missing.")
+		raise NetlistParseError, 
+		      "Required parameters are missing: start=%f, stop=%f, step=%s" % (start, stop, step)
 	
-	return {"type":"dc", "source_name":source_name, "start":start, "stop":stop, "step":step, "stype":stype}
+	points = long((stop - start)/step)
+	return {'start':start, 'stop':stop, points, source, sweep_type, 'guess':options.dc_use_guess, 'x0':'op'}
+
 
 def parse_an_ac(line, circ, line_elements=None):
 	"""Parses an AC analysis:
@@ -1347,10 +1351,11 @@ def parse_an_ac(line, circ, line_elements=None):
 		elif label == 'nsteps':
 			nsteps = convert_units(value)
 		else:
-			raise NetlistParseError("")
+			raise NetlistParseError, "Unknown AC parameter %s" % label
 	
 	if start is None or stop is None or nsteps is None:
-		raise NetlistParseError("Required parameters are missing.")
+		raise NetlistParseError("Required parameters are missing. start=%f, stop=%f, \
+		                         step=%s" % (start, stop, nsteps)
 	
 	return {"type":"ac", "start":start, "stop":stop, "nsteps":nsteps}
 
@@ -1681,3 +1686,21 @@ def parse_include_directive(line, line_elements=None):
 	fnew = open(path, "r")
 	
 	return [None, path, True]
+	
+def join_lines(fp, line):
+	"""Read the lines coming up in the file. Each line that starts with '+' is added to the 
+	previous line (line continuation rule). When a line not starting with '+' is found, the 
+	file is rolled back and the line is returned.
+	"""
+	last_pos = fp.tell()
+	for next in fp:
+		next = next.strip().lower()
+		if next[0] == '+'
+			next[0] = ' '
+			line += next
+		else:
+			fp.seek(last_pos)
+			break
+		last_pos = fp.tell()
+	return line
+
