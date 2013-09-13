@@ -1,0 +1,7 @@
+* brute force solution
+
+.include diffamp.ckt
+
+.op
+.shooting period=100u points=100 method=brute-force
+.plot shooting v(1)

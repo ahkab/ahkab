@@ -1,0 +1,25 @@
+* Amplificatore differenziale
+ic 3 11 type=idc idc=2u
+m1 1 20 3 0 nch w=1u l=1u
+m2 2 21 3 0 nch w=1u l=1u
+
+m3 1 2 12 12 pch w=1u l=3u
+m4 2 2 12 12 pch w=1u l=3u
+
+v1 12 0 type=vdc vdc=5
+v2 11 0 type=vdc vdc=-5
+
+r1a 12 20 10k
+r2a 20 11 10k
+
+r1b 12 21 10k
+r2b 21 11 10k
+
+cbp1 30 20 1m
+vd1 30 0 type=vdc vdc=0 type=sin td=0 vo=0 va=0.5m freq=10k theta=0
+vd2 0 31 type=vdc vdc=0 type=sin td=0 vo=0 va=0.5m freq=10k theta=0
+cbp2 31 21 1m
+
+.model ekv nch type=n kp=20u vto=.5
+.model ekv pch type=p kp=20u vto=-.5
+

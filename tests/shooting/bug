@@ -1,0 +1,27 @@
+import sympy, timeit
+
+global size
+
+def m_inv(): 
+	global size
+	print "Matrix size:", size
+	M = sympy.zeros(size)
+	for ri in range(size):
+		for ci in range(size):
+			M[ri,ci] = sympy.Symbol(ms[ri][ci], real=True)
+	iinv = M.inv()
+	size = size + 1
+
+global ms, size
+m = 'm'
+ms = {}
+max_size = 13
+size = 1 
+for ri in range(max_size):
+	ms.update({ri:{}})
+	for ci in range(max_size):
+		ms[ri].update({ci:m+str(ri)+'_'+str(ci)})
+print "Setup OK"
+for sizei in range(1, max_size):
+	print timeit.timeit(m_inv) 
+
