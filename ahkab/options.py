@@ -16,6 +16,8 @@
 #
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
+"""This module contains options and configuration switches 
+"""
 import os
 
 # global: errors
@@ -62,7 +64,7 @@ transient_no_step_control = False
 # we do not want to redo the iteraction if the aposteriori check suggests a step that is 
 # very close to the one we already used. 0.9 seems to be a good idea.
 transient_aposteriori_step_threshold = 0.9
-cmin=1e-18
+cmin = 1e-18
 
 # pss
 BFPSS = 'bfpss'

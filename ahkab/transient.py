@@ -33,9 +33,8 @@ import sys, imp
 import numpy
 import dc_analysis, implicit_euler, ticker, options, circuit, printing, utilities
 import devices, results
-
-
-#methods, add here
+           
+# differentiation methods, add them here
 IMPLICIT_EULER = "IMPLICIT_EULER"
 TRAP = "TRAP"
 GEAR1 = "GEAR1"
@@ -45,17 +44,79 @@ GEAR4 = "GEAR4"
 GEAR5 = "GEAR5"
 GEAR6 = "GEAR6"
 
-def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=None, N=None, \
-	D=None, data_filename="stdout", use_step_control=True, return_req_dict=None, verbose=3):
+specs = {'tran':{'tokens':({
+                          'label':'tstep',
+                          'pos':0,
+                          'type':float,
+                          'needed':True,
+                          'dest':'tstep',
+                          'default':None
+                         },
+                         {
+                          'label':'tstop',
+                          'pos':1,
+                          'type':float,
+                          'needed':True,
+                          'dest':'tstop',
+                          'default':None
+                         },
+                         {
+                          'label':'start',
+                          'pos':None,
+                          'type':float,
+                          'needed':False,
+                          'dest':'tstart',
+                          'default':0
+                         },
+                         {
+                          'label':'uic',
+                          'pos':2,
+                          'type':float,
+                          'needed':False,
+                          'dest':'uic',
+                          'default':0
+                         },
+                         {
+                          'label':'ic_label',
+                          'pos':None,
+                          'type':str,
+                          'needed':False,
+                          'dest':'x0',
+                          'default':0
+                         },
+                         {
+                          'label':'method',
+                          'pos':None,
+                          'type':str,
+                          'needed':False,
+                          'dest':'method',
+                          'default':TRAP
+                         }
+                        )
+               }
+           }
+
+
+def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control=True,
+                       x0=None, mna=None, N=None, D=None, 
+                       outfile="stdout", return_req_dict=None, verbose=3):
 	"""Performs a transient analysis of the circuit described by circ.
 	
-	Important parameters:
-	- tstep is the maximum step to be allowed during simulation.
-	- print_step_and_lte is a boolean value. Is set to true, the step and the LTE of the first
-	element of x will be printed out to step_and_lte.graph in the current directory.
-	
+	Parameters:
+	circ: circuit instance to be simulated.
+	tstart: start value. Better leave this to zero.
+	tstep: the maximum step to be allowed during simulation or
+	tstop: stop value for simulation
+	method: differentiation method: 'TRAP' (default) or 'IMPLICIT_EULER' or 'GEARx' with x=1..6
+	use_step_control: the LTE will be calculated and the step adjusted. default: True
+	x0: the starting point, the solution at t=tstart (defaults to None, will be set to the OP)
+	mna, N, D: MNA matrices, defaulting to None, for big circuits, reusing matrices saves time
+	outfile: filename, the results will be written to this file. "stdout" means print out.
+	return_req_dict:  to be documented
+	verbose: verbosity level from 0 (silent) to 6 (very verbose).
+
 	"""
-	if data_filename == "stdout":
+	if outfile == "stdout":
 		verbose = 0
 	_debug = False
 	if _debug:
@@ -63,6 +124,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	else:
 		print_step_and_lte = False
 	
+	method = method.upper()
 	HMAX = tstep
 	
 	#check parameters
@@ -143,7 +205,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 		import gear as df
 		df.order = 6
 	else:
-		df = import_custom_df_module(method, print_out=(data_filename != "stdout"))
+		df = import_custom_df_module(method, print_out=(outfile != "stdout"))
 		# df is none if module is not found
 	
 	if df is None:
@@ -220,7 +282,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 	
 	iter_n = 0  # contatore d'iterazione
 	lte = None
-	sol = results.tran_solution(circ, tstart, tstop, op=x0, method=method, outfile=data_filename)
+	sol = results.tran_solution(circ, tstart, tstop, op=x0, method=method, outfile=outfile)
 	printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
 	tick = ticker.ticker(increments_for_step=1)
 	tick.display(verbose > 1)
@@ -239,7 +301,15 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, x0=None, mna=Non
 		elif x is not None:
 			x0 = x
 		
-		(x1, error, solved, n_iter) = dc_analysis.dc_solve(mna=(mna + numpy.multiply(x_coeff, D)) , Ndc=N,  Ntran=D*const, circ=circ, Gmin=Gmin_matrix, x0=x0, time=(time + tstep), locked_nodes=locked_nodes, MAXIT=options.transient_max_nr_iter, verbose=0)
+		(x1, error, solved, n_iter) = dc_analysis.dc_solve(
+		                                             mna=(mna + numpy.multiply(x_coeff, D)), 
+		                                             Ndc=N,  Ntran=D*const, circ=circ, 
+		                                             Gmin=Gmin_matrix, x0=x0, 
+		                                             time=(time + tstep), 
+		                                             locked_nodes=locked_nodes, 
+		                                             MAXIT=options.transient_max_nr_iter, 
+		                                             verbose=0
+		                                             )
 		
 		if solved:
 			old_step = tstep #we will modify it, if we're using step control otherwise it's the same

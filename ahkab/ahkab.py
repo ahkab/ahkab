@@ -22,7 +22,6 @@
 """
 
 import sys
-import os
 from optparse import OptionParser
 
 import numpy
@@ -49,11 +48,9 @@ import printing
 
 __version__ = "0.06a"
 
-analysis = {'op':dc_analysis.op_analysis, 'dc': dc_analysis.dc_analysis, 
-            'tran': transient.transient_analysis, 'ac': ac.ac_analysis,
-            'pss': pss.pss_analysis, 'symbolic': symbolic.symbolic_analysis}
 queue = []
 _print = False
+_x0s = {None:None}
 
 def new_op(guess=True, x0=None, outfile='-', verbose=3):
 	"""Assembles an OP analysis and returns the analysis object.
@@ -77,7 +74,8 @@ def new_op(guess=True, x0=None, outfile='-', verbose=3):
 	"""
 	return {'type':'op', 'guess':guess, 'x0':x0, 'outfile':outfile+(outfile is not None)*'.op', 'verbose':verbose}
 	
-def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None, outfile='-', verbose=3):
+def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None, outfile='stdout', \
+           verbose=3):
 	"""Assembles a DC sweep analysis and returns the analysis object.
 
 	The analysis itself can be run with:
@@ -104,11 +102,12 @@ def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None
 	
 	Returns: the analysis object (a dict)
 	"""
-	{'type':'dc', 'start':float(start), 'stop':float(stop), 'points':float(points), 
+	return {'type':'dc', 'start':float(start), 'stop':float(stop), 'points':float(points), 
 	'source':source, 'x0':x0, 'outfile':outfile+(outfile is not None)*'.dc', 
 	'guess':guess, 'sweep_type':sweep_type,	verbose:verbose}
 	
-def new_tran(tstart, tstop, tstep, x0, method='trap', use_step_control=True, guess=True, outfile='-', verbose=3):
+def new_tran(tstart, tstop, tstep, x0, method=transient.TRAP, use_step_control=True, 
+             outfile='-', verbose=3):
 	"""Assembles a TRAN analysis and returns the analysis object.
 
 	The analysis itself can be run with:
@@ -121,13 +120,10 @@ def new_tran(tstart, tstop, tstep, x0, method='trap', use_step_control=True, gue
 	tstep (float): the time step. If the step control is active, this is the 
 	               minimum time step value.
 	x0 (numpy matrix): the optional starting point x0 = x(t=0). 
-	                   FIXME help method here
 	method (string): the differentiation method to be used. Can be set to 
 	                 'IMPLICIT_EULER', 'TRAP', 'GEAR4', 'GEAR5' or 'GEAR6'.
 	                 Defaults to 'TRAP'.
 	use_step_control (boolean): if False, use a fixed time step equal to tstep.
-	guess (boolean): if set to True, the guessing algorithm will be available to
-	                 help with building x0.
 	outfile (string): the filename of the output file where the results will be written.
 	                  '.tran' is automatically added at the end to prevent different 
 	                  analyses from overwriting each-other's results.
@@ -136,8 +132,8 @@ def new_tran(tstart, tstop, tstep, x0, method='trap', use_step_control=True, gue
 	Returns: the analysis object (a dict)
 	"""
 	return {"type":"tran", "tstart":tstart, "tstop":tstop, "tstep":tstep, 
-	       "method":method, "use_step_control":use_step_control, 'guess':guess, 
-	       'x0':x0, 'data_filename':outfile+(outfile is not None)*'.tran', 'verbose':verbose}
+	       "method":method, "use_step_control":use_step_control, 'x0':x0, 
+	       'outfile':outfile+(outfile is not None)*'.tran', 'verbose':verbose}
 	
 def new_ac(start, stop, points, x0, sweep_type='LOG', outfile=None, verbose=3):
 	"""Assembles an AC analysis and returns the analysis object.
@@ -160,11 +156,10 @@ def new_ac(start, stop, points, x0, sweep_type='LOG', outfile=None, verbose=3):
 	
 	Returns: the analysis object (a dict)
 	"""
-	return {'type':'ac', 'start':start, 'stop':stop, nsteps:points-1, 'sweep_type':sweep_type, \
+	return {'type':'ac', 'start':start, 'stop':stop, 'points':points, 'sweep_type':sweep_type, \
 	'x0':x0, 'data_filename':outfile+(outfile is not None)*'.ac', 'verbose':verbose}
 			
-def new_pss(period, x0, points=None, method='brute-force', autonomous=False, mna=None,
-            Tf=None, D=None, outfile=None, verbose=3):
+def new_pss(period, x0, points=None, method='brute-force', autonomous=False, outfile=None, verbose=3):
 	"""Assembles a Periodic Steady State (PSS) analysis and 
 	returns the analysis object.
 
@@ -193,11 +188,11 @@ def new_pss(period, x0, points=None, method='brute-force', autonomous=False, mna
 	Returns: the analysis object (a dict)
 	"""
 	return {'type':"pss", "method":"brute-force", 'period':period, 'points':points,
-	        'autonomous':autonomous, 'mna':mna, 'Tf':Tf, 'D':D, 'x0':x0,
+	        'autonomous':autonomous, 'x0':x0,
 		'data_filename':outfile+(outfile is not None)*('.'+method.lower()),
 		'verbose':verbose}
 
-def new_symbolic(source=None, ac=True, r0s=False, subs=None, outfile=None, verbose=3):
+def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=3):
 	"""Assembles a Symbolic analysis and 
 	returns the analysis object.
 
@@ -211,7 +206,7 @@ def new_symbolic(source=None, ac=True, r0s=False, subs=None, outfile=None, verbo
 	                 and zeros extraction. 'source' is to be set to the name
 	                 of am independent current or voltage source present in 
 	                 the circuit, eg. 'V1' or 'Iin'.
-	ac (boolean): if set True (default) the frequency-dependent elements will
+	ac_enable (boolean): if set True (default) the frequency-dependent elements will
 	              be considered, otherwise the algorithm will focus on 
 	              DC solutions (usually easier).
 	r0s (boolean): if set to True, the finite output conductances of 
@@ -234,7 +229,7 @@ def new_symbolic(source=None, ac=True, r0s=False, subs=None, outfile=None, verbo
 
 	Returns: the analysis object (a dict)
 	"""
-	return {'type':"symbolic", 'source':source, 'ac':ac, 'r0s':r0s, 'subs':subs, 
+	return {'type':"symbolic", 'source':source, 'ac_enable':ac_enable, 'r0s':r0s, 'subs':subs, 
 		'data_filename':outfile+(outfile is not None)*'.symbolic',
 		'verbose':verbose}
 		
@@ -255,11 +250,14 @@ def run(circ, an_list=None):
 		an_list = queue
 	
 	while len(an_list):
-		an = an_list.pop(0)
-		an_type = an.pop('type')
-		r = analysis[an_type](cir, **an)
+		an_item = an_list.pop(0)
+		an_type = an_item.pop('type')
+		r = analysis[an_type](circ, **an_item)
 		results.update({an_type:r})
-	
+		if an_type == 'op':
+			_x0s.update({'op':r})
+			_x0s.update({'op+ic':icmodified_x0(circ, r)})
+			_handle_netlist_ics(circ, an_list, ic_list=[])
 	return results
 
 def new_x0(circ, icdict):
@@ -270,114 +268,6 @@ def icmodified_x0(circ, x0):
 	
 def get_op_x0(circ):
 	return run(circ, [new_op()])
-
-def old():
-	for directive in [ x for x in an_list if x["type"] == "ic" ]:
-		x0_ic_dict.update({
-			directive["name"]:\
-			dc_analysis.build_x0_from_user_supplied_ic(circ, voltages_dict=directive["vdict"], currents_dict=directive["cdict"])
-			})
-	
-	for an in an_list:
-		if outfile != 'stdout':
-			data_filename = outfile + "." + an["type"]
-		else:
-			data_filename = outfile
-
-		if an["type"] == "ic":
-			continue
-
-		if an["type"] == "op":
-			if not an.has_key('guess_label') or an["guess_label"] is None:
-				x0_op = dc_analysis.op_analysis(circ, guess=guess, data_filename=data_filename, verbose=verbose)
-			else:
-				if not an["guess_label"] in x0_ic_dict:
-					printing.print_warning("op: guess is set but no matching .ic directive was found.")
-					printing.print_warning("op: using built-in guess method: "+str(guess))
-					x0_op = dc_analysis.op_analysis(circ, guess=guess, verbose=verbose)
-				else:
-					x0_op = dc_analysis.op_analysis(circ, guess=False, x0=x0_ic_dict[an["guess_label"]], verbose=verbose)
-			sol = x0_op
-		
-		elif an["type"] == "dc":
-			if an["source_name"][0].lower() == "v":
-				elem_type = "vsource"
-			elif an["source_name"][0].lower() == "i":
-				elem_type = "isource"
-			else:
-				printing.print_general_error("Type of sweep source is unknown: " + an[1][0])
-				sys.exit(1)
-			sol = dc_analysis.dc_analysis(
-					circ, start=an["start"], stop=an["stop"], step=an["step"], \
-					type_descr=(elem_type, an["source_name"][1:]), 
-					xguess=x0_op, data_filename=data_filename, guess=guess, 
-					stype=an['stype'], verbose=verbose)
-			
-		
-		#{"type":"tran", "tstart":tstart, "tstop":tstop, "tstep":tstep, "uic":uic, "method":method, "ic_label":ic_label}
-		elif an["type"] == "tran":
-			if cli_tran_method is not None:
-				tran_method = cli_tran_method.upper()
-			elif an["method"] is not None:
-				tran_method = an["method"].upper()
-			else:
-				tran_method = options.default_tran_method
-			
-			# setup the initial condition (t=0) according to uic
-			# uic = 0 -> all node voltages and currents are zero
-			# uic = 1 -> node voltages and currents are those computed in the last OP analysis
-			# uic = 2 -> node voltages and currents are those computed in the last OP analysis
-			#            combined with the ic=XX directive found in capacitors and inductors
-			# uic = 3 -> use a .ic directive defined by the user
-			uic = an["uic"]
-			if uic == 0:
-				x0 = None
-			elif uic == 1:
-				if x0_op is None:
-					printing.print_general_error("uic is set to 1, but no op has been calculated yet.")
-					sys.exit(51)
-				x0 = x0_op
-			elif uic == 2:
-				if x0_op is None:
-					printing.print_general_error("uic is set to 2, but no op has been calculated yet.")
-					sys.exit(51)
-				x0 = dc_analysis.modify_x0_for_ic(circ, x0_op)
-			elif uic == 3:
-				if an["ic_label"] is None:
-					printing.print_general_error("uic is set to 3, but param ic=<ic_label> was not defined.")
-					sys.exit(53)
-				elif not an["ic_label"] in x0_ic_dict:
-					printing.print_general_error("uic is set to 3, but no .ic directive named %s was found." \
-						%(str(an["ic_label"]),))
-					sys.exit(54)
-				x0 = x0_ic_dict[an["ic_label"]]
-			
-			sol = transient.transient_analysis(circ, \
-				tstart=an["tstart"], tstep=an["tstep"], tstop=an["tstop"], \
-				x0=x0, mna=None, N=None, verbose=verbose, data_filename=data_filename, \
-				use_step_control=(not disable_step_control), method=tran_method)
-		
-		elif an["type"] == "shooting":
-			if an["method"]=="brute-force":
-				sol = bfpss.bfpss(circ, period=an["period"], step=an["step"], mna=None, Tf=None, \
-					D=None, points=an["points"], autonomous=an["autonomous"], x0=x0_op, \
-					data_filename=data_filename, verbose=verbose)
-			elif an["method"]=="shooting":	
-				sol = shooting.shooting(circ, period=an["period"], step=an["step"], mna=None, \
-					Tf=None, D=None, points=an["points"], autonomous=an["autonomous"], \
-					data_filename=data_filename, verbose=verbose)
-		elif an["type"] == "symbolic":
-			if not 'subs' in an.keys():
-				an.update({'subs':None})
-			sol = symbolic.solve(circ, an['source'], opts={'ac':an['ac']}, subs=an['subs'], verbose=verbose)
-		elif an["type"] == "ac":
-			sol = ac.ac_analysis(circ=circ, start=an['start'], nsteps=an['nsteps'], \
-				stop=an['stop'], step_type='LOG', xop=x0_op, mna=None,\
-			        data_filename=data_filename, verbose=verbose)
-		elif an["type"] == "temp":
-			constants.T = utilities.Celsius2Kelvin(an['temp'])
-		results.update({an["type"]:sol})
-	return results
 
 def set_temperature(T):
 	T = float(T)
@@ -404,15 +294,20 @@ def process_postproc(postproc_list, title, results, outfilename):
 	if len(postproc_list) and not options.plotting_show_plots:
 		plotting.show_plots()
 	return None
+	
+analysis = {'op':dc_analysis.op_analysis, 'dc': dc_analysis.dc_analysis, 
+            'tran': transient.transient_analysis, 'ac': ac.ac_analysis,
+            'pss': pss.pss_analysis, 'symbolic': symbolic.symbolic_analysis, 
+            'temp':set_temperature}
 
-def main(filename, outfile="stdout", tran_method=transient.TRAP.lower(), no_step_control=False, dc_guess='guess', print_circuit=False, verbose=3):
+def main(filename, outfile="stdout", verbose=3):
 	"""This method allows calling ahkab from a Python script.
 	"""
-	printing.print_info_line(("This is ahkab %s running with:" %(__version__),6), verbose)
-	printing.print_info_line(("  Python %s" % (sys.version.split('\n')[0],),6), verbose)
-	printing.print_info_line(("  Numpy %s"  % (numpy.__version__),6), verbose)
-	printing.print_info_line(("  Sympy %s"  % (sympy.__version__),6), verbose)
-	printing.print_info_line(("  Matplotlib %s"  % (matplotlib.__version__),6), verbose)
+	printing.print_info_line(("This is ahkab %s running with:" %(__version__), 6), verbose)
+	printing.print_info_line(("  Python %s" % (sys.version.split('\n')[0],), 6), verbose)
+	printing.print_info_line(("  Numpy %s"  % (numpy.__version__), 6), verbose)
+	printing.print_info_line(("  Sympy %s"  % (sympy.__version__), 6), verbose)
+	printing.print_info_line(("  Matplotlib %s"  % (matplotlib.__version__), 6), verbose)
 
 	read_netlist_from_stdin = (filename is None or filename == "-")
 	(circ, directives, postproc_direct) = netlist_parser.parse_circuit(filename, read_netlist_from_stdin)
@@ -423,35 +318,45 @@ def main(filename, outfile="stdout", tran_method=transient.TRAP.lower(), no_step
 		printing.print_circuit(circ)
 		sys.exit(3)
 	
-	if verbose > 3 or print_circuit:
+	if verbose > 3 or _print:
 		print "Parsed circuit:"
 		printing.print_circuit(circ)
-	elif verbose > 1:
-		print circ.title.upper()
-	
-	an_list, ic_list = netlist_parser.parse_analysis(circ, directives)
-	postproc_list = netlist_parser.parse_postproc(circ, an_list, postproc_direct)
-	if len(an_list) > 0: 
-		printing.print_info_line(("Requested an.:", 4), verbose)
-		if verbose >= 4:
-			map(printing.print_analysis, an_list)
-	else:
-		if verbose:
-			printing.print_warning("No analysis requested.")
-	if len(an_list) > 0:
-		results = run(circ, an_list)
-	else:
-		printing.print_warning("Nothing to do. Quitting.")
 
-	if len(an_list) > 0 and len(postproc_list) > 0 and len(results):
+	ic_list = netlist_parser.parse_ics(directives)
+	_handle_netlist_ics(circ, an_list=[], ic_list=ic_list)
+	results = {}
+	for an in netlist_parser.parse_analysis(circ, directives):
+		if 'outfile' not in an.keys() or not an['outfile']:
+			an.update({'outfile':outfile})
+		_handle_netlist_ics(circ, [an], ic_list=[])
+		if verbose >= 4: 
+			printing.print_info_line(("Requested an.:", 4), verbose)
+			printing.print_analysis(an)
+		results.update(run(circ, [an]))
+	
+	postproc_list = netlist_parser.parse_postproc(circ, postproc_direct)
+	if len(postproc_list) > 0 and len(results):
 		process_postproc(postproc_list, circ.title, results, outfile)
 
 	return results
+	
+def _handle_netlist_ics(circ, an_list, ic_list):
+	for ic in ic_list:
+		ic_label = ic.keys()[0]
+		icdict = ic[ic_label]
+		_x0s.update({ic_label:new_x0(circ, icdict)})
+	for an in an_list:
+		if isinstance(an['x0'], str):
+			if an['x0'] in _x0s.keys():
+				an['x0'] = _x0s[an['x0']]
+			elif an_list.index(an) == 0:
+				printing.print_general_error("Unknown x0 %s" % an["x0"])
+				sys.exit(54)
+
 
 if __name__ == "__main__":
-	parser = OptionParser(usage="usage: \t%prog [options] <filename>\n\nThe filename is the \
-	                             netlist to be open. Use - (a dash) to read from stdin.",  \
-	                             version="%prog "+__version__+" (c) 2006-2013 Giuseppe Venturini")
+	usage = "usage: \t%prog [options] <filename>\n\nThe filename is the netlist to be open. Use - (a dash) to read from stdin."
+	parser = OptionParser(usage, version="%prog "+__version__+" (c) 2006-2013 Giuseppe Venturini")
 	
 	#general options
 	parser.add_option("-v", "--verbose", action="store", type="string", dest="verbose", default="3", help="Verbose level: from 0 (almost silent) to 5 (debug)")

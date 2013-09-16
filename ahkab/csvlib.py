@@ -10,7 +10,6 @@ Functions:
 2. MISC utilities
 	get_headers_index(headers, load_headers):
 	get_csv_headers(filename):
-	parse_value(astring)
 
 3. Internal routines
 	_get_fp(filename, mode='r')
@@ -20,7 +19,6 @@ Functions:
 
 import sys, copy
 import numpy
-import netlist_parser
 
 SEPARATOR = "\t"
 
@@ -208,7 +206,7 @@ def load_csv(filename, load_headers=[], nsamples=None, skip=0L):
 			data_values = line.split(SEPARATOR)
 			for i in range(len(data_values)):
 				if his.count(i) > 0:
-					data[his.index(i),-1] = parse_value(data_values[i])
+					data[his.index(i),-1] = float(data_values[i])
 				else:
 					pass
 			sample_index = sample_index + 1
@@ -226,22 +224,4 @@ def load_csv(filename, load_headers=[], nsamples=None, skip=0L):
 	headers = map(headers.__getitem__, his)
 
 	return numpy.mat(data), headers, pos, EOF
-
-def parse_value(astring):
-	try:
-		afloat = float(astring)
-		success = True
-	except ValueError:
-		success = False
-	if not success:
-		try:
-			afloat = netlist_parser.convert_units(astring)
-			success = True
-			print "(W): SPICE formatted value found."
-		except ValueError:
-			success = False
-	if not success:
-		print "(E): Unknown data format: "+astring
-		raise ValueError
-	return afloat
 
