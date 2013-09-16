@@ -20,7 +20,7 @@
 """
 This is the results module of the simulator.
 """
-import sys, time, copy
+import sys, time, copy, pickle
 import numpy
 import circuit, devices, printing, options, constants, csvlib
 VERSION = "0.06"
@@ -67,8 +67,8 @@ class op_solution:
 			self.results.update({varname:x[index, 0]})
 			self.errors.update({varname:error[index, 0]})
 			self.units.update({varname:"V"})
-			#if circ.is_int_node_internal_only(index+1):
-			#	self.skip_nodes_list.append(index)
+			if circ.is_int_node_internal_only(index+1):
+				self.skip_nodes_list.append(index)
 
 		for elem in circ.elements:
 			if circuit.is_elem_voltage_defined(elem):
@@ -206,6 +206,7 @@ class op_solution:
 				(v, self.results[v], self.units[v])
 		print str_repr[:-2]
 
+	@staticmethod
 	def gmin_check(op2, op1):
 		"""Checks the differences between two sets of OP results.
 		(It is assumed that one set of results is calculated with Gmin, the other without.)
@@ -226,7 +227,7 @@ class op_solution:
 				if abserr > options.ver*max(abs(op1.results[v]), abs(op2.results[v])) + options.vea:
 					check_failed_vars.append(v)
 			elif op1.units[v] == 'A':
-				if abserr > options.ier*max(abs(op1.results[v]), abs(op2.results[v]))+options.iea:
+				if abserr > options.ier*max(abs(op1.results[v]), abs(op2.results[v])) + options.iea:
 					check_failed_vars.append(v)
 			else:
 				print "Unrecognized unit... Bug."
@@ -324,7 +325,7 @@ class ac_solution:
 			self.units.update({varname_abs:"V"})
 			self.units.update({varname_arg:""})
 			if circ.is_int_node_internal_only(index+1):
-				skip_nodes_list.append(index)
+				self.skip_nodes_list.append(index)
 
 		for elem in circ.elements: 
 			if circuit.is_elem_voltage_defined(elem):
@@ -459,7 +460,7 @@ class dc_solution:
 			self.variables += [varname]
 			self.units.update({varname:"V"})
 			if circ.is_int_node_internal_only(index+1):
-				skip_nodes_list.append(index)
+				self.skip_nodes_list.append(index)
 
 		for elem in circ.elements: 
 			if circuit.is_elem_voltage_defined(elem):
@@ -579,7 +580,7 @@ class mc_solution:
 			self.variables += [varname]
 			self.units.update({varname:"V"})
 			if circ.is_int_node_internal_only(index+1):
-				skip_nodes_list.append(index)
+				self.skip_nodes_list.append(index)
 
 		for elem in circ.elements: 
 			if circuit.is_elem_voltage_defined(elem):
@@ -713,7 +714,7 @@ class tran_solution:
 			self.variables += [varname]
 			self.units.update({varname:"V"})
 			if circ.is_int_node_internal_only(index+1):
-				skip_nodes_list.append(index)
+				self.skip_nodes_list.append(index)
 
 		for elem in circ.elements: 
 			if circuit.is_elem_voltage_defined(elem):
@@ -837,7 +838,7 @@ class pss_solution:
 			self.variables += [varname]
 			self.units.update({varname:"V"})
 			if circ.is_int_node_internal_only(index+1):
-				skip_nodes_list.append(index)
+				self.skip_nodes_list.append(index)
 
 		for elem in circ.elements: 
 			if circuit.is_elem_voltage_defined(elem):
@@ -922,7 +923,7 @@ class pss_solution:
 		return next
 
 class symbolic_solution:
-	def __init__(self, results_dict, substitutions, circ):
+	def __init__(self, results_dict, substitutions, circ, outfile=None):
 		"""Holds a set of Symbolic results.
 			results_dict: the results dict returned by sympy.solve(),
 			substitutions: the substitutions (dict) employed before solving,
@@ -944,6 +945,9 @@ class symbolic_solution:
 			for symb in expr.atoms():
 				if symb.is_Symbol and not symb in self._symbols:
 					self._symbols.append(symb)
+		self.filename = outfile if outfile != 'stdout' else None
+		if self.filename is not None:
+			self.save()
 
 	def as_symbol(self, variable):
 		symbs = filter(lambda x: x.name.lower() == variable.lower(), self._symbols)
@@ -954,6 +958,20 @@ class symbolic_solution:
 			
 	def as_symbols(self, spacedstr):
 		return map(self.as_symbol, spacedstr.split())
+		
+	def save(self):
+		if not self.filename:
+			raise Exception, "Writing the results to file requires setting the \
+			                  'filename' attribute"
+		with open(self.filename, 'wb') as fp:
+			pickle.dump(self, fp)
+	
+	@staticmethod
+	def load(filename):
+		with open(filename, 'rb') as fp:
+			solution = pickle.load(fp)
+		return solution
+
 
 	def __repr__(self):
 		return self.results.__repr__()
@@ -1019,7 +1037,7 @@ class symbolic_solution:
 			raise StopIteration
 		else:
 			self.iter_index += 1
-		return self.results.keys()[self.iter_index], self.results[self.symbols[self.iter_index]]
+		return self.results.keys()[self.iter_index], self.results[self._symbols[self.iter_index]]
 
 
 class case_insensitive_dict:
@@ -1079,9 +1097,4 @@ class case_insensitive_dict:
 	# iterator methods
 	def __iter__(self):
 		return self._dict.__iter__()
-		
-	def next(self):
-		return self._dict.next()
-	
-
 
