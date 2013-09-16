@@ -98,11 +98,9 @@ def print_analysis(an):
 	elif an["type"] == "dc":
 		print ".dc", an["source_name"], "start =", an["start"], "stop =", an["stop"], "step =", an["step"], "type =", an["stype"]
 	elif an["type"] == "tran":
-		sys.stdout.write(".tran tstep="+str(an["tstep"])+" tstop="+str(an["tstop"])+" tstart="+str(an["tstart"])+" uic="+str(an["uic"]))
-		if an["uic"] == 3:
-			sys.stdout.write(" ic_label="+an["ic_label"])
+		sys.stdout.write(".tran tstep="+str(an["tstep"])+" tstop="+str(an["tstop"])+" tstart="+str(an["tstart"]))
 		if an["method"] is not None:
-			print " method =", an["method"]
+			print " method=" + an["method"]
 		else:
 			print ""
 	elif an["type"] == "shooting":
