@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-""" ahkab is a easy electronic circuit simulator.
+""" ahkab is an easy electronic circuit simulator.
 """
 
 import sys
@@ -419,12 +419,11 @@ if __name__ == "__main__":
 	if not read_netlist_from_stdin and not utilities.check_file(remaning_args[0]):
 		sys.exit(23)
 
-	options.default_output_file = cli_options.outfile
 	options.transient_no_step_control = cli_options.no_step_control
 	options.dc_use_guess = cli_options.dc_guess
 	_print = cli_options.print_circuit
 
 	# Program execution
-	main(filename=remaning_args[0])
+	main(filename=remaning_args[0], outfile=cli_options.outfile, verbose=verbose)
 
 	sys.exit(0)
