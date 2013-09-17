@@ -23,11 +23,22 @@ The syntax is explained in the docs and it's based on [1] whenever possible.
 Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
 """
 
-import sys, imp, math
+import sys, imp, math, copy
+import ahkab
 import circuit
-import devices
-import diode, mosq, ekv, switch
+import dc_analysis
+import devices, diode, mosq, ekv, switch
 import printing, utilities, plotting, options
+
+# analyses syntax
+from dc_analysis import specs as dc_spec
+from ac import specs as ac_spec
+from transient import specs as tran_spec
+from pss import specs as pss_spec
+from symbolic import specs as symbolic_spec
+specs = {}
+for i in dc_spec, ac_spec, tran_spec, pss_spec, symbolic_spec:
+	specs.update(i)
 
 def parse_circuit(filename, read_netlist_from_stdin=False):
 	"""Parse a SPICE-like netlist and return a circuit instance 
@@ -44,7 +55,6 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 	"""
 	# Lots of differences with spice's syntax:
 	# Support for alphanumeric node names, but the ref has to be 0. always
-	# Do not break lines with + 
 	# .end is not required, but if is used anything following it is ignored
 	# many others, see doc.
 	
@@ -68,17 +78,20 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 	
 	try:
 		while ffile is not None:
-			for line in ffile:
+			while True:
+				line = ffile.readline()
+				if len(line) == 0:
+					break # check for EOF
 				line_n = line_n + 1
-				
 				line = line.strip().lower()
 				if line_n == 1:
 					# the first line is always the title
 					circ.title = line
 					continue
 				elif len(line) == 0:
-					continue #empty line
-				elif line[0] == "*": # comments start with *
+					continue # empty line is really empty after strip()
+				line = join_lines(ffile, line)
+				if line[0] == "*": # comments start with *
 					continue
 				
 				# directives are grouped together and evaluated after
@@ -143,7 +156,7 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 			subckts_dict.update({subckt_obj.name:subckt_obj})
 		else:
 			raise NetlistParseError, "subckt " + subckt_obj.name + " has been redefined"
-		
+
 	elements = main_netlist_parser(circ, netlist_lines, subckts_dict, models)
 	circ.elements = circ.elements + elements
 	
@@ -1067,7 +1080,7 @@ def convert_units(string_value):
 	if type(string_value) is float:
 		return string_value # not actually a string!
 	if not len(string_value):
-		raise NetlistParseError("")
+		raise NetlistParseError, ""
 
 	index = 0
 	string_value = string_value.strip().upper()
@@ -1081,7 +1094,7 @@ def convert_units(string_value):
 		index = index+1
 	if index == 0:
 		#print string_value
-		raise ValueError
+		raise ValueError, "Unable to parse value: %s" % string_value
 		#return 0
 	numeric_value = float(string_value[:index])
 	multiplier = string_value[index:]
@@ -1118,7 +1131,7 @@ def convert_units(string_value):
 		raise ValueError
 	return numeric_value
 
-def parse_postproc(circ, an_list, postproc_direc):
+def parse_postproc(circ, postproc_direc):
 	postproc_list = []
 	for line, line_n in postproc_direc:
 		if line[0] == ".":
@@ -1129,21 +1142,14 @@ def parse_postproc(circ, an_list, postproc_direc):
 					plot_postproc = {}
 					plot_postproc["type"] = "plot"
 					plot_postproc["analysis"] = line_elements[1]
-					existing_an = False
-					for an in an_list:
-						if an["type"] == plot_postproc["analysis"]:
-							existing_an = True
-							if plot_postproc["analysis"] == "tran" or plot_postproc["analysis"] == "shooting":  	
-								plot_postproc["x"] = "T"
-							elif plot_postproc["analysis"] == "ac":
-								plot_postproc["x"] = "w" #QUIRKY FOR THE TIME BEING
-							elif plot_postproc["analysis"] == "dc":
-								plot_postproc["x"] = an["source_name"]
-							else:
-								printing.print_general_error("Plotting is unsupported for analysis type "+plot_postproc["analysis"])
-							break
-					if not existing_an:
-						raise NetlistParseError("Analysis "+plot_postproc["analysis"]+" not found.")
+					if plot_postproc["analysis"] == "tran" or plot_postproc["analysis"] == "shooting":  	
+						plot_postproc["x"] = "T"
+					elif plot_postproc["analysis"] == "ac":
+						plot_postproc["x"] = "w" #QUIRKY FOR THE TIME BEING
+					elif plot_postproc["analysis"] == "dc":
+						plot_postproc["x"] = an["source_name"]
+					else:
+						printing.print_general_error("Plotting is unsupported for analysis type "+plot_postproc["analysis"])
 						
 					graph_labels = ""
 					for glabel in line_elements[2:]:
@@ -1175,6 +1181,14 @@ def parse_postproc(circ, an_list, postproc_direc):
 				sys.exit(0)
 	return postproc_list
 					
+def parse_ics(directives):
+	ics = []
+	for line, line_n in directives:
+		if line[0] != '.':
+			continue
+		if line[:3] == '.ic':
+			ics += [parse_ic_directive(line)]
+	return ics
 
 def parse_analysis(circ, directives):
 	"""Parses the analyses.
@@ -1182,7 +1196,7 @@ def parse_analysis(circ, directives):
 	Parameters:
 	circ: a circuit class instance that descirbes the circuit.
 	directives: a list of tuples: (line, line_number). Those lines are taken 
-	from the netlistand are the ones that hold the information about the 
+	from the netlist and are the ones that hold the information about the 
 	simulations to be performed.
 	
 	Both of them are returned by parse_circuit()
@@ -1190,50 +1204,18 @@ def parse_analysis(circ, directives):
 	Returns:
 	a list of the analysis, see the code.
 	"""
-	
-	analysis = []
 	for line, line_n in directives:
-		line = line.strip().lower()
-		#if len(line) == 0:
-		#	continue
-		if line[0] == ".":
-			try:
-				line_elements = line.split()
-				# operating point
-				if line_elements[0] == ".op":
-					analysis.append(parse_an_op(line, line_elements))
-				# DC (direct current) sweep
-				elif line_elements[0] == ".dc":
-					analysis.append(parse_an_dc(line, circ, line_elements))
-				# AC (alternating current) sweep
-				elif line_elements[0] == ".ac":
-					analysis.append(parse_an_ac(line, circ, line_elements))
-				# transient analysis
-				elif line_elements[0] == ".tran":
-					analysis.append(parse_an_tran(line, line_elements))
-				# shooting
-				elif line_elements[0] == ".shooting":
-					analysis.append(parse_an_shooting(line, line_elements))
-				elif line_elements[0] == ".temp":
-					analysis.append(parse_temp_directive(line, line_elements))
-				elif line_elements[0] == ".ic":
-					analysis.append(parse_ic_directive(line, line_elements))
-				elif line_elements[0] == ".symbolic":
-					analysis.append(parse_an_symbolic(line, circ, line_elements))
-				else:
-					raise NetlistParseError("Unknown directive.")
-			except NetlistParseError, (msg,):
-				if len(msg):
-					printing.print_general_error(msg)
-				printing.print_parse_error(line_n, line)
-				sys.exit(0)
-	return analysis	
+		if line[0] != '.' or line[:3] == '.ic':
+			continue
+		line_elements = line.split()
+		yield parse_single_analysis(line, line_elements)
+	return 
 
 def parse_temp_directive(line, line_elements=None):
 	"""Parses a TEMP directive:
 	
 	The syntax is:
-	.TEMP <VALUE>>
+	.TEMP <VALUE>
 	"""
 	if line_elements is None:
 		line_elements = line.split()
@@ -1245,247 +1227,65 @@ def parse_temp_directive(line, line_elements=None):
 		
 	return {"type":"temp", "temp":value}
 	
-def parse_an_op(line, line_elements=None):
-	"""Parses a OP analysis:
-	
-	Directive is:
-	.OP
+def parse_single_analysis(line, line_elements=None):
+	"""Parses an analysis and returns a dict with its parameters.
 	"""
 	if line_elements is None:
 		line_elements = line.split()
 	
-	guess_label = None
+	an_type = line_elements[0].replace(".", "").lower()
+	if not an_type in specs:
+		raise NetlistParseError, "Unknown directive: %s" % an_type
+	params = list(copy.deepcopy(specs[an_type]['tokens']))
 	
-	for token in line_elements[1:]:
+	an = {'type':an_type}
+	for i in range(len(line_elements[1:])):
+		token = line_elements[i+1]
 		if token[0] == "*":
 			break
-		(label, value) = parse_param_value_from_string(token)
-		
-		if label == 'guess':
-			guess_label = value
+		if is_valid_value_param_string(token):
+			(label, value) = token.split('=')
+		else:
+			label, value = None, token
+		assigned = False
+		for t in params:
+			if (label is None and t['pos'] == i) or label == t['label']:
+				an.update({t['dest']:convert(value, t['type'])})
+				assigned = True
+				break
+		if assigned:
+			params.pop(params.index(t))
+			continue
+		else:
+			raise NetlistParseError, "Unknown .%s parameter: pos %d (%s=)%s" % \
+			                         (atype.upper(), i, label, value)
+
+	missing = []
+	for t in params:
+		if t['needed']:
+			missing.append(t['label'])
+	if len(missing):
+		raise NetlistParseError, \
+		      "Required parameters are missing: %s" % ("".join(line_elements))
+	# load defaults for unsupplied parameters
+	for t in params:
+		an.update({t['dest']:t['default']})
+
+	# ad-hoc code for tran ... :(
+	if an['type'] == 'tran':
+		uic = int(an.pop('uic'))
+		if uic == 0:
+			an['x0'] = None
+		elif uic == 1:
+			an['x0'] = 'op'
+		elif uic == 2:
+			an['x0'] = 'op+ic'
+		elif uic == 3:
+			pass # already set by ic_label
+		else:
+			raise NetlistParseError, "Unknown UIC value: %d" % uic
 			
-	return {"type":"op", "guess_label":guess_label}
-	
-def parse_an_dc(line, circ, line_elements=None):
-	"""Parses a DC analysis:
-	
-	Directive is:
-	.DC src=<src_name> start=<float> stop=<float> step=<float>
-	"""
-	if line_elements is None:
-		line_elements = line.split()
-	
-	source_name = None
-	start = None
-	stop = None
-	step = None
-	stype = options.dc_lin_step
-	
-	for token in line_elements[1:]:
-		if token[0] == "*":
-			break
-		(label, value) = parse_param_value_from_string(token)
-		if label == 'src':
-			source_name = value
-			if value[0] == "v":
-				source_type = "vsource"
-			elif value[0] == "i":
-				source_type = "isource"
-			else:
-				raise NetlistParseError("Stepping is only" + \
-				"supported with Voltage and Current sources")
-			
-			source_exists = False
-			for elem in circ.elements:
-				if elem.descr == source_name[1:]:
-					if (source_type == 'vsource' and isinstance(elem, devices.vsource)): 
-						source_exists = True
-						break
-					elif (source_type == 'isource' and isinstance(elem, devices.isource)):
-						source_exists = True
-						break
-			if not source_exists:
-				raise NetlistParseError("Source "+source_name+" not found in circuit.")
-		
-		elif label == 'start':
-			start = convert_units(value)
-		elif label == 'stop':
-			stop = convert_units(value)
-		elif label == 'step':
-			step = convert_units(value)
-		elif label == 'type':
-			stype = value[:3].upper()
-		else:
-			raise NetlistParseError("")
-	
-	if start is None or stop is None or step is None or not source_exists:
-		raise NetlistParseError("Required parameters are missing.")
-	
-	return {"type":"dc", "source_name":source_name, "start":start, "stop":stop, "step":step, "stype":stype}
-
-def parse_an_ac(line, circ, line_elements=None):
-	"""Parses an AC analysis:
-	
-	Directive is:
-	.AC start=<float> stop=<float> nsteps=<integer>
-	"""
-	if line_elements is None:
-		line_elements = line.split()
-	
-	start = None
-	stop = None
-	nsteps = None
-	
-	for token in line_elements[1:]:
-		if token[0] == "*":
-			break
-		(label, value) = parse_param_value_from_string(token)
-		if label == 'start':
-			start = convert_units(value)
-		elif label == 'stop':
-			stop = convert_units(value)
-		elif label == 'nsteps':
-			nsteps = convert_units(value)
-		else:
-			raise NetlistParseError("")
-	
-	if start is None or stop is None or nsteps is None:
-		raise NetlistParseError("Required parameters are missing.")
-	
-	return {"type":"ac", "start":start, "stop":stop, "nsteps":nsteps}
-
-
-def parse_an_tran(line, line_elements=None):
-	"""Parses a TRAN analysis:
-	
-	Directive is:
-	.TRAN TSTEP=n TSTOP=n [TSTART=n  UIC=0/1/2 METHOD=metodo]
-	"""
-	if line_elements is None:
-		line_elements = line.split()
-	
-	uic = 0
-	tstep = None
-	tstop = None
-	tstart = 0.0
-	method = None
-	ic_label = None
-	
-	for token in line_elements[1:]:
-		if token[0] == "*":
-			break
-		(label, value) = parse_param_value_from_string(token)
-		if label == 'tstep':
-			tstep = convert_units(value)
-		elif label == 'tstop':
-			tstop = convert_units(value)
-		elif label == 'tstart':
-			tstart = convert_units(value)
-		elif label == 'uic':
-			uic = convert_units(value)
-			if uic != 0 and uic != 1 and uic != 2 and uic !=3:
-				raise NetlistParseError("Invalid UIC value: "+str(uic))
-		elif label == 'method':
-			method = value
-		elif label == 'ic_label':
-			ic_label = value
-		else:
-			raise NetlistParseError("")
-	
-	if tstep is None or tstop is None:
-		raise NetlistParseError("Required parameters are missing.")
-	
-	return {"type":"tran", "tstart":tstart, "tstop":tstop, "tstep":tstep, "uic":uic, "method":method, "ic_label":ic_label}
-
-def parse_an_shooting(line, line_elements=None):
-	"""Parses a SHOOTING analysis.
-	
-	Directive is:
-	.SHOOTING PERIOD=n [points=n step=n autonomous=bool]
-	"""
-	
-	if line_elements is None:
-		line_elements = line.split()
-	
-	an = {"type":"shooting", "period":None, "points":None, "step":None, "autonomous":False, "method":"shooting"}
-	
-	for token in line_elements[1:]:
-		if token[0] == "*":
-			break
-		
-		(label, value) = parse_param_value_from_string(token)
-
-		if label == 'period':
-			an.update({"period":convert_units(value)})
-		elif label == 'points':
-			an.update({"points":int(convert_units(value))})
-		elif label == 'step':
-			an.update({'step':convert_units(value)})
-		elif label == 'autonomous':
-			an.update({'autonomous':convert_boolean(value)})
-		elif label == 'tstab':
-			an.update({'tstab':convert_units(value)})
-		elif label == 'method':
-			an.update({'method':value})
-		else:
-			raise NetlistParseError("Unknown parameter: " + label)
-	
-	if an["period"] is None:
-		raise NetlistParseError("Period is required.")
-	
-	if an["autonomous"]:
-		if an["step"] is not None:
-			raise NetlistParseError("autonomous=yes is incompatible with a step option.")
-	
-	if an["method"] != 'brute-force' and an["method"] != 'shooting':
-		raise NetlistParseError("Unknown shooting method: "+an["method"])
-	
 	return an
-
-def parse_an_symbolic(line, circ, line_elements=None):
-	"""Parses a symbolic analysis:
-	
-	Directive is:
-	.symbolic [tf=<src_name>]
-	"""
-	if line_elements is None:
-		line_elements = line.split()
-	
-	source_name = None
-	ac = False	
-
-	for token in line_elements[1:]:
-		if token[0] == "*":
-			break
-		(label, value) = parse_param_value_from_string(token)
-		if label == 'tf':
-			source_name = value
-			if value[0] == "v":
-				source_type = "vsource"
-			elif value[0] == "i":
-				source_type = "isource"
-			else:
-				raise NetlistParseError("Stepping is only" + \
-				"supported with Voltage and Current sources")
-			
-			source_exists = False
-			for elem in circ.elements:
-				if elem.descr == source_name[1:]:
-					if (source_type == 'vsource' and isinstance(elem, devices.vsource)): 
-						source_exists = True
-						break
-					elif (source_type == 'isource' and isinstance(elem, devices.isource)):
-						source_exists = True
-						break
-			if not source_exists:
-				raise NetlistParseError("Source "+source_name+" not found in circuit.")
-		elif label=='ac':
-			ac = convert_boolean(value)	
-		else:
-			raise NetlistParseError("")
-	
-	
-	return {"type":"symbolic", "source":source_name, 'ac':ac}
 
 def is_valid_value_param_string(astr):
 	"""Has the string a form like <param_name>=<value>?
@@ -1499,8 +1299,26 @@ def is_valid_value_param_string(astr):
 		ret_value = False
 	return ret_value
 		
+def convert(astr, rtype, raise_exception=False):
+	if rtype == float:
+		try:
+			ret = convert_units(astr)
+		except ValueError, msg:
+			if raise_exception:
+				raise ValueError, msg
+			else:
+				ret = astr
+	elif rtype == str:
+		ret = astr
+	elif rtype == bool:
+		ret = convert_boolean(astr)
+	elif raise_exception:
+		raise ValueError, "Unknown type %s" % rtype
+	else:
+		ret = astr
+	return ret
 
-def parse_param_value_from_string(astr, rtype=float):
+def parse_param_value_from_string(astr, rtype=float, raise_exception=False):
 	""" Searches the string for a <param>=<value> couple and returns a list.
 	if rtype is float (type), default value, the method will attempt converting 
 	the value to float. If the conversion fails, a string is returned. 
@@ -1516,13 +1334,7 @@ def parse_param_value_from_string(astr, rtype=float):
 	if not is_valid_value_param_string(astr):
 		return (astr, "")
 	p, v = astr.strip().split("=")
-	if rtype == float:
-		try:
-			v = convert_units(v)
-		except ValueError:
-			pass
-	elif rtype == str:
-		pass
+	v = convert(v, rtype, raise_exception=False)
 	return p, v 
 	
 class NetlistParseError(Exception):
@@ -1538,24 +1350,22 @@ def convert_boolean(value):
 	
 	Returns: boolean
 	"""
-	if value == 'no' or value == 'false' or value == '0':
+	if value == 'no' or value == 'false' or value == '0' or value == 0:
 		return_value = False
-	elif value == 'yes' or value == 'true' or value == '1':
+	elif value == 'yes' or value == 'true' or value == '1' or value == 1:
 		return_value = True
 	else:
-		raise NetlistParseError("invalid boolean: "+value)
+		raise NetlistParseError, "invalid boolean: "+value
 	
 	return return_value
 
 def parse_ic_directive(line, line_elements=None):
-	"""Parses a ic directives and assembles two dictionaries accordingly.
-	
+	"""Parses an ic directive and assembles a dictionary accordingly.
 	"""
 	if line_elements is None:
 		line_elements = line.split()
 	
-	voltages_dict = {}
-	currents_dict = {}
+	ic_dict = {}
 	name = None
 	for token in line_elements[1:]:
 		if token[0] == "*":
@@ -1564,17 +1374,19 @@ def parse_ic_directive(line, line_elements=None):
 		(label, value) = parse_param_value_from_string(token)
 		if label == "name" and name is None:
 			name = value
-		elif label[0] == 'v' and len(label) > 1 and not label[1:] in voltages_dict:
-			voltages_dict.update({label[1:]:convert_units(value)})	
-		elif label[0] == 'i' and len(label) > 1 and not label[1:] in currents_dict:
-			currents_dict.update({label[1:]:convert_units(value)})
-		else:
-			raise NetlistParseError, ""
+			continue
+		# the user should have specified either something like:
+		# V(node)=10u
+		# or something like:
+		# I(Vtest)=100e-6
+		ic_dict.update({label:convert_units(value)})	
+		# We may decide to check if the node exists and/or if the syntax
+		# is correct and raise NetlistParseError if needed.
 	
 	if name is None:
-		raise NetlistParseError("name parameter is missing")
-	
-	return {"type":"ic", "name":name, "vdict":voltages_dict, "cdict":currents_dict}
+		raise NetlistParseError, "The 'name' parameter is missing"
+
+	return {name:ic_dict}
 
 def parse_sub_declaration(subckt_lines):
 	"""Returns a circuit.subckt instance that holds the subckt 
@@ -1682,3 +1494,22 @@ def parse_include_directive(line, line_elements=None):
 	fnew = open(path, "r")
 	
 	return [None, path, True]
+	
+def join_lines(fp, line):
+	"""Read the lines coming up in the file. Each line that starts with '+' is added to the 
+	previous line (line continuation rule). When a line not starting with '+' is found, the 
+	file is rolled back and the line is returned.
+	"""
+	while True:
+		last_pos = fp.tell()
+		next = fp.readline()
+		next = next.strip().lower()
+		if not next:
+			break
+		elif next[0] == '+':
+			line += ' ' + next[1:]
+		else:
+			fp.seek(last_pos)
+			break
+	return line
+
