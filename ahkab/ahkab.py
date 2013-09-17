@@ -291,7 +291,7 @@ def process_postproc(postproc_list, title, results, outfilename):
 	for postproc in postproc_list:
 		plotting.plot_results(title, postproc["x"], postproc["l2l1"], results[postproc["analysis"]], "%s-%d.%s" % (outfilename, index, options.plotting_outtype))
 		index = index +1
-	if len(postproc_list) and not options.plotting_show_plots:
+	if len(postproc_list) and options.plotting_show_plots:
 		plotting.show_plots()
 	return None
 	
