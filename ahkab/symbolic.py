@@ -98,9 +98,9 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
 	mna, N = apply_substitutions(mna, N, subs)
 
 	printing.print_info_line(("MNA matrix (reduced):", 5), verbose)	
-	if verbose > 5:	print sympy.sstr(mna)
+	printing.print_info_line((sympy.sstr(mna), 5), verbose)
 	printing.print_info_line(("N matrix (reduced):", 5), verbose)	
-	if verbose > 5:	print sympy.sstr(N)
+	printing.print_info_line((sympy.sstr(N), 5), verbose)
 
 	printing.print_info_line(("Building equations...", 3), verbose)	
 	eq = []
@@ -119,12 +119,11 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
 	eq, x, sol_h = help_the_solver(eq, x)
 		
 	if len(eq):
-		if verbose > 3:
-			print "Symplified sytem:"
-			printing.print_symbolic_equations(eq)
-			print "To be solved for:"
-			print x
-			printing.print_info_line(("Solving...", 1), verbose)	
+		printing.print_info_line(("Symplified sytem:", 3), verbose)
+		if verbose > 3: printing.print_symbolic_equations(eq)
+		printing.print_info_line(("To be solved for:", 3), verbose)
+		printing.print_info_line((str(x), 3), verbose)
+		printing.print_info_line(("Solving...", 1), verbose)	
 
 		if options.symb_internal_solver:
 			sol = local_solve(eq, x)
@@ -146,10 +145,9 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
 	if sol == {}:
 		printing.print_warning("No solutions. Check the netlist.")
 	else:
-		printing.print_info_line(("Success!", 2), verbose)	
-		if verbose > 1:
-			print "Results:"
-		printing.print_symbolic_results(sol)
+		printing.print_info_line(("Success!", 2), verbose)
+		printing.print_info_line(("Results:", 1), verbose)	
+		if options.cli:	printing.print_symbolic_results(sol)
 
 	if source is not None:
 		src = sympy.Symbol(source.upper(), real=True)
@@ -489,13 +487,4 @@ def local_solve_iter(eqs, xs):
 				print single_sol
 				return eqs, single_sol
 	return eqs, {}
-	
 
-#def process_elements(circ):
-#	new_elem_list = []
-#	for elem in circ.elements:		
-#		if isinstance(elem, mosq.mosq):
-#			devices.resistor(elem.nd, elem.ns)			
-#			else:
-
-#def build_mos_function(vg, vs, )
