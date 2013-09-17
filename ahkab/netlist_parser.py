@@ -78,7 +78,10 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 	
 	try:
 		while ffile is not None:
-			for line in ffile:
+			while True:
+				line = ffile.readline()
+				if len(line) == 0:
+					break # check for EOF
 				line_n = line_n + 1
 				line = line.strip().lower()
 				if line_n == 1:
@@ -86,8 +89,8 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 					circ.title = line
 					continue
 				elif len(line) == 0:
-					continue #empty line
-				#line = join_lines(ffile, line)
+					continue # empty line is really empty after strip()
+				line = join_lines(ffile, line)
 				if line[0] == "*": # comments start with *
 					continue
 				
@@ -1497,15 +1500,16 @@ def join_lines(fp, line):
 	previous line (line continuation rule). When a line not starting with '+' is found, the 
 	file is rolled back and the line is returned.
 	"""
-	last_pos = fp.tell()
-	for next in fp:
+	while True:
+		last_pos = fp.tell()
+		next = fp.readline()
 		next = next.strip().lower()
-		if next[0] == '+':
-			next[0] = ' '
-			line += next
+		if not next:
+			break
+		elif next[0] == '+':
+			line += ' ' + next[1:]
 		else:
 			fp.seek(last_pos)
 			break
-		last_pos = fp.tell()
 	return line
 
