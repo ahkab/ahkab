@@ -279,8 +279,8 @@ def generate_Nac(circ):
 	for elem in circ.elements:
 		if isinstance(elem, devices.isource) and elem.abs_ac is not None:
 			#convenzione normale!
-			N[elem.n1, 0] = N[elem.n1, 0] + elem.abs_ac*numpy.exp(j*elem.arg_ac)
-			N[elem.n2, 0] = N[elem.n2, 0] - elem.abs_ac*numpy.exp(j*elem.arg_ac)
+			Nac[elem.n1, 0] = Nac[elem.n1, 0] + elem.abs_ac*numpy.exp(j*elem.arg_ac)
+			Nac[elem.n2, 0] = Nac[elem.n2, 0] - elem.abs_ac*numpy.exp(j*elem.arg_ac)
 	# process vsources
 	# for each vsource, introduce a new variable: the current flowing through it.
 	# then we introduce a KVL equation to be able to solve the circuit

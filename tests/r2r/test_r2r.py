@@ -56,7 +56,8 @@ def _run_test(ref_run=False):
 	x = numpy.array(x, dtype='int64')
 	times = numpy.array(times, dtype='float64')
 	if ref_run:
-		pickle.dump((x, times), open('r2r.pickle', 'w'))
+		with open('r2r.pickle', 'w') as fp:
+			pickle.dump((x, times), fp)
 	return x, times
 
 def test():

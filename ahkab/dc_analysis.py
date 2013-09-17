@@ -616,7 +616,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
 	if debug and not converged:
 		# re-run the convergence check, only this time get the results 
 		# by node, so we can show to the users which nodes are misbehaving.
-		converged, convergence_by_node = convergence_check(x, dx, residuo, nv-1, debug=True)[1]
+		converged, convergence_by_node = convergence_check(x, dx, residuo, nv-1, debug=True)
 	else:
 		convergence_by_node = []
 	return (x, residuo, converged, iteration, convergence_by_node)
