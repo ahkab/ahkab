@@ -408,7 +408,7 @@ def _handle_netlist_ics(circ, an_list, ic_list):
 		icdict = ic[ic_label]
 		_x0s.update({ic_label:new_x0(circ, icdict)})
 	for an in an_list:
-		if isinstance(an['x0'], str):
+		if 'x0' in an and isinstance(an['x0'], str):
 			if an['x0'] in _x0s.keys():
 				an['x0'] = _x0s[an['x0']]
 			elif an_list.index(an) == 0:
