@@ -17,5 +17,6 @@ v2 2 0 type=vdc vdc=2.5
 
 .op
 .ic name=tran_start v(1)=0 v(2)=2.5 v(3)=2.5 v(4)=0
-.tran tstop=50n tstep=1n uic=3 ic_label=tran_start method=trap
+.tran tstop=50n tstep=1n uic=3 ic_label=tran_start 
++method=trap
 *.plot tran v(1) v(3) v(4)
