@@ -327,7 +327,7 @@ def main(filename, outfile="stdout", verbose=3):
 	results = {}
 	for an in netlist_parser.parse_analysis(circ, directives):
 		if 'outfile' not in an.keys() or not an['outfile']:
-			an.update({'outfile':outfile})
+			an.update({'outfile':outfile+("."+an['type'])*(outfile != 'stdout')})
 		_handle_netlist_ics(circ, [an], ic_list=[])
 		if verbose >= 4: 
 			printing.print_info_line(("Requested an.:", 4), verbose)
