@@ -1185,7 +1185,6 @@ def parse_ics(directives):
 			continue
 		if line[:3] == '.ic':
 			ics += [parse_ic_directive(line)]
-	print ics
 	return ics
 
 def parse_analysis(circ, directives):
