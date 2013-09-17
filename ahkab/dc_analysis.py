@@ -404,9 +404,8 @@ def op_analysis(circ, x0=None, guess=True, outfile=None, verbose=3):
 
 	Returns a Operation Point result, if successful, None otherwise.
 	"""
-	#use_gmin = True
-	#solved=False
-	#x0 = numpy.mat(numpy.zeros((1,2)))
+	if outfile == 'stdout':
+		verbose = 0 # silent mode, print out results only.
 	
 	(mna, N) = generate_mna_and_N(circ)
 
@@ -435,32 +434,35 @@ def op_analysis(circ, x0=None, guess=True, outfile=None, verbose=3):
 		op1 = results.op_solution(x1, error1, circ, outfile=outfile, iterations=n_iter1)
 		printing.print_info_line(("Solving without Gmin:", 4), verbose)
 		(x2, error2, solved2, n_iter2) = dc_solve(mna, N, circ, Gmin=None, x0=x1, verbose=verbose)
-		
-		if not solved2:
-			printing.print_general_error("Can't solve without Gmin.")
-			if verbose:
-				print "Displaying latest valid results."
-				op1.write_to_file(filename='stdout')
-			opsolution = op1
-		else:
-			op2 = results.op_solution(x2, error2, circ, outfile=outfile, iterations=n_iter1+n_iter2)
-			op2.gmin = 0
-			badvars = results.op_solution.gmin_check(op2, op1)
-			printing.print_result_check(badvars, verbose=verbose)
-			check_ok = not (len(badvars) > 0)
-			if not check_ok and verbose:
-				print "Solution with Gmin:"
-				op1.write_to_file(filename='stdout')
-				print "Solution without Gmin:"
-			if verbose:
-				op2.write_to_file(filename='stdout')
-			opsolution = op2
-	
-		if outfile != 'stdout' and outfile is not None:
-			opsolution.write_to_file()
 	else:
+		solved2 = False
+		
+	if solved1 and not solved2:
+		printing.print_general_error("Can't solve without Gmin.")
+		if verbose:
+			print "Displaying latest valid results."
+			op1.write_to_file(filename='stdout')
+		opsolution = op1
+	elif solved1 and solved2:
+		op2 = results.op_solution(x2, error2, circ, outfile=outfile, iterations=n_iter1+n_iter2)
+		op2.gmin = 0
+		badvars = results.op_solution.gmin_check(op2, op1)
+		printing.print_result_check(badvars, verbose=verbose)
+		check_ok = not (len(badvars) > 0)
+		if not check_ok and verbose:
+			print "Solution with Gmin:"
+			op1.write_to_file(filename='stdout')
+			print "Solution without Gmin:"
+			op2.write_to_file(filename='stdout')
+		opsolution = op2
+	else: # not solved1
 		printing.print_general_error("Couldn't solve the circuit. Giving up.")
 		opsolution = None
+
+	if opsolution and outfile != 'stdout' and outfile is not None:
+		opsolution.write_to_file()
+	elif opsolution:
+		opsolution.write_to_file(filename='stdout')
 
 	return opsolution
 
