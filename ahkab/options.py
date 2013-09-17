@@ -20,6 +20,10 @@
 """
 import os
 
+# global: command line execution or module import
+# when cli is False, no printing and no weird stdout stuff.
+cli = False
+
 # global: errors
 # voltage: absolute and relative tolerances
 vea = 1e-6

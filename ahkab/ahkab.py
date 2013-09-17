@@ -22,6 +22,7 @@
 """
 
 import sys
+import tempfile
 from optparse import OptionParser
 
 import numpy
@@ -48,13 +49,14 @@ import printing
 
 __version__ = "0.06a"
 
-global _queue
+global _queue, _x0s, _print, _of
 
 _queue = []
 _print = False
 _x0s = {None:None}
+_of = []
 
-def new_op(guess=True, x0=None, outfile='stdout', verbose=3):
+def new_op(guess=True, x0=None, outfile=None, verbose=None):
 	"""Assembles an OP analysis and returns the analysis object.
 	The analysis itself can be run with:
 	ahkab.run(...)
@@ -74,10 +76,20 @@ def new_op(guess=True, x0=None, outfile='stdout', verbose=3):
 	
 	Returns: the analysis object (a dict)
 	"""
-	return {'type':'op', 'guess':guess, 'x0':x0, 'outfile':outfile+(outfile != 'stdout')*'.op', 'verbose':verbose}
+	if outfile is None or outfile == 'stdout': 
+		if options.cli:
+			outfile = 'stdout'
+		else:
+			ofi, outfile = tempfile.mkstemp(suffix='.op')
+			_of.append(ofi) # keep the file open until quitting
+	else:
+		outfile += '.op'
+	if verbose is None:
+		verbose = 0
+	return {'type':'op', 'guess':guess, 'x0':x0, 'outfile':outfile, 'verbose':verbose}
 	
-def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None, outfile='stdout', \
-           verbose=3):
+def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None, outfile=None, \
+           verbose=None):
 	"""Assembles a DC sweep analysis and returns the analysis object.
 
 	The analysis itself can be run with:
@@ -104,12 +116,22 @@ def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None
 	
 	Returns: the analysis object (a dict)
 	"""
+	if outfile is None or outfile == 'stdout': 
+		if options.cli:
+			outfile = 'stdout'
+		else:
+			ofi, outfile = tempfile.mkstemp(suffix='.dc')
+			_of.append(ofi) # keep the file open until quitting
+	else:
+		outfile += '.dc'
+	if verbose is None:
+		verbose = 0
 	return {'type':'dc', 'start':float(start), 'stop':float(stop), 'points':float(points), 
-	'source':source, 'x0':x0, 'outfile':outfile+(outfile != 'stdout')*'.dc', 
-	'guess':guess, 'sweep_type':sweep_type,	verbose:verbose}
+	        'source':source, 'x0':x0, 'outfile':outfile, 'guess':guess, 'sweep_type':sweep_type, 
+	        'verbose':verbose}
 	
 def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP, use_step_control=True, 
-             outfile='stdout', verbose=3):
+             outfile=None, verbose=None):
 	"""Assembles a TRAN analysis and returns the analysis object.
 
 	The analysis itself can be run with:
@@ -133,11 +155,21 @@ def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP, use_step_cont
 	
 	Returns: the analysis object (a dict)
 	"""
+	if outfile is None or outfile == 'stdout': 
+		if options.cli:
+			outfile = 'stdout'
+		else:
+			ofi, outfile = tempfile.mkstemp(suffix='.tran')
+			_of.append(ofi) # keep the file open until quitting
+	else:
+		outfile += '.tran'
+	if verbose is None:
+		verbose = 0
 	return {"type":"tran", "tstart":tstart, "tstop":tstop, "tstep":tstep, 
 	       "method":method, "use_step_control":use_step_control, 'x0':x0, 
-	       'outfile':outfile+(outfile != 'stdout')*'.tran', 'verbose':verbose}
+	       'outfile':outfile, 'verbose':verbose}
 	
-def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile='stdout', verbose=3):
+def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile=None, verbose=None):
 	"""Assembles an AC analysis and returns the analysis object.
 
 	The analysis itself can be run with:
@@ -158,10 +190,21 @@ def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile='stdout', ver
 	
 	Returns: the analysis object (a dict)
 	"""
-	return {'type':'ac', 'start':start, 'stop':stop, 'points':points, 'sweep_type':sweep_type, \
-	'x0':x0, 'outfile':outfile+(outfile != 'stdout')*'.ac', 'verbose':verbose}
+	if outfile is None or outfile == 'stdout': 
+		if options.cli:
+			outfile = 'stdout'
+		else:
+			ofi, outfile = tempfile.mkstemp(suffix='.ac')
+			_of.append(ofi) # keep the file open until quitting
+	else:
+		outfile += '.ac'
+	if verbose is None:
+		verbose = 0
+	return {'type':'ac', 'start':start, 'stop':stop, 'points':points, 'sweep_type':sweep_type, 
+	        'x0':x0, 'outfile':outfile, 'verbose':verbose}
 			
-def new_pss(period, x0=None, points=None, method='brute-force', autonomous=False, outfile='stdout', verbose=3):
+def new_pss(period, x0=None, points=None, method='brute-force', autonomous=False, outfile=None, 
+            verbose=None):
 	"""Assembles a Periodic Steady State (PSS) analysis and returns the analysis object.
 
 	The analysis itself can be run with:
@@ -188,12 +231,20 @@ def new_pss(period, x0=None, points=None, method='brute-force', autonomous=False
 
 	Returns: the analysis object (a dict)
 	"""
-	return {'type':"pss", "method":"brute-force", 'period':period, 'points':points,
-	        'autonomous':autonomous, 'x0':x0,
-		'outfile':outfile+(outfile != 'stdout')*('.'+method.lower()),
-		'verbose':verbose}
+	if outfile is None or outfile == 'stdout': 
+		if options.cli:
+			outfile = 'stdout'
+		else:
+			ofi, outfile = tempfile.mkstemp(suffix='.'+method.lower())
+			_of.append(ofi) # keep the file open until quitting
+	else:
+		outfile += '.' + method.lower()
+	if verbose is None:
+		verbose = 0
+	return {'type':"pss", "method":method, 'period':period, 'points':points,
+	        'autonomous':autonomous, 'x0':x0, 'outfile':outfile, 'verbose':verbose}
 
-def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile='stdout', verbose=3):
+def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=None):
 	"""Assembles a Symbolic analysis and returns the analysis object.
 
 	The analysis itself can be run with:
@@ -229,9 +280,18 @@ def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile='std
 
 	Returns: the analysis object (a dict)
 	"""
+	if outfile is None or outfile == 'stdout': 
+		if options.cli:
+			outfile = 'stdout'
+		else:
+			ofi, outfile = tempfile.mkstemp(suffix='.symbolic')
+			_of.append(ofi) # keep the file open until quitting
+	else:
+		outfile += '.symbolic'
+	if verbose is None:
+		verbose = 0
 	return {'type':"symbolic", 'source':source, 'ac_enable':ac_enable, 'r0s':r0s, 'subs':subs, 
-		'outfile':outfile+(outfile != 'stdout')*'.symbolic',
-		'verbose':verbose}
+		'outfile':outfile, 'verbose':verbose}
 		
 def queue(*analysis):
 	global _queue
@@ -423,6 +483,7 @@ if __name__ == "__main__":
 
 	options.transient_no_step_control = cli_options.no_step_control
 	options.dc_use_guess = cli_options.dc_guess
+	options.cli = True
 	_print = cli_options.print_circuit
 
 	# Program execution
