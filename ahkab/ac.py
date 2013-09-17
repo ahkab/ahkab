@@ -178,7 +178,6 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
 	Gmin_matrix = dc_analysis.build_gmin_matrix(circ, options.gmin, mna.shape[0], verbose)
 
 	iter_n = 0  # contatore d'iterazione
-	#printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_omega=True)
 	printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
 	tick = ticker.ticker(increments_for_step=1)
 	tick.display(verbose > 1)
