@@ -1,7 +1,7 @@
 # -*- coding: iso-8859-1 -*-
 # results.py
 # Results module
-# Copyright 2011 Giuseppe Venturini
+# Copyright 2011-2013 Giuseppe Venturini
 
 # This file is part of the ahkab simulator.
 #
@@ -23,7 +23,7 @@ This is the results module of the simulator.
 import sys, time, copy, pickle
 import numpy
 import circuit, devices, printing, options, constants, csvlib
-VERSION = "0.06"
+VERSION = "0.07"
 csvlib.SEPARATOR = "\t"
 
 	
@@ -54,7 +54,7 @@ class op_solution:
 		# (per questo, per misurare una corrente, si può fare uso di generatori di tensione da 0V)
 	
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
-		self.skip_nodes_list = []	      # nodi da saltare, solo interni
+		self.skip_nodes_list = []	# nodi da saltare, solo interni
 		self.variables = []
 		self.results = case_insensitive_dict()
 		self.errors = case_insensitive_dict()
@@ -181,7 +181,7 @@ class op_solution:
 		else:
 			fp = sys.stdout
 		fp.write(self.timestamp+"\n")
-		fp.write("ahkab v. "+VERSION+u" (c) 2006-2011 Giuseppe Venturini\n\n")
+		fp.write("ahkab v. "+VERSION+u" (c) 2006-2013 Giuseppe Venturini\n\n")
 		fp.write("Operating Point (OP) analysis\n\n")
 		fp.write("Netlist: %s\nTitle: %s\n" % (self.netlist_file, self.netlist_title))
 		fp.write("At %.2f K\n" % (self.temp,))
@@ -945,7 +945,7 @@ class symbolic_solution:
 			for symb in expr.atoms():
 				if symb.is_Symbol and not symb in self._symbols:
 					self._symbols.append(symb)
-		self.filename = outfile
+		self.filename = outfile if outfile != 'stdout' else None
 		if self.filename is not None:
 			self.save()
 

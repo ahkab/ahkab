@@ -29,11 +29,73 @@ The actual solution is done by mdn_solver, that uses a modified
 version of the Newton Rhapson method.
 """
 
-import sys
+import sys, re
 import numpy, numpy.linalg
 import devices, diode
 import constants, ticker, options, circuit, printing, utilities, dc_guess, results
 
+specs = {'op':{
+                'tokens':({
+                           'label':'guess',
+                           'pos':None,
+                           'type':bool,
+                           'needed':False,
+                           'dest':'guess',
+                           'default':options.dc_use_guess
+                          },
+                          {
+                           'label':'ic_label',
+                           'pos':None,
+                           'type':str,
+                           'needed':False,
+                           'dest':'x0',
+                           'default':None
+                          }
+                         )
+               },
+          'dc':{'tokens':({
+                                    'label':'source',
+                                    'pos':0,
+                                    'type':str,
+                                    'needed':True,
+                                    'dest':'source',
+                                    'default':None
+                                   },
+                                   {
+                                    'label':'start',
+                                    'pos':1,
+                                    'type':float,
+                                    'needed':True,
+                                    'dest':'start',
+                                    'default':None
+                                   },
+                                   {
+                                    'label':'stop',
+                                    'pos':2,
+                                    'type':float,
+                                    'needed':True,
+                                    'dest':'stop',
+                                    'default':None
+                                   },
+                                   {
+                                    'label':'step',
+                                    'pos':3,
+                                    'type':float,
+                                    'needed':True,
+                                    'dest':'step',
+                                    'default':None
+                                   },
+                                   {
+                                    'label':'type',
+                                    'pos':None,
+                                    'type':str,
+                                    'needed':False,
+                                    'dest':'type',
+                                    'default':None
+                                   }
+                                  )
+            }
+           }
 
 
 def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=None, locked_nodes=None, skip_Tt=False, verbose=3):
@@ -218,7 +280,7 @@ def get_solve_methods():
 	source_stepping = {"enabled":False,"failed":False,"factors":(0.001,.005,.01,.03,.1,.3,.5,.7,.8,.9), "index":0}
 	return standard_solving, gmin_stepping, source_stepping
 
-def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename="stdout", print_int_nodes=True, guess=True, stype="LINEAR", verbose=2):
+def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True, x0=None, outfile="stdout", verbose=3):
 	"""Performs a sweep of the value of V or I of a independent source from start 
 	value to stop value using the provided step. 
 	For every circuit generated, computes the op and prints it out.
@@ -227,55 +289,51 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 	circ: the circuit instance to be simulated
 	start: start value of the sweep source
 	stop: stop value of the sweep source
-	step: step value of the sweep source
-	elem_type: string, may be 'vsource' or 'isource'
-	elem_descr: the description of the element, used to recognize it in circ (i.e v<desc>)
-	data_filename: string, filename of the output file. If set to stdout, prints to screen
-	print_int_nodes: do it
-	guess: op_analysis will guess to start the first NR iteration for the first point, the previsious dc is used from then on
+	step: the step size in the sweep
+	source: string, the name of the source to be swept
+	sweep_type: either options.dc_lin_step (default) or options.dc_log_step
+	guess: op_analysis will guess to start the first NR iteration for the first point, 
+	       the previsious dc is used from then on
+	outfile: string, filename of the output file. If set to 'stdout', prints to screen.
 	verbose: verbosity level
 	
 	Returns:
-	A results.dc_solution instance, if a solution was found for at least one sweep value.
-	None, if an error occurred (eg invalid start/stop/step values) or there was no solution
-	for any sweep value.
+	* A results.dc_solution instance, if a solution was found for at least one sweep value.
+	* None, if an error occurred (eg invalid start/stop/step values) or there was no solution
+	  for any sweep value.
 	"""
-	if data_filename == 'stdout':
+	if outfile == 'stdout':
 		verbose = 0
 	printing.print_info_line(("Starting DC analysis:", 2), verbose)
-	(elem_type, elem_descr) = type_descr
+	elem_type, elem_descr = source[0].lower(), source[1:]
 	sweep_label = elem_type[0].upper()+elem_descr
 
-	#check step/start/stop parameters
-	if step == 0:
-		printing.print_general_error("Can't sweep with step=0 !")
+	if sweep_type == options.dc_log_step and stop - start < 0:
+		printing.print_general_error("DC analysis has log sweeping and negative stepping.")
 		sys.exit(1)
-	if start > stop:
-		printing.print_general_error("DC analysis has start > stop")
-		sys.exit(1)
-	if (stop-start)/step < 1:
-		printing.print_general_error("DC analysis has number of steps < 1")
-		sys.exit(1)
-	if stype == options.dc_log_step:
-		dc_iter = utilities.log_axis_iterator(stop, start, nsteps=int(stop-start)/step)
-	elif stype == options.dc_lin_step:
-		dc_iter = utilities.lin_axis_iterator(stop, start, nsteps=int(stop-start)/step)
+	if (stop - start)*step < 0:
+		raise ValueError, "Unbonded stepping in DC analysis."
+	
+	if sweep_type == options.dc_log_step:
+		dc_iter = utilities.log_axis_iterator(stop, start, nsteps=points)
+	elif sweep_type == options.dc_lin_step:
+		dc_iter = utilities.lin_axis_iterator(stop, start, nsteps=points)
 	else:
-		printing.print_general_error("Unknown sweep type: %s" % (stype,)) 
+		printing.print_general_error("Unknown sweep type: %s" % (sweep_type,)) 
 		sys.exit(1)
 
-	if elem_type != 'vsource' and elem_type != 'isource':
+	if elem_type != 'v' and elem_type != 'i':
 		printing.print_general_error("Sweeping is possible only with voltage and current sources. (" +str(elem_type)+ ")")
 		sys.exit(1)
 
 	source_elem = None
 	for index in xrange(len(circ.elements)):
 		if circ.elements[index].descr == elem_descr:
-			if elem_type == 'vsource': 
+			if elem_type == 'v': 
 				if isinstance(circ.elements[index], devices.vsource):
 					source_elem = circ.elements[index]
 					break
-			if elem_type == 'isource':
+			if elem_type == 'i':
 				if isinstance(circ.elements[index], devices.isource):
 					source_elem = circ.elements[index]
 					break
@@ -288,13 +346,12 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 	else:
 		initial_value = source_elem.idc
 
-	# The initial value is set to None and this IS CORRECT. 
-	# op_analysis will attempt to do a smart guess, if called with x0 = None and guess=True
-	# For each iteration over the source voltage (current) value, the last result is used as x0.
-	# op_analysis will not attempt to guess the op if x0 is not None
-	x = None
+	# If the initial value is set to None, op_analysis will attempt a smart guess (if guess), 
+	# Then for each iteration, the last result is used as x0, since op_analysis will not 
+	# attempt to guess the op if x0 is not None.
+	x = x0
 	
-	sol = results.dc_solution(circ, start, stop, sweepvar=sweep_label, stype=stype, outfile=data_filename)
+	sol = results.dc_solution(circ, start, stop, sweepvar=sweep_label, stype=sweep_type, outfile=outfile)
 	
 	printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
 	tick = ticker.ticker(1)
@@ -311,8 +368,8 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 		else:
 			source_elem.idc = sweep_value
 		#silently calculate the op
-		op = op_analysis(circ, x0=x, guess=guess, verbose=0)
-		if op is None:
+		x = op_analysis(circ, x0=x, guess=guess, verbose=0)
+		if x is None:
 			tick.hide(verbose>2)
 			if not options.dc_sweep_skip_allowed:
 				print "Could't solve the circuit for sweep value:", start + index*step
@@ -322,10 +379,7 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 				print "Skipping sweep value:", start + index*step
 				continue
 		solved = True
-		sol.add_op(sweep_value, op)
-		
-		if guess:
-			guess = False
+		sol.add_op(sweep_value, x)
 
 		tick.step(verbose>2)
 	
@@ -341,7 +395,7 @@ def dc_analysis(circ, start, stop, step, type_descr, xguess=None, data_filename=
 
 	return sol if solved else None
 
-def op_analysis(circ, x0=None, guess=True, data_filename=None, verbose=3):
+def op_analysis(circ, x0=None, guess=True, outfile=None, verbose=3):
 	"""Runs an Operating Point (OP) analysis
 	circ: the circuit instance on which the simulation is run
 	x0: is the initial guess to be used to start the NR mdn_solver
@@ -350,9 +404,8 @@ def op_analysis(circ, x0=None, guess=True, data_filename=None, verbose=3):
 
 	Returns a Operation Point result, if successful, None otherwise.
 	"""
-	#use_gmin = True
-	#solved=False
-	#x0 = numpy.mat(numpy.zeros((1,2)))
+	if outfile == 'stdout':
+		verbose = 0 # silent mode, print out results only.
 	
 	(mna, N) = generate_mna_and_N(circ)
 
@@ -378,35 +431,38 @@ def op_analysis(circ, x0=None, guess=True, data_filename=None, verbose=3):
 	# We'll check the results now. Recalculate them without Gmin (using previsious solution as initial guess)
 	# and check that differences on nodes and current do not exceed the tolerances.
 	if solved1:
-		op1 = results.op_solution(x1, error1, circ, outfile=data_filename, iterations=n_iter1)
+		op1 = results.op_solution(x1, error1, circ, outfile=outfile, iterations=n_iter1)
 		printing.print_info_line(("Solving without Gmin:", 4), verbose)
 		(x2, error2, solved2, n_iter2) = dc_solve(mna, N, circ, Gmin=None, x0=x1, verbose=verbose)
-		
-		if not solved2:
-			printing.print_general_error("Can't solve without Gmin.")
-			if verbose:
-				print "Displaying latest valid results."
-				op1.write_to_file(filename='stdout')
-			opsolution = op1
-		else:
-			op2 = results.op_solution(x2, error2, circ, outfile=data_filename, iterations=n_iter1+n_iter2)
-			op2.gmin = 0
-			badvars = results.op_solution.gmin_check(op2, op1)
-			printing.print_result_check(badvars, verbose=verbose)
-			check_ok = not (len(badvars) > 0)
-			if not check_ok and verbose:
-				print "Solution with Gmin:"
-				op1.write_to_file(filename='stdout')
-				print "Solution without Gmin:"
-			if verbose:
-				op2.write_to_file(filename='stdout')
-			opsolution = op2
-	
-		if data_filename != 'stdout' and data_filename is not None:
-			opsolution.write_to_file()
 	else:
+		solved2 = False
+		
+	if solved1 and not solved2:
+		printing.print_general_error("Can't solve without Gmin.")
+		if verbose:
+			print "Displaying latest valid results."
+			op1.write_to_file(filename='stdout')
+		opsolution = op1
+	elif solved1 and solved2:
+		op2 = results.op_solution(x2, error2, circ, outfile=outfile, iterations=n_iter1+n_iter2)
+		op2.gmin = 0
+		badvars = results.op_solution.gmin_check(op2, op1)
+		printing.print_result_check(badvars, verbose=verbose)
+		check_ok = not (len(badvars) > 0)
+		if not check_ok and verbose:
+			print "Solution with Gmin:"
+			op1.write_to_file(filename='stdout')
+			print "Solution without Gmin:"
+			op2.write_to_file(filename='stdout')
+		opsolution = op2
+	else: # not solved1
 		printing.print_general_error("Couldn't solve the circuit. Giving up.")
 		opsolution = None
+
+	if opsolution and outfile != 'stdout' and outfile is not None:
+		opsolution.write_to_file()
+	elif opsolution:
+		opsolution.write_to_file(filename='stdout')
 
 	return opsolution
 
@@ -811,35 +867,51 @@ def check_ground_paths(mna, circ, reduced_mna=True):
 			test_passed = False
 	return test_passed
 
-def build_x0_from_user_supplied_ic(circ, voltages_dict, currents_dict):
+def build_x0_from_user_supplied_ic(circ, icdict):
 	"""Builds a numpy.matrix of appropriate size (reduced!) from the values supplied
-	in voltages_dict and currents_dict. What is not found in the dictionary is set to 0.
+	in voltages_dict and currents_dict.
 	
+	Supplying a custom x0 can be useful:
+	- To aid convergence in tough circuits.
+	- To start a transient simulation from a particular x0
+
 	Parameters:
 	circ: the circuit instance
-	voltages_dict: keys are the external nodes, values are the node voltages.
-	currents_dict: keys are the elements names (eg l1, v4), the values are the currents
+	icdict: a dictionary assembled as follows:
+	        - to specify a nodal voltage: {'V(node)':<voltage value>}
+	          Eg {'V(n1)':2.3, 'V(n2)':0.45, ...}
+	          All unspecified voltages default to 0.
+	        - to specify a branch current: 'I(<element>)':<voltage value>}
+	          ie. the elements names are sorrounded by I(...).
+	          Eg. {'I(L1)':1.03e-3, I(V4):2.3e-6, ...}
+	          All unspecified currents default to 0.
 		
-	Note: this simulator uses the normal convention.
+	Notes: this simulator uses the normal convention.
 	
 	Returns:
-	The x0 matrix
+	The x0 matrix assembled according to icdict
 	"""
+	Vregex = re.compile("V\s*\(\s*(\w?)\s*\)",re.IGNORECASE|re.DOTALL)
+	Iregex = re.compile("I\s*\(\s*(\w?)\s*\)",re.IGNORECASE|re.DOTALL)
 	nv = len(circ.nodes_dict) #number of voltage variables
-	voltage_defined_elements = [ x for x in circ.elements if circuit.is_elem_voltage_defined(x) ]
-	ni = len(voltage_defined_elements) #number of current variables
-	current_labels_list = [ elem.letter_id + elem.descr for elem in voltage_defined_elements ]
-	
+	voltage_defined_elem_names = [ elem.letter_id + elem.descr 
+	                               for elem in circ.elements 
+	                               if circuit.is_elem_voltage_defined(elem) 
+	                             ]
+	voltage_defined_elem_names = map(str.lower, voltage_defined_elem_names)
+	ni = len(voltage_defined_elem_names) #number of current variables
 	x0 = numpy.mat(numpy.zeros((nv + ni, 1)))
-	
-	for ext_node, value in voltages_dict.iteritems():
-		int_node = circ.ext_node_to_int(ext_node)
-		x0[int_node, 0] = value
-	
-	for current_label, value in currents_dict.iteritems():
-		index = current_labels_list.index(current_label)
-		x0[nv + index, 0] = value
-
+	for label, value in icdict.iteritems():
+		if Vregex.search(label):
+			ext_node = Vregex.findall(label)[0]
+			int_node = circ.ext_node_to_int(ext_node)
+			x0[int_node, 0] = value
+		elif Iregex.search(label):
+			element_name = Iregex.findall(label)[0]
+			index = voltage_defined_elem_names.index(element_name)
+			x0[nv + index, 0] = value
+		else:
+			raise ValueError, "Unrecognized label "+label
 	return x0[1:, :]
 
 def modify_x0_for_ic(circ, x0):

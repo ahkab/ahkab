@@ -32,15 +32,68 @@ import sys
 import numpy
 import dc_analysis, ticker, options, circuit, devices, printing, utilities, results
 
-def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
-	AC=None, Nac=None, J=None, data_filename="stdout", verbose=3):
-	"""Performs an AC analysis of the circuit (described by circ).
-	"""
+specs = {'ac':{'tokens':({
+                          'label':'type',
+                          'pos':0,
+                          'type':str,
+                          'needed':False,
+                          'dest':'sweep_type',
+                          'default':options.ac_log_step
+                         },
+                         {
+                          'label':'start',
+                          'pos':1,
+                          'type':float,
+                          'needed':True,
+                          'dest':'start',
+                          'default':None
+                         },
+                         {
+                          'label':'stop',
+                          'pos':2,
+                          'type':float,
+                          'needed':True,
+                          'dest':'stop',
+                          'default':None
+                         },
+                         {
+                          'label':'nsteps',
+                          'pos':3,
+                          'type':float,
+                          'needed':True,
+                          'dest':'points',
+                          'default':None
+                         }
+                        )
+               }
+           }
+
+
+def ac_analysis(circ, start, points, stop, sweep_type, x0=None, 
+                mna=None, AC=None, Nac=None, J=None, 
+                outfile="stdout", verbose=3):
+	"""Performs an AC analysis of the circuit described by circ.
 	
-	if data_filename == 'stdout':
+	Parameters:
+	start (float): the start angular frequency for the AC analysis
+	stop (float): stop angular frequency
+	points (float): the number of points to be use the discretize the 
+					[start, stop] interval.
+	sweep_type (string): Either 'LOG' or 'LINEAR', defaults to 'LOG'.
+	outfile (string): the filename of the output file where the results will be written.
+	                  '.ac' is automatically added at the end to prevent different 
+	                  analyses from overwriting each-other's results.
+	                  If unset or set to None, defaults to stdout.
+	verbose (int): the verbosity level, from 0 (silent) to 6 (debug).
+	
+	Returns: an AC results object
+        """
+	
+	if outfile == 'stdout':
 		verbose = 0
 
 	#check step/start/stop parameters
+	nsteps = points - 1
 	if start == 0:
 		printing.print_general_error("AC analysis has start frequency = 0")
                 sys.exit(5)
@@ -50,9 +103,9 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 	if nsteps < 1:
 		printing.print_general_error("AC analysis has number of steps <= 1")
 		sys.exit(1)
-	if step_type == options.ac_log_step:
+	if sweep_type == options.ac_log_step:
 		omega_iter = utilities.log_axis_iterator(stop, start, nsteps)
-	elif step_type == options.ac_lin_step:
+	elif sweep_type == options.ac_lin_step:
 		omega_iter = utilities.lin_axis_iterator(stop, start, nsteps)
 	else:
 		printing.print_general_error("Unknown sweep type.") 
@@ -86,20 +139,21 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 			pass
 			# we used the supplied linearization matrix
 		else:
-			if xop is None:
+			if x0 is None:
 				printing.print_info_line(("Starting OP analysis to get a linearization point...", 3), verbose, print_nl=False)
 				#silent OP
-				xop = dc_analysis.op_analysis(circ, verbose=0)
-				if xop is None: #still! Then op_analysis has failed!
+				x0 = dc_analysis.op_analysis(circ, verbose=0)
+				if x0 is None: #still! Then op_analysis has failed!
 					printing.print_info_line(("failed.", 3), verbose)
 					printing.print_general_error("OP analysis failed, no linearization point available. Quitting.") 
 					sys.exit(3)
 				else:
 					printing.print_info_line(("done.", 3), verbose)
 			printing.print_info_line(("Linearization point (xop):", 5), verbose)
-			if verbose > 4: xop.print_short()
+			if verbose > 4: 
+				x0.print_short()
 			printing.print_info_line(("Linearizing the circuit...", 5), verbose, print_nl=False)
-			J = generate_J(xop=xop.asmatrix(), circ=circ, mna=mna, Nac=Nac, data_filename=data_filename, verbose=verbose)
+			J = generate_J(xop=x0.asmatrix(), circ=circ, mna=mna, Nac=Nac, data_filename=outfile, verbose=verbose)
 			printing.print_info_line((" done.", 5), verbose)
 			# we have J, continue
 	else: #not circ.is_nonlinear()
@@ -115,7 +169,7 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 	printing.print_info_line(("Nac (reduced):", 5), verbose)
 	printing.print_info_line((str(Nac), 5), verbose)
 	
-	sol = results.ac_solution(circ, ostart=start, ostop=stop, opoints=nsteps, stype=step_type, op=xop, outfile=data_filename)
+	sol = results.ac_solution(circ, ostart=start, ostop=stop, opoints=nsteps, stype=sweep_type, op=x0, outfile=outfile)
 
 	# setup the initial values to start the iteration:
 	nv = len(circ.nodes_dict)
@@ -124,12 +178,11 @@ def ac_analysis(circ, start, nsteps, stop, step_type, xop=None, mna=None,\
 	Gmin_matrix = dc_analysis.build_gmin_matrix(circ, options.gmin, mna.shape[0], verbose)
 
 	iter_n = 0  # contatore d'iterazione
-	#printing.print_results_header(circ, fdata, print_int_nodes=options.print_int_nodes, print_omega=True)
 	printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
 	tick = ticker.ticker(increments_for_step=1)
 	tick.display(verbose > 1)
 
-	x = xop
+	x = x0
 	for omega in omega_iter:
 		(x, error, solved, n_iter) = dc_analysis.dc_solve(mna=(mna + numpy.multiply(j*omega, AC) + J), \
 		Ndc=Nac,  Ntran=0, circ=circuit.circuit(title="Dummy circuit for AC", filename=None), Gmin=Gmin_matrix, x0=x, \

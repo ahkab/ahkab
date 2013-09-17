@@ -24,7 +24,8 @@ import numpy
 import transient, implicit_euler, dc_analysis, ticker, options, circuit, printing, utilities
 import results, devices
 
-def bfpss(circ, period, step=None, mna=None, Tf=None, D=None, points=None, autonomous=False, x0=None,  data_filename='stdout', vector_norm=lambda v: max(abs(v)), verbose=3):
+def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
+          mna=None, Tf=None, D=None, outfile='stdout', vector_norm=lambda v: max(abs(v)), verbose=3):
 	"""Performs a PSS analysis. 
 	
 	Time step is constant, IE will be used as DF
@@ -41,12 +42,12 @@ def bfpss(circ, period, step=None, mna=None, Tf=None, D=None, points=None, auton
 	- if none of them is set, options.shooting_default_points will be used as points
 	autonomous has to be False, autonomous circuits are not supported
 	x0 is the initial guess to be used. Needs work.
-	data_filename is the output filename. Defaults to stdout.
+	outfile is the output filename. Defaults to stdout.
 	verbose is set to zero (print errors only) if datafilename == 'stdout'.
 
 	Returns: nothing
 	"""
-	if data_filename == "stdout":
+	if outfile == "stdout":
 		verbose = 0
 	
 	printing.print_info_line(("Starting periodic steady state analysis:",3), verbose)
@@ -176,7 +177,7 @@ def bfpss(circ, period, step=None, mna=None, Tf=None, D=None, points=None, auton
 		t = numpy.mat(numpy.arange(points)*step)
 		t = t.reshape((1, points))
 		x = x.reshape((points, n_of_var))
-		sol = results.pss_solution(circ=circ, method="brute-force", period=period, outfile=data_filename, t_array=t, x_array=x.T)
+		sol = results.pss_solution(circ=circ, method="brute-force", period=period, outfile=outfile, t_array=t, x_array=x.T)
 	else:
 		print "failed."
 		sol = None
