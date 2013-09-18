@@ -155,7 +155,8 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
 		tfs = calculate_gains(sol, src)
 		printing.print_info_line(("done.", 2), verbose)	
 		printing.print_info_line(("Small-signal symbolic transfer functions:", 1), verbose)	
-		printing.print_symbolic_transfer_functions(tfs)
+		if options.cli: 
+			printing.print_symbolic_transfer_functions(tfs)
 	else:
 		tfs = None
 	
