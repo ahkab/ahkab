@@ -406,6 +406,8 @@ def op_analysis(circ, x0=None, guess=True, outfile=None, verbose=3):
 	"""
 	if outfile == 'stdout':
 		verbose = 0 # silent mode, print out results only.
+	if not options.dc_use_guess:
+		guess = False
 	
 	(mna, N) = generate_mna_and_N(circ)
 

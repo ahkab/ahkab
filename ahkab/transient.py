@@ -118,6 +118,8 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
 	if outfile == "stdout":
 		verbose = 0
 	_debug = False
+	if options.transient_no_step_control:
+		use_step_control = False
 	if _debug:
 		print_step_and_lte = True
 	else:
