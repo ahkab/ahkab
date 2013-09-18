@@ -310,6 +310,8 @@ def run(circ, an_list=None):
 	
 	if not an_list:
 		an_list = _queue
+	else:
+		an_list = list(an_list)
 	
 	while len(an_list):
 		an_item = an_list.pop(0)
