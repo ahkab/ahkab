@@ -24,7 +24,8 @@ import numpy, numpy.linalg
 import transient, implicit_euler, dc_analysis, ticker, options, circuit, printing, utilities
 import results, devices
 
-def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, autonomous=False, data_filename='stdout', vector_norm=lambda v: max(abs(v)), verbose=3):
+def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
+             mna=None, Tf=None, D=None, outfile='stdout', vector_norm=lambda v: max(abs(v)), verbose=3):
 	"""Performs a periodic steady state analysis based on the algorithm described in
 	Brambilla, A.; D'Amore, D., "Method for steady-state simulation of 
 	strongly nonlinear circuits in the time domain," Circuits and 
@@ -61,18 +62,20 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 	- if points is set, the step will be automatically determined
 	- if none of them is set, options.shooting_default_points will be used as points
 	autonomous has to be False, autonomous circuits are not supported
-	data_filename is the output filename. Defaults to stdout.
+	outfile is the output filename. Defaults to stdout.
 	verbose is set to zero (print errors only) if datafilename == 'stdout'.
 
 	Returns: nothing
 	"""
 	
-	if data_filename == "stdout": 
+	if outfile == "stdout": 
 		verbose = 0
 
 	printing.print_info_line(("Starting periodic steady state analysis:",3), verbose)
 	printing.print_info_line(("Method: shooting",3), verbose)
 	
+	if isinstance(x0, results.op_solution):
+		x0 = x0.asmatrix()
 	if mna is None or Tf is None:
 		(mna, Tf) = dc_analysis.generate_mna_and_N(circ)
 		mna = utilities.remove_row_and_col(mna)
@@ -97,7 +100,7 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 	
 	printing.print_info_line(("Starting transient analysis for algorithm init: tstop=%g, tstep=%g... " % (10*points*step, step),3), verbose, print_nl=False)
 	xtran = transient.transient_analysis(circ=circ, tstart=0, tstep=step, tstop=10*points*step, method="TRAP", x0=None, mna=mna, N=Tf, \
-        D=D, use_step_control=False, data_filename=data_filename+".tran", return_req_dict={"points":points}, verbose=0)
+        D=D, use_step_control=False, outfile=outfile+".tran", return_req_dict={"points":points}, verbose=0)
 	if xtran is None:
 		print "failed."
 		return None
@@ -181,7 +184,7 @@ def shooting(circ, period, step=None, mna=None, Tf=None, D=None, points=None, au
 		xmat = x[0]
 		for index in xrange(1, points):
 			xmat = numpy.concatenate((xmat, x[index]), axis=1)
-		sol = results.pss_solution(circ=circ, method="shooting", period=period, outfile=data_filename, t_array=t, x_array=xmat)
+		sol = results.pss_solution(circ=circ, method="shooting", period=period, outfile=outfile, t_array=t, x_array=xmat)
 		#print_results(circ, x, fdata, points, step)
 	else:
 		print "failed."

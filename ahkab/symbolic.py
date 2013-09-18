@@ -36,37 +36,59 @@ import printing
 import results
 import options
 
-def solve(circ, tf_source=None, subs=None, opts=None, outfile=None, verbose=3):
+specs = {'symbolic':{'tokens':({
+                          'label':'tf',
+                          'pos':None,
+                          'type':str,
+                          'needed':False,
+                          'dest':'source',
+                          'default':None
+                         },
+                         {
+                          'label':'ac',
+                          'pos':None,
+                          'type':bool,
+                          'needed':False,
+                          'dest':'ac_enable',
+                          'default':True
+                         },
+                         {
+                          'label':'r0s',
+                          'pos':None,
+                          'type':bool,
+                          'needed':False,
+                          'dest':'r0s',
+                          'default':False
+                         }
+                        )
+               }
+           }
+
+def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=3):
 	"""Attempt a symbolic solution of the circuit.
 	circ: the circuit instance to be simulated.
-	tf_source: the name (string) of the source to be used as input for the transfer
+	source: the name (string) of the source to be used as input for the transfer
 		   function. If None, no transfer function is evaluated.
+	ac_enable: take frequency dependency into consideration (default: True)
+	r0s: take transistors' output impedance into consideration (default: False)
 	subs: a dictionary of sympy Symbols to be substituted. It makes solving the circuit 
 	      easier. Eg. {R1:R2} - replace R1 with R2. It can be generated with 
 	      parse_substitutions()
-	opts: dict of 'option':boolean to be taken into account in simulation.
-	      currently 'r0s' and 'ac' are the only options considered.
+	outfile: output filename ('stdout' means print to stdout).
 	verbose: verbosity level 0 (silent) to 6 (painful).
 	
 	Returns: a dictionary with the solutions.
 	"""
-	if opts is None:
-		# load the defaults
-		opts = {'r0s':True, 'ac':False}
-	if not 'r0s' in opts.keys():
-		opts.update({'r0s':True})
-	if not 'ac' in opts.keys():
-		opts.update({'ac':False})
 	if subs is None:
 		subs = {} # no subs by default
 
-	if not opts['ac']:
+	if not ac_enable:
 		printing.print_info_line(("Starting symbolic DC analysis...", 1), verbose)
 	else:
 		printing.print_info_line(("Starting symbolic AC analysis...", 1), verbose)		
 		
 	printing.print_info_line(("Building symbolic MNA, N and x...", 3), verbose, print_nl=False)
-	mna, N, subs_g = generate_mna_and_N(circ, opts, opts['ac'])
+	mna, N, subs_g = generate_mna_and_N(circ, opts={'r0s':r0s}, ac=ac_enable)
 	x = get_variables(circ)
 	mna = mna[1:, 1:]
 	N = N[1:, :]
@@ -76,9 +98,9 @@ def solve(circ, tf_source=None, subs=None, opts=None, outfile=None, verbose=3):
 	mna, N = apply_substitutions(mna, N, subs)
 
 	printing.print_info_line(("MNA matrix (reduced):", 5), verbose)	
-	if verbose > 5:	print sympy.sstr(mna)
+	printing.print_info_line((sympy.sstr(mna), 5), verbose)
 	printing.print_info_line(("N matrix (reduced):", 5), verbose)	
-	if verbose > 5:	print sympy.sstr(N)
+	printing.print_info_line((sympy.sstr(N), 5), verbose)
 
 	printing.print_info_line(("Building equations...", 3), verbose)	
 	eq = []
@@ -97,12 +119,11 @@ def solve(circ, tf_source=None, subs=None, opts=None, outfile=None, verbose=3):
 	eq, x, sol_h = help_the_solver(eq, x)
 		
 	if len(eq):
-		if verbose > 3:
-			print "Symplified sytem:"
-			printing.print_symbolic_equations(eq)
-			print "To be solved for:"
-			print x
-			printing.print_info_line(("Solving...", 1), verbose)	
+		printing.print_info_line(("Symplified sytem:", 3), verbose)
+		if verbose > 3: printing.print_symbolic_equations(eq)
+		printing.print_info_line(("To be solved for:", 3), verbose)
+		printing.print_info_line((str(x), 3), verbose)
+		printing.print_info_line(("Solving...", 1), verbose)	
 
 		if options.symb_internal_solver:
 			sol = local_solve(eq, x)
@@ -124,13 +145,12 @@ def solve(circ, tf_source=None, subs=None, opts=None, outfile=None, verbose=3):
 	if sol == {}:
 		printing.print_warning("No solutions. Check the netlist.")
 	else:
-		printing.print_info_line(("Success!", 2), verbose)	
-		if verbose > 1:
-			print "Results:"
-		printing.print_symbolic_results(sol)
+		printing.print_info_line(("Success!", 2), verbose)
+		printing.print_info_line(("Results:", 1), verbose)	
+		if options.cli:	printing.print_symbolic_results(sol)
 
-	if tf_source is not None:
-		src = sympy.Symbol(tf_source.upper(), real=True)
+	if source is not None:
+		src = sympy.Symbol(source.upper(), real=True)
 		printing.print_info_line(("Calculating small-signal symbolic transfer functions (%s))..."%(str(src),), 2), verbose, print_nl=False)
 		tfs = calculate_gains(sol, src)
 		printing.print_info_line(("done.", 2), verbose)	
@@ -164,9 +184,9 @@ def sol_to_dict(sol, x, optimize=True):
 		ret.update({str(x[index]):sol_current})
 	return ret
 
-def apply_substitutions(mna, N, opts):
-	mna = mna.subs(opts)
-	N = N.subs(opts)
+def apply_substitutions(mna, N, subs):
+	mna = mna.subs(subs)
+	N = N.subs(subs)
 	return (mna, N)
 
 def get_variables(circ):
@@ -467,13 +487,4 @@ def local_solve_iter(eqs, xs):
 				print single_sol
 				return eqs, single_sol
 	return eqs, {}
-	
 
-#def process_elements(circ):
-#	new_elem_list = []
-#	for elem in circ.elements:		
-#		if isinstance(elem, mosq.mosq):
-#			devices.resistor(elem.nd, elem.ns)			
-#			else:
-
-#def build_mos_function(vg, vs, )

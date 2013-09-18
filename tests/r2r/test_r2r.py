@@ -82,7 +82,7 @@ def test():
 			pylab.plot(x_new, times_new, 'go', label='Measured - NEW')
 			p_new = fit(times_new, x_new)
 			xf_new = numpy.arange(x_new[-1])
-			pylab.plot(xf_new, fitfunc(p_new, xf_new), 'k-', label=('Fit: $y = %.3e\ x^3 + %.3e\ x^2 + %.1f$ - NEW' % tuple(p.tolist())))
+			pylab.plot(xf_new, fitfunc(p_new, xf_new), 'k-', label=('Fit: $y = %.3e\ x^3 + %.3e\ x^2 + %.1f$ - NEW' % tuple(p_new.tolist())))
 		pylab.xlabel("Number of equations []")
 		pylab.ylabel("Time to convergence [s]")
 		pylab.legend(loc=0)
@@ -90,3 +90,4 @@ def test():
 
 if __name__ == '__main__':
 	stand_alone_exec = True
+	test()
