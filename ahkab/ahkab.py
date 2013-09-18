@@ -314,6 +314,10 @@ def run(circ, an_list=None):
 	while len(an_list):
 		an_item = an_list.pop(0)
 		an_type = an_item.pop('type')
+		if 'x0' in an_item and isinstance(an_item['x0'], str):
+			printing.print_warning("%s has x0 set to %s, unavailable. Using 'None'." % 
+			                       (an_type.upper(), an_item['x0']))
+			an_item['x0'] = None
 		r = analysis[an_type](circ, **an_item)
 		results.update({an_type:r})
 		if an_type == 'op':
