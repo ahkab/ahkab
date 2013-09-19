@@ -90,8 +90,8 @@ specs = {'op':{
                                     'pos':None,
                                     'type':str,
                                     'needed':False,
-                                    'dest':'type',
-                                    'default':None
+                                    'dest':'sweep_type',
+                                    'default':options.dc_lin_step
                                    }
                                   )
             }
@@ -314,6 +314,7 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
 	if (stop - start)*step < 0:
 		raise ValueError, "Unbonded stepping in DC analysis."
 	
+	points = (stop - start)/step + 1
 	if sweep_type == options.dc_log_step:
 		dc_iter = utilities.log_axis_iterator(stop, start, nsteps=points)
 	elif sweep_type == options.dc_lin_step:
@@ -463,7 +464,7 @@ def op_analysis(circ, x0=None, guess=True, outfile=None, verbose=3):
 
 	if opsolution and outfile != 'stdout' and outfile is not None:
 		opsolution.write_to_file()
-	elif opsolution:
+	elif opsolution and verbose:
 		opsolution.write_to_file(filename='stdout')
 
 	return opsolution
