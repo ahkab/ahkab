@@ -1258,7 +1258,7 @@ def parse_single_analysis(line, line_elements=None):
 			continue
 		else:
 			raise NetlistParseError, "Unknown .%s parameter: pos %d (%s=)%s" % \
-			                         (atype.upper(), i, label, value)
+			                         (an_type.upper(), i, label, value)
 
 	missing = []
 	for t in params:
