@@ -244,8 +244,8 @@ def generate_mna_and_N(circ, opts, ac=False):
 			# we use conductances instead of 1/R because there is a significant
 			# overhead handling many 1/R terms in sympy.
 			if elem.is_symbolic:
-				R = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True)
-				G = sympy.Symbol("G"+elem.descr, real=True)
+				R = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True, positive=True, complex=False)
+				G = sympy.Symbol("G"+elem.descr, real=True, positive=True, complex=False)
 				# but we keep track of which is which and substitute back after solving.
 				subs_g.update({G:1/R})
 			else:
@@ -262,7 +262,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 		elif isinstance(elem, devices.capacitor):
 			if ac:
 				if elem.is_symbolic:
-					capa = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True)
+					capa = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True, positive=True, complex=False)
 				else:
 					capa = elem.C
 				mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + s*capa
@@ -275,7 +275,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 			pass
 		elif isinstance(elem, devices.gisource):
 			if elem.is_symbolic:
-				alpha = sympy.Symbol(elem.letter_id+elem.descr, real=True)
+				alpha = sympy.Symbol(elem.letter_id+elem.descr, real=True, complex=False)
 			else:
 				alpha = elem.alpha
 			mna[elem.n1, elem.sn1] = mna[elem.n1, elem.sn1] + alpha
@@ -284,25 +284,25 @@ def generate_mna_and_N(circ, opts, ac=False):
 			mna[elem.n2, elem.sn2] = mna[elem.n2, elem.sn2] + alpha
 		elif isinstance(elem, devices.isource):
 			if elem.is_symbolic:
-				IDC = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True)
+				IDC = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True, complex=False)
 			else:
 				IDC = elem.idc
 			N[elem.n1, 0] = N[elem.n1, 0] + IDC
 			N[elem.n2, 0] = N[elem.n2, 0] - IDC
 		elif isinstance(elem, mosq.mosq_device) or isinstance(elem, ekv.ekv_device):
-			gm = sympy.Symbol('gm_'+elem.letter_id+elem.descr, real=True)
+			gm = sympy.Symbol('gm_'+elem.letter_id+elem.descr, real=True, positive=True, complex=False)
 			mna[elem.n1, elem.ng] = mna[elem.n1, elem.ng] + gm
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gm
 			mna[elem.n2, elem.ng] = mna[elem.n2, elem.ng] - gm
 			mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + gm
 			if opts['r0s']:
-				r0 = sympy.Symbol('r0_'+elem.letter_id+elem.descr, real=True)
+				r0 = sympy.Symbol('r0_'+elem.letter_id+elem.descr, real=True, positive=True, complex=False)
 				mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1/r0
 				mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/r0
 				mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1/r0
 				mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1/r0
 		elif isinstance(elem, diode.diode):
-			gd = sympy.Symbol("g"+elem.letter_id+elem.descr)
+			gd = sympy.Symbol("g"+elem.letter_id+elem.descr, positive=True, complex=False)
 			mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + gd
 			mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gd
 			mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - gd
@@ -330,13 +330,13 @@ def generate_mna_and_N(circ, opts, ac=False):
 			mna[index, elem.n2] = -1
 			if isinstance(elem, devices.vsource):
 				if elem.is_symbolic:
-					VDC = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
+					VDC = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True, complex=False)
 				else:
 					VDC = elem.vdc
 				N[index, 0] = -VDC
 			elif isinstance(elem, devices.evsource):
 				if elem.is_symbolic:
-					alpha = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
+					alpha = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True, complex=False)
 				else:
 					alpha = elem.alpha
 				mna[index, elem.sn1] = -alpha
@@ -344,7 +344,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 			elif isinstance(elem, devices.inductor):
 				if ac:
 					if elem.is_symbolic:
-						L = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
+						L = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True, positive=True, complex=False)
 					else:
 						L = elem.L
 					mna[index, index] = -s*L
@@ -364,7 +364,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 					this_index = circ.find_vde_index("L"+elem.descr, verbose=0)
 					for cd in elem.coupling_devices:
 						if cd.is_symbolic:
-							M = sympy.Symbol("M" + cd.descr, real=True)
+							M = sympy.Symbol("M" + cd.descr, real=True, positive=True, complex=False)
 						else:
 							M = cd.K
 						# get id+descr of the other inductor (eg. "L32")
