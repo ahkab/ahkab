@@ -1,7 +1,7 @@
 # -*- coding: iso-8859-1 -*-
-# plot_results.py
-# DC simulation methods
-# Copyright 2009 Giuseppe Venturini
+# plotting.py
+# Module to plot the simulation data (through matplotlib)
+# Copyright 2009-2013 Giuseppe Venturini
 
 # This file is part of the ahkab simulator.
 #
@@ -132,7 +132,7 @@ def save_figure(filename, fig):
 	pylab.savefig(filename, dpi=100, bbox_inches='tight', format=options.plotting_outtype)
 	return
 
-def plot_results(title, xvarname, y2y1_list, results, outfilename):
+def plot_results(title, y2y1_list, results, outfilename):
 	"""Plot the results.
 	"""
 	if results is None:
@@ -140,9 +140,9 @@ def plot_results(title, xvarname, y2y1_list, results, outfilename):
 		return
 	fig = pylab.figure()
 	analysis = results.get_type().upper()
-	xunit = results.units[xvarname]
 	gdata = []
-	x = results[xvarname]
+	x, xlabel = results.get_x(), results.get_xlabel()
+	xunit = results.units[xlabel]
 	yvu = []
 
 	for y2label, y1label in y2y1_list:
@@ -156,11 +156,11 @@ def plot_results(title, xvarname, y2y1_list, results, outfilename):
 		yvu += [(line_label, results.units[y2label])]
 		gdata.append((data2-data1, line_label))
 
-	if xvarname == 'w':
+	if xlabel == 'w':
 		xlog = True
 	else:
 		xlog = False
-	setup_plot(fig, title, (xvarname, xunit), yvu, xlog=xlog)
+	setup_plot(fig, title, (xlabel, xunit), yvu, xlog=xlog)
 
 	pylab.hold(True)
 	ymax, ymin = None, None

@@ -375,6 +375,14 @@ class ac_solution:
 		except KeyError:
 			return default
 		return data
+	
+	def get_x(self):
+		x = self.variables[0]
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[x], nsamples=None, skip=0L)
+		return data
+
+	def get_xlabel(self):
+		return self.variables[0]
 
 	def has_key(self, name):
 		"""Determine whether the result set contains a variable."""
@@ -505,6 +513,14 @@ class dc_solution:
 		except KeyError:
 			return default
 		return data
+	
+	def get_x(self):
+		x = self.variables[0]
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[x], nsamples=None, skip=0L)
+		return data
+
+	def get_xlabel(self):
+		return self.variables[0]
 
 	def has_key(self, name):
 		"""Determine whether the result set contains a variable."""
@@ -760,6 +776,14 @@ class tran_solution:
 			return default
 		return data
 
+	def get_x(self):
+		x = self.variables[0]
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[x], nsamples=None, skip=0L)
+		return data
+
+	def get_xlabel(self):
+		return self.variables[0]
+
 	def has_key(self, name):
 		"""Determine whether the result set contains a variable."""
 		return name in self.variables
@@ -882,6 +906,14 @@ class pss_solution:
 		except KeyError:
 			return default
 		return data
+
+	def get_x(self):
+		x = self.variables[0]
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[x], nsamples=None, skip=0L)
+		return data
+
+	def get_xlabel(self):
+		return self.variables[0]
 
 	def has_key(self, name):
 		"""Determine whether the result set contains a variable."""

@@ -1134,51 +1134,54 @@ def convert_units(string_value):
 def parse_postproc(circ, postproc_direc):
 	postproc_list = []
 	for line, line_n in postproc_direc:
-		if line[0] == ".":
-			try:
-				line_elements = line.split()
-				#plot
-				if line_elements[0] == ".plot":
-					plot_postproc = {}
-					plot_postproc["type"] = "plot"
-					plot_postproc["analysis"] = line_elements[1]
-					if plot_postproc["analysis"] == "tran" or plot_postproc["analysis"] == "shooting":  	
-						plot_postproc["x"] = "T"
-					elif plot_postproc["analysis"] == "ac":
-						plot_postproc["x"] = "w" #QUIRKY FOR THE TIME BEING
-					elif plot_postproc["analysis"] == "dc":
-						plot_postproc["x"] = an["source_name"]
-					else:
-						printing.print_general_error("Plotting is unsupported for analysis type "+plot_postproc["analysis"])
-						
-					graph_labels = ""
-					for glabel in line_elements[2:]:
-						graph_labels = graph_labels + " " + glabel
-					
-					l2l1 = plotting.split_netlist_label(graph_labels)
+		if not line[0] == ".":
+			continue
 
-					if plot_postproc["analysis"] == "ac":
-						l2l1ac = []
-						for l2, l1 in l2l1:
-							if l1 is not None:
-								l1 = "|%s|" % (l1, )
-							else:
-								l1 = None
-							if l2 is not None:
-								l2 = "|%s|" % (l2, )
-							else:
-								l2 = None
-							l2l1ac.append((l2,l1))
-						l2l1 = l2l1ac				
-					plot_postproc["l2l1"] = l2l1
-					postproc_list.append(plot_postproc)
-				else:
-					raise NetlistParseError("Unknown postproc directive.")
-			except NetlistParseError, (msg,):
-				if len(msg):
-					printing.print_general_error(msg)
-				printing.print_parse_error(line_n, line)
-				sys.exit(0)
+		try:
+			line_elements = line.split()
+			#plot
+			if line_elements[0] == ".plot":
+				plot_postproc = {}
+				plot_postproc["type"] = "plot"
+				plot_postproc["analysis"] = line_elements[1]
+				if not (plot_postproc["analysis"] == "tran" or 
+				        plot_postproc["analysis"] == "shooting" or  
+				        plot_postproc["analysis"] == "ac" or 
+				        plot_postproc["analysis"] == "dc"
+				       ):
+					printing.print_general_error(
+					             "Plotting is unsupported for analysis type " + 
+					              plot_postproc["analysis"]
+					              )
+					
+				graph_labels = ""
+				for glabel in line_elements[2:]:
+					graph_labels = graph_labels + " " + glabel
+				
+				l2l1 = plotting.split_netlist_label(graph_labels)
+
+				if plot_postproc["analysis"] == "ac":
+					l2l1ac = []
+					for l2, l1 in l2l1:
+						if l1 is not None:
+							l1 = "|%s|" % (l1, )
+						else:
+							l1 = None
+						if l2 is not None:
+							l2 = "|%s|" % (l2, )
+						else:
+							l2 = None
+						l2l1ac.append((l2,l1))
+					l2l1 = l2l1ac				
+				plot_postproc["l2l1"] = l2l1
+				postproc_list.append(plot_postproc)
+			else:
+				raise NetlistParseError("Unknown postproc directive.")
+		except NetlistParseError, (msg,):
+			if len(msg):
+				printing.print_general_error(msg)
+			printing.print_parse_error(line_n, line)
+			sys.exit(0)
 	return postproc_list
 					
 def parse_ics(directives):
