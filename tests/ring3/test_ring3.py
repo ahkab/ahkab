@@ -4,7 +4,7 @@ import subprocess
 import numpy
 from nose.tools import ok_, nottest, with_setup
 
-ahkab_path = "../../ahkab/ahkab.py"
+ahkab_path = "../../ahkab/__main__.py"
 er = 1e-6
 ea = 1e-9
 
@@ -39,3 +39,6 @@ def test():
 
 	ok_(numpy.allclose(res_new, res, rtol=er, atol=ea), "Test RING3 FAILED")
 
+if __name__ == '__main__':
+	test()
+	teardown_func()
