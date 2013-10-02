@@ -26,15 +26,11 @@ import circuit, devices, printing, options, constants, csvlib
 VERSION = "0.07"
 csvlib.SEPARATOR = "\t"
 
-	
-class op_solution:
-	def __init__(self, x, error, circ, outfile, iterations=0):
-		"""Holds a set of Operating Point results.
-			x: the result set
-			error: the residual error after solution,
+class solution:
+	def __init__(self, circ, outfile):
+		"""Base class storing a set of generic simulation results.
 			circ: the circuit instance of the simulated circuit
-			print_int_nodes: a boolean to be set True if you wish to see voltage values 
-			of the internal nodes added automatically by the simulator.
+			outfile: the filename of the save file
 		"""
 		self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
 		self.netlist_file = circ.filename
@@ -44,21 +40,120 @@ class op_solution:
 		self.iea = options.iea
 		self.ier = options.ier
 		self.gmin = options.gmin
-		self.temp = constants.T # in Kelvin
+		self.cmin = options.cmin
+		self.temp = constants.T
 		self.filename = outfile
-		self.iterations = iterations
+		self._init_file_done = False
 
-		#We have mixed current and voltage results
-		# per primi vengono tanti valori di tensioni quanti sono i nodi del circuito meno uno,
-		# quindi tante correnti quanti sono gli elementi definiti in tensione presenti
-		# (per questo, per misurare una corrente, si può fare uso di generatori di tensione da 0V)
-	
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
 		self.skip_nodes_list = []	# nodi da saltare, solo interni
 		self.variables = []
+		self.units = case_insensitive_dict()
+
+	def _add_data(self, data):
+		"""Add the data matrix to the results set."""
+		csvlib.write_csv(self.filename, data, self.variables, append=self._init_file_done)
+		self._init_file_done = True
+
+	def get_type(self):
+		"""Please redefine this function in the subclasses."""
+		raise Exception, "Undefined"
+
+	def asmatrix(self):
+		"""Return all data as a (possibly huge) python matrix."""
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[], 
+		                                          nsamples=None, skip=0L)
+		return data.T
+
+	# Access as a dictionary BY VARIABLE NAME:
+	def __len__(self):
+		"""Get the number of variables in the results set."""
+		return len(self.variables)
+
+	def __getitem__(self, name):
+		"""Get a specific variable, as from a dictionary."""
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], 
+		                                          nsamples=None, skip=0L)
+		return data.T
+
+	def get(self, name, default=None):
+		"""Get a solution by variable name."""
+		try:
+			data, headers, pos, EOF = csvlib.load_csv(self.filename, 
+			                                          load_headers=[name], 
+			                                          nsamples=None, skip=0L)
+		except KeyError:
+			return default
+		return data.T
+
+	def has_key(self, name):
+		"""Determine whether the result set contains a variable."""
+		return name.upper() in map(str.upper, self.variables)
+
+	def __contains__(self, name):
+		"""Determine whether the result set contains a variable."""
+		return name.upper() in map(str.upper, self.variables)
+
+	def keys(self):
+		"""Get all of the results set's variables names."""
+		return self.variables
+
+	def values(self):
+		"""Get all of the results set's variables values."""
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, 
+		                                          load_headers=self.variables, 
+		                                          nsamples=None, skip=0L)
+		return data.T
+
+	def items(self):
+		data, headers, pos, EOF = csvlib.load_csv(self.filename, 
+		                                          load_headers=self.variables, 
+		                                          nsamples=None, skip=0L)
+		vlist = []
+		for j in range(data.shape[0]):
+			vlist.append(data[j, :].T)
+		return zip(headers, vlist)
+
+	# iterator methods
+	def __iter__(self):
+		self.iter_index = 0
+		self.iter_data, self.iter_headers, pos, EOF = csvlib.load_csv(self.filename, 
+		                                                              load_headers=[], 
+		                                                              nsamples=None, 
+		                                                              skip=0L)
+		return self
+
+	def next(self):
+		if self.iter_index == len(self.iter_headers):
+			self.iter_index = 0
+			raise StopIteration
+		else:
+			next = self.iter_headers[self.iter_index], \
+			       self.iter_data[self.iter_index, :].T
+			self.iter_index += 1
+		return next
+
+class op_solution(solution):
+	def __init__(self, x, error, circ, outfile, iterations=0):
+		"""Holds a set of Operating Point results.
+			x: the result set
+			error: the residual error after solution,
+			circ: the circuit instance of the simulated circuit
+			print_int_nodes: a boolean to be set True if you wish to see voltage values 
+			of the internal nodes added automatically by the simulator.
+		"""
+		solution.__init__(self, circ, outfile)
+		self.iterations = iterations
+
+		#We have mixed current and voltage results
+		# per primi vengono tanti valori di tensioni quanti sono i nodi del circuito meno 
+		# uno, quindi tante correnti quanti sono gli elementi definiti in tensione presenti
+		# (per questo, per misurare una corrente, si può fare uso di generatori di tensione 
+		# da 0V)
+	
+		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
 		self.results = case_insensitive_dict()
 		self.errors = case_insensitive_dict()
-		self.units = case_insensitive_dict()
 		self.x = x
 	
 		for index in range(nv_1):
@@ -81,12 +176,10 @@ class op_solution:
 
 		self.op_info = self.get_elements_op(circ, x)
 
-	def __repr__(self):
-		return self.results.__repr__()
-
 	def __str__(self):
-		str_repr = "OP simulation results for %s (netlist %s).\nRun on %s, data filename %s.\n" % \
-		(self.netlist_title, self.netlist_file, self.timestamp, self.filename)
+		str_repr = \
+		    "OP simulation results for %s (netlist %s).\nRun on %s, data filename %s.\n" % \
+		    (self.netlist_title, self.netlist_file, self.timestamp, self.filename)
 		for v in self.variables:
 			str_repr += "%s:\t%e\t%s\t(%e %s, %f %%)\n" % \
 				(v, self.results[v], self.units[v], \
@@ -157,7 +250,8 @@ class op_solution:
 				v = v + x[elem.n1-1] if elem.n1 != 0 else v
 				v = v - x[elem.n2-1] if elem.n2 != 0 else v
 				tot_power = tot_power - v*elem.I()
-			elif isinstance(elem, devices.vsource) or isinstance(elem, devices.evsource):
+			elif isinstance(elem, devices.vsource) or \
+			     isinstance(elem, devices.evsource):
 				v = 0
 				v = v + x[elem.n1-1] if elem.n1 != 0 else v
 				v = v - x[elem.n2-1] if elem.n2 != 0 else v
@@ -185,8 +279,8 @@ class op_solution:
 		fp.write("Operating Point (OP) analysis\n\n")
 		fp.write("Netlist: %s\nTitle: %s\n" % (self.netlist_file, self.netlist_title))
 		fp.write("At %.2f K\n" % (self.temp,))
-		fp.write("Options:\n\tvea = %e\n\tver = %f\n\tiea = %e\n\tier = %f\n\tgmin = %e\n" %\
-			(self.vea, self.ver, self.iea, self.ier, self.gmin))
+		fp.write("Options:\n\tvea = %e\n\tver = %f\n\tiea = %e\n\tier = %f\n\tgmin = %e\n" \
+		         % (self.vea, self.ver, self.iea, self.ier, self.gmin))
 		fp.write("\nConvergence reached in %d iterations.\n" % (self.iterations,))
 		fp.write("\nResults:\n")
 		vtable = self.get_table_array()
@@ -224,64 +318,18 @@ class op_solution:
 		for v in op1.variables:
 			abserr = abs(op2.results[v] - op1.results[v])
 			if op1.units[v] == 'V':
-				if abserr > options.ver*max(abs(op1.results[v]), abs(op2.results[v])) + options.vea:
+				if abserr > options.ver*max(abs(op1.results[v]), 
+				                            abs(op2.results[v])) + options.vea:
 					check_failed_vars.append(v)
 			elif op1.units[v] == 'A':
-				if abserr > options.ier*max(abs(op1.results[v]), abs(op2.results[v])) + options.iea:
+				if abserr > options.ier*max(abs(op1.results[v]), 
+				                            abs(op2.results[v])) + options.iea:
 					check_failed_vars.append(v)
 			else:
 				print "Unrecognized unit... Bug."
 		return check_failed_vars
 
-
-	# Access as a dictionary:
-	def __len__(self):
-		"""Get the number of variables in the results set."""
-		return len(self.variables)
-
-	def __getitem__(self, name):
-		"""Get a specific header, as from a dictionary."""
-		return self.results[name.upper()]
-
-	def get(self, name, default=None):
-		name = name.upper()
-		try:
-			return self.results[name]
-		except KeyError:
-			return default
-
-	def has_key(self, name):
-		"""Determine whether the result set contains a variable."""
-		return name.upper() in self.variables
-
-	def __contains__(self, name):
-		"""Determine whether the result set contains a variable."""
-		return name.upper() in self.variables
-
-	def keys(self):
-		"""Get all of the results set's variable's names."""
-		return self.variables
-
-	def values(self):
-		"""Get all of the results set's variable's values."""
-		return self.results.values()
-
-	def items(self):
-		return self.results.items()
-
-	# iterator methods
-	def __iter__(self):
-		return self
-
-	def next(self):
-		if self.iter_index == len(self.variables)-1:
-			self.iter_index = 0
-			raise StopIteration
-		else:                       # look for usable candidate
-			self.iter_index += 1
-		return self.variables[self.iter_index], self.results[self.variables[self.iter_index]]
-
-class ac_solution:
+class ac_solution(solution):
 	def __init__(self, circ, ostart, ostop, opoints, stype, op, outfile):
 		"""Holds a set of AC results.
 			circ: the circuit instance of the simulated circuit
@@ -290,31 +338,13 @@ class ac_solution:
 			stype: the sweep type
 			op: the linearization op used to compute the results
 		"""
-		self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-		self.netlist_file = circ.filename
-		self.netlist_title = circ.title
-		self.vea = options.vea
-		self.ver = options.ver
-		self.iea = options.iea
-		self.ier = options.ier
-		self.gmin = options.gmin
-		self.temp = constants.T
+		solution.__init__(self, circ, outfile)
 		self.linearization_op = op
 		self.stype = stype
 		self.ostart, self.ostop, self.opoints = ostart, ostop, opoints
-		self.filename = outfile
-
-		self._init_file_done = False
-
-		#We have mixed current and voltage results
-		# per primi vengono tanti valori di tensioni quanti sono i nodi del circuito meno uno,
-		# quindi tante correnti quanti sono gli elementi definiti in tensione presenti
-		# (per questo, per misurare una corrente, si può fare uso di generatori di tensione da 0V)
 	
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
-		self.skip_nodes_list = []	# nodi da saltare, solo interni
-		self.variables = ["w"]
-		self.units = case_insensitive_dict()
+		self.variables += ["w"]
 		self.units.update({"w":"rad/s"})
 	
 		for index in range(nv_1):
@@ -337,7 +367,8 @@ class ac_solution:
 				self.units.update({varname_arg:""})
 
 	def __str__(self):
-		return "<AC simulation results for %s (netlist %s). %s sweep, from %g Hz to %g Hz, %d points. Run on %s, data filename %s.>" % \
+		return "<AC simulation results for %s (netlist %s). %s sweep, from %g Hz to %g Hz, \
+%d points. Run on %s, data filename %s.>" % \
 		(self.netlist_title, self.netlist_file, self.stype, self.ostart, self.ostop, self.opoints,self.timestamp, self.filename)
 
 	def add_line(self, omega, x):
@@ -348,82 +379,19 @@ class ac_solution:
 			xsplit[2*i, 0] = numpy.abs(x[i,0])
 			xsplit[2*i+1, 0] = numpy.angle(x[i,0],deg=options.ac_phase_in_deg)
 			 
-		data = numpy.concatenate((omega, xsplit), axis=0) 
-		csvlib.write_csv(self.filename, data, self.variables, append=self._init_file_done)
-		self._init_file_done = True
+		data = numpy.concatenate((omega, xsplit), axis=0)
+		solution._add_data(self, data)
 
 	def get_type(self):
 		return "AC"
-
-	#def asmatrix(self):
-	#	return self.x
-
-	# Access as a dictionary BY VARIABLE NAME:
-	def __len__(self):
-		"""Get the number of variables in the results set."""
-		return len(self.variables)
-
-	def __getitem__(self, name):
-		"""Get a specific variable, as from a dictionary."""
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], nsamples=None, skip=0L)
-		return data
-
-	def get(self, name, default=None):
-		"""Get a solution by variable name."""
-		try:
-			data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], nsamples=None, skip=0L)
-		except KeyError:
-			return default
-		return data
-	
+		
 	def get_x(self):
-		x = self.variables[0]
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[x], nsamples=None, skip=0L)
-		return data
+		return self.get(self.variables[0])
 
 	def get_xlabel(self):
 		return self.variables[0]
 
-	def has_key(self, name):
-		"""Determine whether the result set contains a variable."""
-		return name.upper() in map(str.upper, self.variables)
-
-	def __contains__(self, name):
-		"""Determine whether the result set contains a variable."""
-		return name.upper() in map(str.upper, self.variables)
-
-	def keys(self):
-		"""Get all of the results set's variables names."""
-		return self.variables
-
-	def values(self):
-		"""Get all of the results set's variables values."""
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
-		return data
-
-	def items(self):
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
-		vlist = []
-		for j in range(data.shape[0]):
-			vlist.append(data[j, :])
-		return zip(headers, vlist)
-
-	# iterator methods
-	def __iter__(self):
-		self.iter_index = 0
-		self.iter_data, self.iter_headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0L)
-		return self
-
-	def next(self):
-		if self.iter_index == len(self.iter_headers):
-			self.iter_index = 0
-			raise StopIteration
-		else:
-			next = self.iter_headers[self.iter_index], self.iter_data[self.iter_index, :]
-			self.iter_index += 1
-		return next
-
-class dc_solution:
+class dc_solution(solution):
 	def __init__(self, circ, start, stop, sweepvar, stype, outfile):
 		"""Holds a set of DC results.
 			circ: the circuit instance of the simulated circuit
@@ -434,28 +402,11 @@ class dc_solution:
 			outfile: the file to write the results to. 
 			         (Use "stdout" to write to std output)
 		"""
-		self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-		self.netlist_file = circ.filename
-		self.netlist_title = circ.title
-		self.vea = options.vea
-		self.ver = options.ver
-		self.iea = options.iea
-		self.ier = options.ier
-		self.gmin = options.gmin
-		self.temp = constants.T
+		solution.__init__(self, circ, outfile)
 		self.start, self.stop = start, stop
 		self.stype = stype
-		self.filename = outfile
-
-		self._init_file_done = False
-
-		#We have mixed current and voltage results
-		# per primi vengono tanti valori di tensioni quanti sono i nodi del circuito meno uno,
-		# quindi tante correnti quanti sono gli elementi definiti in tensione presenti
-		# (per questo, per misurare una corrente, si può fare uso di generatori di tensione da 0V)
 	
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
-		self.skip_nodes_list = []	# nodi da saltare, solo interni
 		self.variables = [sweepvar]
 		self.units = case_insensitive_dict()		
 		if self.variables[0][0] == 'V':
@@ -477,217 +428,33 @@ class dc_solution:
 				self.units.update({varname:"A"})
 
 	def __str__(self):
-		return "<DC simulation results for %s (netlist %s). %s sweep of %s from %g %s to %g %s. Run on %s, data filename %s.>" % \
-		(self.netlist_title, self.netlist_file, self.stype, self.variables[0].upper(), \
-		self.start, self.units[self.variables[0]], self.stop, self.units[self.variables[0]], self.timestamp, self.filename)
+		return "<DC simulation results for %s (netlist %s). %s sweep of %s from %g %s to \
+%g %s. Run on %s, data filename %s.>" % \
+		(
+		 self.netlist_title, self.netlist_file, self.stype, self.variables[0].upper(), \
+		 self.start, self.units[self.variables[0]], self.stop, self.units[self.variables[0]], 
+		 self.timestamp, self.filename
+		)
 
 	def add_op(self, sweepvalue, op):
-		"""A DC sweep is made of a set of OP points. This method adds an OP solution and its corresponding 
-		sweep value to the results set.
+		"""A DC sweep is made of a set of OP points. This method adds an OP solution and 
+		its corresponding sweep value to the results set.
 		"""
 		sweepvalue = numpy.mat(numpy.array([sweepvalue]))
 		x = op.asmatrix()
 		data = numpy.concatenate((sweepvalue, x), axis=0)
-		csvlib.write_csv(self.filename, data, copy.copy(self.variables), append=self._init_file_done)
-		self._init_file_done = True
+		solution._add_data(self, data)
 
 	def get_type(self):
 		return "DC"
-
-	#def asmatrix(self):
-	#	return self.x
-
-	# Access as a dictionary BY VARIABLE NAME:
-	def __len__(self):
-		"""Get the number of variables in the results set."""
-		return len(self.variables)
-
-	def __getitem__(self, name):
-		"""Get a specific variable, as from a dictionary."""
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], nsamples=None, skip=0L)
-		return data
-
-	def get(self, name, default=None):
-		try:
-			data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], nsamples=None, skip=0L)
-		except KeyError:
-			return default
-		return data
-	
+		
 	def get_x(self):
-		x = self.variables[0]
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[x], nsamples=None, skip=0L)
-		return data
+		return self.get(self.variables[0])
 
 	def get_xlabel(self):
 		return self.variables[0]
 
-	def has_key(self, name):
-		"""Determine whether the result set contains a variable."""
-		return name.upper() in map(str.upper, self.variables)
-
-	def __contains__(self, name):
-		"""Determine whether the result set contains a variable."""
-		return name.upper() in map(str.upper, self.variables)
-
-	def keys(self):
-		"""Get all of the results set's variables names."""
-		return self.variables
-
-	def values(self):
-		"""Get all of the results set's variables values."""
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
-		return data
-
-	def items(self):
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
-		vlist = []
-		for j in range(data.shape[0]):
-			vlist.append(data[j, :])
-		return zip(headers, vlist)
-
-	# iterator methods
-	def __iter__(self):
-		self.iter_index = 0
-		self.iter_data, self.iter_headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0L)
-		return self
-
-	def next(self):
-		if self.iter_index == len(self.iter_headers):
-			self.iter_index = 0
-			raise StopIteration
-		else:
-			next = self.iter_headers[self.iter_index], self.iter_data[self.iter_index, :]
-			self.iter_index += 1
-		return next
-
-class mc_solution:
-	def __init__(self, circ, nkeys, outfile):
-		"""Holds a set of MONTE CARLO results.
-			circ: the circuit instance of the simulated circuit
-			nkeys: number of random number needed for each point
-			outfile: the file to write the results to. 
-			         (Use "stdout" to write to std output)
-		"""
-		self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-		self.netlist_file = circ.filename
-		self.netlist_title = circ.title
-		self.vea = options.vea
-		self.ver = options.ver
-		self.iea = options.iea
-		self.ier = options.ier
-		self.gmin = options.gmin
-		self.temp = constants.T
-		self.nkeys = nkeys
-		self.filename = outfile
-
-		#We have mixed current and voltage results
-		# per primi vengono tanti valori di tensioni quanti sono i nodi del circuito meno uno,
-		# quindi tante correnti quanti sono gli elementi definiti in tensione presenti
-		# (per questo, per misurare una corrente, si può fare uso di generatori di tensione da 0V)
-	
-		self.variables = []
-		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
-		self.skip_nodes_list = []	# nodi da saltare, solo interni
-		self.units = case_insensitive_dict()		
-	
-		for index in range(nv_1):
-			varname = "V%s" % (str(circ.nodes_dict[index + 1]),)
-			self.variables += [varname]
-			self.units.update({varname:"V"})
-			if circ.is_int_node_internal_only(index+1):
-				self.skip_nodes_list.append(index)
-
-		for elem in circ.elements: 
-			if circuit.is_elem_voltage_defined(elem):
-				varname = "I(%s)" % (elem.letter_id.upper()+elem.descr,)
-				self.variables += [varname]
-				self.units.update({varname:"A"})
-
-		# the keys get stored along with the simulation results
-		for i in range(self.nkeys):
-			varname = "MCKEY%d" % (i,)
-			self.variables += [varname]
-			self.units.update({varname:""})
-		csvlib.write_headers(self.filename, copy.copy(self.variables))
-
-	def __str__(self):
-		return "<MONTE CARLO OP simulation results for %s (netlist %s). %s sweep of %s from %g %s to %g %s. Run on %s, data filename %s.>" % \
-		(self.netlist_title, self.netlist_file, self.stype, self.variables[0].upper(), \
-		self.start, self.units[self.variables[0]], self.stop, self.units[self.variables[0]], self.timestamp, self.filename)
-
-	def add_op(self, keys, op):
-		"""A MONTE CARLO OP is made of a set of OP points. This method adds an OP solution and its corresponding 
-		key values to the results set.
-		"""
-		keys = numpy.mat(numpy.array(keys)).T
-		x = op.asmatrix()
-		data = numpy.concatenate((x, keys), axis=0)
-		csvlib.write_csv(self.filename, data, copy.copy(self.variables), append=True)
-
-	def get_type(self):
-		return "MC"
-
-	#def asmatrix(self):
-	#	return self.x
-
-	# Access as a dictionary BY VARIABLE NAME:
-	def __len__(self):
-		"""Get the number of variables in the results set."""
-		return len(self.variables)
-
-	def __getitem__(self, name):
-		"""Get a specific variable, as from a dictionary."""
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], nsamples=None, skip=0L)
-		return data
-
-	def get(self, name, default=None):
-		try:
-			data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], nsamples=None, skip=0L)
-		except KeyError:
-			return default
-		return data
-
-	def has_key(self, name):
-		"""Determine whether the result set contains a variable."""
-		return name.upper() in map(str.upper, self.variables)
-
-	def __contains__(self, name):
-		"""Determine whether the result set contains a variable."""
-		return name.upper() in map(str.upper, self.variables)
-
-	def keys(self):
-		"""Get all of the results set's variables names."""
-		return self.variables
-
-	def values(self):
-		"""Get all of the results set's variables values."""
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
-		return data
-
-	def items(self):
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
-		vlist = []
-		for j in range(data.shape[0]):
-			vlist.append(data[j, :])
-		return zip(headers, vlist)
-
-	# iterator methods
-	def __iter__(self):
-		self.iter_index = 0
-		self.iter_data, self.iter_headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0L)
-		return self
-
-	def next(self):
-		if self.iter_index == len(self.iter_headers):
-			self.iter_index = 0
-			raise StopIteration
-		else:
-			next = self.iter_headers[self.iter_index], self.iter_data[self.iter_index, :]
-			self.iter_index += 1
-		return next
-
-class tran_solution:
+class tran_solution(solution):
 	def __init__(self, circ, tstart, tstop, op, method, outfile):
 		"""Holds a set of TRANSIENT results.
 			circ: the circuit instance of the simulated circuit
@@ -697,32 +464,15 @@ class tran_solution:
 			outfile: the file to write the results to. 
 			         (Use "stdout" to write to std output)
 		"""
-		self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-		self.netlist_file = circ.filename
-		self.netlist_title = circ.title
-		self.vea = options.vea
-		self.ver = options.ver
-		self.iea = options.iea
-		self.ier = options.ier
-		self.gmin = options.gmin
-		self.temp = constants.T
+		solution.__init__(self, circ, outfile)
 		self.start_op = op
 		self.tstart, self.tstop = tstart, tstop
-		self.filename = outfile
 		self.method = method
 
-		self._init_file_done = False
 		self._lock = False
-
-		#We have mixed current and voltage results
-		# per primi vengono tanti valori di tensioni quanti sono i nodi del circuito meno uno,
-		# quindi tante correnti quanti sono gli elementi definiti in tensione presenti
-		# (per questo, per misurare una corrente, si può fare uso di generatori di tensione da 0V)
 	
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
-		self.skip_nodes_list = []	# nodi da saltare, solo interni
 		self.variables = ["T"]
-		self.units = case_insensitive_dict()
 		self.units.update({"T":"s"})
 	
 		for index in range(nv_1):
@@ -739,8 +489,12 @@ class tran_solution:
 				self.units.update({varname:"A"})
 
 	def __str__(self):
-		return "<TRAN simulation results for %s (netlist %s), from %g s to %g s. Diff. method %s. Run on %s, data filename %s.>" % \
-		(self.netlist_title, self.netlist_file, self.tstart, self.tstop, self.method, self.timestamp, self.filename)
+		return "<TRAN simulation results for %s (netlist %s), from %g s to %g s. Diff. \
+method %s. Run on %s, data filename %s.>" % \
+		(
+		 self.netlist_title, self.netlist_file, self.tstart, self.tstop, self.method, 
+		 self.timestamp, self.filename
+		)
 
 	def add_line(self, time, x):
 		"""This method adds a solution and its corresponding time value to the results set.
@@ -748,82 +502,26 @@ class tran_solution:
 		if not self._lock:
 			time = numpy.mat(numpy.array([time]))
 			data = numpy.concatenate((time, x), axis=0)
-			csvlib.write_csv(self.filename, data, copy.copy(self.variables), append=self._init_file_done)
-			self._init_file_done = True
+			solution._add_data(self, data)
 		else:
-			printing.print_general_error("Attempting to add values to a complete result set. BUG")
+			printing.print_general_error(
+			                    "Attempting to add values to a complete result set. BUG"
+			                    )
 
 	def lock(self):
 		self._lock = True
 
 	def get_type(self):
 		return "TRAN"
-
-	# Access as a dictionary BY VARIABLE NAME:
-	def __len__(self):
-		"""Get the number of variables in the results set."""
-		return len(self.variables)
-
-	def __getitem__(self, name):
-		"""Get a specific variable, as from a dictionary."""
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name.upper()], nsamples=None, skip=0L)
-		return data
-
-	def get(self, name, default=None):
-		try:
-			data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name.upper()], nsamples=None, skip=0L)
-		except KeyError:
-			return default
-		return data
-
+		
 	def get_x(self):
-		x = self.variables[0]
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[x], nsamples=None, skip=0L)
-		return data
+		return self.get(self.variables[0])
 
 	def get_xlabel(self):
 		return self.variables[0]
 
-	def has_key(self, name):
-		"""Determine whether the result set contains a variable."""
-		return name in self.variables
 
-	def __contains__(self, name):
-		"""Determine whether the result set contains a variable."""
-		return name in self.variables
-
-	def keys(self):
-		"""Get all of the results set's variables names."""
-		return self.variables
-
-	def values(self):
-		"""Get all of the results set's variables values."""
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
-		return data
-
-	def items(self):
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
-		vlist = []
-		for j in range(data.shape[0]):
-			vlist.append(data[j, :])
-		return zip(headers, vlist)
-
-	# iterator methods
-	def __iter__(self):
-		self.iter_index = 0
-		self.iter_data, self.iter_headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0L)
-		return self
-
-	def next(self):
-		if self.iter_index == len(self.iter_headers):
-			self.iter_index = 0
-			raise StopIteration
-		else:
-			next = self.iter_headers[self.iter_index], self.iter_data[self.iter_index, :]
-			self.iter_index += 1
-		return next
-
-class pss_solution:
+class pss_solution(solution):
 	def __init__(self, circ, method, period, outfile, t_array=None, x_array=None):
 		"""Holds a set of TRANSIENT results.
 			circ: the circuit instance of the simulated circuit
@@ -833,28 +531,13 @@ class pss_solution:
 			outfile: the file to write the results to. 
 			         (Use "stdout" to write to std output)
 		"""
-		self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-		self.netlist_file = circ.filename
-		self.netlist_title = circ.title
-		self.vea = options.vea
-		self.ver = options.ver
-		self.iea = options.iea
-		self.ier = options.ier
-		self.gmin = options.gmin
-		self.temp = constants.T
+		solution.__init__(self, circ, outfile)
 		self.period = period
-		self.filename = outfile
 		self.method = method
 
 		#We have mixed current and voltage results
-		# per primi vengono tanti valori di tensioni quanti sono i nodi del circuito meno uno,
-		# quindi tante correnti quanti sono gli elementi definiti in tensione presenti
-		# (per questo, per misurare una corrente, si può fare uso di generatori di tensione da 0V)
-	
 		nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
-		self.skip_nodes_list = []	# nodi da saltare, solo interni
 		self.variables = ["T"]
-		self.units = case_insensitive_dict()
 		self.units.update({"T":"s"})
 	
 		for index in range(nv_1):
@@ -874,14 +557,18 @@ class pss_solution:
 			self.set_results(t_array, x_array)
 
 	def __str__(self):
-		return "<PSS simulation results for %s (netlist %s), period %g s. Method: %s. Run on %s, data filename %s.>" % \
-		(self.netlist_title, self.netlist_file, self.period, self.method, self.timestamp, self.filename)
+		return "<PSS simulation results for %s (netlist %s), period %g s. Method: %s. \
+Run on %s, data filename %s.>" % \
+		( 
+		 self.netlist_title, self.netlist_file, self.period, self.method, self.timestamp, 
+		 self.filename
+		)
 
 	def set_results(self, t, x):
 		"""All the results are set at the same time for a PSS"""
 		time = numpy.mat(numpy.array(t))
-		data = numpy.concatenate((time, x), axis=0) 
-		csvlib.write_csv(self.filename, data, self.variables, append=False)
+		data = numpy.concatenate((time, x), axis=0)
+		solution._add_data(self, data)
 
 	def asmatrix(self):
 		allvalues = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0L)
@@ -889,72 +576,14 @@ class pss_solution:
 
 	def get_type(self):
 		return "PSS"
-
-	# Access as a dictionary BY VARIABLE NAME:
-	def __len__(self):
-		"""Get the number of variables in the results set."""
-		return len(self.variables)
-
-	def __getitem__(self, name):
-		"""Get a specific variable, as from a dictionary."""
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], nsamples=None, skip=0L)
-		return data
-
-	def get(self, name, default=None):
-		try:
-			data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], nsamples=None, skip=0L)
-		except KeyError:
-			return default
-		return data
-
+		
 	def get_x(self):
-		x = self.variables[0]
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[x], nsamples=None, skip=0L)
-		return data
+		return self.get(self.variables[0])
 
 	def get_xlabel(self):
 		return self.variables[0]
 
-	def has_key(self, name):
-		"""Determine whether the result set contains a variable."""
-		return name.upper() in map(str.upper, self.variables)
-
-	def __contains__(self, name):
-		"""Determine whether the result set contains a variable."""
-		return name.upper() in map(str.upper, self.variables)
-
-	def keys(self):
-		"""Get all of the results set's variables names."""
-		return self.variables
-
-	def values(self):
-		"""Get all of the results set's variables values."""
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
-		return data
-
-	def items(self):
-		data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=self.variables, nsamples=None, skip=0L)
-		vlist = []
-		for j in range(data.shape[0]):
-			vlist.append(data[j, :])
-		return zip(headers, vlist)
-
-	# iterator methods
-	def __iter__(self):
-		self.iter_index = 0
-		self.iter_data, self.iter_headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0L)
-		return self
-
-	def next(self):
-		if self.iter_index == len(self.iter_headers):
-			self.iter_index = 0
-			raise StopIteration
-		else:
-			next = self.iter_headers[self.iter_index], self.iter_data[self.iter_index, :]
-			self.iter_index += 1
-		return next
-
-class symbolic_solution:
+class symbolic_solution():
 	def __init__(self, results_dict, substitutions, circ, outfile=None):
 		"""Holds a set of Symbolic results.
 			results_dict: the results dict returned by sympy.solve(),
@@ -1001,8 +630,8 @@ class symbolic_solution:
 	@staticmethod
 	def load(filename):
 		with open(filename, 'rb') as fp:
-			solution = pickle.load(fp)
-		return solution
+			asolution = pickle.load(fp)
+		return asolution
 
 
 	def __repr__(self):
@@ -1019,10 +648,6 @@ class symbolic_solution:
 
 	def get_type(self):
 		return "Symbolic"
-
-	# do we need this method?
-	#def asmatrix(self):
-	#	return self.x
 
 	# Access as a dictionary:
 	def __len__(self):
@@ -1069,10 +694,13 @@ class symbolic_solution:
 			raise StopIteration
 		else:
 			self.iter_index += 1
-		return self.results.keys()[self.iter_index], self.results[self._symbols[self.iter_index]]
+		return self.results.keys()[self.iter_index], \
+		       self.results[self._symbols[self.iter_index]]
 
 
-class case_insensitive_dict:
+class case_insensitive_dict():
+	"""A dictionary that returns the same values for __str__.lower(key) and __str__.upper(key)
+	"""
 	def __init__(self):
 		self._dict = {}
 		# Access as a dictionary BY VARIABLE NAME:
@@ -1098,6 +726,8 @@ class case_insensitive_dict:
 		return self._dict[keys[i]]
 
 	def get(self, name, default=None):
+		"""Given the key 'name', return its corresp. value. If not found, return 'default'
+		"""
 		try:
 			keys = self._dict.keys()
 			i = map(str.upper, keys).index(name.upper())
@@ -1114,19 +744,23 @@ class case_insensitive_dict:
 		return name.upper() in map(str.upper, self._dict.keys())
 
 	def keys(self):
-		"""Get all of the results set's variables names."""
+		"""Get all keys"""
 		return self._dict.keys()
 
 	def values(self):
+		"""Get all values"""
 		return self._dict.values()
 
 	def items(self):
+		"""Get all keys and values pairs"""
 		return self._dict.items()
 		
 	def update(self, adict):
+		"""Update the dictionary contents with the dictionary 'adict'"""
 		return self._dict.update(adict)
 
 	# iterator methods
 	def __iter__(self):
+		"""Iterator"""
 		return self._dict.__iter__()
 
