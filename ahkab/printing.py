@@ -23,8 +23,7 @@ be somewhat uniform.
 """
 
 import sys
-import numpy
-import circuit, devices, options
+import devices, options
 import diode, mosq, ekv, switch
 	
 def print_circuit(circ):
