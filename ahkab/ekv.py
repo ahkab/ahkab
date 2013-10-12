@@ -297,7 +297,6 @@ class ekv_mos_model:
 			self.GAMMA = math.sqrt(2.0*constants.e*constants.si.esi*NSUB*10**6/self.COX)
 		else:
 			self.GAMMA = GAMMA_DEFAULT
-		print("***************************" + str(self.GAMMA))
 		if PHI is not None:
 			self.PHI = float(PHI)
 		elif NSUB is not None:
