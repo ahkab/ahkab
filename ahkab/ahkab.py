@@ -56,7 +56,7 @@ _print = False
 _x0s = {None:None}
 _of = []
 
-def new_op(guess=True, x0=None, outfile=None, verbose=None):
+def new_op(guess=True, x0=None, outfile=None, verbose=0):
 	"""Assembles an OP analysis and returns the analysis object.
 	The analysis itself can be run with:
 	ahkab.run(...)
@@ -84,12 +84,10 @@ def new_op(guess=True, x0=None, outfile=None, verbose=None):
 			_of.append(ofi) # keep the file open until quitting
 	else:
 		outfile += '.op'
-	if verbose is None:
-		verbose = 0
 	return {'type':'op', 'guess':guess, 'x0':x0, 'outfile':outfile, 'verbose':verbose}
 	
 def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None, outfile=None, \
-           verbose=None):
+           verbose=0):
 	"""Assembles a DC sweep analysis and returns the analysis object.
 
 	The analysis itself can be run with:
@@ -124,14 +122,12 @@ def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None
 			_of.append(ofi) # keep the file open until quitting
 	else:
 		outfile += '.dc'
-	if verbose is None:
-		verbose = 0
 	return {'type':'dc', 'start':float(start), 'stop':float(stop), 'points':float(points), 
 	        'source':source, 'x0':x0, 'outfile':outfile, 'guess':guess, 'sweep_type':sweep_type, 
 	        'verbose':verbose}
 	
 def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP, use_step_control=True, 
-             outfile=None, verbose=None):
+             outfile=None, verbose=0):
 	"""Assembles a TRAN analysis and returns the analysis object.
 
 	The analysis itself can be run with:
@@ -163,13 +159,11 @@ def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP, use_step_cont
 			_of.append(ofi) # keep the file open until quitting
 	else:
 		outfile += '.tran'
-	if verbose is None:
-		verbose = 0
 	return {"type":"tran", "tstart":tstart, "tstop":tstop, "tstep":tstep, 
 	       "method":method, "use_step_control":use_step_control, 'x0':x0, 
 	       'outfile':outfile, 'verbose':verbose}
 	
-def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile=None, verbose=None):
+def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile=None, verbose=0):
 	"""Assembles an AC analysis and returns the analysis object.
 
 	The analysis itself can be run with:
@@ -198,13 +192,11 @@ def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile=None, verbose
 			_of.append(ofi) # keep the file open until quitting
 	else:
 		outfile += '.ac'
-	if verbose is None:
-		verbose = 0
 	return {'type':'ac', 'start':start, 'stop':stop, 'points':points, 'sweep_type':sweep_type, 
 	        'x0':x0, 'outfile':outfile, 'verbose':verbose}
 			
 def new_pss(period, x0=None, points=None, method='brute-force', autonomous=False, outfile=None, 
-            verbose=None):
+            verbose=0):
 	"""Assembles a Periodic Steady State (PSS) analysis and returns the analysis object.
 
 	The analysis itself can be run with:
@@ -239,12 +231,10 @@ def new_pss(period, x0=None, points=None, method='brute-force', autonomous=False
 			_of.append(ofi) # keep the file open until quitting
 	else:
 		outfile += '.' + method.lower()
-	if verbose is None:
-		verbose = 0
 	return {'type':"pss", "method":method, 'period':period, 'points':points,
 	        'autonomous':autonomous, 'x0':x0, 'outfile':outfile, 'verbose':verbose}
 
-def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=None):
+def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=0):
 	"""Assembles a Symbolic analysis and returns the analysis object.
 
 	The analysis itself can be run with:
@@ -288,8 +278,6 @@ def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None
 			_of.append(ofi) # keep the file open until quitting
 	else:
 		outfile += '.symbolic'
-	if verbose is None:
-		verbose = 0
 	return {'type':"symbolic", 'source':source, 'ac_enable':ac_enable, 'r0s':r0s, 'subs':subs, 
 		'outfile':outfile, 'verbose':verbose}
 		
@@ -396,6 +384,9 @@ def main(filename, outfile="stdout", verbose=3):
 	for an in netlist_parser.parse_analysis(circ, directives):
 		if 'outfile' not in an.keys() or not an['outfile']:
 			an.update({'outfile':outfile+("."+an['type'])*(outfile != 'stdout')})
+		if 'verbose' in an.keys() and (an['verbose'] is None or an['verbose'] < verbose) \
+		   or not 'verbose' in an.keys():
+			an.update({'verbose':verbose})
 		_handle_netlist_ics(circ, [an], ic_list=[])
 		if verbose >= 4: 
 			printing.print_info_line(("Requested an.:", 4), verbose)
