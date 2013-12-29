@@ -47,7 +47,7 @@ import utilities
 import plotting
 import printing 
 
-__version__ = "0.07"
+__version__ = "0.08"
 
 global _queue, _x0s, _print, _of
 
