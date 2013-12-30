@@ -49,11 +49,11 @@ specs = {'pss':{'tokens':({
            }
 
 def pss_analysis(*largs, **args):
-	m = args.pop('method').lower()
-	if m == options.SHOOTINGPSS:
-		r = shooting.shooting(*largs, **args)
-	elif m == options.BFPSS:
-		r = bfpss.bfpss(*largs, **args)
-	else:
-		raise Exception, "Unknown PSS method %s" % m
-	return r
+    m = args.pop('method').lower()
+    if m == options.SHOOTINGPSS:
+        r = shooting.shooting(*largs, **args)
+    elif m == options.BFPSS:
+        r = bfpss.bfpss(*largs, **args)
+    else:
+        raise Exception, "Unknown PSS method %s" % m
+    return r

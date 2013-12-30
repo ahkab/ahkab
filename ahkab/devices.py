@@ -118,11 +118,6 @@ class resistor(generic):
         self.n1 = n1
         self.n2 = n2
     
-    def netlist(circ):
-        circ.nodes_dict[self.n1]
-        circ.nodes_dict[self.n2]
-        return "%s %s %s %s" % (self.letter_id, self.n1, self.n2, self.v)
-    
     def g(self, v, time=0):
         return 1.0/self.R
     
