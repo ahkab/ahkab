@@ -75,14 +75,14 @@ ports_vector in which there are the recommended guesses for dc analysis.
 Eg Vgs is set to Vt in mosfets.
 This is obviously useless for linear devices.
 
-2. Every element should have a meaningful __str__ method. 
+2. Every element should have a meaning(Component)ful __str__ method. 
 It must return a line of paramaters without n1 n2, because a element cannot 
 know the external names of its nodes. It is used to print the parsed netlist.
 
 """
 
-class generic(object):
-    """This class is for debugging purposes only."""
+class Component(object):
+    """Base Component class, also for debugging"""
 
     def __init__(self, n1=None, n2=None, is_nonlinear=False, is_symbolic=True):
         self.v              = 0
@@ -91,10 +91,11 @@ class generic(object):
         self.is_nonlinear   = is_nonlinear
         self.is_symbolic    = is_symbolic
 
+    #   Used by `print_netlist_elem_line` for value
     def __str__(self):
         return str(self.v)
     
-    #must be called to define the element!
+    #   must be called to define the element!
     def set_char(self, i_function=None, g_function=None):
         if i_function:
             self.i = i_function
@@ -107,7 +108,7 @@ class generic(object):
     def i(self, v):
         return 0
 
-class resistor(generic):
+class Resistor(Component):
     letter_id = "r"
     is_nonlinear = False
     is_symbolic = True
@@ -135,7 +136,7 @@ class resistor(generic):
     def print_op_info(self, ports_v):
         print self.get_op_info(ports_v)
 
-class capacitor(generic):
+class Capacitor(Component):
     letter_id = "c"
     is_nonlinear = False
     is_symbolic = True
@@ -167,7 +168,7 @@ class capacitor(generic):
     def print_op_info(self, ports_v):
         print self.get_op_info(ports_v)
         
-class inductor(generic):
+class Inductor(Component):
     letter_id = "l"
     is_nonlinear = False
     is_symbolic = True
@@ -180,7 +181,7 @@ class inductor(generic):
         self.ic = ic
         self.coupling_devices = []
 
-class inductor_coupling(generic):
+class InductorCoupling(Component):
     letter_id = "k"
     is_nonlinear = False
     is_symbolic = True
@@ -214,7 +215,7 @@ class inductor_coupling(generic):
 ##  SOURCES
 ################
 
-class isource(generic):
+class ISource(Component):
     """Generic (ideal) current source:
     Defaults to a DC current source. To implement a time-varying source:
     set _time_function to an appropriate function(time) and is_timedependent=True
@@ -263,7 +264,7 @@ class isource(generic):
         else:
             return self._time_function.value(time)
 
-class vsource(generic):
+class VSource(Component):
     """Generic (ideal) voltage source:
     Defaults to a DC voltage source. To implement a time-varying source:
     set _time_function to an appropriate function(time) and is_timedependent=True
@@ -315,7 +316,7 @@ class vsource(generic):
         else:
             return self._time_function.value(time)
 
-class evsource:
+class EVSource(Component):
     """Linear voltage controlled voltage source (ideal)
 
     Source port is a open circuit, dest. port is a ideal voltage source:
@@ -341,7 +342,7 @@ class evsource:
         return "alpha="+str(self.alpha)
 
 
-class gisource:
+class GISource(Component):
     letter_id = "g"
     """Linear voltage controlled current source
     
@@ -368,16 +369,14 @@ class gisource:
     def __str__(self):
         return "alpha="+str(self.alpha)
     
-class hvsource: #fixme
+class HVSource(Component): #   TODO: fixme
     """Linear current controlled voltage source
-    fixme: todo
-    
     """
     letter_id = "h"
     is_nonlinear = False
     is_symbolic = True
     def __init__(self, n1, n2, sn1, sn2, alpha):
-        print "hvsource not implemented. BUG"
+        print "HVSource not implemented. TODO"
         self.alpha = alpha
         self.n1 = n1
         self.n2 = n2
@@ -386,10 +385,7 @@ class hvsource: #fixme
         import sys
         sys.exit(1)
     def __str__(self):
-        raise Exception, "hvsource not implemented. BUG"
-
-# NEEDS TO BE CALLED hvsource, or search for it and modify appropriately
-
+        raise Exception, "HVSource not implemented. TODO"
 
 
 #########################################

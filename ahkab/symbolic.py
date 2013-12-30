@@ -240,7 +240,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
         #if elem.is_nonlinear and not (isinstance(elem, mosq.mosq_device) or isinstance(elem, ekv.ekv_device)): 
         #   print "Skipped elem "+elem.letter_id.upper()+elem.descr + ": not implemented."  
         #   continue
-        if isinstance(elem, devices.resistor):
+        if isinstance(elem, devices.Resistor):
             # we use conductances instead of 1/R because there is a significant
             # overhead handling many 1/R terms in sympy.
             if elem.is_symbolic:
@@ -259,7 +259,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - G
             mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - G
             mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + G
-        elif isinstance(elem, devices.capacitor):
+        elif isinstance(elem, devices.Capacitor):
             if ac:
                 if elem.is_symbolic:
                     capa = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True, positive=True)
@@ -271,9 +271,9 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
                 mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - s*capa
             else:
                 pass
-        elif isinstance(elem, devices.inductor):
+        elif isinstance(elem, devices.Inductor):
             pass
-        elif isinstance(elem, devices.gisource):
+        elif isinstance(elem, devices.GISource):
             if elem.is_symbolic:
                 alpha = sympy.Symbol(elem.letter_id+elem.descr, real=True)
             else:
@@ -282,7 +282,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             mna[elem.n1, elem.sn2] = mna[elem.n1, elem.sn2] - alpha
             mna[elem.n2, elem.sn1] = mna[elem.n2, elem.sn1] - alpha
             mna[elem.n2, elem.sn2] = mna[elem.n2, elem.sn2] + alpha
-        elif isinstance(elem, devices.isource):
+        elif isinstance(elem, devices.ISource):
             if elem.is_symbolic:
                 IDC = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True)
             else:
@@ -307,7 +307,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gd
             mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - gd
             mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + gd
-        elif isinstance(elem, devices.inductor_coupling):
+        elif isinstance(elem, devices.InductorCoupling):
             pass
             # this is taken care of within the inductors
         elif circuit.is_elem_voltage_defined(elem):
@@ -328,20 +328,20 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             # KVL
             mna[index, elem.n1] = +1
             mna[index, elem.n2] = -1
-            if isinstance(elem, devices.vsource):
+            if isinstance(elem, devices.VSource):
                 if elem.is_symbolic:
                     VDC = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
                 else:
                     VDC = elem.vdc
                 N[index, 0] = -VDC
-            elif isinstance(elem, devices.evsource):
+            elif isinstance(elem, devices.EVSource):
                 if elem.is_symbolic:
                     alpha = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
                 else:
                     alpha = elem.alpha
                 mna[index, elem.sn1] = -alpha
                 mna[index, elem.sn2] = +alpha
-            elif isinstance(elem, devices.inductor):
+            elif isinstance(elem, devices.Inductor):
                 if ac:
                     if elem.is_symbolic:
                         L = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True, positive=True)
@@ -352,13 +352,13 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
                     pass
                     # already so: commented out             
                     # N[index,0] = 0
-            elif isinstance(elem, devices.hvsource):
+            elif isinstance(elem, devices.HVSource):
                 printing.print_warning("symbolic.py: BUG - hvsources are not implemented yet.")
                 sys.exit(33)
     
     for elem in circ:
         if circuit.is_elem_voltage_defined(elem):
-            if isinstance(elem, devices.inductor):
+            if isinstance(elem, devices.Inductor):
                 if ac:
                     # find its index to know which column corresponds to its current
                     this_index = circ.find_vde_index("L"+elem.descr, verbose=0)

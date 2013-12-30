@@ -57,27 +57,37 @@ def print_netlist_elem_line(elem, circ):
     
     sys.stdout.write(elem.letter_id.upper() + elem.descr + " ")
     
-    if isinstance(elem, devices.resistor) or isinstance(elem, diode.diode) or \
-    isinstance(elem, devices.isource) or isinstance(elem, devices.vsource) or \
-    isinstance(elem, devices.capacitor) or isinstance(elem, devices.inductor):
+    if isinstance(elem, devices.Resistor)   \
+    or isinstance(elem, diode.diode)        \
+    or isinstance(elem, devices.ISource)    \
+    or isinstance(elem, devices.VSource)    \
+    or isinstance(elem, devices.Capacitor)  \
+    or isinstance(elem, devices.Inductor):
         sys.stdout.write(ext_n1 + " " + ext_n2 + " ")
-    elif isinstance(elem, devices.evsource) or isinstance(elem, devices.gisource) or \
-         isinstance(elem, switch.switch_device):
+    
+    elif isinstance(elem, devices.EVSource) \
+    or isinstance(elem, devices.GISource)   \
+    or isinstance(elem, switch.switch_device):
         sys.stdout.write(ext_n1 + " " + ext_n2 + " " + circ.nodes_dict[elem.sn1]+ " " + \
         circ.nodes_dict[elem.sn2] + " ")
-    elif isinstance(elem, devices.inductor_coupling):
+
+    elif isinstance(elem, devices.InductorCoupling):
         sys.stdout.write(" ")
-    elif isinstance(elem, mosq.mosq_device): #quadratic mos
+
+    elif isinstance(elem, mosq.mosq_device): #  quadratic mos
         sys.stdout.write(ext_n1 + " " + circ.nodes_dict[elem.ng] + " " + ext_n2 + " ")
+    
     elif isinstance(elem, ekv.ekv_device):
         sys.stdout.write(ext_n1 + " " + circ.nodes_dict[elem.ng] + " " + ext_n2 + " " + circ.nodes_dict[elem.nb] + " ")
+    
     elif elem.letter_id == "y":
         sys.stdout.write(ext_n1 + " " + ext_n2 + " ")
+    
     else:
-        print ""
-        print_general_error("Unknown element, this is probably a bug: " + elem.__class__.__name__)
+        print_general_error("\nUnknown element, this is probably a bug: " + elem.__class__.__name__)
         sys.exit(1)
     
+    #   Defaults to `Component.__str__`
     print str(elem)
     
     return None

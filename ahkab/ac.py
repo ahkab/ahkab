@@ -237,18 +237,18 @@ def generate_AC(circ, shape):
     nv = len(circ.nodes_dict)# - 1
     i_eq = 0 #each time we find a vsource or vcvs or ccvs, we'll add one to this.
     for elem in circ:
-        if isinstance(elem, devices.vsource) or isinstance(elem, devices.evsource) or \
-        isinstance(elem, devices.hvsource):
+        if isinstance(elem, devices.VSource) or isinstance(elem, devices.EVSource) or \
+        isinstance(elem, devices.HVSource):
             #notice that hvsources aren't yet implemented now!
             i_eq = i_eq + 1
-        elif isinstance(elem, devices.capacitor):
+        elif isinstance(elem, devices.Capacitor):
             n1 = elem.n1
             n2 = elem.n2
             AC[n1, n1] = AC[n1, n1] + elem.C
             AC[n1, n2] = AC[n1, n2] - elem.C
             AC[n2, n2] = AC[n2, n2] + elem.C
             AC[n2, n1] = AC[n2, n1] - elem.C
-        elif isinstance(elem, devices.inductor):
+        elif isinstance(elem, devices.Inductor):
             AC[nv + i_eq, nv + i_eq] = -1 * elem.L
             if len(elem.coupling_devices):
                 for cd in elem.coupling_devices:
@@ -275,9 +275,9 @@ def generate_Nac(circ):
     n_of_nodes = len(circ.nodes_dict)
     Nac = numpy.mat(numpy.zeros((n_of_nodes, 1)), dtype=complex)
     j = numpy.complex('j')
-    # process isources
+    # process `ISource`s
     for elem in circ:
-        if isinstance(elem, devices.isource) and elem.abs_ac is not None:
+        if isinstance(elem, devices.ISource) and elem.abs_ac is not None:
             #convenzione normale!
             Nac[elem.n1, 0] = Nac[elem.n1, 0] + elem.abs_ac*numpy.exp(j*elem.arg_ac)
             Nac[elem.n2, 0] = Nac[elem.n2, 0] - elem.abs_ac*numpy.exp(j*elem.arg_ac)
@@ -288,7 +288,7 @@ def generate_Nac(circ):
         if circuit.is_elem_voltage_defined(elem):
             index = Nac.shape[0] 
             Nac = utilities.expand_matrix(Nac, add_a_row=True, add_a_col=False)
-            if isinstance(elem, devices.vsource) and elem.abs_ac is not None:
+            if isinstance(elem, devices.VSource) and elem.abs_ac is not None:
                 Nac[index, 0] = -1.0*elem.abs_ac*numpy.exp(j*elem.arg_ac)
     return Nac
 

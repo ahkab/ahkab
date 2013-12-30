@@ -237,7 +237,7 @@ class op_solution(solution):
                         tempv = tempv - x[port[1]-1]                
                     ports_v_v = ((tempv,),)
                 op_info += [elem.get_op_info(ports_v_v)]
-            if isinstance(elem, devices.gisource):
+            if isinstance(elem, devices.GISource):
                 v = 0
                 v = v + x[elem.n1-1] if elem.n1 != 0 else v
                 v = v - x[elem.n2-1] if elem.n2 != 0 else v
@@ -245,13 +245,13 @@ class op_solution(solution):
                 vs = vs + x[elem.n1-1] if elem.n1 != 0 else vs
                 vs = vs - x[elem.n2-1] if elem.n2 != 0 else vs
                 tot_power = tot_power - v*vs*elem.alpha
-            elif isinstance(elem, devices.isource):
+            elif isinstance(elem, devices.ISource):
                 v = 0
                 v = v + x[elem.n1-1] if elem.n1 != 0 else v
                 v = v - x[elem.n2-1] if elem.n2 != 0 else v
                 tot_power = tot_power - v*elem.I()
-            elif isinstance(elem, devices.vsource) or \
-                 isinstance(elem, devices.evsource):
+            elif isinstance(elem, devices.VSource) or \
+                 isinstance(elem, devices.EVSource):
                 v = 0
                 v = v + x[elem.n1-1] if elem.n1 != 0 else v
                 v = v - x[elem.n2-1] if elem.n2 != 0 else v

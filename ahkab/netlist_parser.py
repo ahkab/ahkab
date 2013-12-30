@@ -273,7 +273,7 @@ def parse_elem_resistor(line, circ, line_elements=None):
     if R == 0:
         raise NetlistParseError, "ZERO-valued resistors are not allowed." 
 
-    elem = devices.resistor(n1=n1, n2=n2, R=R)
+    elem = devices.Resistor(n1=n1, n2=n2, R=R)
     elem.descr = line_elements[0][1:]
     
     return [elem]
@@ -310,7 +310,7 @@ def parse_elem_capacitor(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
     
-    elem = devices.capacitor(n1=n1, n2=n2, C=convert_units(line_elements[3]), ic=ic)
+    elem = devices.Capacitor(n1=n1, n2=n2, C=convert_units(line_elements[3]), ic=ic)
     elem.descr = line_elements[0][1:]
     
     return [elem]
@@ -347,7 +347,7 @@ def parse_elem_inductor(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
     
-    elem = devices.inductor(n1=n1, n2=n2, L=convert_units(line_elements[3]), ic=ic)
+    elem = devices.Inductor(n1=n1, n2=n2, L=convert_units(line_elements[3]), ic=ic)
     elem.descr = line_elements[0][1:]
     
     return [elem]
@@ -388,9 +388,9 @@ def parse_elem_inductor_coupling(line, circ, line_elements=None, elements=[]):
     L1elem, L2elem = None, None
 
     for e in elements:
-        if isinstance(e, devices.inductor) and L1descr == e.descr:
+        if isinstance(e, devices.Inductor) and L1descr == e.descr:
             L1elem = e
-        elif isinstance(e, devices.inductor) and L2descr == e.descr:
+        elif isinstance(e, devices.Inductor) and L2descr == e.descr:
             L2elem = e
 
     if L1elem is None or L2elem is None:
@@ -401,7 +401,7 @@ def parse_elem_inductor_coupling(line, circ, line_elements=None, elements=[]):
 
     M = math.sqrt(L1elem.L * L2elem.L) * Kvalue
 
-    elem = devices.inductor_coupling(L1=L1, L2=L2, K=Kvalue, M=M)
+    elem = devices.InductorCoupling(L1=L1, L2=L2, K=Kvalue, M=M)
     elem.descr = name[1:]
     L1elem.coupling_devices.append(elem)
     L2elem.coupling_devices.append(elem)    
@@ -476,7 +476,7 @@ def parse_elem_vsource(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
     
-    elem = devices.vsource(n1=n1, n2=n2, vdc=vdc, abs_ac=vac)
+    elem = devices.VSource(n1=n1, n2=n2, vdc=vdc, abs_ac=vac)
     elem.descr = line_elements[0][1:]
     
     if function is not None:
@@ -551,7 +551,7 @@ def parse_elem_isource(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
     
-    elem = devices.isource(n1=n1, n2=n2, idc=idc, abs_ac=iac)
+    elem = devices.ISource(n1=n1, n2=n2, idc=idc, abs_ac=iac)
     elem.descr = line_elements[0][1:]
     
     if function is not None:
@@ -620,7 +620,7 @@ def parse_elem_diode(line, circ, line_elements=None, models=None):
     #   new_node = n1
     #   n1 = circ.generate_internal_only_node_label()
     #   #print "-<<<<<<<<"+str(n1)+" "+str(n2) +" "+str(new_node)
-    #   rs_elem = devices.resistor(n1=new_node, n2=n1, R=Rs)
+    #   rs_elem = devices.Resistor(n1=new_node, n2=n1, R=Rs)
     #   rs_elem.descr = "INT"
     #   return_list = return_list + [rs_elem]
     
@@ -745,7 +745,7 @@ def parse_elem_vcvs(line, circ, line_elements=None):
     sn1 = circ.add_node(ext_sn1)
     sn2 = circ.add_node(ext_sn2)
     
-    elem = devices.evsource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=convert_units(line_elements[5]))
+    elem = devices.EVSource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=convert_units(line_elements[5]))
     elem.descr = line_elements[0][1:]
     
     return [elem]
@@ -784,7 +784,7 @@ def parse_elem_vccs(line, circ, line_elements=None):
     sn1 = circ.add_node(ext_sn1)
     sn2 = circ.add_node(ext_sn2)
     
-    elem = devices.gisource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=convert_units(line_elements[5]))
+    elem = devices.GISource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=convert_units(line_elements[5]))
     elem.descr = line_elements[0][1:]
     
     return [elem]

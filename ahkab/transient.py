@@ -432,18 +432,18 @@ def generate_D(circ, shape):
     nv = len(circ.nodes_dict)# - 1
     i_eq = 0 #each time we find a vsource or vcvs or ccvs, we'll add one to this.
     for elem in circ:
-        if isinstance(elem, devices.vsource) or isinstance(elem, devices.evsource) or \
-        isinstance(elem, devices.hvsource):
+        if isinstance(elem, devices.VSource) or isinstance(elem, devices.EVSource) or \
+        isinstance(elem, devices.HVSource):
             #notice that hvsources aren't yet implemented now!
             i_eq = i_eq + 1
-        elif isinstance(elem, devices.capacitor):
+        elif isinstance(elem, devices.Capacitor):
             n1 = elem.n1
             n2 = elem.n2
             D[n1, n1] = D[n1, n1] + elem.C
             D[n1, n2] = D[n1, n2] - elem.C
             D[n2, n2] = D[n2, n2] + elem.C
             D[n2, n1] = D[n2, n1] - elem.C
-        elif isinstance(elem, devices.inductor):
+        elif isinstance(elem, devices.Inductor):
             D[ nv + i_eq, nv + i_eq ] = -1 * elem.L
             # Mutual inductors (coupled inductors)
             # need to add a -M dI/dt where I is the current in the OTHER inductor.
