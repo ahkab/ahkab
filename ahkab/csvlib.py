@@ -121,8 +121,6 @@ def get_headers_index(headers, load_headers, verbose=3):
         except AttributeError:
             if verbose:
                 print "(W): got spurious header "+str(lh)+" (not a string). Skipping."
-        import traceback
-        traceback.print_tb()
     return his
 
 def get_csv_headers(filename):
