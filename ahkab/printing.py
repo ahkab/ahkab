@@ -40,7 +40,6 @@ def print_circuit(circ):
     for elem in circ:
         print_netlist_elem_line(elem, circ)
     
-    print "(models and analysis directives are omitted)"
     return None
     
 def print_netlist_elem_line(elem, circ):

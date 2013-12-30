@@ -832,7 +832,7 @@ def check_circuit(circ):
         
     return test_passed, reason
 
-def check_ground_paths(mna, circ, reduced_mna=True):
+def check_ground_paths(mna, circ, reduced_mna=True, verbose=0):
     """Checks that every node has a DC path to ground, wheather through
     nonlinear or linear elements.
     - This does not ensure that the circuit will have a DC solution.
@@ -866,7 +866,8 @@ def check_ground_paths(mna, circ, reduced_mna=True):
                 if op.count(node):
                     node_is_nl_op = True
         if not node_is_nl_op:
-            printing.print_warning("No path to ground from node " + circ.nodes_dict[node])
+            if verbose:
+                printing.print_warning("No path to ground from node " + circ.nodes_dict[node])
             test_passed = False
     return test_passed
 

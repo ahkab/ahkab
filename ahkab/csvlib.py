@@ -106,7 +106,7 @@ def _close_fp(fp, filename):
     else:
         fp.close()
 
-def get_headers_index(headers, load_headers):
+def get_headers_index(headers, load_headers, verbose=0):
     """Creates a list of integers. Each element in the list is the COLUMN index
     of the signal according to the supplied headers.
 
@@ -120,9 +120,11 @@ def get_headers_index(headers, load_headers):
         try:
             his = his + [lowcase_headers.index(lh.lower())]
         except ValueError:
-            print "(W): header "+lh+" not found. Skipping."
+            if verbose:
+                print "(W): header "+lh+" not found. Skipping."
         except AttributeError:
-            print "(W): got spurious header "+str(lh)+" (not a string). Skipping."
+            if verbose:
+                print "(W): got spurious header "+str(lh)+" (not a string). Skipping."
     return his
 
 def get_csv_headers(filename):
