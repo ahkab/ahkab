@@ -152,7 +152,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
     #It's a good idea to call transient with prebuilt MNA and N matrix
     #the analysis will be slightly faster (long netlists). 
     if mna is None or N is None:
-        (mna, N) = dc_analysis.generate_mna_and_N(circ)
+        (mna, N) = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
         mna = utilities.remove_row_and_col(mna)
         N = utilities.remove_row(N, rrow=0)
     elif not mna.shape[0] == N.shape[0]:
@@ -172,7 +172,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
     else:
         if isinstance(x0, results.op_solution):
             opsol = x0
-            x0 = x0.asmatrix()
+            x0 = x0.asmatrix(verbose=verbose)
         else:
             opsol =  results.op_solution(x=x0, error=numpy.matrix(numpy.zeros((mna.shape[0], 1))), circ=circ, outfile=None)
         printing.print_info_line(("Using the supplied op as x(t=%g)." % (tstart,), 5), verbose)

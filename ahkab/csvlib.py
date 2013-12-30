@@ -5,10 +5,10 @@ Functions:
 
 1. CSV write/load:
     write_csv(filename, data, headers, append=False)
-    load_csv(filename, load_headers=[], nsamples=None, skip=0L)
+    load_csv(filename, load_headers=[], nsamples=None, skip=0L, verbose=3)
 
 2. MISC utilities
-    get_headers_index(headers, load_headers):
+    get_headers_index(headers, load_headers. verbose=3):
     get_csv_headers(filename):
 
 3. Internal routines
@@ -39,9 +39,9 @@ def write_csv(filename, data, headers, append=False):
 
     Returns: None
     """
+
+    #   Writing data in CSV format to `filename`
     if not append:
-        #sys.stdout.write("Writing data in CSV format to "+filename+"... ")
-        #sys.stdout.flush()
         fp = _get_fp(filename, mode="w")
         headers = copy.copy(headers)
         if not headers[0][0] == '#':
@@ -52,12 +52,9 @@ def write_csv(filename, data, headers, append=False):
                 fp.write(SEPARATOR)
             else:
                 fp.write("\n")
-    else:
-        #sys.stdout.write("Appending data in CSV format to "+filename+"... ")
-        #sys.stdout.flush()
-        fp = _get_fp(filename, mode="a")
-        # No headers to be written!
-
+    #   Appending data in CSV format to `filename`, no headers
+    else: fp = _get_fp(filename, mode="a")    
+        
     if not data.shape[0] == len(headers):
         print "(W): write_csv(): data and headers don't match. Continuing anyway."
         print "DATA: " + str(data.shape) + " headers length: "+str(len(headers))
@@ -69,7 +66,6 @@ def write_csv(filename, data, headers, append=False):
                 fp.write(SEPARATOR)
         fp.write("\n")
     _close_fp(fp, filename)
-    #print "done."
 
 def write_headers(filename, headers):
     """Writes headers in CVS format to filename."""
@@ -106,7 +102,7 @@ def _close_fp(fp, filename):
     else:
         fp.close()
 
-def get_headers_index(headers, load_headers, verbose=0):
+def get_headers_index(headers, load_headers, verbose=3):
     """Creates a list of integers. Each element in the list is the COLUMN index
     of the signal according to the supplied headers.
 
@@ -125,6 +121,8 @@ def get_headers_index(headers, load_headers, verbose=0):
         except AttributeError:
             if verbose:
                 print "(W): got spurious header "+str(lh)+" (not a string). Skipping."
+        import traceback
+        traceback.print_tb()
     return his
 
 def get_csv_headers(filename):
@@ -147,7 +145,7 @@ def get_csv_headers(filename):
     return headers
 
 
-def load_csv(filename, load_headers=[], nsamples=None, skip=0L):
+def load_csv(filename, load_headers=[], nsamples=None, skip=0L, verbose=3):
     """Reads data in CVS format from filename.
     
     Supports:
@@ -194,7 +192,7 @@ def load_csv(filename, load_headers=[], nsamples=None, skip=0L):
         if headers is None:     
             headers = line.split(SEPARATOR)
             if len(load_headers):
-                his = get_headers_index(headers, load_headers)
+                his = get_headers_index(headers, load_headers, verbose=verbose)
             else:
                 his = range(len(headers))
         else:

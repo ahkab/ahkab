@@ -123,7 +123,7 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
 
     #It's a good idea to call AC with prebuilt MNA matrix if the circuit is big
     if mna is None:
-        (mna, N) = dc_analysis.generate_mna_and_N(circ)
+        (mna, N) = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
         del N
         mna = utilities.remove_row_and_col(mna)
     if Nac is None:
@@ -153,7 +153,7 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
             if verbose > 4: 
                 x0.print_short()
             printing.print_info_line(("Linearizing the circuit...", 5), verbose, print_nl=False)
-            J = generate_J(xop=x0.asmatrix(), circ=circ, mna=mna, Nac=Nac, data_filename=outfile, verbose=verbose)
+            J = generate_J(xop=x0.asmatrix(verbose=verbose), circ=circ, mna=mna, Nac=Nac, data_filename=outfile, verbose=verbose)
             printing.print_info_line((" done.", 5), verbose)
             # we have J, continue
     else: #not circ.is_nonlinear()

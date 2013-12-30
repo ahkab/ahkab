@@ -160,7 +160,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
     #initial guess, if specified, otherwise it's zero
     if x0 is not None:
         if isinstance(x0, results.op_solution):
-            x = x0.asmatrix()
+            x = x0.asmatrix(verbose=verbose)
         else:
             x = x0
     else:
@@ -410,7 +410,7 @@ def op_analysis(circ, x0=None, guess=True, outfile=None, verbose=3):
     if not options.dc_use_guess:
         guess = False
     
-    (mna, N) = generate_mna_and_N(circ)
+    (mna, N) = generate_mna_and_N(circ, verbose=verbose)
 
     printing.print_info_line(("MNA matrix and constant term (complete):", 4), verbose)
     printing.print_info_line((str(mna), 4), verbose)
@@ -714,7 +714,7 @@ def get_td(dx, locked_nodes, n=-1):
     return td
 
 
-def generate_mna_and_N(circ):
+def generate_mna_and_N(circ, verbose=3):
     """La vecchia versione usava il sistema visto a lezione, quella nuova mira ad essere 
     magari meno elegante, ma funzionale, flessibile e comprensibile. 
     MNA e N vengono creati direttamente della dimensione det. dal numero dei nodi, poi se 
@@ -802,7 +802,7 @@ def generate_mna_and_N(circ):
 
     # Seems a good place to run some sanity check
     # for the time being we do not halt the execution
-    check_ground_paths(mna, circ, reduced_mna=False)
+    check_ground_paths(mna, circ, reduced_mna=False, verbose=verbose)
 
     #all done
     return (mna, N)
@@ -832,7 +832,7 @@ def check_circuit(circ):
         
     return test_passed, reason
 
-def check_ground_paths(mna, circ, reduced_mna=True, verbose=0):
+def check_ground_paths(mna, circ, reduced_mna=True, verbose=3):
     """Checks that every node has a DC path to ground, wheather through
     nonlinear or linear elements.
     - This does not ensure that the circuit will have a DC solution.
@@ -923,7 +923,7 @@ def modify_x0_for_ic(circ, x0):
     """
 
     if isinstance(x0, results.op_solution):
-        x0 = x0.asmatrix()
+        x0 = x0.asmatrix(verbose=0)
         return_obj = True
     else:
         return_obj = False

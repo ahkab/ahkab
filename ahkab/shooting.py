@@ -75,9 +75,9 @@ def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
     printing.print_info_line(("Method: shooting",3), verbose)
     
     if isinstance(x0, results.op_solution):
-        x0 = x0.asmatrix()
+        x0 = x0.asmatrix(verbose=verbose)
     if mna is None or Tf is None:
-        (mna, Tf) = dc_analysis.generate_mna_and_N(circ)
+        (mna, Tf) = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
         mna = utilities.remove_row_and_col(mna)
         Tf = utilities.remove_row(Tf, rrow=0)
     elif not mna.shape[0] == Tf.shape[0]:

@@ -59,10 +59,10 @@ class solution:
         """Please redefine this function in the subclasses."""
         raise Exception, "Undefined"
 
-    def asmatrix(self):
+    def asmatrix(self, verbose=3):
         """Return all data as a (possibly huge) python matrix."""
         data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[], 
-                                                  nsamples=None, skip=0L)
+                                                  nsamples=None, skip=0L, verbose=verbose)
         return data.T
 
     # Access as a dictionary BY VARIABLE NAME:
@@ -73,15 +73,15 @@ class solution:
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
         data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], 
-                                                  nsamples=None, skip=0L)
+                                                  nsamples=None, skip=0L, verbose=0)
         return data.T
 
-    def get(self, name, default=None):
+    def get(self, name, default=None, verbose=3):
         """Get a solution by variable name."""
         try:
             data, headers, pos, EOF = csvlib.load_csv(self.filename, 
                                                       load_headers=[name], 
-                                                      nsamples=None, skip=0L)
+                                                      nsamples=None, skip=0L, verbose=verbose)
         except KeyError:
             return default
         return data.T
@@ -98,17 +98,17 @@ class solution:
         """Get all of the results set's variables names."""
         return self.variables
 
-    def values(self):
+    def values(self, verbose=3):
         """Get all of the results set's variables values."""
         data, headers, pos, EOF = csvlib.load_csv(self.filename, 
                                                   load_headers=self.variables, 
-                                                  nsamples=None, skip=0L)
+                                                  nsamples=None, skip=0L, verbose=verbose)
         return data.T
 
-    def items(self):
+    def items(self, verbose=3):
         data, headers, pos, EOF = csvlib.load_csv(self.filename, 
                                                   load_headers=self.variables, 
-                                                  nsamples=None, skip=0L)
+                                                  nsamples=None, skip=0L, verbose=verbose)
         vlist = []
         for j in range(data.shape[0]):
             vlist.append(data[j, :].T)
@@ -570,8 +570,8 @@ Run on %s, data filename %s.>" % \
         data = numpy.concatenate((time, x), axis=0)
         solution._add_data(self, data)
 
-    def asmatrix(self):
-        allvalues = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0L)
+    def asmatrix(self, verbose=3):
+        allvalues = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0L, verbose=verbose)
         return allvalues[0, :], allvalues[1:, :]
 
     def get_type(self):

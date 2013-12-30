@@ -88,7 +88,7 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
         printing.print_info_line(("Starting symbolic AC analysis...", 1), verbose)      
         
     printing.print_info_line(("Building symbolic MNA, N and x...", 3), verbose, print_nl=False)
-    mna, N, subs_g = generate_mna_and_N(circ, opts={'r0s':r0s}, ac=ac_enable)
+    mna, N, subs_g = generate_mna_and_N(circ, opts={'r0s':r0s}, ac=ac_enable, verbose=verbose)
     x = get_variables(circ)
     mna = mna[1:, 1:]
     N = N[1:, :]
@@ -226,7 +226,7 @@ def to_real_list(M):
         reallist.append(elem[0])
     return reallist
 
-def generate_mna_and_N(circ, opts, ac=False):
+def generate_mna_and_N(circ, opts, ac=False, verbose=3):
     """Generates a symbolic Modified Nodal Analysis matrix and N vector.
     """
     #print options
@@ -313,7 +313,7 @@ def generate_mna_and_N(circ, opts, ac=False):
         elif circuit.is_elem_voltage_defined(elem):
             pass
             #we'll add its lines afterwards
-        else:
+        elif verbose:
             printing.print_warning("Skipped elem %s: not implemented." % (elem.letter_id.upper()+elem.descr,))
 
     pre_vde = mna.shape[0]

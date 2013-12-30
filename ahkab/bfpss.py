@@ -54,7 +54,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
     printing.print_info_line(("Method: brute-force",3), verbose)
     
     if mna is None or Tf is None:
-        (mna, Tf) = dc_analysis.generate_mna_and_N(circ)
+        (mna, Tf) = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
         mna = utilities.remove_row_and_col(mna)
         Tf = utilities.remove_row(Tf, rrow=0)
     elif not mna.shape[0] == Tf.shape[0]:
@@ -285,7 +285,7 @@ def build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
     x = numpy.mat(numpy.zeros((points*n_of_var, 1)))
     if x0 is not None:
         if isinstance(x0, results.op_solution):
-            x0 = x0.asmatrix()
+            x0 = x0.asmatrix(verbose=verbose)
         if x0.shape[0] != n_of_var:
             print "Warning x0 has the wrong dimensions. Using all 0s."
         else:
