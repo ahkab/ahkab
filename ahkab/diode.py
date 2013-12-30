@@ -32,7 +32,6 @@ Contains a diode element and its model class.
 
 class diode:
     letter_id = "d"
-    descr = None
     is_nonlinear = True
     is_symbolic = True
     dc_guess = [0.425]
@@ -97,7 +96,7 @@ class diode:
         idiode = self.i(0, (vn1n2,))
         gmdiode = self.g(0, (vn1n2,), 0)
         info = ["V(n1-n2): ", vn1n2, "[V]", "I(n1-n2):", idiode, "[A]", "P:", vn1n2*idiode, "g:", gmdiode, "[A/V]", "T:", self._get_T(), "K" ]
-        arr = [[self.letter_id.upper()+self.descr] + info]
+        arr = [[self.part_id.upper()] + info]
         strarr = printing.table_setup(arr)
         return strarr
 

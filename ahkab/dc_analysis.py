@@ -209,7 +209,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
                         print "Convergence problem node %s" % (circ.int_node_to_ext(ivalue),)
                     elif not convergence_by_node[ivalue] and ivalue >= nv-1:
                         e = circ.find_vde(ivalue)
-                        print "Convergence problem current in %s%s" % (e.letter_id, e.descr)
+                        print "Convergence problem current in %s" % e.part_id
             if n_iter == MAXIT-1:
                 printing.print_general_error("Error: MAXIT exceeded ("+str(MAXIT)+")")
             if more_solve_methods_available(standard_solving, gmin_stepping, source_stepping):
@@ -329,7 +329,7 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
 
     source_elem = None
     for index in xrange(len(circ)):
-        if circ[index].descr == elem_descr:
+        if circ[index][1:] == elem_descr:
             if elem_type == 'v': 
                 if isinstance(circ[index], devices.VSource):
                     source_elem = circ[index]
@@ -339,7 +339,7 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
                     source_elem = circ[index]
                     break
     if not source_elem:
-        printing.print_general_error(elem_type + " element with descr. "+ elem_descr +" was not found.")
+        printing.print_general_error("%s was not found." % source[0].part_id)
         sys.exit(1)
     
     if isinstance(source_elem, devices.VSource):
@@ -740,10 +740,10 @@ def generate_mna_and_N(circ, verbose=3):
         if elem.is_nonlinear:
             continue
         elif isinstance(elem, devices.Resistor):
-            mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1.0/elem.R
-            mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1.0/elem.R
-            mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1.0/elem.R
-            mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1.0/elem.R
+            mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1.0/elem.value
+            mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1.0/elem.value
+            mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1.0/elem.value
+            mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1.0/elem.value
         elif isinstance(elem, devices.Capacitor):
             pass #In a capacitor I(V) = 0
         elif isinstance(elem, devices.GISource):
@@ -898,10 +898,8 @@ def build_x0_from_user_supplied_ic(circ, icdict):
     Vregex = re.compile("V\s*\(\s*(\w?)\s*\)",re.IGNORECASE|re.DOTALL)
     Iregex = re.compile("I\s*\(\s*(\w?)\s*\)",re.IGNORECASE|re.DOTALL)
     nv = len(circ.nodes_dict) #number of voltage variables
-    voltage_defined_elem_names = [ elem.letter_id + elem.descr 
-                                   for elem in circ 
-                                   if circuit.is_elem_voltage_defined(elem) 
-                                 ]
+    voltage_defined_elem_names = \
+        [elem.part_id for elem in circ if circuit.is_elem_voltage_defined(elem)]
     voltage_defined_elem_names = map(str.lower, voltage_defined_elem_names)
     ni = len(voltage_defined_elem_names) #number of current variables
     x0 = numpy.mat(numpy.zeros((nv + ni, 1)))

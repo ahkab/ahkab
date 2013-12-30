@@ -196,7 +196,7 @@ def get_variables(circ):
     nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
     
     # descrizioni dei componenti non definibili in tensione
-    idescr = [ (elem.letter_id.upper() + elem.descr) \
+    idescr = [ elem.part_id.upper() \
         for elem in circ if circuit.is_elem_voltage_defined(elem) ]
 
     mna_size = nv_1 + len(idescr)
@@ -229,32 +229,25 @@ def to_real_list(M):
 def generate_mna_and_N(circ, opts, ac=False, verbose=3):
     """Generates a symbolic Modified Nodal Analysis matrix and N vector.
     """
-    #print options
-    n_of_nodes = len(circ.nodes_dict)
-    mna = smzeros(n_of_nodes)
-    N = smzeros((n_of_nodes, 1))
-    s = sympy.Symbol("s", complex=True)
-    subs_g = {}
-    #process_elements()     
+    #   print options
+    n_of_nodes  = len(circ.nodes_dict)
+    mna         = smzeros(n_of_nodes)
+    N           = smzeros((n_of_nodes, 1))
+    s           = sympy.Symbol('s', complex=True)
+    subs_g      = {}
+
     for elem in circ:
-        #if elem.is_nonlinear and not (isinstance(elem, mosq.mosq_device) or isinstance(elem, ekv.ekv_device)): 
-        #   print "Skipped elem "+elem.letter_id.upper()+elem.descr + ": not implemented."  
-        #   continue
         if isinstance(elem, devices.Resistor):
             # we use conductances instead of 1/R because there is a significant
             # overhead handling many 1/R terms in sympy.
             if elem.is_symbolic:
-                R = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True, positive=True)
-                G = sympy.Symbol("G"+elem.descr, real=True, positive=True)
+                R = sympy.Symbol(elem.part_id.upper(), real=True, positive=True)
+                G = sympy.Symbol('G'+part_id[1:], real=True, positive=True)
                 # but we keep track of which is which and substitute back after solving.
                 subs_g.update({G:1/R})
             else:
-                R = elem.R
+                R = elem.value
                 G = 1.0/R
-            #mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1/R
-            #mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/R
-            #mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1/R
-            #mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1/R
             mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + G
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - G
             mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - G
@@ -262,9 +255,9 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
         elif isinstance(elem, devices.Capacitor):
             if ac:
                 if elem.is_symbolic:
-                    capa = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True, positive=True)
+                    capa = sympy.Symbol(elem.part_id.upper(), real=True, positive=True)
                 else:
-                    capa = elem.C
+                    capa = elem.value
                 mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + s*capa
                 mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - s*capa
                 mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + s*capa
@@ -275,34 +268,34 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             pass
         elif isinstance(elem, devices.GISource):
             if elem.is_symbolic:
-                alpha = sympy.Symbol(elem.letter_id+elem.descr, real=True)
+                alpha = sympy.Symbol(elem.part_id.upper(), real=True)
             else:
-                alpha = elem.alpha
+                alpha = elem.value
             mna[elem.n1, elem.sn1] = mna[elem.n1, elem.sn1] + alpha
             mna[elem.n1, elem.sn2] = mna[elem.n1, elem.sn2] - alpha
             mna[elem.n2, elem.sn1] = mna[elem.n2, elem.sn1] - alpha
             mna[elem.n2, elem.sn2] = mna[elem.n2, elem.sn2] + alpha
         elif isinstance(elem, devices.ISource):
             if elem.is_symbolic:
-                IDC = sympy.Symbol(elem.letter_id.upper()+elem.descr, real=True)
+                IDC = sympy.Symbol(elem.part_id.upper(), real=True)
             else:
                 IDC = elem.idc
             N[elem.n1, 0] = N[elem.n1, 0] + IDC
             N[elem.n2, 0] = N[elem.n2, 0] - IDC
         elif isinstance(elem, mosq.mosq_device) or isinstance(elem, ekv.ekv_device):
-            gm = sympy.Symbol('gm_'+elem.letter_id+elem.descr, real=True, positive=True)
+            gm = sympy.Symbol('gm_'+elem.part_id, real=True, positive=True)
             mna[elem.n1, elem.ng] = mna[elem.n1, elem.ng] + gm
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gm
             mna[elem.n2, elem.ng] = mna[elem.n2, elem.ng] - gm
             mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + gm
             if opts['r0s']:
-                r0 = sympy.Symbol('r0_'+elem.letter_id+elem.descr, real=True, positive=True)
+                r0 = sympy.Symbol('r0_'+elem.part_id, real=True, positive=True)
                 mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1/r0
                 mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1/r0
                 mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1/r0
                 mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1/r0
         elif isinstance(elem, diode.diode):
-            gd = sympy.Symbol("g"+elem.letter_id+elem.descr, positive=True)
+            gd = sympy.Symbol("g"+elem.part_id, positive=True)
             mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + gd
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gd
             mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - gd
@@ -314,7 +307,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             pass
             #we'll add its lines afterwards
         elif verbose:
-            printing.print_warning("Skipped elem %s: not implemented." % (elem.letter_id.upper()+elem.descr,))
+            printing.print_warning("Skipped elem %s: not implemented." % (elem.part_id.upper(),))
 
     pre_vde = mna.shape[0]
     for elem in circ:
@@ -330,13 +323,13 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             mna[index, elem.n2] = -1
             if isinstance(elem, devices.VSource):
                 if elem.is_symbolic:
-                    VDC = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
+                    VDC = sympy.Symbol(elem.part_id.upper(), real=True)
                 else:
                     VDC = elem.vdc
                 N[index, 0] = -VDC
             elif isinstance(elem, devices.EVSource):
                 if elem.is_symbolic:
-                    alpha = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True)
+                    alpha = sympy.Symbol(elem.part_id.upper(), real=True)
                 else:
                     alpha = elem.alpha
                 mna[index, elem.sn1] = -alpha
@@ -344,7 +337,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             elif isinstance(elem, devices.Inductor):
                 if ac:
                     if elem.is_symbolic:
-                        L = sympy.Symbol(elem.letter_id.upper() + elem.descr, real=True, positive=True)
+                        L = sympy.Symbol(elem.part_id.upper(), real=True, positive=True)
                     else:
                         L = elem.L
                     mna[index, index] = -s*L
@@ -361,26 +354,20 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             if isinstance(elem, devices.Inductor):
                 if ac:
                     # find its index to know which column corresponds to its current
-                    this_index = circ.find_vde_index("L"+elem.descr, verbose=0)
+                    this_index = circ.find_vde_index(elem.part_id, verbose=0)
                     for cd in elem.coupling_devices:
                         if cd.is_symbolic:
-                            M = sympy.Symbol("M" + cd.descr, real=True, positive=True)
+                            M = sympy.Symbol(cd.part_id, real=True, positive=True)
                         else:
                             M = cd.K
-                        # get id+descr of the other inductor (eg. "L32")
-                        other_id_wdescr = cd.get_other_inductor("L"+elem.descr)
+                        # get `part_id` of the other inductor (eg. "L32")
+                        other_id_wdescr = cd.get_other_inductor(elem.part_id)
                         # find its index to know which column corresponds to its current
                         other_index = circ.find_vde_index(other_id_wdescr, verbose=0)
                         # add the term.
-                        #print "other_index: "+str(other_index)
-                        #print "this_index: "+str(this_index)
                         mna[pre_vde+this_index,pre_vde+other_index] += -s*M
-                        #print mna
                 else: 
                     pass
-                    # already so: commented out             
-                    # N[index,0] = 0
-            
     
     #all done
     return (mna, N, subs_g)
@@ -412,15 +399,13 @@ def parse_substitutions(slist):
         v1, v2 = l.split("=")
         letter_id1 = v1[0].upper() if v1[0].upper() != 'R' else 'G'
         letter_id2 = v2[0].upper() if v2[0].upper() != 'R' else 'G'
-        #pos1 = True if letter_id1 in ('G', 'C', 'L', 'M') else None
-        #pos2 = True if letter_id2 in ('G', 'C', 'L', 'M') else None
         subs.update({
             sympy.Symbol(letter_id1+v1[1:].lower(), real=True):
             sympy.Symbol(letter_id2+v2[1:].lower(), real=True)
             })
     return subs
 
-############## THESE  WILL BE REMOVED - AS SOON AS SOME SYMPY BUGS ARE FIXED ###########
+######## TODO: THESE  WILL BE REMOVED - AS SOON AS SOME SYMPY BUGS ARE FIXED ###########
 def help_the_solver(eqs, xs, debug=False):
     iter_flag = True
     sol = {}

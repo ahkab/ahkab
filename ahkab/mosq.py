@@ -58,7 +58,7 @@ BEX_DEFAULT = -1.5
 ISMALL_GUESS_MIN = 1e-10
 
 class mosq_device:
-    def __init__(self, nd, ng, ns, nb, W, L, model, M=1, N=1):
+    def __init__(self, nd, ng, ns, nb, W, L, model, M=1, N=1, part_id='M'):
         """Quadratic Law MOSFET device
         Parameters:
             nd: drain node
@@ -93,7 +93,7 @@ class mosq_device:
         self.mc_enabled = False
         self.opdict = {}
         self.opdict.update({'state':(float('nan'), float('nan'), float('nan'))})
-        self.letter_id = 'M'
+        self.part_id=part_id
         self.is_nonlinear = True
         self.is_symbolic = True
         self.dc_guess = [self.mosq_model.VTO*(0.4)*self.mosq_model.NPMOS, self.mosq_model.VTO*(1.1)*self.mosq_model.NPMOS, 0]
@@ -161,7 +161,6 @@ class mosq_device:
 
     def get_op_info(self, ports_v):
         """Operating point info, for design/verification. """
-        mos_type = self._get_mos_type()
         self.update_status_dictionary(ports_v)
         sat_status = "SATURATION" if self.opdict['SAT'] else "LINEAR"
         if not self.opdict["ON"]: 
@@ -169,13 +168,12 @@ class mosq_device:
         else:
             status = "ON"
 
-        arr = [["M"+self.descr, mos_type.upper()+" ch", status, "", "", sat_status, "", "", "", "", "",""],]
+        arr = [[self.part_id+" ch", status, "", "", sat_status, "", "", "", "", "",""],]
         arr.append(["beta", "[A/V^2]:", self.opdict['beta'], "Weff", "[m]:", str(self.opdict['W'])+" ("+str(self.device.W)+")", "L", "[m]:", str(self.opdict['L'])+ " ("+str(self.device.L)+")", "M/N:", "", str(self.device.M)+"/"+str(self.device.N)])
         arr.append(["Vds", "[V]:", float(ports_v[0][0]), "Vgs", "[V]:", float(ports_v[0][1]), "Vbs", "[V]:", float(ports_v[0][2]),  "", "", ""])
         arr.append([ "VTH", "[V]:", self.opdict['VTH'], "VOD", "[V]:", self.opdict['VOD'], "", "","", "VA", "[V]:", str(self.opdict['Ids']/self.opdict['gmd'])])
         arr.append(["Ids", "[A]:", self.opdict['Ids'], "", "", "", "", "", "", "", "", '']) 
         arr.append(["gm", "[S]:", self.opdict['gm'], "gmb", "[S]:", self.opdict['gmb'], "ro", "[Ohm]:", 1/self.opdict['gmd'], "", "", ""])
-        #arr.append([  "", "", "", "", "", ""])
 
         return printing.table_setup(arr)
 
@@ -386,7 +384,9 @@ class mosq_mos_model:
         # monte carlo support       
         svt, skp = self.get_svt_skp(device, debug=debug)
 
-        #print "PHI:", self.PHI, "vbs:", vbs
+        if debug:
+            print "PHI:", self.PHI, "vbs:", vbs
+        
         VT = self.VTO + svt + self.GAMMA*(math.sqrt(-vbs+2*self.PHI) - math.sqrt(2*self.PHI))
         if vgs < VT:
             ids = options.iea*(vgs/VT+vds/VT)/100 
@@ -410,15 +410,15 @@ class mosq_mos_model:
 
         return Ids 
 
-        #if debug:
-        #   print "vd:", vd, "vg:",VG/self.scaling.Ut, "vs:", vs, "vds:", vd-vs
-        #   print "v_ifn:", v_ifn, "v_irn:",v_irn
-        #   print "ifn:", ifn, "irn:",irn
-        #   print "ip_abs_err:", ip_abs_err
-        #   print "Vth:", self.scaling.Ut
-        #   print "nv", nv, "Is", self.scaling.Is
-        #   print "Weff:", device.W, "Leff:", Leff
-        #   print "NPMOS:", self.NPMOS, "CS_FACTOR", CS_FACTOR
+        if debug:
+           print "vd:", vd, "vg:",VG/self.scaling.Ut, "vs:", vs, "vds:", vd-vs
+           print "v_ifn:", v_ifn, "v_irn:",v_irn
+           print "ifn:", ifn, "irn:",irn
+           print "ip_abs_err:", ip_abs_err
+           print "Vth:", self.scaling.Ut
+           print "nv", nv, "Is", self.scaling.Is
+           print "Weff:", device.W, "Leff:", Leff
+           print "NPMOS:", self.NPMOS, "CS_FACTOR", CS_FACTOR
 
 
         
@@ -514,7 +514,6 @@ if __name__ == '__main__':
 
     m = mosq_mos_model(TYPE='p', KP=50e-6, VTO=.4)
     ma = mosq_device(1, 2, 3, 4, W=10e-6,L=1e-6, model=m)
-    ma.descr = "1"
 
     # OP test
     vds = numpy.arange(0, 100)/100.0*5-2.5

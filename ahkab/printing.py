@@ -55,7 +55,7 @@ def print_netlist_elem_line(elem, circ):
         ext_n1 = circ.nodes_dict[elem.n1]
         ext_n2 = circ.nodes_dict[elem.n2]
     
-    sys.stdout.write(elem.letter_id.upper() + elem.descr + " ")
+    sys.stdout.write(elem.part_id + " ")
     
     if isinstance(elem, devices.Resistor)   \
     or isinstance(elem, diode.diode)        \

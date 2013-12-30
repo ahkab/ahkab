@@ -78,7 +78,7 @@ ISMALL_GUESS_MIN = 1e-10
 
 class ekv_device:
     INIT_IFRN_GUESS = 1
-    def __init__(self, nd, ng, ns, nb, W, L, model, M=1, N=1):
+    def __init__(self, nd, ng, ns, nb, W, L, model, M=1, N=1, part_id='M'):
         """ EKV device
         Parameters:
             nd: drain node
@@ -114,7 +114,7 @@ class ekv_device:
         self.opdict.update({'ifn':self.INIT_IFRN_GUESS})
         self.opdict.update({'irn':self.INIT_IFRN_GUESS})
         self.opdict.update({'ip_abs_err':self.ekv_model.get_ip_abs_err(self.device)})
-        self.letter_id = 'M'
+        self.part_id = part_id
         self.is_nonlinear = True
         self.is_symbolic = True
         self.dc_guess = [self.ekv_model.VTO*(0.1)*self.ekv_model.NPMOS, self.ekv_model.VTO*(1.1)*self.ekv_model.NPMOS, 0]
@@ -206,7 +206,7 @@ class ekv_device:
         if self.opdict["WMSI"] == 2:
             wmsi_status = "STRONG INVERSION"
 
-        arr = [["M"+self.descr, mos_type.upper()+" ch",wmsi_status, "", "", sat_status, "", "", "", "", "",""],]
+        arr = [[self.part_id, mos_type.upper()+" ch",wmsi_status, "", "", sat_status, "", "", "", "", "",""],]
         arr.append(["beta", "[A/V^2]:", self.opdict['beta'], "Weff", "[m]:", str(self.opdict['Weff'])+" ("+str(self.device.W)+")", "Leff", "[m]:", str(self.opdict['Leff'])+ " ("+str(self.device.L)+")", "M/N:", "", str(self.device.M)+"/"+str(self.device.N)])
         arr.append(["Vdb", "[V]:", float(ports_v[0][0]), "Vgb", "[V]:", float(ports_v[0][1]), "Vsb", "[V]:", float(ports_v[0][2]),  "Vp", "[V]:", self.opdict['Vp'],])
         arr.append([ "VTH", "[V]:", self.opdict['VTH'], "VOD", "[V]:", self.opdict['VOD'], "nq: ", "",self.opdict['nq'], "VA", "[V]:", str(self.opdict['Ids']/self.opdict['gmd'])])
@@ -274,7 +274,6 @@ class ekv_mos_model:
 
         self.name = "model_ekv0" if name is None else name
         self.TNOM = float(TNOM) if TNOM is not None else constants.Tref
-        #print "TYPE IS:" + TYPE
         self.NPMOS = 1 if TYPE == 'n' else -1
 
         # optional parameters (no defaults)
@@ -710,7 +709,6 @@ if __name__ == '__main__':
 
     ekv_m = ekv_mos_model(TYPE='n', KP=50e-6, VTO=.4)
     ma = ekv_device(1, 2, 3, 4, W=10e-6,L=1e-6, model=ekv_m)
-    ma.descr = "1"
 
     # OP test
     vd = 0.0

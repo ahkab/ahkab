@@ -168,7 +168,7 @@ class op_solution(solution):
         for elem in circ:
             if circuit.is_elem_voltage_defined(elem):
                 index = index + 1
-                varname = ("I("+elem.letter_id.upper()+elem.descr+")").upper()
+                varname = ("I("+elem.part_id.upper()+")").upper()
                 self.variables += [varname]
                 self.results.update({varname:x[index, 0]})
                 self.errors.update({varname:error[index, 0]})
@@ -359,8 +359,8 @@ class ac_solution(solution):
 
         for elem in circ: 
             if circuit.is_elem_voltage_defined(elem):
-                varname_abs = "|I(%s)|" % (elem.letter_id.upper()+elem.descr,)
-                varname_arg = "arg(I(%s))" % (elem.letter_id.upper()+elem.descr,)
+                varname_abs = "|I(%s)|" % (elem.part_id.upper(),)
+                varname_arg = "arg(I(%s))" % (elem.part_id.upper(),)
                 self.variables += [varname_abs]
                 self.variables += [varname_arg]
                 self.units.update({varname_abs:"A"})
@@ -423,7 +423,7 @@ class dc_solution(solution):
 
         for elem in circ: 
             if circuit.is_elem_voltage_defined(elem):
-                varname = "I(%s)" % (elem.letter_id.upper()+elem.descr,)
+                varname = "I(%s)" % (elem.part_id.upper(),)
                 self.variables += [varname]
                 self.units.update({varname:"A"})
 
@@ -484,7 +484,7 @@ class tran_solution(solution):
 
         for elem in circ: 
             if circuit.is_elem_voltage_defined(elem):
-                varname = ("I(%s)" % (elem.letter_id.upper()+elem.descr,)).upper()
+                varname = ("I(%s)" % (elem.part_id.upper(),)).upper()
                 self.variables += [varname]
                 self.units.update({varname:"A"})
 
@@ -549,7 +549,7 @@ class pss_solution(solution):
 
         for elem in circ: 
             if circuit.is_elem_voltage_defined(elem):
-                varname = "I(%s)" % (elem.letter_id.upper()+elem.descr,)
+                varname = "I(%s)" % (elem.part_id.upper(),)
                 self.variables += [varname]
                 self.units.update({varname:"A"})
 

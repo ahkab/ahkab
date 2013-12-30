@@ -84,16 +84,17 @@ know the external names of its nodes. It is used to print the parsed netlist.
 class Component(object):
     """Base Component class, also for debugging"""
 
-    def __init__(self, n1=None, n2=None, is_nonlinear=False, is_symbolic=True):
-        self.v              = 0
+    def __init__(self, part_id=None, n1=None, n2=None, is_nonlinear=False, is_symbolic=True, value=None):
+        self.part_id        = part_id
         self.n1             = n1
         self.n2             = n2
+        self.value          = value
         self.is_nonlinear   = is_nonlinear
         self.is_symbolic    = is_symbolic
 
     #   Used by `print_netlist_elem_line` for value
     def __str__(self):
-        return str(self.v)
+        return str(self.value)
     
     #   must be called to define the element!
     def set_char(self, i_function=None, g_function=None):
@@ -103,33 +104,32 @@ class Component(object):
             self.g = g_function
     
     def g(self, v):
-        return 1/self.R
+        return 1/self.value
     
     def i(self, v):
         return 0
 
 class Resistor(Component):
-    letter_id = "r"
     is_nonlinear = False
     is_symbolic = True
     
-    def __init__(self, n1, n2, R):
-        self.R = R
-        self.v = R
-        self.n1 = n1
-        self.n2 = n2
+    def __init__(self, n1, n2, value, part_id='R'):
+        self.part_id    = part_id
+        self.value      = value
+        self.n1         = n1
+        self.n2         = n2
     
     def g(self, v, time=0):
-        return 1.0/self.R
+        return 1.0/self.value
     
     def i(self, v, time=0):
         return 0
     
     def get_op_info(self, ports_v):
         vn1n2 = float(ports_v[0][0])
-        in1n2 = float(ports_v[0][0]/self.R)
-        power = float(ports_v[0][0]**2/self.R)
-        arr = [[self.letter_id.upper()+self.descr,"V(n1-n2):", vn1n2, "[V]", "I(n2-n1):", in1n2, "[A]", "P:", power, "[W]"]]
+        in1n2 = float(ports_v[0][0]/self.value)
+        power = float(ports_v[0][0]**2/self.value)
+        arr = [[self.part_id.upper(), "V(n1-n2):", vn1n2, "[V]", "I(n2-n1):", in1n2, "[A]", "P:", power, "[W]"]]
         strarr = printing.table_setup(arr)
         return strarr
     
@@ -137,16 +137,15 @@ class Resistor(Component):
         print self.get_op_info(ports_v)
 
 class Capacitor(Component):
-    letter_id = "c"
     is_nonlinear = False
     is_symbolic = True
 
-    def __init__(self, n1, n2, C, ic=None):
-        self.C = C
-        self.v = C
-        self.n1 = n1
-        self.n2 = n2
-        self.ic = ic
+    def __init__(self, part_id='C', n1=None, n2=None, value=None, ic=None):
+        self.part_id    = part_id
+        self.value      = value
+        self.n1         = n1
+        self.n2         = n2
+        self.ic         = ic
 
     def g(self, v, time=0):
         return 0
@@ -155,13 +154,13 @@ class Capacitor(Component):
         return 0
     
     def d(self, v, time=0):
-        return self.C
+        return self.value
     
     def get_op_info(self, ports_v):
         vn1n2 = float(ports_v[0][0])
-        qn1n2 = float(ports_v[0][0]*self.C)
-        energy = float(.5*ports_v[0][0]**2*self.C)
-        arr = [[self.letter_id.upper()+self.descr,"V(n1-n2):", vn1n2, "[V]", "Q:", qn1n2, "[C]", "E:", energy, "[J]"]]
+        qn1n2 = float(ports_v[0][0]*self.value)
+        energy = float(.5*ports_v[0][0]**2*self.value)
+        arr = [[self.part_id.upper(), "V(n1-n2):", vn1n2, "[V]", "Q:", qn1n2, "[C]", "E:", energy, "[J]"]]
         strarr = printing.table_setup(arr)
         return strarr
 
@@ -169,31 +168,29 @@ class Capacitor(Component):
         print self.get_op_info(ports_v)
         
 class Inductor(Component):
-    letter_id = "l"
     is_nonlinear = False
     is_symbolic = True
 
-    def __init__(self, n1, n2, L, ic=None):
-        self.L = L
-        self.v = L
+    def __init__(self, n1, n2, value, part_id='L', ic=None):
+        self.value = value
         self.n1 = n1
         self.n2 = n2
+        self.part_id = part_id
         self.ic = ic
         self.coupling_devices = []
 
 class InductorCoupling(Component):
-    letter_id = "k"
     is_nonlinear = False
     is_symbolic = True
 
-    def __init__(self, L1, L2, K, M):
-        self.K = K
-        self.M = M
-        self.L1 = L1
-        self.L2 = L2
+    def __init__(self, L1, L2, value_L1, value_L2, part_id='K'):
+        self.value_L1   = value_L1
+        self.value_21   = value_L2
+        self.L1         = L1
+        self.L2         = L2
 
     def __str__(self):
-        return "%s %s %g" % (self.L1, self.L2, self.K)
+        return "%s %s %g" % (self.L1, self.L2, self.value)
 
     def get_other_inductor(self, Lselected):
         Lret = None
@@ -204,12 +201,6 @@ class InductorCoupling(Component):
         if Lret is None:
             raise Exception, "Mutual inductors bug."
         return Lret
-
-#########################
-## NON LINEAR ELEMENTS
-#########################
-
-# NONE here
 
 ################
 ##  SOURCES
@@ -229,14 +220,14 @@ class ISource(Component):
     and then perform a transient analysis with the OP as starting point.
     Otherwise the value in t=0 is used for DC analysis.
     """
-    letter_id = "i"
     is_nonlinear = False
     is_symbolic = True
     is_timedependent = False
     _time_function = None
 
-    def __init__(self, n1, n2, idc=None, abs_ac=None, arg_ac=0):
-        self.idc = idc
+    def __init__(self, n1, n2, value=None, abs_ac=None, arg_ac=0):
+        self.part_id = part_id
+        self.value = value
         self.abs_ac = abs_ac
         self.arg_ac = arg_ac
         self.n1 = n1
@@ -244,8 +235,8 @@ class ISource(Component):
         
     def __str__(self):
         rep = ""
-        if self.idc is not None:
-            rep = rep + "type=idc idc="+str(self.idc) + " "
+        if self.value is not None:
+            rep = rep + "type=idc value="+str(self.value) + " "
         if self.abs_ac is not None:
             rep = rep + "iac="+str(self.abs_ac) + " " + "arg="+str(self.arg_ac) + " "
         if self.is_timedependent:
@@ -259,8 +250,8 @@ class ISource(Component):
         This simulator uses Normal convention: 
         A positive currents flows in a element from the + node to the - node
         """
-        if not self.is_timedependent or (self._time_function == None) or (time==None and self.idc is not None):
-            return self.idc
+        if not self.is_timedependent or (self._time_function == None) or (time==None and self.value is not None):
+            return self.value
         else:
             return self._time_function.value(time)
 

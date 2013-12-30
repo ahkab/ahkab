@@ -60,9 +60,9 @@ class circuit(list):
 
     The following methods are provided to add and remove elements to the circuit:
 
-    add_resistor(self, name, ext_n1, ext_n2, R)
-    add_capacitor(self, name, ext_n1, ext_n2, C, ic=None)
-    add_inductor(self, name, ext_n1, ext_n2, L, ic=None)
+    add_resistor(self, name, ext_n1, ext_n2, value)
+    add_capacitor(self, name, ext_n1, ext_n2, value, ic=None)
+    add_inductor(self, name, ext_n1, ext_n2, value, ic=None)
     add_vsource(self, name, ext_n1, ext_n2, vdc, vac, function=None)
     add_isource(self, name, ext_n1, ext_n2, idc, iac, function=None)
     add_diode(self, name, ext_n1, ext_n2, Is=None, Rs=None, m=None, T=None, ic=None)
@@ -257,8 +257,7 @@ class circuit(list):
     def has_duplicate_elem(self):
         for index1 in range(len(self)):
             for index2 in range(index1+1, len(self)):
-                if self[index1].letter_id == self[index2].letter_id and \
-                self[index1].descr == self[index2].descr:
+                if self[index1].part_id == self[index2].part_id:
                     return True
         return False
 
@@ -267,7 +266,7 @@ class circuit(list):
         return '0'
     def get_elem_by_name(self, name):
         for e in self:
-            if (e.letter_id + e.descr).lower() == name.lower():
+            if e.part_id.lower() == name.lower():
                 return e
         return None
 
@@ -316,7 +315,7 @@ class circuit(list):
             del self.models[model_label]
         # should print a warning here
 
-    def add_resistor(self, name, ext_n1, ext_n2, R):
+    def add_resistor(self, name, ext_n1, ext_n2, value):
         """Adds a resistor to the circuit (also takes care that the nodes are
         added as well).
 
@@ -331,15 +330,15 @@ class circuit(list):
         n1 = self.add_node(ext_n1)
         n2 = self.add_node(ext_n2)
 
-        if R == 0:
+        if value == 0:
             raise CircuitError, "ZERO-valued resistors are not allowed."
 
-        elem = devices.Resistor(n1=n1, n2=n2, R=R)
-        elem.descr = name[1:]
+        elem = devices.Resistor(n1=n1, n2=n2, value=value)
+        elem.part_id = name
         self.append(elem)
         return True
 
-    def add_capacitor(self, name, ext_n1, ext_n2, C, ic=None):
+    def add_capacitor(self, name, ext_n1, ext_n2, value, ic=None):
         """Adds a capacitor to the circuit (also takes care that the nodes are
         added as well).
 
@@ -353,19 +352,19 @@ class circuit(list):
 
         Returns: True
         """
-        if C == 0:
+        if value == 0:
             raise CircuitError, "ZERO-valued capacitors are not allowed."
 
         n1 = self.add_node(ext_n1)
         n2 = self.add_node(ext_n2)
 
-        elem = devices.Capacitor(n1=n1, n2=n2, C=C, ic=ic)
-        elem.descr = name[1:]
+        elem = devices.Capacitor(n1=n1, n2=n2, value=value, ic=ic)
+        elem.part_id = name
 
         self.append(elem)
         return True
 
-    def add_inductor(self, name, ext_n1, ext_n2, L, ic=None):
+    def add_inductor(self, name, ext_n1, ext_n2, value, ic=None):
         """Adds an inductor to the circuit (also takes care that the nodes are
         added as well).
 
@@ -383,8 +382,8 @@ class circuit(list):
         n1 = self.add_node(ext_n1)
         n2 = self.add_node(ext_n2)
 
-        elem = devices.Inductor(n1=n1, n2=n2, L=L, ic=ic)
-        elem.descr = name[1:]
+        elem = devices.Inductor(n1=n1, n2=n2, value=value, ic=ic)
+        elem.part_id = name
 
         self.append(elem)
         return True
@@ -392,14 +391,12 @@ class circuit(list):
     def add_inductor_coupling(self, name, L1, L2, Kvalue):
         """ Write DOC XXX
         """
-        L1descr = L1[1:]
-        L2descr = L2[1:]
         L1elem, L2elem = None, None
 
         for e in self:
-            if isinstance(e, devices.Inductor) and L1descr == e.descr:
+            if isinstance(e, devices.Inductor) and (L1 == e.part_id):
                 L1elem = e
-            elif isinstance(e, devices.Inductor) and L2descr == e.descr:
+            elif isinstance(e, devices.Inductor) and (L2 == e.part_id):
                 L2elem = e
 
         if L1elem is None or L2elem is None:
@@ -412,7 +409,7 @@ class circuit(list):
         M = math.sqrt(L1elem.L * L2elem.L) * Kvalue
 
         elem = devices.InductorCoupling(L1=L1, L2=L2, K=Kvalue, M=M)
-        elem.descr = name[1:]
+        elem.part_id = name
         L1elem.coupling_devices.append(elem)
         L2elem.coupling_devices.append(elem)
 
@@ -436,7 +433,7 @@ class circuit(list):
         n2 = self.add_node(n2)
 
         elem = devices.VSource(n1=n1, n2=n2, vdc=vdc, abs_ac=vac)
-        elem.descr = name[1:]
+        elem.part_id = name
 
         if function is not None:
             elem.is_timedependent = True
@@ -463,7 +460,7 @@ class circuit(list):
         n2 = self.add_node(ext_n2)
 
         elem = devices.ISource(n1=n1, n2=n2, idc=idc, abs_ac=iac)
-        elem.descr = name[1:]
+        elem.part_id = name
 
         if function is not None:
             elem.is_timedependent = True
@@ -498,7 +495,7 @@ class circuit(list):
             raise ModelError, "Unknown diode model id: "+model_label
 
         elem = diode.diode(n1=n1, n2=n2, model=models[model_label], AREA=Area, T=T, ic=ic, off=off)
-        elem.descr = name[1:]
+        elem.part_id = name
         self.append(elem)
 
         return True
@@ -545,7 +542,7 @@ class circuit(list):
             raise Exception, "Unknown model type for "+model_label
 
         #elem = mosq.mosq(nd, ng, ns, kp=kp, w=w, l=l, vt=vt, mos_type=mos_type, lambd=lambd)
-        elem.descr = name[1:]
+        elem.part_id = name
 
         self.append(elem)
         return True
@@ -572,7 +569,7 @@ class circuit(list):
         sn2 = self.add_node(ext_sn2)
 
         elem = devices.EVSource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=alpha)
-        elem.descr = name[1:]
+        elem.part_id = name
 
         self.append(elem)
         return True
@@ -601,7 +598,7 @@ class circuit(list):
         sn2 = self.add_node(ext_sn2)
 
         elem = devices.GISource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=alpha)
-        elem.descr = name[1:]
+        elem.part_id = name
 
         self.append(elem)
         return True
@@ -647,7 +644,7 @@ class circuit(list):
             raise ModelError, "Unknown switch model id: "+model_label
 
         elem = switch.switch_device(n1=n1, n2=n2, sn1=sn1, sn2=sn2, model=models[model_label])
-        elem.descr = name[1:]
+        elem.part_id = name
         self.append(elem)
         return True
 
@@ -674,8 +671,7 @@ class circuit(list):
 
 
         elem = elem_class(**param_dict)
-        elem.descr = name[1:]
-        elem.letter_id = "y"
+        elem.part_id = "y%s" % name[1:]
 
         if hasattr(elem, "check"):
             selfcheck_result, error_msg = elem.check()
@@ -740,7 +736,7 @@ class circuit(list):
         found = False
         for elem in self:
             if is_elem_voltage_defined(elem):
-                if (elem.letter_id + elem.descr).upper() == id_wdescr.upper():
+                if elem.part_id.upper() == id_wdescr.upper():
                     found = True
                     break
                 else:

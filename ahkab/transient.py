@@ -450,7 +450,7 @@ def generate_D(circ, shape):
             if len(elem.coupling_devices):
                 for cd in elem.coupling_devices:
                     # get id+descr of the other inductor (eg. "L32")
-                    other_id_wdescr = cd.get_other_inductor("L"+elem.descr)
+                    other_id_wdescr = cd.get_other_inductor(elem.part_id)
                     # find its index to know which column corresponds to its current
                     other_index = circ.find_vde_index(other_id_wdescr, verbose=0)
                     # add the term.

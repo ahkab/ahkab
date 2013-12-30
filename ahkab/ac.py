@@ -244,16 +244,16 @@ def generate_AC(circ, shape):
         elif isinstance(elem, devices.Capacitor):
             n1 = elem.n1
             n2 = elem.n2
-            AC[n1, n1] = AC[n1, n1] + elem.C
-            AC[n1, n2] = AC[n1, n2] - elem.C
-            AC[n2, n2] = AC[n2, n2] + elem.C
-            AC[n2, n1] = AC[n2, n1] - elem.C
+            AC[n1, n1] = AC[n1, n1] + elem.value
+            AC[n1, n2] = AC[n1, n2] - elem.value
+            AC[n2, n2] = AC[n2, n2] + elem.value
+            AC[n2, n1] = AC[n2, n1] - elem.value
         elif isinstance(elem, devices.Inductor):
-            AC[nv + i_eq, nv + i_eq] = -1 * elem.L
+            AC[nv + i_eq, nv + i_eq] = -1 * elem.value
             if len(elem.coupling_devices):
                 for cd in elem.coupling_devices:
-                    # get id+descr of the other inductor (eg. "L32")
-                    other_id_wdescr = cd.get_other_inductor("L"+elem.descr)
+                    # get `part_id` of the other inductor (eg. "L32")
+                    other_id_wdescr = cd.get_other_inductor(elem.part_id)
                     # find its index to know which column corresponds to its current
                     other_index = circ.find_vde_index(other_id_wdescr, verbose=0)
                     # add the term.

@@ -60,7 +60,7 @@ class switch_device:
     The device instance accesses the following attributes:
     name, string, the device label
     """
-    def __init__(self, n1, n2, sn1, sn2, model, ic=None):
+    def __init__(self, n1, n2, sn1, sn2, model, ic=None, part_id='S'):
         """Voltage controlled switch device
         Parameters:
             n1: output node (+)
@@ -87,8 +87,7 @@ class switch_device:
         self.model = model
         self.opdict = {}
         self.opdict.update({'state':(float('nan'), float('nan'))})
-        self.letter_id = 'S'
-        self.descr = None
+        self.part_id = part_id
         self.is_nonlinear = True
         self.is_symbolic = True
         self.dc_guess = self.model.get_dc_guess(self.device.is_on)
@@ -158,7 +157,7 @@ class switch_device:
         """Operating point info, for design/verification. """
         self.update_status_dictionary(ports_v)
 
-        arr = [["S"+self.descr, 'STATUS:', \
+        arr = [[self.part_id, 'STATUS:', \
                       "ON"*self.opdict['STATUS']+"OFF"*(not self.opdict['STATUS']), \
                       "VO [V]:", float(self.opdict['state'][0]), \
                       "VS [V]:", float(self.opdict['state'][1]), \

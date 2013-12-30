@@ -273,8 +273,7 @@ def parse_elem_resistor(line, circ, line_elements=None):
     if R == 0:
         raise NetlistParseError, "ZERO-valued resistors are not allowed." 
 
-    elem = devices.Resistor(n1=n1, n2=n2, R=R)
-    elem.descr = line_elements[0][1:]
+    elem = devices.Resistor(part_id=line_elements[0], n1=n1, n2=n2, R=R)
     
     return [elem]
     
@@ -310,8 +309,7 @@ def parse_elem_capacitor(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
     
-    elem = devices.Capacitor(n1=n1, n2=n2, C=convert_units(line_elements[3]), ic=ic)
-    elem.descr = line_elements[0][1:]
+    elem = devices.Capacitor(part_id=line_elements[0], n1=n1, n2=n2, value=convert_units(line_elements[3]), ic=ic)
     
     return [elem]
 
@@ -347,8 +345,7 @@ def parse_elem_inductor(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
     
-    elem = devices.Inductor(n1=n1, n2=n2, L=convert_units(line_elements[3]), ic=ic)
-    elem.descr = line_elements[0][1:]
+    elem = devices.Inductor(part_id=line_elements[0], n1=n1, n2=n2, value=convert_units(line_elements[3]), ic=ic)
     
     return [elem]
 
@@ -383,14 +380,12 @@ def parse_elem_inductor_coupling(line, circ, line_elements=None, elements=[]):
             raise NetlistParseError, "unknown parameter " + label
         Kvalue = convert_units(value)
 
-    L1descr = L1[1:]
-    L2descr = L2[1:]
     L1elem, L2elem = None, None
 
     for e in elements:
-        if isinstance(e, devices.Inductor) and L1descr == e.descr:
+        if isinstance(e, devices.Inductor) and L1 == e.part_id:
             L1elem = e
-        elif isinstance(e, devices.Inductor) and L2descr == e.descr:
+        elif isinstance(e, devices.Inductor) and L2 == e.part_id:
             L2elem = e
 
     if L1elem is None or L2elem is None:
@@ -402,7 +397,7 @@ def parse_elem_inductor_coupling(line, circ, line_elements=None, elements=[]):
     M = math.sqrt(L1elem.L * L2elem.L) * Kvalue
 
     elem = devices.InductorCoupling(L1=L1, L2=L2, K=Kvalue, M=M)
-    elem.descr = name[1:]
+    elem.part_id = name
     L1elem.coupling_devices.append(elem)
     L2elem.coupling_devices.append(elem)    
     
@@ -476,8 +471,7 @@ def parse_elem_vsource(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
     
-    elem = devices.VSource(n1=n1, n2=n2, vdc=vdc, abs_ac=vac)
-    elem.descr = line_elements[0][1:]
+    elem = devices.VSource(part_id=line_elements[0], n1=n1, n2=n2, vdc=vdc, abs_ac=vac)
     
     if function is not None:
         elem.is_timedependent = True
@@ -551,8 +545,7 @@ def parse_elem_isource(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
     
-    elem = devices.ISource(n1=n1, n2=n2, idc=idc, abs_ac=iac)
-    elem.descr = line_elements[0][1:]
+    elem = devices.ISource(part_id=line_elements[0], n1=n1, n2=n2, idc=idc, abs_ac=iac)
     
     if function is not None:
         elem.is_timedependent = True
@@ -616,18 +609,9 @@ def parse_elem_diode(line, circ, line_elements=None, models=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
     
-    #if Rs: #we need to add a Rs on the anode
-    #   new_node = n1
-    #   n1 = circ.generate_internal_only_node_label()
-    #   #print "-<<<<<<<<"+str(n1)+" "+str(n2) +" "+str(new_node)
-    #   rs_elem = devices.Resistor(n1=new_node, n2=n1, R=Rs)
-    #   rs_elem.descr = "INT"
-    #   return_list = return_list + [rs_elem]
-    
     if not models.has_key(model_label):
         raise NetlistParseError, "Unknown model id: "+model_label
-    elem = diode.diode(n1=n1, n2=n2, model=models[model_label], AREA=Area, T=T, ic=ic, off=off)
-    elem.descr = line_elements[0][1:]
+    elem = diode.diode(part_id=line_elements[0], n1=n1, n2=n2, model=models[model_label], AREA=Area, value=value, ic=ic, off=off)
     return [elem]
 
 def parse_elem_mos(line, circ, line_elements, models):
@@ -705,14 +689,15 @@ def parse_elem_mos(line, circ, line_elements, models):
 
     if not models.has_key(model_label):
         raise NetlistParseError, "Unknown model id: "+model_label
+    
+    elem = None
+
     if isinstance(models[model_label], ekv.ekv_mos_model):
-        elem = ekv.ekv_device(nd, ng, ns, nb, w, l, models[model_label], m, n)
+        elem = ekv.ekv_device(nd, ng, ns, nb, w, l, models[model_label], m, n, part_id=line_elements[0])
     elif isinstance(models[model_label], mosq.mosq_mos_model):
-        elem = mosq.mosq_device(nd, ng, ns, nb, w, l, models[model_label], m, n)
+        elem = mosq.mosq_device(nd, ng, ns, nb, w, l, models[model_label], m, n, part_id=line_elements[0])
     else:
         raise NetlistParseError, "Unknown MOS model type: "+model_label
-
-    elem.descr = line_elements[0][1:]
     
     return [elem]
         
@@ -745,8 +730,7 @@ def parse_elem_vcvs(line, circ, line_elements=None):
     sn1 = circ.add_node(ext_sn1)
     sn2 = circ.add_node(ext_sn2)
     
-    elem = devices.EVSource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=convert_units(line_elements[5]))
-    elem.descr = line_elements[0][1:]
+    elem = devices.EVSource(part_id=line_elements[0], n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=convert_units(line_elements[5]))
     
     return [elem]
     
@@ -784,9 +768,8 @@ def parse_elem_vccs(line, circ, line_elements=None):
     sn1 = circ.add_node(ext_sn1)
     sn2 = circ.add_node(ext_sn2)
     
-    elem = devices.GISource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=convert_units(line_elements[5]))
-    elem.descr = line_elements[0][1:]
-    
+    elem = devices.GISource(part_id=line_elements[0], n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=convert_units(line_elements[5]))
+
     return [elem]
 
 def parse_elem_switch(line, circ, line_elements=None, models=None):
@@ -822,17 +805,14 @@ def parse_elem_switch(line, circ, line_elements=None, models=None):
     sn2 = circ.add_node(ext_sn2)
     
     model_label = line_elements[5]
+    elem        = None
+
     if not models.has_key(model_label):
         raise NetlistParseError, "Unknown model id: "+model_label
     if isinstance(models[model_label], switch.vswitch_model):
-        elem = switch.switch_device(n1, n2, sn1, sn2, models[model_label])
-    #if isinstance(models[model_label], switch.vswitch_model) or \
-    #   isinstance(models[model_label], switch.iswitch_model):
-    #   elem = mosq.mosq_device(nd, ng, ns, nb, w, l, models[model_label], m, n)
+        elem = switch.switch_device(n1, n2, sn1, sn2, models[model_label], part_id=line_elements[0])
     else:
         raise NetlistParseError, "Unknown MOS model type: "+model_label
-
-    elem.descr = line_elements[0][1:]
     
     return [elem]
     
@@ -918,15 +898,13 @@ def parse_elem_user_defined(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
     
-    elem = elem_class(n1, n2, param_dict, circ.add_node, convert_units)
-    elem.descr = line_elements[0][1:]
-    elem.letter_id = "y"
+    elem = elem_class(n1, n2, param_dict, circ.add_node, convert_units, part_id=line_elements[0])
     
     selfcheck_result, error_msg = elem.check()
     if not selfcheck_result:
         raise NetlistParseError, "module: " + module_name + " elem type: "+ elem_type_name+" error: "+\
         error_msg
-    #fixme non so sicuro che sia una buona idea
+    #   TODO fixme non so sicuro che sia una buona idea
     
     return [elem]
     
@@ -1451,10 +1429,10 @@ def parse_sub_instance(line, circ, subckts_dict, line_elements=None, models=None
     
     elements_list = main_netlist_parser(wrapped_circ, subckt.code, subckts_dict, models)
     
-    # Every subckt adds elemets with the _same description_ (elem.descr)
-    # We modify it so that each descr is uniq for every instance
+    # Every subckt adds elemets with the _same description_ (elem.part_id[1:])
+    # We modify it so that each description is uniq for every instance
     for element in elements_list:
-        element.descr = "-" + wrapped_circ.prefix + element.descr
+        element = element[0] + element[1:] + "-" + wrapped_circ.prefix + element[1:]
     
     return elements_list
 
