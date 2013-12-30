@@ -172,7 +172,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
     else:
         if isinstance(x0, results.op_solution):
             opsol = x0
-            x0 = x0.asmatrix(verbose=verbose)
+            x0 = x0.asmatrix()
         else:
             opsol =  results.op_solution(x=x0, error=numpy.matrix(numpy.zeros((mna.shape[0], 1))), circ=circ, outfile=None)
         printing.print_info_line(("Using the supplied op as x(t=%g)." % (tstart,), 5), verbose)

@@ -1,11 +1,12 @@
 Untitled
-L0 0 n4 4e-09
-L1 0 n3 3.6e-08
-R0 0 n1 10
-C0 n4 n1 1.5e-10
-L2 n1 n3 1.5e-08
-R1 n2 0 390
-L3 0 0 7e-09
+R0 n2 0 820000
+C1 n3 0 3.9e-11
+R1 n3 n1 51000000
+R2 n1 n4 220000
+R3 0 n4 6200000
+R4 n4 n3 13000
+L1 n6 0 1.3e-08
+C2 n3 n4 3.9e-07
 V1 n1 0 type=vdc vdc=5 vac=1 type=pulse v1=0 v2=1 td=5e-07 per=2 tr=1e-12 tf=1e-12 pw=1
 
 .op

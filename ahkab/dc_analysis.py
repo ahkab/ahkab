@@ -160,7 +160,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
     #initial guess, if specified, otherwise it's zero
     if x0 is not None:
         if isinstance(x0, results.op_solution):
-            x = x0.asmatrix(verbose=verbose)
+            x = x0.asmatrix()
         else:
             x = x0
     else:
@@ -923,7 +923,7 @@ def modify_x0_for_ic(circ, x0):
     """
 
     if isinstance(x0, results.op_solution):
-        x0 = x0.asmatrix(verbose=0)
+        x0 = x0.asmatrix()
         return_obj = True
     else:
         return_obj = False
