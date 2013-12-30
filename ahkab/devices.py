@@ -113,7 +113,7 @@ class Resistor(Component):
     is_nonlinear = False
     is_symbolic = True
     
-    def __init__(self, n1, n2, value, part_id='R'):
+    def __init__(self, part_id='R', n1=None, n2=None, value=None):
         self.part_id    = part_id
         self.value      = value
         self.n1         = n1
@@ -171,7 +171,7 @@ class Inductor(Component):
     is_nonlinear = False
     is_symbolic = True
 
-    def __init__(self, n1, n2, value, part_id='L', ic=None):
+    def __init__(self, part_id='L', n1=None, n2=None, value=None, ic=None):
         self.value = value
         self.n1 = n1
         self.n2 = n2
@@ -183,7 +183,7 @@ class InductorCoupling(Component):
     is_nonlinear = False
     is_symbolic = True
 
-    def __init__(self, L1, L2, value_L1, value_L2, part_id='K'):
+    def __init__(self, part_id='K', L1=None, L2=None, value_L1=None, value_L2=None):
         self.value_L1   = value_L1
         self.value_21   = value_L2
         self.L1         = L1
@@ -225,7 +225,7 @@ class ISource(Component):
     is_timedependent = False
     _time_function = None
 
-    def __init__(self, n1, n2, value=None, abs_ac=None, arg_ac=0):
+    def __init__(self, part_id='I', n1=None, n2=None, value=None, abs_ac=None, arg_ac=0):
         self.part_id = part_id
         self.value = value
         self.abs_ac = abs_ac
@@ -269,27 +269,26 @@ class VSource(Component):
     and then perform a transient analysis with the OP as starting point.
     Otherwise the value in t=0 is used for DC analysis.
     """
-    letter_id = "v"
     is_nonlinear = False
     is_symbolic = True
     is_timedependent = False
     _time_function = None
     dc_guess = None #defined in init
 
-    def __init__(self, n1, n2, vdc=None, abs_ac=None, arg_ac=0):
-        self.vdc = vdc
-        self.v = 1.0
+    def __init__(self, part_id='V', n1=None, n2=None, value=1.0, abs_ac=None, arg_ac=0):
+        self.part_id = part_id
+        self.value = value
         self.n1 = n1
         self.n2 = n2
         self.abs_ac = abs_ac
         self.arg_ac = arg_ac
-        if vdc is not None:
-            self.dc_guess = [self.vdc]
+        if value is not None:
+            self.dc_guess = [self.value]
     
     def __str__(self):
         rep = ""
-        if self.vdc is not None:
-            rep = rep + "type=vdc vdc="+str(self.vdc) + " "
+        if self.value is not None:
+            rep = rep + "type=vdc value="+str(self.value) + " "
         if self.abs_ac is not None:
             #   TODO:   netlist parser doesn't accept `arg=` from `self.arg_ac`
             rep = rep + "vac="+str(self.abs_ac) + " "
@@ -302,8 +301,8 @@ class VSource(Component):
         If time is not supplied, or set to None, or the source is DC, returns vdc"""
         if not self.is_timedependent or \
         (self._time_function is None) or \
-        (time is None and self.vdc is not None):
-            return self.vdc
+        (time is None and self.value is not None):
+            return self.value
         else:
             return self._time_function.value(time)
 
@@ -320,21 +319,21 @@ class EVSource(Component):
     alpha: prop constant between voltages
     
     """
-    letter_id = "e"
     is_nonlinear = False
     is_symbolic = True
-    def __init__(self, n1, n2, sn1, sn2, alpha):
-        self.alpha = alpha
-        self.n1 = n1
-        self.n2 = n2
-        self.sn1 = sn1
-        self.sn2 = sn2
+    def __init__(self, part_id='E', n1=None, n2=None, value=None, sn1=None, sn2=None):
+        self.part_id    = part_id
+        self.n1         = n1
+        self.n2         = n2
+        self.alpha      = value
+        self.sn1        = sn1
+        self.sn2        = sn2
+
     def __str__(self):
-        return "alpha="+str(self.alpha)
+        return "value=%s" % self.value
 
 
 class GISource(Component):
-    letter_id = "g"
     """Linear voltage controlled current source
     
     Source port is a short circuit, dest. port is a ideal current source:
@@ -351,28 +350,30 @@ class GISource(Component):
     """
     is_nonlinear = False
     is_symbolic = True
-    def __init__(self, n1, n2, sn1, sn2, alpha):
-        self.alpha = alpha
-        self.n1 = n1
-        self.n2 = n2
-        self.sn1 = sn1
-        self.sn2 = sn2
+    def __init__(self, part_id='G', n1=None, n2=None, value=None, sn1=None, sn2=None):
+        self.part_id    = part_id
+        self.n1         = n1
+        self.n2         = n2
+        self.alpha      = value
+        self.sn1        = sn1
+        self.sn2        = sn2
+
     def __str__(self):
-        return "alpha="+str(self.alpha)
+        return "value=%s" % self.value
     
 class HVSource(Component): #   TODO: fixme
     """Linear current controlled voltage source
     """
-    letter_id = "h"
     is_nonlinear = False
     is_symbolic = True
-    def __init__(self, n1, n2, sn1, sn2, alpha):
+    def __init__(self, part_id='H', n1=None, n2=None, value=None, sn1=None, sn2=None):
         print "HVSource not implemented. TODO"
-        self.alpha = alpha
-        self.n1 = n1
-        self.n2 = n2
-        self.sn1 = sn1
-        self.sn2 = sn2
+        self.part_id    = part_id
+        self.n1         = n1
+        self.n2         = n2
+        self.alpha      = value
+        self.sn1        = sn1
+        self.sn2        = sn2
         import sys
         sys.exit(1)
     def __str__(self):

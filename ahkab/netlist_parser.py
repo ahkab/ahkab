@@ -268,12 +268,12 @@ def parse_elem_resistor(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
     
-    R = convert_units(line_elements[3])
+    value = convert_units(line_elements[3])
 
-    if R == 0:
+    if value== 0:
         raise NetlistParseError, "ZERO-valued resistors are not allowed." 
 
-    elem = devices.Resistor(part_id=line_elements[0], n1=n1, n2=n2, R=R)
+    elem = devices.Resistor(part_id=line_elements[0], n1=n1, n2=n2, value=value)
     
     return [elem]
     
@@ -471,7 +471,7 @@ def parse_elem_vsource(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
     
-    elem = devices.VSource(part_id=line_elements[0], n1=n1, n2=n2, vdc=vdc, abs_ac=vac)
+    elem = devices.VSource(n1=n1, n2=n2, value=vdc, part_id=line_elements[0], abs_ac=vac)
     
     if function is not None:
         elem.is_timedependent = True

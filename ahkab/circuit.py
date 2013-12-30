@@ -415,7 +415,7 @@ class circuit(list):
 
         self.append(elem)
 
-    def add_vsource(self, name, n1, n2, vdc, vac=0, function=None):
+    def add_vsource(self, part_id, n1, n2, value, vac=0, function=None):
         """Adds a voltage source to the circuit (also takes care that the nodes
         are added as well).
 
@@ -432,8 +432,7 @@ class circuit(list):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
 
-        elem = devices.VSource(n1=n1, n2=n2, vdc=vdc, abs_ac=vac)
-        elem.part_id = name
+        elem = devices.VSource(part_id=part_id, n1=n1, n2=n2, value=value, abs_ac=vac)
 
         if function is not None:
             elem.is_timedependent = True
@@ -442,7 +441,7 @@ class circuit(list):
         self.append(elem)
         return True
 
-    def add_isource(self, name, ext_n1, ext_n2, idc, iac=0, function=None):
+    def add_isource(self, part_id, ext_n1, ext_n2, idc, iac=0, function=None):
         """Adds a current source to the circuit (also takes care that the nodes
         are added as well).
 
@@ -459,8 +458,7 @@ class circuit(list):
         n1 = self.add_node(ext_n1)
         n2 = self.add_node(ext_n2)
 
-        elem = devices.ISource(n1=n1, n2=n2, idc=idc, abs_ac=iac)
-        elem.part_id = name
+        elem = devices.ISource(part_id=part_id, n1=n1, n2=n2, idc=idc, abs_ac=iac)
 
         if function is not None:
             elem.is_timedependent = True
@@ -469,7 +467,7 @@ class circuit(list):
         self.append(elem)
         return True
 
-    def add_diode(self, name, ext_n1, ext_n2, model_label, models=None, Area=None, T=None, ic=None, off=False):
+    def add_diode(self, part_id, ext_n1, ext_n2, model_label, models=None, Area=None, T=None, ic=None, off=False):
         """Adds a diode to the circuit (also takes care that the nodes
         are added as well).
 
@@ -494,13 +492,12 @@ class circuit(list):
         if not models.has_key(model_label):
             raise ModelError, "Unknown diode model id: "+model_label
 
-        elem = diode.diode(n1=n1, n2=n2, model=models[model_label], AREA=Area, T=T, ic=ic, off=off)
-        elem.part_id = name
+        elem = diode.diode(part_id=part_id, n1=n1, n2=n2, model=models[model_label], AREA=Area, T=T, ic=ic, off=off)
         self.append(elem)
 
         return True
 
-    def add_mos(self, name, ext_nd, ext_ng, ext_ns, ext_nb, w, l, model_label, models=None, m=None, n=None):
+    def add_mos(self, part_id, ext_nd, ext_ng, ext_ns, ext_nb, w, l, model_label, models=None, m=None, n=None):
         """Adds a mosfet to the circuit (also takes care that the nodes
         are added as well).
 
@@ -532,22 +529,24 @@ class circuit(list):
 
         if models is None:
             models = self.models
+        
         if not models.has_key(model_label):
             raise ModelError, "Unknown model id: "+model_label
+        
         if isinstance(models[model_label], ekv.ekv_mos_model):
-            elem = ekv.ekv_device(nd, ng, ns, nb, w, l, models[model_label], m, n)
+            elem = ekv.ekv_device(part_id, nd, ng, ns, nb, w, l, models[model_label], m, n)
+        
         elif isinstance(models[model_label], mosq.mosq_mos_model):
-            elem =  mosq.mosq_device(nd, ng, ns, nb, w, l, models[model_label], m, n)
+            elem =  mosq.mosq_device(part_id, nd, ng, ns, nb, w, l, models[model_label], m, n)
+        
         else:
             raise Exception, "Unknown model type for "+model_label
 
-        #elem = mosq.mosq(nd, ng, ns, kp=kp, w=w, l=l, vt=vt, mos_type=mos_type, lambd=lambd)
-        elem.part_id = name
-
         self.append(elem)
+
         return True
 
-    def add_vcvs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha):
+    def add_vcvs(self, part_id, ext_n1, ext_n2, ext_sn1, ext_sn2, value):
         """Adds a voltage-controlled voltage source (vcvs) to the circuit
         (also takes care that its nodes are added as well).
 
@@ -568,13 +567,13 @@ class circuit(list):
         sn1 = self.add_node(ext_sn1)
         sn2 = self.add_node(ext_sn2)
 
-        elem = devices.EVSource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=alpha)
-        elem.part_id = name
+        elem = devices.EVSource(part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=value)
 
         self.append(elem)
+
         return True
 
-    def add_vccs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha):
+    def add_vccs(self, part_id, ext_n1, ext_n2, ext_sn1, ext_sn2, value):
         """Adds a voltage-controlled current source (vccs) to the circuit
         (also takes care that its nodes are added as well).
 
@@ -597,8 +596,7 @@ class circuit(list):
         sn1 = self.add_node(ext_sn1)
         sn2 = self.add_node(ext_sn2)
 
-        elem = devices.GISource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=alpha)
-        elem.part_id = name
+        elem = devices.GISource(part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=value)
 
         self.append(elem)
         return True
@@ -643,8 +641,7 @@ class circuit(list):
         if not models.has_key(model_label):
             raise ModelError, "Unknown switch model id: "+model_label
 
-        elem = switch.switch_device(n1=n1, n2=n2, sn1=sn1, sn2=sn2, model=models[model_label])
-        elem.part_id = name
+        elem = switch.switch_device(part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, model=models[model_label])
         self.append(elem)
         return True
 
