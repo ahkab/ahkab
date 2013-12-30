@@ -417,10 +417,10 @@ def generate_D(circ, shape):
 	 V(n1) - V(n2) - VL = 0
 	Where VL = L dI/dt
 	That's 0 (zero) in DC analysis, but not in transient analysis, where it needs to be differentiated.
-	To understand on which line does the inductor's L*dI/dt go, we use the order in circuit.elements:
+	To understand on which line does the inductor's L*dI/dt go, we use the order in `circuit`:
 	First are all voltage lines, then the current ones in the same order of the elements that introduce
 	them.
-	Therefore, we look at circ.elements.
+	Therefore, we look at `circ`.
 	
 	For every time t, the D matrix is used (elsewhere) to solve the following system:
 	
@@ -431,7 +431,7 @@ def generate_D(circ, shape):
 	D = numpy.matrix(numpy.zeros((shape[0]+1, shape[1]+1)))
 	nv = len(circ.nodes_dict)# - 1
 	i_eq = 0 #each time we find a vsource or vcvs or ccvs, we'll add one to this.
-	for elem in circ.elements:
+	for elem in circ:
 		if isinstance(elem, devices.vsource) or isinstance(elem, devices.evsource) or \
 		isinstance(elem, devices.hvsource):
 			#notice that hvsources aren't yet implemented now!

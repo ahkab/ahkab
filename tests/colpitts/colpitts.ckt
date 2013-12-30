@@ -3,12 +3,12 @@ MOS COLPITTS OSCILLATOR
 vdd dd 0 type=vdc vdc=2.5
 
 * Ql = 33 at 3GHz
-l1 dd nd 5n ic=-1n
-r0 nd dd 3.5k 
+L1 dd nd 5n ic=-1n
+R0 nd dd 3.5k 
 
 * n = 0.5, f0 = 3GHz
-c1 nd ns 1.12p ic=2.5
-c2 ns 0  1.12p *ic=.01
+C1 nd ns 1.12p ic=2.5
+C2 ns 0  1.12p *ic=.01
 
 m1 nd1 bias ns ns nmos w=200u l=1u
 vtest nd nd1 type=vdc vdc=0 *read current

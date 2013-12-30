@@ -227,7 +227,7 @@ def generate_AC(circ, shape):
 	(KVL over n1 and n2) V(n1) - V(n2) - j*w*L I(inductor) = 0
 
 	To understand on which line is the KVL line for an inductor, we use the 
-	*order* of the elements in circuit.elements:
+	*order* of the elements in `circuit`:
 	First are all voltage lines, then the current ones in the same order of 
 	the elements that introduce them.
 	
@@ -236,7 +236,7 @@ def generate_AC(circ, shape):
 	AC = numpy.matrix(numpy.zeros((shape[0]+1, shape[1]+1)))
 	nv = len(circ.nodes_dict)# - 1
 	i_eq = 0 #each time we find a vsource or vcvs or ccvs, we'll add one to this.
-	for elem in circ.elements:
+	for elem in circ:
 		if isinstance(elem, devices.vsource) or isinstance(elem, devices.evsource) or \
 		isinstance(elem, devices.hvsource):
 			#notice that hvsources aren't yet implemented now!
@@ -276,7 +276,7 @@ def generate_Nac(circ):
 	Nac = numpy.mat(numpy.zeros((n_of_nodes, 1)), dtype=complex)
 	j = numpy.complex('j')
 	# process isources
-	for elem in circ.elements:
+	for elem in circ:
 		if isinstance(elem, devices.isource) and elem.abs_ac is not None:
 			#convenzione normale!
 			Nac[elem.n1, 0] = Nac[elem.n1, 0] + elem.abs_ac*numpy.exp(j*elem.arg_ac)
@@ -284,7 +284,7 @@ def generate_Nac(circ):
 	# process vsources
 	# for each vsource, introduce a new variable: the current flowing through it.
 	# then we introduce a KVL equation to be able to solve the circuit
-	for elem in circ.elements:
+	for elem in circ:
 		if circuit.is_elem_voltage_defined(elem):
 			index = Nac.shape[0] 
 			Nac = utilities.expand_matrix(Nac, add_a_row=True, add_a_col=False)
@@ -297,7 +297,7 @@ def generate_J(xop, circ, mna, Nac, data_filename, verbose=0):
 	# build the linearized matrix (stored in J)
 	J = numpy.mat(numpy.zeros(mna.shape))
 	Tlin = numpy.mat(numpy.zeros(Nac.shape))
-        for elem in circ.elements:
+        for elem in circ:
 		if elem.is_nonlinear:
 			dc_analysis.update_J_and_Tx(J, Tlin, xop, elem, time=None)
 	#del Tlin # not needed! **DC**!

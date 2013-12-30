@@ -27,7 +27,7 @@ import printing
 # will be added here by netlist_parser and circuit instances
 user_defined_modules_dict = {}
 
-class circuit:
+class circuit(list):
 	"""Every circuit is described in the ahkab simulator by a circuit class.
 	This class holds everything is needed to simulate the circuit (except
 	the specification of the analyses to be performed).
@@ -101,8 +101,6 @@ class circuit:
 		self.title = title
 		self.filename = filename
 		self.nodes_dict = {} # {int_node:ext_node}
-		#_reverse_dict = {}
-		self.elements = []
 		self.internal_nodes = 0
 		self.models = {}
 
@@ -191,7 +189,7 @@ class circuit:
 	def is_nonlinear(self):
 		"""Returns True if at least a element in the circuit is NL.
 		"""
-		for elem in self.elements:
+		for elem in self:
 			if elem.is_nonlinear:
 				return True
 		return False
@@ -203,8 +201,7 @@ class circuit:
 		iteration.
 		"""
 		locked_nodes = []
-		nl_elements = [elem for elem in self.elements if elem.is_nonlinear]
-		#nl_elements = filter(lambda elem: elem.is_nonlinear, element_list)
+		nl_elements = [elem for elem in self if elem.is_nonlinear]
 		for elem in nl_elements:
 			oports = elem.get_output_ports()
 			for index in range(len(oports)):
@@ -258,10 +255,10 @@ class circuit:
 		return ret
 
 	def has_duplicate_elem(self):
-		for index1 in range(len(self.elements)):
-			for index2 in range(index1+1, len(self.elements)):
-				if self.elements[index1].letter_id == self.elements[index2].letter_id and \
-				self.elements[index1].descr == self.elements[index2].descr:
+		for index1 in range(len(self)):
+			for index2 in range(index1+1, len(self)):
+				if self[index1].letter_id == self[index2].letter_id and \
+				self[index1].descr == self[index2].descr:
 					return True
 		return False
 
@@ -269,7 +266,7 @@ class circuit:
 		"Returns the (external) reference node. AKA GND."
 		return '0'
 	def get_elem_by_name(self, name):
-		for e in self.elements:
+		for e in self:
 			if (e.letter_id + e.descr).lower() == name.lower():
 				return e
 		return None
@@ -339,7 +336,7 @@ class circuit:
 
 		elem = devices.resistor(n1=n1, n2=n2, R=R)
 		elem.descr = name[1:]
-		self.elements = self.elements + [elem]
+		self.append(elem)
 		return True
 
 	def add_capacitor(self, name, ext_n1, ext_n2, C, ic=None):
@@ -365,7 +362,7 @@ class circuit:
 		elem = devices.capacitor(n1=n1, n2=n2, C=C, ic=ic)
 		elem.descr = name[1:]
 
-		self.elements = self.elements + [elem]
+		self.append(elem)
 		return True
 
 	def add_inductor(self, name, ext_n1, ext_n2, L, ic=None):
@@ -389,7 +386,7 @@ class circuit:
 		elem = devices.inductor(n1=n1, n2=n2, L=L, ic=ic)
 		elem.descr = name[1:]
 
-		self.elements = self.elements + [elem]
+		self.append(elem)
 		return True
 
 	def add_inductor_coupling(self, name, L1, L2, Kvalue):
@@ -399,7 +396,7 @@ class circuit:
 		L2descr = L2[1:]
 		L1elem, L2elem = None, None
 
-		for e in self.elements:
+		for e in self:
 			if isinstance(e, devices.inductor) and L1descr == e.descr:
 				L1elem = e
 			elif isinstance(e, devices.inductor) and L2descr == e.descr:
@@ -419,7 +416,7 @@ class circuit:
 		L1elem.coupling_devices.append(elem)
 		L2elem.coupling_devices.append(elem)
 
-		self.elements = self.elements + [elem]
+		self.append(elem)
 
 	def add_vsource(self, name, ext_n1, ext_n2, vdc, vac=0, function=None):
 		"""Adds a voltage source to the circuit (also takes care that the nodes
@@ -445,7 +442,7 @@ class circuit:
 			elem.is_timedependent = True
 			elem._time_function = function
 
-		self.elements = self.elements + [elem]
+		self.append(elem)
 		return True
 
 	def add_isource(self, name, ext_n1, ext_n2, idc, iac=0, function=None):
@@ -472,7 +469,7 @@ class circuit:
 			elem.is_timedependent = True
 			elem._time_function = function
 
-		self.elements = self.elements + [elem]
+		self.append(elem)
 		return True
 
 	def add_diode(self, name, ext_n1, ext_n2, model_label, models=None, Area=None, T=None, ic=None, off=False):
@@ -502,7 +499,7 @@ class circuit:
 
 		elem = diode.diode(n1=n1, n2=n2, model=models[model_label], AREA=Area, T=T, ic=ic, off=off)
 		elem.descr = name[1:]
-		self.elements = self.elements + [elem]
+		self.append(elem)
 
 		return True
 
@@ -550,7 +547,7 @@ class circuit:
 		#elem = mosq.mosq(nd, ng, ns, kp=kp, w=w, l=l, vt=vt, mos_type=mos_type, lambd=lambd)
 		elem.descr = name[1:]
 
-		self.elements = self.elements + [elem]
+		self.append(elem)
 		return True
 
 	def add_vcvs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha):
@@ -577,7 +574,7 @@ class circuit:
 		elem = devices.evsource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=alpha)
 		elem.descr = name[1:]
 
-		self.elements = self.elements + [elem]
+		self.append(elem)
 		return True
 
 	def add_vccs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha):
@@ -606,7 +603,7 @@ class circuit:
 		elem = devices.gisource(n1=n1, n2=n2, sn1=sn1, sn2=sn2, alpha=alpha)
 		elem.descr = name[1:]
 
-		self.elements = self.elements + [elem]
+		self.append(elem)
 		return True
 
 	def add_switch(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, ic, model_label, models=None):
@@ -651,7 +648,7 @@ class circuit:
 
 		elem = switch.switch_device(n1=n1, n2=n2, sn1=sn1, sn2=sn2, model=models[model_label])
 		elem.descr = name[1:]
-		self.elements = self.elements + [elem]
+		self.append(elem)
 		return True
 
 	def add_user_defined(self, module, label, param_dict):
@@ -686,7 +683,7 @@ class circuit:
 				raise NetlistParseError, "module: " + module_name + " elem type: "+ elem_type_name+" error: "+\
 				error_msg
 
-		self.elements = self.elements + [elem]
+		self.append(elem)
 		return True
 
 	def remove_elem(self, elem):
@@ -697,10 +694,10 @@ class circuit:
 
 		Returns: True if the element was found and removed, False otherwise
 		"""
-		if not elem in self.elements:
+		if not elem in self:
 			return False
 
-		self.elements.remove(elem)
+		self.remove(elem)
 		nodes = []
 		if hasattr(elem, n1) and elem.n1 != 0:
 			nodes = nodes + [n1]
@@ -715,7 +712,7 @@ class circuit:
 
 		remove_list = copy.copy(nodes)
 		for n in nodes:
-			for e in self.elements:
+			for e in self:
 				if hasattr(elem, n1) and e.n1 == n or\
 				hasattr(elem, n2) and e.n2 == n:
 					remove_list.remove(n)
@@ -741,7 +738,7 @@ class circuit:
 		"""
 		vde_index = 0
 		found = False
-		for elem in self.elements:
+		for elem in self:
 			if is_elem_voltage_defined(elem):
 				if (elem.letter_id + elem.descr).upper() == id_wdescr.upper():
 					found = True
@@ -769,7 +766,7 @@ class circuit:
 		index = index - len(self.nodes) + 1
 		ni = 0
 		found = False
-		for e in self.elements:
+		for e in self:
 			if circuit.is_elem_voltage_defined(e):
 				if index == ni:
 					found = True

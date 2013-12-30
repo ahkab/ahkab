@@ -25,6 +25,23 @@ be somewhat uniform.
 import sys
 import devices, options
 import diode, mosq, ekv, switch
+
+def print_netlist(circ):
+    """Prints the whole circuit to stdout, in netlist format.
+    
+    Parameters:
+    circ: the circuit instance to be printed.
+    
+    Returns: None
+    """
+
+    if circ.title:
+        print circ.title
+
+    for elem in circ:
+        print elem
+
+    return None
 	
 def print_circuit(circ):
 	"""Prints the whole circuit to stdout, in a format similar to 
@@ -38,7 +55,7 @@ def print_circuit(circ):
 	if circ.title:
 		print "* TITLE:", circ.title
 		
-	for elem in circ.elements:
+	for elem in circ:
 		print_netlist_elem_line(elem, circ)
 	
 	print "(models and analysis directives are omitted)"

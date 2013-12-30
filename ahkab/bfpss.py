@@ -113,7 +113,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
 			T[:, 0] = 0
 			td[:, 0] = 0
 		for index in xrange(1, points):
-			for elem in circ.elements:
+			for elem in circ:
 				# build all dT(xn)/dxn (stored in J) and T(x)
 				if elem.is_nonlinear:
 					oports = elem.get_output_ports()
@@ -323,7 +323,7 @@ def build_Tt(circ, points, step, tick, n_of_var, verbose=3):
 	for index in xrange(1, points):
 		v_eq = 0
 		time = index * step
-		for elem in circ.elements:
+		for elem in circ:
 			if (isinstance(elem, devices.vsource) or isinstance(elem, devices.isource)) and elem.is_timedependent:
 				if isinstance(elem, devices.vsource):
 					Tt[index*n_of_var + nv - 1 + v_eq, 0] = -1.0 * elem.V(time)

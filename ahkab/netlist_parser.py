@@ -157,8 +157,7 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
         else:
             raise NetlistParseError, "subckt " + subckt_obj.name + " has been redefined"
 
-    elements = main_netlist_parser(circ, netlist_lines, subckts_dict, models)
-    circ.elements = circ.elements + elements
+    circ += main_netlist_parser(circ, netlist_lines, subckts_dict, models)
     
     return (circ, directives, postproc)
     
@@ -191,7 +190,6 @@ def main_netlist_parser(circ, netlist_lines, subckts_dict, models):
                 elements += parse_function[line[0]](line, line.split())
             except KeyError:
                 raise NetlistParseError, "unknown element."
-
     #   Handle errors from individual parse functions
     except NetlistParseError, (msg,):
         if len(msg):

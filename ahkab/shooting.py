@@ -241,7 +241,7 @@ def build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3):
                 Tt = numpy.zeros((n_of_var, 1))
                 v_eq = 0
                 time = index * step
-                for elem in circ.elements:
+                for elem in circ:
                         if (isinstance(elem, devices.vsource) or isinstance(elem, devices.isource)) and elem.is_timedependent:
                                 if isinstance(elem, devices.vsource):
                                         Tt[nv - 1 + v_eq, 0] = -1.0 * elem.V(time)
@@ -266,7 +266,7 @@ def get_variable_MAass_and_Tass(circ, xi, xi_minus_1, M, D, step, n_of_var):
 	J = numpy.zeros((n_of_var, n_of_var))
 	(C1, C0) = implicit_euler.get_df_coeff(step)
 
-	for elem in circ.elements:
+	for elem in circ:
 		# build all dT(xn)/dxn (stored in J) and T(x)
 		if elem.is_nonlinear:
 			output_ports = elem.get_output_ports()

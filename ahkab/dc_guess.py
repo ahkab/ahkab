@@ -54,7 +54,7 @@ def get_dc_guess(circ, verbose=3):
 	v_eq = 0 # number of current equations
 	one_element_with_dc_guess_found = False
 
-	for elem in circ.elements:
+	for elem in circ:
 		# In the meanwhile, check how many current equations are 
 		# required to solve the circuit
 		if circuit.is_elem_voltage_defined(elem):

@@ -165,7 +165,7 @@ class op_solution(solution):
 			if circ.is_int_node_internal_only(index+1):
 				self.skip_nodes_list.append(index)
 
-		for elem in circ.elements:
+		for elem in circ:
 			if circuit.is_elem_voltage_defined(elem):
 				index = index + 1
 				varname = ("I("+elem.letter_id.upper()+elem.descr+")").upper()
@@ -212,7 +212,7 @@ class op_solution(solution):
 		i_index = 0
 		nv_1 = len(circ.nodes_dict) - 1
 		op_info = []
-		for elem in circ.elements:
+		for elem in circ:
 			ports_v_v = []
 			if hasattr(elem, "get_op_info"):
 				if elem.is_nonlinear:
@@ -357,7 +357,7 @@ class ac_solution(solution):
 			if circ.is_int_node_internal_only(index+1):
 				self.skip_nodes_list.append(index)
 
-		for elem in circ.elements: 
+		for elem in circ: 
 			if circuit.is_elem_voltage_defined(elem):
 				varname_abs = "|I(%s)|" % (elem.letter_id.upper()+elem.descr,)
 				varname_arg = "arg(I(%s))" % (elem.letter_id.upper()+elem.descr,)
@@ -421,7 +421,7 @@ class dc_solution(solution):
 			if circ.is_int_node_internal_only(index+1):
 				self.skip_nodes_list.append(index)
 
-		for elem in circ.elements: 
+		for elem in circ: 
 			if circuit.is_elem_voltage_defined(elem):
 				varname = "I(%s)" % (elem.letter_id.upper()+elem.descr,)
 				self.variables += [varname]
@@ -482,7 +482,7 @@ class tran_solution(solution):
 			if circ.is_int_node_internal_only(index+1):
 				self.skip_nodes_list.append(index)
 
-		for elem in circ.elements: 
+		for elem in circ: 
 			if circuit.is_elem_voltage_defined(elem):
 				varname = ("I(%s)" % (elem.letter_id.upper()+elem.descr,)).upper()
 				self.variables += [varname]
@@ -547,7 +547,7 @@ class pss_solution(solution):
 			if circ.is_int_node_internal_only(index+1):
 				self.skip_nodes_list.append(index)
 
-		for elem in circ.elements: 
+		for elem in circ: 
 			if circuit.is_elem_voltage_defined(elem):
 				varname = "I(%s)" % (elem.letter_id.upper()+elem.descr,)
 				self.variables += [varname]

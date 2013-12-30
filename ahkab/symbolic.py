@@ -197,7 +197,7 @@ def get_variables(circ):
 	
 	# descrizioni dei componenti non definibili in tensione
 	idescr = [ (elem.letter_id.upper() + elem.descr) \
-		for elem in circ.elements if circuit.is_elem_voltage_defined(elem) ]
+		for elem in circ if circuit.is_elem_voltage_defined(elem) ]
 
 	mna_size = nv_1 + len(idescr)
 	x = smzeros((mna_size, 1))
@@ -236,7 +236,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 	s = sympy.Symbol("s", complex=True)
 	subs_g = {}
 	#process_elements() 	
-	for elem in circ.elements:
+	for elem in circ:
 		#if elem.is_nonlinear and not (isinstance(elem, mosq.mosq_device) or isinstance(elem, ekv.ekv_device)): 
 		#	print "Skipped elem "+elem.letter_id.upper()+elem.descr + ": not implemented."	
 		#	continue
@@ -317,7 +317,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 			printing.print_warning("Skipped elem %s: not implemented." % (elem.letter_id.upper()+elem.descr,))
 
 	pre_vde = mna.shape[0]
-	for elem in circ.elements:
+	for elem in circ:
 		if circuit.is_elem_voltage_defined(elem):
 			index = mna.shape[0] #get_matrix_size(mna)[0]
 			mna = expand_matrix(mna, add_a_row=True, add_a_col=True)
@@ -356,7 +356,7 @@ def generate_mna_and_N(circ, opts, ac=False):
 				printing.print_warning("symbolic.py: BUG - hvsources are not implemented yet.")
 				sys.exit(33)
 	
-	for elem in circ.elements:
+	for elem in circ:
 		if circuit.is_elem_voltage_defined(elem):
 			if isinstance(elem, devices.inductor):
 				if ac:

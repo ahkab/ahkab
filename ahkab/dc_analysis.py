@@ -143,7 +143,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 	Tt = numpy.mat(numpy.zeros((mna_size, 1)))
 	v_eq = 0
 	if not skip_Tt:
-		for elem in circ.elements:
+		for elem in circ:
 			if (isinstance(elem, devices.vsource) or isinstance(elem, devices.isource)) and elem.is_timedependent:
 				if isinstance(elem, devices.vsource):
 					Tt[nv - 1 + v_eq, 0] = -1 * elem.V(time)
@@ -328,15 +328,15 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
 		sys.exit(1)
 
 	source_elem = None
-	for index in xrange(len(circ.elements)):
-		if circ.elements[index].descr == elem_descr:
+	for index in xrange(len(circ)):
+		if circ[index].descr == elem_descr:
 			if elem_type == 'v': 
-				if isinstance(circ.elements[index], devices.vsource):
-					source_elem = circ.elements[index]
+				if isinstance(circ[index], devices.vsource):
+					source_elem = circ[index]
 					break
 			if elem_type == 'i':
-				if isinstance(circ.elements[index], devices.isource):
-					source_elem = circ.elements[index]
+				if isinstance(circ[index], devices.isource):
+					source_elem = circ[index]
 					break
 	if not source_elem:
 		printing.print_general_error(elem_type + " element with descr. "+ elem_descr +" was not found.")
@@ -474,7 +474,7 @@ def print_elements_ops(circ, x):
 	i_index = 0
 	nv_1 = len(circ.nodes_dict) - 1
 	print "OP INFORMATION:"
-	for elem in circ.elements:
+	for elem in circ:
 		ports_v_v = []
 		if hasattr(elem, "print_op_info"):
 			if elem.is_nonlinear:
@@ -599,7 +599,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
 		tick.step(print_steps)
 		if nonlinear_circuit:
 			# build dT(x)/dx (stored in J) and Tx(x)
-			J, Tx = build_J_and_Tx(x, mna_size, circ.elements, time)
+			J, Tx = build_J_and_Tx(x, mna_size, circ, time)
 			J = J + mna
 		else:
 			J = mna
@@ -726,7 +726,7 @@ def generate_mna_and_N(circ):
 	Le tensioni nodali sono ordinate tramite i numeri interni dei nodi, in ordine CRESCENTE, saltando
 	il nodo 0, preso a riferimento.
 	L'ordine delle correnti nei gen di tensione � det. dall'ordine in cui essi vengono incontrati 
-	scorrendo circ.elements. Viene sempre usata la convenzione normale.
+	scorrendo `circ`. Viene sempre usata la convenzione normale.
 	
 	Il sistema � cos� fatto: MNA*x + N = 0
 	
@@ -736,7 +736,7 @@ def generate_mna_and_N(circ):
 	n_of_nodes = len(circ.nodes_dict)
 	mna = numpy.mat(numpy.zeros((n_of_nodes, n_of_nodes)))
 	N = numpy.mat(numpy.zeros((n_of_nodes, 1)))
-	for elem in circ.elements:
+	for elem in circ:
 		if elem.is_nonlinear:
 			continue
 		elif isinstance(elem, devices.resistor):
@@ -769,7 +769,7 @@ def generate_mna_and_N(circ):
 	# i generatori di tensione non sono pilotabili in tensione: g � infinita
 	# for each vsource, introduce a new variable: the current flowing through it.
 	# then we introduce a KVL equation to be able to solve the circuit
-	for elem in circ.elements:
+	for elem in circ:
 		if circuit.is_elem_voltage_defined(elem):
 			index = mna.shape[0] #get_matrix_size(mna)[0]
 			mna = utilities.expand_matrix(mna, add_a_row=True, add_a_col=True)
@@ -820,7 +820,7 @@ def check_circuit(circ):
 	elif not circ.nodes_dict.has_key(0):
 		test_passed = False
 		reason = "the circuit has no ref. Quitting."
-	elif len(circ.elements) < 2:
+	elif len(circ) < 2:
 		test_passed = False
 		reason = "the circuit has less than two elements."
 	elif circ.has_duplicate_elem():
@@ -858,7 +858,7 @@ def check_ground_paths(mna, circ, reduced_mna=True):
 			to_be_checked_for_nonlinear_paths.append(node)
 	for node in to_be_checked_for_nonlinear_paths:
 		node_is_nl_op = False
-		for elem in circ.elements:
+		for elem in circ:
 			if not elem.is_nonlinear:
 				continue
 			ops = elem.get_output_ports()
@@ -898,7 +898,7 @@ def build_x0_from_user_supplied_ic(circ, icdict):
 	Iregex = re.compile("I\s*\(\s*(\w?)\s*\)",re.IGNORECASE|re.DOTALL)
 	nv = len(circ.nodes_dict) #number of voltage variables
 	voltage_defined_elem_names = [ elem.letter_id + elem.descr 
-	                               for elem in circ.elements 
+	                               for elem in circ 
 	                               if circuit.is_elem_voltage_defined(elem) 
 	                             ]
 	voltage_defined_elem_names = map(str.lower, voltage_defined_elem_names)
@@ -928,10 +928,10 @@ def modify_x0_for_ic(circ, x0):
 		return_obj = False
 
 	nv = len(circ.nodes_dict) #number of voltage variables
-	voltage_defined_elements = [ x for x in circ.elements if circuit.is_elem_voltage_defined(x) ]
+	voltage_defined_elements = [ x for x in circ if circuit.is_elem_voltage_defined(x) ]
 	
 	# setup voltages this may _not_ work properly
-	for elem in circ.elements:
+	for elem in circ:
 		if isinstance(elem, devices.capacitor) and elem.ic or \
 			isinstance(elem, diode.diode) and elem.ic:
 			x0[elem.n1 - 1, 0] = x0[elem.n2 - 1, 0] + elem.ic
