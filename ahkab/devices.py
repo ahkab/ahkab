@@ -75,7 +75,7 @@ ports_vector in which there are the recommended guesses for dc analysis.
 Eg Vgs is set to Vt in mosfets.
 This is obviously useless for linear devices.
 
-2. Every element should have a meaning(Component)ful __str__ method. 
+2. Every element should have a meaningful __str__ method. 
 It must return a line of paramaters without n1 n2, because a element cannot 
 know the external names of its nodes. It is used to print the parsed netlist.
 
