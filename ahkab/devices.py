@@ -214,7 +214,7 @@ class inductor_coupling(generic):
 ##  SOURCES
 ################
 
-class isource:
+class isource(generic):
     """Generic (ideal) current source:
     Defaults to a DC current source. To implement a time-varying source:
     set _time_function to an appropriate function(time) and is_timedependent=True
@@ -233,6 +233,7 @@ class isource:
     is_symbolic = True
     is_timedependent = False
     _time_function = None
+
     def __init__(self, n1, n2, idc=None, abs_ac=None, arg_ac=0):
         self.idc = idc
         self.abs_ac = abs_ac
@@ -261,7 +262,8 @@ class isource:
             return self.idc
         else:
             return self._time_function.value(time)
-class vsource:
+
+class vsource(generic):
     """Generic (ideal) voltage source:
     Defaults to a DC voltage source. To implement a time-varying source:
     set _time_function to an appropriate function(time) and is_timedependent=True
@@ -281,6 +283,7 @@ class vsource:
     is_timedependent = False
     _time_function = None
     dc_guess = None #defined in init
+
     def __init__(self, n1, n2, vdc=None, abs_ac=None, arg_ac=0):
         self.vdc = vdc
         self.v = 1.0
@@ -296,7 +299,8 @@ class vsource:
         if self.vdc is not None:
             rep = rep + "type=vdc vdc="+str(self.vdc) + " "
         if self.abs_ac is not None:
-            rep = rep + "vac="+str(self.abs_ac) + " " + "arg="+str(self.arg_ac) + " "
+            #   TODO:   netlist parser doesn't accept `arg=` from `self.arg_ac`
+            rep = rep + "vac="+str(self.abs_ac) + " "
         if self.is_timedependent:
             rep = rep + str(self._time_function)
         return rep
