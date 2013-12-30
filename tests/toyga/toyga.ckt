@@ -1,0 +1,16 @@
+Untitled
+L1 n3 n5 6.8e-05
+L2 n7 0 6.8e-05
+R0 n3 n4 160000
+R1 n6 n5 75
+C1 n4 0 4.7e-08
+C2 n6 n7 4.7e-06
+R2 0 n4 750
+C4 n1 n6 3.3e-10
+C5 n6 n7 3.9e-06
+C6 0 n5 5.6e-07
+R3 0 n6 12
+V1 n1 0 type=vdc vdc=5 vac=1 type=pulse v1=0 v2=1 td=5e-07 per=2 tr=1e-12 tf=1e-12 pw=1
+
+.op
+.ac start=1e3 stop=1e5 nsteps=10000000
