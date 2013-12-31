@@ -1,6 +1,6 @@
 import ahkab
 import switch, circuit, printing
-mycircuit = circuit.circuit(title="Test switch")
+mycircuit = circuit.Circuit(title="Test switch")
 gnd = mycircuit.get_ground_node()
 mycircuit.add_resistor("R1", "n1", gnd, 1e3)
 mycircuit.add_resistor("R2", "n2", "n3", 50)

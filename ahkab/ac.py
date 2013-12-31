@@ -184,9 +184,18 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
 
     x = x0
     for omega in omega_iter:
-        (x, error, solved, n_iter) = dc_analysis.dc_solve(mna=(mna + numpy.multiply(j*omega, AC) + J), \
-        Ndc=Nac,  Ntran=0, circ=circuit.circuit(title="Dummy circuit for AC", filename=None), Gmin=Gmin_matrix, x0=x, \
-        time=None, locked_nodes=None, MAXIT=options.ac_max_nr_iter, skip_Tt=True, verbose=0)
+        (x, error, solved, n_iter) = dc_analysis.dc_solve(
+            mna             = (mna + numpy.multiply(j*omega, AC) + J),
+            Ndc             = Nac,  
+            Ntran           = 0, 
+            circ            = circuit.Circuit(title="Dummy circuit for AC", filename=None), 
+            Gmin            = Gmin_matrix,
+            x0              = x,
+            time            = None, 
+            locked_nodes    = None, 
+            MAXIT           = options.ac_max_nr_iter, 
+            skip_Tt         = True, 
+            verbose         = 0)
         if solved:
             tick.step(verbose > 1)
             iter_n = iter_n + 1

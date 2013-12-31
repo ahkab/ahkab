@@ -58,7 +58,7 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
     # .end is not required, but if is used anything following it is ignored
     # many others, see doc.
     
-    circ = circuit.circuit(title="", filename=filename)
+    circ = circuit.Circuit(title="", filename=filename)
     
     if not read_netlist_from_stdin:
         ffile = open(filename, "r")

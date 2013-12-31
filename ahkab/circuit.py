@@ -27,15 +27,13 @@ import printing
 # will be added here by netlist_parser and circuit instances
 user_defined_modules_dict = {}
 
-class circuit(list):
-    """Every circuit is described in the ahkab simulator by a circuit class.
+class Circuit(list):
+    """Every circuit is described in the ahkab simulator by a Circuit class.
     This class holds everything is needed to simulate the circuit (except
     the specification of the analyses to be performed).
 
-    It is even possible to rewrite a netlist from a circuit class: see the
+    It is even possible to rewrite a netlist from a Circuit class: see the
     printing module.
-
-    There are basically three things in this class.
 
     1. Nodes
     The nodes are stored in this way: we assign to each node a internal
@@ -47,7 +45,7 @@ class circuit(list):
     identifier (or external node name) is printed instead.
 
     This is done through:
-        my_circuit = circuit()
+        my_circuit = Circuit()
 
         ...
         [ init code ]
@@ -55,8 +53,8 @@ class circuit(list):
 
         print "This is a node" + my_circuit.nodes_dict[int_node]
 
-    2. Elements
-    All the elements in the circuit must be appended to the element list.
+    2. A Circuit is derived from a list. This list holds the elements.
+    All the elements in the Circuit must be appended to the Circuit.
 
     The following methods are provided to add and remove elements to the circuit:
 
@@ -74,7 +72,7 @@ class circuit(list):
 
     Example:
 
-    mycircuit = circuit.circuit(title="Example circuit", filename=None)
+    mycircuit = circuit.Circuit(title="Example circuit", filename=None)
     # no filename since there will be no deck associated with this circuit.
     # get the ref node (gnd)
     gnd = mycircuit.get_ground_node()
@@ -89,7 +87,7 @@ class circuit(list):
     That value shouldn't be changed by hand.
 
     4. Device models.
-    They are stored in circuit.models (type dict), the following methods
+    They are stored in Circuit.models (type dict), the following methods
     are provided to add and remove device models.
 
     add_model(self, model_type, model_label, model_parameters)
