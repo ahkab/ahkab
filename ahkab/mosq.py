@@ -38,6 +38,8 @@ This MOS Model follows the Square Law Mos Model:
 
 """
 
+__version__ = "0.08"
+
 import constants, options, utilities, printing
 import math 
 

@@ -19,6 +19,8 @@
 
 """ This module implements IE (aka Backward Euler) and a first order prediction formula"""
 
+__version__ = "0.08"
+
 import numpy
 
 order = 1

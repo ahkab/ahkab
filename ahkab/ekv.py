@@ -56,6 +56,8 @@ The Missing Features:
 - Quasistatic implementation
 """
 
+__version__ = "0.08"
+
 import constants, options, utilities, printing
 import math 
 

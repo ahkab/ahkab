@@ -22,6 +22,8 @@ This is the printing module of the simulator. Using its functions, the output wi
 be somewhat uniform.
 """
 
+__version__ = "0.08"
+
 import sys
 import devices, options
 import diode, mosq, ekv, switch

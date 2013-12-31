@@ -22,6 +22,8 @@ This module offers the functions needed to plot the results
 of a simulation
 """
 
+__version__ = "0.08"
+
 import re
 import numpy, pylab
 import printing, options

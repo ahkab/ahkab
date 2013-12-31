@@ -20,6 +20,9 @@
 """
 This is the results module of the simulator.
 """
+
+__version__ = "0.08"
+
 import sys, time, copy, pickle
 import numpy
 import circuit, devices, printing, options, constants, csvlib

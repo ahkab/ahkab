@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
+__version__ = "0.08"
+
 import sys
 import math
 

@@ -21,6 +21,8 @@
 This file implements the TRAP DF and a second order prediction formula.
 """
 
+__version__ = "0.08"
+
 import numpy
 from numpy.linalg import inv
 

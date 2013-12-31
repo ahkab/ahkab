@@ -29,6 +29,8 @@ The actual solution is done by mdn_solver, that uses a modified
 version of the Newton Rhapson method.
 """
 
+__version__ = "0.08"
+
 import sys, re
 import numpy, numpy.linalg
 import devices, diode

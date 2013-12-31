@@ -19,6 +19,8 @@
 
 """Brute-force periodic steady state analysis module"""
 
+__version__ = "0.08"
+
 import sys
 import numpy
 import transient, implicit_euler, dc_analysis, ticker, options, circuit, printing, utilities

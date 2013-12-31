@@ -16,8 +16,12 @@
 #
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
+
 """This module contains options and configuration switches 
 """
+
+__version__ = "0.08"
+
 import os
 
 # global: command line execution or module import

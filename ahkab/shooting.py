@@ -19,6 +19,8 @@
 
 """Periodic steady state analysis based on the shooting method"""
 
+__version__ = "0.08"
+
 import sys
 import numpy, numpy.linalg
 import transient, implicit_euler, dc_analysis, ticker, options, circuit, printing, utilities

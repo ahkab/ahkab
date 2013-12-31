@@ -20,6 +20,8 @@
 """Holds some constants useful for equations
 """
 
+__version__ = "0.08"
+
 import math
 
 e = 1.60217646e-19

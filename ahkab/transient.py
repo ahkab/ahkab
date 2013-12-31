@@ -29,6 +29,8 @@ We need:
     6. a differentiation method to approximate dx/dt
 """
 
+__version__ = "0.08"
+
 import sys, imp
 import numpy
 import dc_analysis, implicit_euler, ticker, options, circuit, printing, utilities

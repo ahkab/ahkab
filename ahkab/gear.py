@@ -78,6 +78,8 @@
     This module uses a faster way to compute the values that doesn't require to invert the matrix.
     Anyway, from a theorical point of view, the above applies.
       """
+
+__version__ = "0.08"
     
 import numpy, sys
 import utilities, printing

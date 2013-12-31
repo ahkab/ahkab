@@ -21,11 +21,16 @@
 This file holds miscellaneous utility functions needed by the simulator.
 """
 
+__version__ = "0.08"
+
 import os
 import os.path
 import operator
 
+import scipy
+import scipy.interpolate
 import numpy
+import math
 
 import printing
 
@@ -241,7 +246,7 @@ def Kelvin2Celsius(kel):
 #   Maximum attenuation pass band/Minimum attenuation stop band
 def MAPSB(results, pass_band, stop_band):
     # Normalize the output to the low frequency value and convert to array
-    norm_out = numpy.asarray(results['|Vn4|'].T/r['|Vn4|'].max())
+    norm_out = numpy.asarray(results['|Vn4|'].T/results['|Vn4|'].max())
     
     # Convert to dB
     norm_out_db = 20 * numpy.log10(norm_out)
@@ -250,7 +255,7 @@ def MAPSB(results, pass_band, stop_band):
     norm_out_db = norm_out_db.reshape((max(norm_out_db.shape),))
     
     # Convert angular frequencies to Hz and convert matrix to array
-    frequencies = numpy.asarray(r['w'].T/2/math.pi)
+    frequencies = numpy.asarray(results['w'].T/2/math.pi)
     
     # Reshape to be scipy-friendly
     frequencies = frequencies.reshape((max(frequencies.shape),))

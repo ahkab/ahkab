@@ -21,6 +21,8 @@
 Implements a progress indicator.
 """
 
+__version__ = "0.08"
+
 import sys
 
 class ticker:
