@@ -133,6 +133,7 @@ def get_csv_headers(filename):
 
     Returns a list of strings.
 """
+
     fp = _get_fp(filename, mode="r")
     headers = None
     line = ""
