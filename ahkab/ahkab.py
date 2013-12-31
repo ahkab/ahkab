@@ -122,9 +122,9 @@ def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None
 			_of.append(ofi) # keep the file open until quitting
 	else:
 		outfile += '.dc'
-	return {'type':'dc', 'start':float(start), 'stop':float(stop), 'points':float(points), 
-	        'source':source, 'x0':x0, 'outfile':outfile, 'guess':guess, 'sweep_type':sweep_type, 
-	        'verbose':verbose}
+	return {'type':'dc', 'start':float(start), 'stop':float(stop),
+	        'step':float(stop - start)/float(points - 1), 'source':source, 'x0':x0,
+	        'outfile':outfile, 'guess':guess, 'sweep_type':sweep_type, 'verbose':verbose}
 	
 def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP, use_step_control=True, 
              outfile=None, verbose=0):
