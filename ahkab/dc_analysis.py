@@ -316,7 +316,9 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
     if (stop - start)*step < 0:
         raise ValueError, "Unbonded stepping in DC analysis."
     
-    points = (stop - start)/step + 1
+    points      = (stop - start)/step + 1
+    sweep_type  = sweep_type.upper()[:3]
+
     if sweep_type == options.dc_log_step:
         dc_iter = utilities.log_axis_iterator(stop, start, nsteps=points)
     elif sweep_type == options.dc_lin_step:

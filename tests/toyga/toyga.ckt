@@ -7,7 +7,10 @@ R3 0 n4 6200000
 R4 n4 n3 13000
 L1 n6 0 1.3e-08
 C2 n3 n4 3.9e-07
-V1 n1 0 type=vdc vdc=5 vac=1 type=pulse v1=0 v2=1 td=5e-07 per=2 tr=1e-12 tf=1e-12 pw=1
+
+VIN n1 0 DC 5 AC 1 PULSE(0 1 0.0000005 0.000000000001 0.000000000001 1 2) 
 
 .op
-.ac start=1e3 stop=1e5 nsteps=10
+.ac lin 1000 100000 100
+.plot ac vdb(n1) xlog
+.end
