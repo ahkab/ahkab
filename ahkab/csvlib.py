@@ -223,5 +223,5 @@ def load_csv(filename, load_headers=[], nsamples=None, skip=0L):
 
 	headers = map(headers.__getitem__, his)
 
-	return numpy.mat(data), headers, pos, EOF
+	return numpy.array(data), headers, pos, EOF
 
