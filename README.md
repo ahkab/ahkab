@@ -7,8 +7,10 @@ The code should be easy to read and modify, the main language is Python 2.x and 
 
 ### News! ###
 
- * The project [moved to GitHub](https://github.com/ahkab/ahkab). 
- * `ahkab` can now be run stand-alone with a netlist file or _within Python scripts as a library_. This will likely become the preferred way in the future. See **[this butterworth filter simulation](https://github.com/ahkab/ahkab/wiki/Example:-Python-API)** for an example/tentative tutorial.
+ * **Update your scientific Python installation!** We benefit from the latest updates to numpy and get **a 40% speed-up** for all large networks simulations.
+
+![r2r](https://f.cloud.github.com/assets/5038142/1903519/85895ee4-7c83-11e3-9712-c63c7152ce23.png)
+
 
 ### Supported simulations: ###
   * Numeric:
@@ -26,7 +28,11 @@ The results are saved to disk, plotted or printed to stdout and can be read/proc
 
 There are no packages for the time being (this program is at an early development stage). Go to [ahkab on github](https://github.com/ahkab/ahkab) and follow the instructions to check out the code. You can find the list of the dependencies in the [Install notes](https://github.com/ahkab/ahkab/wiki/Install:-Notes).
 
-###Run standalone###
+###Usage###
+
+ * `ahkab` can be run _within Python scripts as a library_. This will likely become the preferred way in the future. See **[this butterworth filter simulation](https://github.com/ahkab/ahkab/wiki/Example:-Python-API)** for an example/tentative tutorial.
+
+ * or stand-alone with a netlist file, the syntax being:
 
     $ python ahkab -o graph.dat <netlist file>`
 
@@ -39,6 +45,12 @@ The simulator can either be run from the command line with a netlist file or inc
 Refer to the [netlist syntax page](https://github.com/ahkab/ahkab/wiki/Help:-Netlist-Syntax) for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.
 
 The latter option is shown briefly in the **[Python API](https://github.com/ahkab/ahkab/wiki/Example:-Python-API)** wiki page. The code comes with docstrings associated with _most_ functions, type `help(ahkab.function_name)`.
+
+### How this project was born ###
+
+This project was born when I was an enthusistic undergrad, apparently with plenty of free time, attending "Simulazione Circuitale" (*Circuit Simulation*) taught by [Prof. A. Brambilla](http://brambilla.dei.polimi.it/) back in Italy at the Polythecnic University of Milan.
+
+I am grateful to prof. Brambilla for teaching one of the most interesting courses of my university years. -GV
 
 ### Contributors ###
 Giuseppe Venturini (@ggventurini on GH) Ian Daniher (@itdaniher, also on GH)
