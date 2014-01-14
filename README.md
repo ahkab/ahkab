@@ -48,7 +48,7 @@ The latter option is shown briefly in the **[Python API](https://github.com/ahka
 
 ### How this project was born ###
 
-This project was born when I was an enthusistic undergrad, apparently with plenty of free time, attending "Simulazione Circuitale" (*Circuit Simulation*) taught by [Prof. A. Brambilla](http://brambilla.dei.polimi.it/) back in Italy at the Polythecnic University of Milan.
+This project was born when I was an enthusistic undergrad, apparently with plenty of free time, attending "Simulazione Circuitale" (*Circuit Simulation*) taught by [Prof. A. Brambilla](http://brambilla.dei.polimi.it/) back in Italy at the Polytechnic University of Milan.
 
 I am grateful to prof. Brambilla for teaching one of the most interesting courses of my university years. -GV
 
