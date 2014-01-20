@@ -1,7 +1,6 @@
-ahkab
-=====
+#<img src="http://raw.github.com/wiki/ahkab/ahkab/images/logo_small.png" alt="Monkeying around" style="width: 80px;"/> ahkab
 
-a SPICE-like electronic circuit simulator written in Python
+***a SPICE-like electronic circuit simulator written in Python***
 
 The code should be easy to read and modify, the main language is Python 2.x and it is platform-independent.[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/3f4b146d6a15f66802f1906e5cf4f68c "githalytics.com")](http://githalytics.com/ahkab/ahkab)
 
