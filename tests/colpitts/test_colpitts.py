@@ -5,7 +5,7 @@ import subprocess
 import numpy
 from nose.tools import ok_, nottest, with_setup
 
-ahkab_path = "../../ahkab/ahkab.py"
+ahkab_path = "../../ahkab/__main__.py"
 er = 1e-6
 ea = 1e-9
 
