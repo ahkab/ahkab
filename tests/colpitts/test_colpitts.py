@@ -42,4 +42,4 @@ def test():
 
 if __name__ == '__main__':
 	data = numpy.loadtxt("colpitts-ref.tran")
-	
+	test()
