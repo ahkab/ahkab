@@ -503,7 +503,7 @@ def parse_elem_vsource(line, circ, line_elements=None):
     n2 = circ.add_node(ext_n2)
 
     elem = devices.VSource(
-        n1=n1, n2=n2, dc_value=dc_value, part_id=line_elements[0], abs_ac=vac)
+        n1=n1, n2=n2, dc_value=dc_value, part_id=line_elements[0], ac_value=vac)
 
     if function is not None:
         elem.is_timedependent = True
@@ -580,7 +580,7 @@ def parse_elem_isource(line, circ, line_elements=None):
     n2 = circ.add_node(ext_n2)
 
     elem = devices.ISource(
-        part_id=line_elements[0], n1=n1, n2=n2, dc_value=dc_value, abs_ac=iac)
+        part_id=line_elements[0], n1=n1, n2=n2, dc_value=dc_value, ac_value=iac)
 
     if function is not None:
         elem.is_timedependent = True

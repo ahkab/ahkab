@@ -242,8 +242,8 @@ class ISource(Component):
     def __init__(self, part_id='I', n1=None, n2=None, dc_value=None, ac_value=0):
         self.part_id = part_id
         self.dc_value = dc_value
-        self.abs_ac = numpy.abs(ac_value)
-        self.arg_ac = numpy.angle(ac_value)
+        self.abs_ac = numpy.abs(ac_value) if ac_value else None
+        self.arg_ac = numpy.angle(ac_value) if ac_value else None
         self.n1 = n1
         self.n2 = n2
 
@@ -297,8 +297,8 @@ class VSource(Component):
         self.dc_value = dc_value
         self.n1 = n1
         self.n2 = n2
-        self.abs_ac = numpy.abs(ac_value)
-        self.arg_ac = numpy.angle(ac_value)
+        self.abs_ac = numpy.abs(ac_value) if ac_value else None
+        self.arg_ac = numpy.angle(ac_value) if ac_value else None
         if dc_value is not None:
             self.dc_guess = [self.dc_value]
 
