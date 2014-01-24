@@ -19,6 +19,7 @@
 
 __version__ = "0.08"
 
+import numpy
 import math
 import constants
 import printing
@@ -238,18 +239,18 @@ class ISource(Component):
     is_timedependent = False
     _time_function = None
 
-    def __init__(self, part_id='I', n1=None, n2=None, dc_value=None, abs_ac=None, arg_ac=0):
+    def __init__(self, part_id='I', n1=None, n2=None, dc_value=None, ac_value=0):
         self.part_id = part_id
         self.dc_value = dc_value
-        self.abs_ac = abs_ac
-        self.arg_ac = arg_ac
+        self.abs_ac = numpy.abs(ac_value)
+        self.arg_ac = numpy.angle(ac_value)
         self.n1 = n1
         self.n2 = n2
 
     def __str__(self):
         rep = ""
-        if self.value is not None:
-            rep = rep + "type=idc value=" + str(self.value) + " "
+        if self.dc_value is not None:
+            rep = rep + "type=idc value=" + str(self.dc_value) + " "
         if self.abs_ac is not None:
             rep = rep + "iac=" + \
                 str(self.abs_ac) + " " + "arg=" + str(self.arg_ac) + " "
@@ -291,19 +292,19 @@ class VSource(Component):
     _time_function = None
     dc_guess = None  # defined in init
 
-    def __init__(self, part_id='V', n1=None, n2=None, dc_value=1.0, abs_ac=None, arg_ac=0):
+    def __init__(self, part_id='V', n1=None, n2=None, dc_value=1.0, ac_value=0):
         self.part_id = part_id
         self.dc_value = dc_value
         self.n1 = n1
         self.n2 = n2
-        self.abs_ac = abs_ac
-        self.arg_ac = arg_ac
+        self.abs_ac = numpy.abs(ac_value)
+        self.arg_ac = numpy.angle(ac_value)
         if dc_value is not None:
             self.dc_guess = [self.dc_value]
 
     def __str__(self):
         rep = ""
-        if self.value is not None:
+        if self.dc_value is not None:
             rep = rep + "type=vdc value=" + str(self.dc_value) + " "
         if self.abs_ac is not None:
             #   TODO:   netlist parser doesn't accept `arg=` from `self.arg_ac`
@@ -349,7 +350,7 @@ class EVSource(Component):
         self.sn2 = sn2
 
     def __str__(self):
-        return "value=%s" % self.value
+        return "alpha=%s" % self.alpha
 
 
 class GISource(Component):
@@ -380,7 +381,7 @@ class GISource(Component):
         self.sn2 = sn2
 
     def __str__(self):
-        return "value=%s" % self.value
+        return "value=%s" % self.alpha
 
 
 class HVSource(Component):  # TODO: fixme
