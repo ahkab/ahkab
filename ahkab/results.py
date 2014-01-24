@@ -267,14 +267,13 @@ class op_solution(solution):
         return op_info
 
     def write_to_file(self, filename=None):
-        if filename is not None:
-            local_filename = filename
-        else:
-            filename = self.filename
-        if filename == None:
+        if filename is None and self.filename is None:
+            # maybe warn the user here?
             return
+        if filename is None:
+            filename = self.filename
         if filename != 'stdout':
-            fp = open(filename, "w")
+            fp = open(filename+"info", "w")
         else:
             fp = sys.stdout
         fp.write(self.timestamp+"\n")
@@ -295,6 +294,7 @@ class op_solution(solution):
         fp.flush()
         if filename != 'stdout':
             fp.close()
+            solution._add_data(self, self.x)
 
     def print_short(self):
         str_repr = ""
