@@ -335,8 +335,8 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
     if outfile == 'stdout':
         verbose = 0
     printing.print_info_line(("Starting DC analysis:", 2), verbose)
-    elem_type, elem_descr = source[0].lower(), source[1:]
-    sweep_label = elem_type[0].upper() + elem_descr
+    elem_type, elem_descr = source[0].lower(), source.lower() # eg. 'v', 'v34'
+    sweep_label = elem_type[0].upper() + elem_descr[1:]
 
     if sweep_type == options.dc_log_step and stop - start < 0:
         printing.print_general_error(
@@ -363,7 +363,7 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
 
     source_elem = None
     for index in xrange(len(circ)):
-        if circ[index][1:] == elem_descr:
+        if circ[index].part_id.lower() == elem_descr:
             if elem_type == 'v':
                 if isinstance(circ[index], devices.VSource):
                     source_elem = circ[index]
