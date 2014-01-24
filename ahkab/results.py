@@ -587,16 +587,18 @@ Run on %s, data filename %s.>" % \
         return self.variables[0]
 
 class symbolic_solution():
-    def __init__(self, results_dict, substitutions, circ, outfile=None):
+    def __init__(self, results_dict, substitutions, circ, outfile=None, tf=False):
         """Holds a set of Symbolic results.
             results_dict: the results dict returned by sympy.solve(),
             substitutions: the substitutions (dict) employed before solving,
             circ: the circuit instance of the simulated circuit.
+            tf: is this set of results a set of transfer functions?
         """
         self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
         self.netlist_file = circ.filename
         self.netlist_title = circ.title
         self.substitutions = substitutions
+        self.tf = tf
 
         # the keys are strings
         # self.symbols = map(str, results_dict.keys())
@@ -606,6 +608,8 @@ class symbolic_solution():
         
         self._symbols = results_dict.keys() # keep them, they're useful
         for expr in results_dict.values():
+            if tf:
+                expr = expr['gain']
             for symb in expr.atoms():
                 if symb.is_Symbol and not symb in self._symbols:
                     self._symbols.append(symb)
@@ -641,12 +645,28 @@ class symbolic_solution():
         return self.results.__repr__()
 
     def __str__(self):
-        str_repr = "Symbolic simulation results for %s (netlist %s).\nRun on %s.\n" % \
-        (self.netlist_title, self.netlist_file, self.timestamp)
+        str_repr = "Symbolic %s results for %s (netlist %s).\nRun on %s.\n" % \
+                   ('simulation'*(not self.tf) + 'transfer function'*self.tf, 
+                    self.netlist_title, self.netlist_file, self.timestamp)
         keys = self.results.keys()
         keys.sort() 
-        for key in keys:
-            str_repr +=  str(key) + "\t = " + str(self.results[key]) + "\n"
+        if not self.tf:
+            for key in keys:
+                str_repr +=  str(key) + "\t = " + str(self.results[key]) + "\n"
+        else:
+            for key in keys:
+                str_repr +=  str(key) + ":\n\t%s:\t%s\n" % \
+                             ('gain', self.results[key]['gain'])
+                if self.results[key]['gain'] == self.results[key]['gain0']:
+                    continue
+                str_repr +=  "\t%s:\t%s\n" % \
+                             ('gain0', self.results[key]['gain0'])
+                for sing in ('poles', 'zeros'):
+                    if not len(self.results[key][sing]):
+                        continue
+                    str_repr += "\t%s:\n" % sing
+                    for p in self.results[key][sing]:
+                        str_repr +=  "\t\t" + str(p) + "\n"
         return str_repr
 
     def get_type(self):

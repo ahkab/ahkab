@@ -177,6 +177,10 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
 
     # convert to a results instance
     sol = results.symbolic_solution(sol, subs, circ, outfile)
+    if tfs:
+        if outfile and outfile != 'stdout':
+            outfile += ".tfs"
+        tfs = results.symbolic_solution(tfs, subs, circ, outfile, tf=True)
     return sol, tfs
 
 
@@ -264,7 +268,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             if elem.is_symbolic:
                 R = sympy.Symbol(
                     elem.part_id.upper(), real=True, positive=True)
-                G = sympy.Symbol('G' + part_id[1:], real=True, positive=True)
+                G = sympy.Symbol('G' + elem.part_id[1:], real=True, positive=True)
                 # but we keep track of which is which and substitute back after
                 # solving.
                 subs_g.update({G: 1 / R})
