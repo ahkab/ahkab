@@ -177,10 +177,8 @@ def plot_results(title, y2y1_list, results, outfilename):
     pylab.hold(True)
     ymax, ymin = None, None
     for y, label in gdata:
-        # pylab wants matrices in the form: N,1, while results come as (1, N)
-        # -> Transpose
         [line] = pylab.plot(
-            x.T, y.T, options.plotting_style, label=label +
+            x, y, options.plotting_style, label=label +
             " (" + analysis + ")",
             mfc='w', lw=options.plotting_lw, mew=options.plotting_lw)
         line.set_mec(line.get_color())  # nice empty circles
