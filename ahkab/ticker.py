@@ -21,74 +21,78 @@
 Implements a progress indicator.
 """
 
+__version__ = "0.091"
+
 import sys
 
-class ticker:
-	"""This is a progress indicator class.
-	
-	If activated, you shouldn't print anything to screen before calling
-	ticker.hide().
 
-	If you wish to change the progress indicator, change self.progress to
-	something else. 
-	"""
-	progress = ("-", "\\", "|", "/")
-	_index = 0
-	_step = 0
-	_display = False
-	increments_for_step = 1
-	
-	def __init__(self, increments_for_step=10):
-		self.increments_for_step = increments_for_step
-		
-	def step(self, enable):
-		"""After calling this function ticker.increments_for_step times
-		the status is incremented."""
-		if not enable:
-			return
-		if (self._index + 1) % self.increments_for_step == 0:
-			if (self._step + 1) % len(self.progress) == 0:
-				self._step = 0
-			else:
-				self._step = self._step + 1
-			self._index = 0
-			if self._display:
-				sys.stdout.write("\b"+self.progress[self._step])
-				sys.stdout.flush()
-		else:
-			self._index = self._index + 1
-	
-	def hide(self, enable):
-		"""Before printing to screen, call this to hide the progress
-		indicator.
-		"""
-		if not enable:
-			return
-		sys.stdout.write("\b")
-		sys.stdout.flush()
-		self._display = False
-	
-	def display(self, enable):
-		"""Print to screen the progress indicator. Call hide to hide it
-		again.
-		"""
-		if not enable:
-			return
-		sys.stdout.write(self.progress[self._step])
-		sys.stdout.flush()
-		self._display = True
-		
-	def reset(self):
-		"""Reset to initial status. Doesn't hide it."""
-		self._step = 0
-		self._index = 0
+class ticker:
+
+    """This is a progress indicator class.
+
+    If activated, you shouldn't print anything to screen before calling
+    ticker.hide().
+
+    If you wish to change the progress indicator, change self.progress to
+    something else.
+    """
+    progress = ("-", "\\", "|", "/")
+    _index = 0
+    _step = 0
+    _display = False
+    increments_for_step = 1
+
+    def __init__(self, increments_for_step=10):
+        self.increments_for_step = increments_for_step
+
+    def step(self, enable):
+        """After calling this function ticker.increments_for_step times
+        the status is incremented."""
+        if not enable:
+            return
+        if (self._index + 1) % self.increments_for_step == 0:
+            if (self._step + 1) % len(self.progress) == 0:
+                self._step = 0
+            else:
+                self._step = self._step + 1
+            self._index = 0
+            if self._display:
+                sys.stdout.write("\b" + self.progress[self._step])
+                sys.stdout.flush()
+        else:
+            self._index = self._index + 1
+
+    def hide(self, enable):
+        """Before printing to screen, call this to hide the progress
+        indicator.
+        """
+        if not enable:
+            return
+        sys.stdout.write("\b")
+        sys.stdout.flush()
+        self._display = False
+
+    def display(self, enable):
+        """Print to screen the progress indicator. Call hide to hide it
+        again.
+        """
+        if not enable:
+            return
+        sys.stdout.write(self.progress[self._step])
+        sys.stdout.flush()
+        self._display = True
+
+    def reset(self):
+        """Reset to initial status. Doesn't hide it."""
+        self._step = 0
+        self._index = 0
 
 if __name__ == "__main__":
-	# test
-	import time
-	tk = ticker()
-	tk.display()
-	for i in range(100000):
-		time.sleep(0.0001)
-		tk.step()
-	tk.hide()
+    # test
+    import time
+    tk = ticker()
+    tk.display()
+    for i in range(100000):
+        time.sleep(0.0001)
+        tk.step()
+    tk.hide()

@@ -20,6 +20,8 @@
 """Holds some constants useful for equations
 """
 
+__version__ = "0.091"
+
 import math
 
 e = 1.60217646e-19
@@ -27,15 +29,20 @@ T = 300
 Tref = 300
 k = 1.3806503e-23
 
+
 def Vth(T=Tref):
-	return k*T/e
+    return k * T / e
+
 
 class silicon:
-	def __init__(self):
-		self.esi = 104.5*10**-12 #F/m
-		self.eox = 34.5*10**-12  #F/m
-	def Eg(self, T=Tref):
-		return  (1.16 - 0.000702*T**2/(1108+T)) #eV
-	def ni(self, T=Tref):
-		return 1.45*10**16*(T/Tref)*math.exp(self.Eg(Tref)/(2*Vth(Tref))-self.Eg(T)/(2*Vth(T)))
+
+    def __init__(self):
+        self.esi = 104.5 * 10 ** -12  # F/m
+        self.eox = 34.5 * 10 ** -12  # F/m
+
+    def Eg(self, T=Tref):
+        return (1.16 - 0.000702 * T ** 2 / (1108 + T))  # eV
+
+    def ni(self, T=Tref):
+        return 1.45 * 10 ** 16 * (T / Tref) * math.exp(self.Eg(Tref) / (2 * Vth(Tref)) - self.Eg(T) / (2 * Vth(T)))
 si = silicon()

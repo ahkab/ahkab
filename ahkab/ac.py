@@ -18,289 +18,321 @@
 
 """ This module offers the methods required to perform an AC analysis.
 Our problem can be written as:
-	MNA*x + AC*x + J*x + Nac = 0
+    MNA*x + AC*x + J*x + Nac = 0
 We need:
-	1. the mna matrix MNA
-	2. the AC matrix, holding the frequency dep parts
-	3. The linearized non-linear elements end up in J
-	4. Nac, the AC sources contribution  
+    1. the mna matrix MNA
+    2. the AC matrix, holding the frequency dep parts
+    3. The linearized non-linear elements end up in J
+    4. Nac, the AC sources contribution
 In order for an AC analysis to be performed, an OP has to be computed first,
 if there is any non-linear device in the circuit.
 """
 
+__version__ = "0.091"
+
 import sys
 import numpy
-import dc_analysis, ticker, options, circuit, devices, printing, utilities, results
+import dc_analysis
+import ticker
+import options
+import circuit
+import devices
+import printing
+import utilities
+import results
 
-specs = {'ac':{'tokens':({
-                          'label':'type',
-                          'pos':0,
-                          'type':str,
-                          'needed':False,
-                          'dest':'sweep_type',
-                          'default':options.ac_log_step
-                         },
-                         {
-                          'label':'start',
-                          'pos':1,
-                          'type':float,
-                          'needed':True,
-                          'dest':'start',
-                          'default':None
-                         },
-                         {
-                          'label':'stop',
-                          'pos':2,
-                          'type':float,
-                          'needed':True,
-                          'dest':'stop',
-                          'default':None
-                         },
-                         {
-                          'label':'nsteps',
-                          'pos':3,
-                          'type':float,
-                          'needed':True,
-                          'dest':'points',
-                          'default':None
-                         }
-                        )
-               }
-           }
+specs = {'ac': {'tokens': ({
+                           'label': 'type',
+                           'pos': 0,
+                           'type': str,
+                           'needed': False,
+                           'dest': 'sweep_type',
+                           'default': options.ac_log_step
+                           },
+        {
+                           'label': 'start',
+                           'pos': 1,
+                           'type': float,
+                           'needed': True,
+                           'dest': 'start',
+                           'default': None
+                           },
+                {
+                           'label': 'stop',
+                           'pos': 2,
+                           'type': float,
+                           'needed': True,
+                           'dest': 'stop',
+                           'default': None
+                           },
+        {
+                'label': 'nsteps',
+                           'pos': 3,
+                'type': float,
+                'needed': True,
+                'dest': 'points',
+                'default': None
+                }
+)
+}
+}
 
 
-def ac_analysis(circ, start, points, stop, sweep_type, x0=None, 
-                mna=None, AC=None, Nac=None, J=None, 
+def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
+                mna=None, AC=None, Nac=None, J=None,
                 outfile="stdout", verbose=3):
-	"""Performs an AC analysis of the circuit described by circ.
-	
-	Parameters:
-	start (float): the start angular frequency for the AC analysis
-	stop (float): stop angular frequency
-	points (float): the number of points to be use the discretize the 
-					[start, stop] interval.
-	sweep_type (string): Either 'LOG' or 'LINEAR', defaults to 'LOG'.
-	outfile (string): the filename of the output file where the results will be written.
-	                  '.ac' is automatically added at the end to prevent different 
-	                  analyses from overwriting each-other's results.
-	                  If unset or set to None, defaults to stdout.
-	verbose (int): the verbosity level, from 0 (silent) to 6 (debug).
-	
-	Returns: an AC results object
+    """Performs an AC analysis of the circuit described by circ.
+
+    Parameters:
+    start (float): the start angular frequency for the AC analysis
+    stop (float): stop angular frequency
+    points (float): the number of points to be use the discretize the
+                    [start, stop] interval.
+    sweep_type (string): Either 'LOG' or 'LINEAR', defaults to 'LOG'.
+    outfile (string): the filename of the output file where the results will be written.
+                      '.ac' is automatically added at the end to prevent different
+                      analyses from overwriting each-other's results.
+                      If unset or set to None, defaults to stdout.
+    verbose (int): the verbosity level, from 0 (silent) to 6 (debug).
+
+    Returns: an AC results object
         """
-	
-	if outfile == 'stdout':
-		verbose = 0
 
-	#check step/start/stop parameters
-	nsteps = points - 1
-	if start == 0:
-		printing.print_general_error("AC analysis has start frequency = 0")
-                sys.exit(5)
-	if start > stop:
-		printing.print_general_error("AC analysis has start > stop")
-		sys.exit(1)
-	if nsteps < 1:
-		printing.print_general_error("AC analysis has number of steps <= 1")
-		sys.exit(1)
-	if sweep_type == options.ac_log_step:
-		omega_iter = utilities.log_axis_iterator(stop, start, nsteps)
-	elif sweep_type == options.ac_lin_step:
-		omega_iter = utilities.lin_axis_iterator(stop, start, nsteps)
-	else:
-		printing.print_general_error("Unknown sweep type.") 
-		sys.exit(1)
-	
-	tmpstr = "Vea =", options.vea, "Ver =", options.ver, "Iea =", options.iea, "Ier =", \
-	options.ier, "max_ac_nr_iter =", options.ac_max_nr_iter
-	printing.print_info_line((tmpstr, 5), verbose)
-	del tmpstr
-	
-	printing.print_info_line(("Starting AC analysis: ", 1), verbose)
-	tmpstr = "w: start = %g Hz, stop = %g Hz, %d steps" % (start, stop, nsteps)
-	printing.print_info_line((tmpstr, 3), verbose)
-	del tmpstr
+    if outfile == 'stdout':
+        verbose = 0
 
-	#It's a good idea to call AC with prebuilt MNA matrix if the circuit is big
-	if mna is None:
-		(mna, N) = dc_analysis.generate_mna_and_N(circ)
-		del N
-		mna = utilities.remove_row_and_col(mna)
-	if Nac is None:
-		Nac = generate_Nac(circ)
-		Nac = utilities.remove_row(Nac, rrow=0)
-	if AC is None:
-		AC = generate_AC(circ, [mna.shape[0], mna.shape[0]])
-		AC = utilities.remove_row_and_col(AC)
+    # check step/start/stop parameters
+    nsteps = points - 1
+    if start == 0:
+        printing.print_general_error("AC analysis has start frequency = 0")
+        sys.exit(5)
+    if start > stop:
+        printing.print_general_error("AC analysis has start > stop")
+        sys.exit(1)
+    if nsteps < 1:
+        printing.print_general_error("AC analysis has number of steps <= 1")
+        sys.exit(1)
+    if sweep_type == options.ac_log_step:
+        omega_iter = utilities.log_axis_iterator(stop, start, nsteps)
+    elif sweep_type == options.ac_lin_step:
+        omega_iter = utilities.lin_axis_iterator(stop, start, nsteps)
+    else:
+        printing.print_general_error("Unknown sweep type.")
+        sys.exit(1)
 
-	
-	if circ.is_nonlinear():
-		if J is not None:
-			pass
-			# we used the supplied linearization matrix
-		else:
-			if x0 is None:
-				printing.print_info_line(("Starting OP analysis to get a linearization point...", 3), verbose, print_nl=False)
-				#silent OP
-				x0 = dc_analysis.op_analysis(circ, verbose=0)
-				if x0 is None: #still! Then op_analysis has failed!
-					printing.print_info_line(("failed.", 3), verbose)
-					printing.print_general_error("OP analysis failed, no linearization point available. Quitting.") 
-					sys.exit(3)
-				else:
-					printing.print_info_line(("done.", 3), verbose)
-			printing.print_info_line(("Linearization point (xop):", 5), verbose)
-			if verbose > 4: 
-				x0.print_short()
-			printing.print_info_line(("Linearizing the circuit...", 5), verbose, print_nl=False)
-			J = generate_J(xop=x0.asmatrix(), circ=circ, mna=mna, Nac=Nac, data_filename=outfile, verbose=verbose)
-			printing.print_info_line((" done.", 5), verbose)
-			# we have J, continue
-	else: #not circ.is_nonlinear()
-		# no J matrix is required.
-		J = 0
-	
-	printing.print_info_line(("MNA (reduced):", 5), verbose)
-	printing.print_info_line((str(mna), 5), verbose)
-	printing.print_info_line(("AC (reduced):", 5), verbose)
-	printing.print_info_line((str(AC), 5), verbose)
-	printing.print_info_line(("J (reduced):", 5), verbose)
-	printing.print_info_line((str(J), 5), verbose)
-	printing.print_info_line(("Nac (reduced):", 5), verbose)
-	printing.print_info_line((str(Nac), 5), verbose)
-	
-	sol = results.ac_solution(circ, ostart=start, ostop=stop, opoints=nsteps, stype=sweep_type, op=x0, outfile=outfile)
+    tmpstr = "Vea =", options.vea, "Ver =", options.ver, "Iea =", options.iea, "Ier =", \
+        options.ier, "max_ac_nr_iter =", options.ac_max_nr_iter
+    printing.print_info_line((tmpstr, 5), verbose)
+    del tmpstr
 
-	# setup the initial values to start the iteration:
-	nv = len(circ.nodes_dict)
-	j = numpy.complex('j')
+    printing.print_info_line(("Starting AC analysis: ", 1), verbose)
+    tmpstr = "w: start = %g Hz, stop = %g Hz, %d steps" % (start, stop, nsteps)
+    printing.print_info_line((tmpstr, 3), verbose)
+    del tmpstr
 
-	Gmin_matrix = dc_analysis.build_gmin_matrix(circ, options.gmin, mna.shape[0], verbose)
+    # It's a good idea to call AC with prebuilt MNA matrix if the circuit is
+    # big
+    if mna is None:
+        (mna, N) = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
+        del N
+        mna = utilities.remove_row_and_col(mna)
+    if Nac is None:
+        Nac = generate_Nac(circ)
+        Nac = utilities.remove_row(Nac, rrow=0)
+    if AC is None:
+        AC = generate_AC(circ, [mna.shape[0], mna.shape[0]])
+        AC = utilities.remove_row_and_col(AC)
 
-	iter_n = 0  # contatore d'iterazione
-	printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
-	tick = ticker.ticker(increments_for_step=1)
-	tick.display(verbose > 1)
+    if circ.is_nonlinear():
+        if J is not None:
+            pass
+            # we used the supplied linearization matrix
+        else:
+            if x0 is None:
+                printing.print_info_line(
+                    ("Starting OP analysis to get a linearization point...", 3), verbose, print_nl=False)
+                # silent OP
+                x0 = dc_analysis.op_analysis(circ, verbose=0)
+                if x0 is None:  # still! Then op_analysis has failed!
+                    printing.print_info_line(("failed.", 3), verbose)
+                    printing.print_general_error(
+                        "OP analysis failed, no linearization point available. Quitting.")
+                    sys.exit(3)
+                else:
+                    printing.print_info_line(("done.", 3), verbose)
+            printing.print_info_line(
+                ("Linearization point (xop):", 5), verbose)
+            if verbose > 4:
+                x0.print_short()
+            printing.print_info_line(
+                ("Linearizing the circuit...", 5), verbose, print_nl=False)
+            J = generate_J(xop=x0.asmatrix(), circ=circ, mna=mna,
+                           Nac=Nac, data_filename=outfile, verbose=verbose)
+            printing.print_info_line((" done.", 5), verbose)
+            # we have J, continue
+    else:  # not circ.is_nonlinear()
+        # no J matrix is required.
+        J = 0
 
-	x = x0
-	for omega in omega_iter:
-		(x, error, solved, n_iter) = dc_analysis.dc_solve(mna=(mna + numpy.multiply(j*omega, AC) + J), \
-		Ndc=Nac,  Ntran=0, circ=circuit.circuit(title="Dummy circuit for AC", filename=None), Gmin=Gmin_matrix, x0=x, \
-		time=None, locked_nodes=None, MAXIT=options.ac_max_nr_iter, skip_Tt=True, verbose=0)
-		if solved:
-			tick.step(verbose > 1)
-			iter_n = iter_n + 1
-			# hooray!
-			sol.add_line(omega, x)
-		else:
-			break
-	
-	tick.hide(verbose > 1)
-	
-	if solved:
-		printing.print_info_line(("done.", 1), verbose)
-		ret_value = sol
-	else:
-		printing.print_info_line(("failed.", 1), verbose)
-		ret_value =  None
-	
-	return ret_value
+    printing.print_info_line(("MNA (reduced):", 5), verbose)
+    printing.print_info_line((str(mna), 5), verbose)
+    printing.print_info_line(("AC (reduced):", 5), verbose)
+    printing.print_info_line((str(AC), 5), verbose)
+    printing.print_info_line(("J (reduced):", 5), verbose)
+    printing.print_info_line((str(J), 5), verbose)
+    printing.print_info_line(("Nac (reduced):", 5), verbose)
+    printing.print_info_line((str(Nac), 5), verbose)
+
+    sol = results.ac_solution(circ, ostart=start, ostop=stop,
+                              opoints=nsteps, stype=sweep_type, op=x0, outfile=outfile)
+
+    # setup the initial values to start the iteration:
+    nv = len(circ.nodes_dict)
+    j = numpy.complex('j')
+
+    Gmin_matrix = dc_analysis.build_gmin_matrix(
+        circ, options.gmin, mna.shape[0], verbose)
+
+    iter_n = 0  # contatore d'iterazione
+    printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
+    tick = ticker.ticker(increments_for_step=1)
+    tick.display(verbose > 1)
+
+    x = x0
+    for omega in omega_iter:
+        (x, error, solved, n_iter) = dc_analysis.dc_solve(
+            mna=(mna + numpy.multiply(j * omega, AC) + J),
+            Ndc = Nac,
+            Ntran = 0,
+            circ = circuit.Circuit(
+                title="Dummy circuit for AC", filename=None),
+            Gmin = Gmin_matrix,
+            x0 = x,
+            time = None,
+            locked_nodes = None,
+            MAXIT = options.ac_max_nr_iter,
+            skip_Tt = True,
+            verbose = 0)
+        if solved:
+            tick.step(verbose > 1)
+            iter_n = iter_n + 1
+            # hooray!
+            sol.add_line(omega, x)
+        else:
+            break
+
+    tick.hide(verbose > 1)
+
+    if solved:
+        printing.print_info_line(("done.", 1), verbose)
+        ret_value = sol
+    else:
+        printing.print_info_line(("failed.", 1), verbose)
+        ret_value = None
+
+    return ret_value
+
 
 def generate_AC(circ, shape):
-	"""Generates the AC coefficients matrix. 
-	Shape is the REDUCED MNA shape, AC will be of the same shape.
-	
-	It's easy to set up the voltage lines, we know that line 2 refers to 
-	node 2, etc... 
-	
-	A capacitor between nodes n1 and n2 determines the following elements:
-	
-	(KCL node n1) +j*w*C V(n1) - j*w*C V(n2) + ... = ...
-	(KCL node n2) -j*w*C V(n1) + j*w*C V(n2) + ... = ...
-	
-	Inductors generate, together with voltage sources, ccvs, vcvs, a 
-	additional line in the mna matrix, and hence in AC too. The current 
-	flowing through the device gets added to the x vector.
-	
-	In inductors, we have:
-	
-	(KVL over n1 and n2) V(n1) - V(n2) - j*w*L I(inductor) = 0
+    """Generates the AC coefficients matrix.
+    Shape is the REDUCED MNA shape, AC will be of the same shape.
 
-	To understand on which line is the KVL line for an inductor, we use the 
-	*order* of the elements in circuit.elements:
-	First are all voltage lines, then the current ones in the same order of 
-	the elements that introduce them.
-	
-	Returns: the UNREDUCED AC matrix
-	"""
-	AC = numpy.matrix(numpy.zeros((shape[0]+1, shape[1]+1)))
-	nv = len(circ.nodes_dict)# - 1
-	i_eq = 0 #each time we find a vsource or vcvs or ccvs, we'll add one to this.
-	for elem in circ.elements:
-		if isinstance(elem, devices.vsource) or isinstance(elem, devices.evsource) or \
-		isinstance(elem, devices.hvsource):
-			#notice that hvsources aren't yet implemented now!
-			i_eq = i_eq + 1
-		elif isinstance(elem, devices.capacitor):
-			n1 = elem.n1
-			n2 = elem.n2
-			AC[n1, n1] = AC[n1, n1] + elem.C
-			AC[n1, n2] = AC[n1, n2] - elem.C
-			AC[n2, n2] = AC[n2, n2] + elem.C
-			AC[n2, n1] = AC[n2, n1] - elem.C
-		elif isinstance(elem, devices.inductor):
-			AC[nv + i_eq, nv + i_eq] = -1 * elem.L
-			if len(elem.coupling_devices):
-				for cd in elem.coupling_devices:
-					# get id+descr of the other inductor (eg. "L32")
-					other_id_wdescr = cd.get_other_inductor("L"+elem.descr)
-					# find its index to know which column corresponds to its current
-					other_index = circ.find_vde_index(other_id_wdescr, verbose=0)
-					# add the term.
-					AC[nv + i_eq, nv + other_index] += -1 * cd.M
-			i_eq = i_eq + 1
-		
-	if options.cmin > 0:
-		cmin_mat = numpy.matrix(numpy.eye(shape[0]+1-i_eq))
-		cmin_mat[0, 1:] = 1
-		cmin_mat[1:, 0] = 1
-		cmin_mat[0, 0] = cmin_mat.shape[0]-1
-		AC[:-i_eq, :-i_eq] += options.cmin*cmin_mat
+    It's easy to set up the voltage lines, we know that line 2 refers to
+    node 2, etc...
 
-	return AC
+    A capacitor between nodes n1 and n2 determines the following elements:
+
+    (KCL node n1) +j*w*C V(n1) - j*w*C V(n2) + ... = ...
+    (KCL node n2) -j*w*C V(n1) + j*w*C V(n2) + ... = ...
+
+    Inductors generate, together with voltage sources, ccvs, vcvs, a
+    additional line in the mna matrix, and hence in AC too. The current
+    flowing through the device gets added to the x vector.
+
+    In inductors, we have:
+
+    (KVL over n1 and n2) V(n1) - V(n2) - j*w*L I(inductor) = 0
+
+    To understand on which line is the KVL line for an inductor, we use the
+    *order* of the elements in `circuit`:
+    First are all voltage lines, then the current ones in the same order of
+    the elements that introduce them.
+
+    Returns: the UNREDUCED AC matrix
+    """
+    AC = numpy.matrix(numpy.zeros((shape[0] + 1, shape[1] + 1)))
+    nv = len(circ.nodes_dict)  # - 1
+    i_eq = 0  # each time we find a vsource or vcvs or ccvs, we'll add one to this.
+    for elem in circ:
+        if isinstance(elem, devices.VSource) or isinstance(elem, devices.EVSource) or \
+                isinstance(elem, devices.HVSource):
+            # notice that hvsources aren't yet implemented now!
+            i_eq = i_eq + 1
+        elif isinstance(elem, devices.Capacitor):
+            n1 = elem.n1
+            n2 = elem.n2
+            AC[n1, n1] = AC[n1, n1] + elem.value
+            AC[n1, n2] = AC[n1, n2] - elem.value
+            AC[n2, n2] = AC[n2, n2] + elem.value
+            AC[n2, n1] = AC[n2, n1] - elem.value
+        elif isinstance(elem, devices.Inductor):
+            AC[nv + i_eq, nv + i_eq] = -1 * elem.value
+            if len(elem.coupling_devices):
+                for cd in elem.coupling_devices:
+                    # get `part_id` of the other inductor (eg. "L32")
+                    other_id_wdescr = cd.get_other_inductor(elem.part_id)
+                    # find its index to know which column corresponds to its
+                    # current
+                    other_index = circ.find_vde_index(
+                        other_id_wdescr, verbose=0)
+                    # add the term.
+                    AC[nv + i_eq, nv + other_index] += -1 * cd.M
+            i_eq = i_eq + 1
+
+    if options.cmin > 0:
+        cmin_mat = numpy.matrix(numpy.eye(shape[0] + 1 - i_eq))
+        cmin_mat[0, 1:] = 1
+        cmin_mat[1:, 0] = 1
+        cmin_mat[0, 0] = cmin_mat.shape[0] - 1
+        AC[:-i_eq, :-i_eq] += options.cmin * cmin_mat
+
+    return AC
+
 
 def generate_Nac(circ):
-	"""Generate the vector holding the contribution of AC sources.
-	"""
-	n_of_nodes = len(circ.nodes_dict)
-	Nac = numpy.mat(numpy.zeros((n_of_nodes, 1)), dtype=complex)
-	j = numpy.complex('j')
-	# process isources
-	for elem in circ.elements:
-		if isinstance(elem, devices.isource) and elem.abs_ac is not None:
-			#convenzione normale!
-			Nac[elem.n1, 0] = Nac[elem.n1, 0] + elem.abs_ac*numpy.exp(j*elem.arg_ac)
-			Nac[elem.n2, 0] = Nac[elem.n2, 0] - elem.abs_ac*numpy.exp(j*elem.arg_ac)
-	# process vsources
-	# for each vsource, introduce a new variable: the current flowing through it.
-	# then we introduce a KVL equation to be able to solve the circuit
-	for elem in circ.elements:
-		if circuit.is_elem_voltage_defined(elem):
-			index = Nac.shape[0] 
-			Nac = utilities.expand_matrix(Nac, add_a_row=True, add_a_col=False)
-			if isinstance(elem, devices.vsource) and elem.abs_ac is not None:
-				Nac[index, 0] = -1.0*elem.abs_ac*numpy.exp(j*elem.arg_ac)
-	return Nac
+    """Generate the vector holding the contribution of AC sources.
+    """
+    n_of_nodes = len(circ.nodes_dict)
+    Nac = numpy.mat(numpy.zeros((n_of_nodes, 1)), dtype=complex)
+    j = numpy.complex('j')
+    # process `ISource`s
+    for elem in circ:
+        if isinstance(elem, devices.ISource) and elem.abs_ac is not None:
+            # convenzione normale!
+            Nac[elem.n1, 0] = Nac[elem.n1, 0] + \
+                elem.abs_ac * numpy.exp(j * elem.arg_ac)
+            Nac[elem.n2, 0] = Nac[elem.n2, 0] - \
+                elem.abs_ac * numpy.exp(j * elem.arg_ac)
+    # process vsources
+    # for each vsource, introduce a new variable: the current flowing through it.
+    # then we introduce a KVL equation to be able to solve the circuit
+    for elem in circ:
+        if circuit.is_elem_voltage_defined(elem):
+            index = Nac.shape[0]
+            Nac = utilities.expand_matrix(Nac, add_a_row=True, add_a_col=False)
+            if isinstance(elem, devices.VSource) and elem.abs_ac is not None:
+                Nac[index, 0] = -1.0 * elem.abs_ac * numpy.exp(j * elem.arg_ac)
+    return Nac
+
 
 def generate_J(xop, circ, mna, Nac, data_filename, verbose=0):
-	# setup J
-	# build the linearized matrix (stored in J)
-	J = numpy.mat(numpy.zeros(mna.shape))
-	Tlin = numpy.mat(numpy.zeros(Nac.shape))
-        for elem in circ.elements:
-		if elem.is_nonlinear:
-			dc_analysis.update_J_and_Tx(J, Tlin, xop, elem, time=None)
-	#del Tlin # not needed! **DC**!
+    # setup J
+    # build the linearized matrix (stored in J)
+    J = numpy.mat(numpy.zeros(mna.shape))
+    Tlin = numpy.mat(numpy.zeros(Nac.shape))
+    for elem in circ:
+        if elem.is_nonlinear:
+            dc_analysis.update_J_and_Tx(J, Tlin, xop, elem, time=None)
+    # del Tlin # not needed! **DC**!
 
-	return J
-
+    return J
