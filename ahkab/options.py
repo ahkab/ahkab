@@ -20,7 +20,7 @@
 """This module contains options and configuration switches
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import os
 

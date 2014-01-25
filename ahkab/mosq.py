@@ -38,7 +38,7 @@ This MOS Model follows the Square Law Mos Model:
 
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import constants
 import options

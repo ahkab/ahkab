@@ -29,7 +29,7 @@ We need:
     6. a differentiation method to approximate dx/dt
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import sys, imp
 import numpy

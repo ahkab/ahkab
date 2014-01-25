@@ -79,7 +79,7 @@
     Anyway, from a theorical point of view, the above applies.
       """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import numpy
 import sys

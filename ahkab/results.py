@@ -21,7 +21,7 @@
 This is the results module of the simulator.
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import sys, time, copy, pickle
 import numpy

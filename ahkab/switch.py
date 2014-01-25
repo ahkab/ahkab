@@ -33,7 +33,7 @@ sn2 o--+         +--o n2
 
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import math
 import options

@@ -21,7 +21,7 @@
 """ ahkab is an easy electronic circuit simulator.
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import sys
 import tempfile

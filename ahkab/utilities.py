@@ -21,7 +21,7 @@
 This file holds miscellaneous utility functions needed by the simulator.
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import os
 import os.path

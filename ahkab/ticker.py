@@ -21,7 +21,7 @@
 Implements a progress indicator.
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import sys
 

@@ -28,7 +28,7 @@ In order for an AC analysis to be performed, an OP has to be computed first,
 if there is any non-linear device in the circuit.
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import sys
 import numpy

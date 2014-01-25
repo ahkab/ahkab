@@ -24,7 +24,7 @@ AC or DC.
 The principal method is solve(), which carries out the symbolic circuit solution.
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import sympy
 from sympy.matrices import zeros as smzeros

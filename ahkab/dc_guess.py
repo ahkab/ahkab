@@ -20,7 +20,7 @@
 """This module provides the get_dc_guess() method.
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import sys
 import numpy

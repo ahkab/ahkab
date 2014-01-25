@@ -23,7 +23,7 @@ The syntax is explained in the docs and it's based on [1] whenever possible.
 Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import sys
 import imp

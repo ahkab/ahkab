@@ -19,7 +19,7 @@
 
 """Periodic steady state analysis based on the shooting method"""
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import sys
 import numpy
