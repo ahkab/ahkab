@@ -265,7 +265,7 @@ class ISource(Component):
         This simulator uses Normal convention:
         A positive currents flows in a element from the + node to the - node
         """
-        if not self.is_timedependent or (self._time_function == None) or (time == None and self.value is not None):
+        if not self.is_timedependent or (self._time_function == None) or (time == None and self.dc_value is not None):
             return self.dc_value
         else:
             return self._time_function.value(time)
@@ -318,7 +318,7 @@ class VSource(Component):
         If time is not supplied, or set to None, or the source is DC, returns dc_value"""
         if not self.is_timedependent or \
             (self._time_function is None) or \
-                (time is None and self.value is not None):
+                (time is None and self.dc_value is not None):
             return self.dc_value
         else:
             return self._time_function.value(time)
