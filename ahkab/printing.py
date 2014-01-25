@@ -197,7 +197,7 @@ def print_parse_error(nline, line, print_to_stdout=False):
 
 def print_symbolic_results(x):
     keys = x.keys()
-    keys.sort()
+    keys.sort(lambda x, y: cmp(str(x), str(y)))
     for key in keys:
         print str(key) + "\t = " + str(x[key])
     return None
@@ -205,7 +205,7 @@ def print_symbolic_results(x):
 
 def print_symbolic_transfer_functions(x):
     keys = x.keys()
-    keys.sort()
+    keys.sort(lambda x, y: cmp(str(x), str(y)))
     for key in keys:
         print str(key) + " = " + str(x[key]['gain'])
         print '\tDC: ' + str(x[key]['gain0'])
