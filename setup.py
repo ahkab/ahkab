@@ -11,7 +11,7 @@ def read(fname):
         return ""
 
 setup(
-    name='deltasigma',
+    name='ahkab',
     version=__version__,
     packages=find_packages(),
     package_data={

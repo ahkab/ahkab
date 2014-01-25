@@ -41,5 +41,5 @@ def test():
 	ok_(numpy.allclose(res_new, res, rtol=er, atol=ea), "Test colpitts FAILED")
 
 if __name__ == '__main__':
-	data = numpy.loadtxt("colpitts-ref.tran")
 	test()
+	data = numpy.loadtxt("colpitts-ref.tran")
