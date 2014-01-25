@@ -52,7 +52,7 @@ This project was born when I was an enthusistic undergrad, apparently with plent
 I am grateful to prof. Brambilla for teaching one of the most interesting courses of my university years. -GV
 
 ### Contributors ###
-Giuseppe Venturini (@ggventurini on GH) Ian Daniher (@itdaniher, also on GH)
+[Giuseppe Venturini](https://github.com/ggventurini), [Ian Daniher](https://github.com/itdaniher), [Rob Crowter](https://github.com/weilawei).
 
 ### Bugs and patches ###
 
