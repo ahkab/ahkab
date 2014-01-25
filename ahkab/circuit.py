@@ -65,15 +65,15 @@ class Circuit(list):
 
     The following methods are provided to add and remove elements to the circuit:
 
-    add_resistor(self, name, ext_n1, ext_n2, value)
-    add_capacitor(self, name, ext_n1, ext_n2, value, ic=None)
-    add_inductor(self, name, ext_n1, ext_n2, value, ic=None)
-    add_vsource(self, name, ext_n1, ext_n2, dc_value, ac_value, function=None)
-    add_isource(self, name, ext_n1, ext_n2, dc_value, ac_value, function=None)
-    add_diode(self, name, ext_n1, ext_n2, Is=None, Rs=None, m=None, T=None, ic=None)
-    add_mos(self, name, ext_nd, ext_ng, ext_ns, ext_nb, w, l, model_label, models=None, m=None, n=None)
-    add_vcvs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha)
-    add_vccs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha)
+    add_resistor(self, name, n1, n2, value)
+    add_capacitor(self, name, n1, n2, value, ic=None)
+    add_inductor(self, name, n1, n2, value, ic=None)
+    add_vsource(self, name, n1, n2, dc_value, ac_value, function=None)
+    add_isource(self, name, n1, n2, dc_value, ac_value, function=None)
+    add_diode(self, name, n1, n2, Is=None, Rs=None, m=None, T=None, ic=None)
+    add_mos(self, name, nd, ng, ns, nb, w, l, model_label, models=None, m=None, n=None)
+    add_vcvs(self, name, n1, n2, sn1, sn2, alpha)
+    add_vccs(self, name, n1, n2, sn1, sn2, alpha)
     add_user_defined(self, module, label, param_dict)
     remove_elem(self, elem)
 
@@ -84,7 +84,7 @@ class Circuit(list):
     # get the ref node (gnd)
     gnd = mycircuit.get_ground_node()
     # add a node named n1 and a 600 ohm resistor connected between n1 and gnd
-    mycircuit.add_resistor(name="R1", ext_n1="n1", ext_n2=gnd, R=600)
+    mycircuit.add_resistor(name="R1", n1="n1", n2=gnd, R=600)
 
     Refer to the methods help for addtional info.
 
@@ -321,20 +321,20 @@ class Circuit(list):
             del self.models[model_label]
         # should print a warning here
 
-    def add_resistor(self, name, ext_n1, ext_n2, value):
+    def add_resistor(self, name, n1, n2, value):
         """Adds a resistor to the circuit (also takes care that the nodes are
         added as well).
 
         Parameters:
         name (string): the resistor name (eg "R1"). The first letter is replaced by an R
-        ext_n1, ext_n2 (string): the nodes to which the resistor is connected.
+        n1, n2 (string): the nodes to which the resistor is connected.
                     eg. "in" or "out_a"
         R (float): resistance (float)
 
         Returns: True
         """
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
 
         if value == 0:
             raise CircuitError, "ZERO-valued resistors are not allowed."
@@ -344,13 +344,13 @@ class Circuit(list):
         self.append(elem)
         return True
 
-    def add_capacitor(self, name, ext_n1, ext_n2, value, ic=None):
+    def add_capacitor(self, name, n1, n2, value, ic=None):
         """Adds a capacitor to the circuit (also takes care that the nodes are
         added as well).
 
         Parameters:
         name (string): the capacitor name (eg "C1"). The first letter is always C.
-        ext_n1, ext_n2 (string): the nodes to which the element is connected.
+        n1, n2 (string): the nodes to which the element is connected.
                     eg. "in" or "out_a"
         C (float): capacitance (float)
         ic (float): initial condition, see simulation types for how this affects
@@ -361,8 +361,8 @@ class Circuit(list):
         if value == 0:
             raise CircuitError, "ZERO-valued capacitors are not allowed."
 
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
 
         elem = devices.Capacitor(n1=n1, n2=n2, value=value, ic=ic)
         elem.part_id = name
@@ -370,13 +370,13 @@ class Circuit(list):
         self.append(elem)
         return True
 
-    def add_inductor(self, name, ext_n1, ext_n2, value, ic=None):
+    def add_inductor(self, name, n1, n2, value, ic=None):
         """Adds an inductor to the circuit (also takes care that the nodes are
         added as well).
 
         Parameters:
         name (string): the inductor name (eg "Lfilter"). The first letter is always L.
-        ext_n1, ext_n2 (string): the nodes to which the element is connected.
+        n1, n2 (string): the nodes to which the element is connected.
                     eg. "in" or "out_a"
         C (float): inductance
         ic (float): initial condition, see simulation types for how this affects
@@ -385,8 +385,8 @@ class Circuit(list):
         Returns: True
         """
 
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
 
         elem = devices.Inductor(n1=n1, n2=n2, value=value, ic=ic)
         elem.part_id = name
@@ -448,13 +448,13 @@ class Circuit(list):
         self.append(elem)
         return True
 
-    def add_isource(self, part_id, ext_n1, ext_n2, dc_value, ac_value=0, function=None):
+    def add_isource(self, part_id, n1, n2, dc_value, ac_value=0, function=None):
         """Adds a current source to the circuit (also takes care that the nodes
         are added as well).
 
         Parameters:
         name (string): the current source name (eg "IA"). The first letter is always I.
-        ext_n1, ext_n2 (string): the nodes to which the element is connected.
+        n1, n2 (string): the nodes to which the element is connected.
                     eg. "in" or "out_a"
         dc_value (float): DC current
         ac_value (float): AC current (optional)
@@ -462,8 +462,8 @@ class Circuit(list):
 
         Returns: True
         """
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
 
         elem = devices.ISource(
             part_id=part_id, n1=n1, n2=n2, dc_value=dc_value, ac_value=ac_value)
@@ -475,13 +475,13 @@ class Circuit(list):
         self.append(elem)
         return True
 
-    def add_diode(self, part_id, ext_n1, ext_n2, model_label, models=None, Area=None, T=None, ic=None, off=False):
+    def add_diode(self, part_id, n1, n2, model_label, models=None, Area=None, T=None, ic=None, off=False):
         """Adds a diode to the circuit (also takes care that the nodes
         are added as well).
 
         Parameters:
         name (string): the diode name (eg "D1"). The first letter is always D.
-        ext_n1, ext_n2 (string): the nodes to which the element is connected.
+        n1, n2 (string): the nodes to which the element is connected.
                     eg. "in" or "out_a"
         Area (float): Scaled device area (optional, defaults to 1.0)
         T (float): operating temperature (no temperature dependence yet)
@@ -493,8 +493,8 @@ class Circuit(list):
 
         Returns: True
         """
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
         if models is None:
             models = self.models
         if not models.has_key(model_label):
@@ -506,17 +506,17 @@ class Circuit(list):
 
         return True
 
-    def add_mos(self, part_id, ext_nd, ext_ng, ext_ns, ext_nb, w, l, model_label, models=None, m=None, n=None):
+    def add_mos(self, part_id, nd, ng, ns, nb, w, l, model_label, models=None, m=None, n=None):
         """Adds a mosfet to the circuit (also takes care that the nodes
         are added as well).
 
         Parameters:
 
         name (string): the mos name (eg "M1"). The first letter is always M.
-        ext_nd (string): drain node
-        ext_ng (string): gate node
-        ext_ns (string): source node
-        ext_nb (string): bulk node
+        nd (string): drain node
+        ng (string): gate node
+        ns (string): source node
+        nb (string): bulk node
         w (float): gate width
         l (float): gate length
         model_label (string): model identifier
@@ -531,10 +531,10 @@ class Circuit(list):
         if n is None:
             n = 1
 
-        nd = self.add_node(ext_nd)
-        ng = self.add_node(ext_ng)
-        ns = self.add_node(ext_ns)
-        nb = self.add_node(ext_nb)
+        nd = self.add_node(nd)
+        ng = self.add_node(ng)
+        ns = self.add_node(ns)
+        nb = self.add_node(nb)
 
         if models is None:
             models = self.models
@@ -557,15 +557,15 @@ class Circuit(list):
 
         return True
 
-    def add_vcvs(self, part_id, ext_n1, ext_n2, ext_sn1, ext_sn2, value):
+    def add_vcvs(self, part_id, n1, n2, sn1, sn2, value):
         """Adds a voltage-controlled voltage source (vcvs) to the circuit
         (also takes care that its nodes are added as well).
 
         Parameters:
         name (string): the vcvs name (eg "E1"). The first letter is always E.
-        ext_n1, ext_n2 (string): the output port nodes, where the output voltage is
+        n1, n2 (string): the output port nodes, where the output voltage is
                      forced. Eg. "outp", "outm" or "out_a", "out_b".
-        ext_sn1, ext_sn2 (string): the input port nodes, where the input voltage is
+        sn1, sn2 (string): the input port nodes, where the input voltage is
                      read. Eg. "inp", "inm" or "in_a", "in_b".
                 alpha (float): The proportionality factor between input and output voltages:
                 V(outp) - V(outn) = alpha * (V(inp) - V(inn))
@@ -573,10 +573,10 @@ class Circuit(list):
         Returns: True
         """
 
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
-        sn1 = self.add_node(ext_sn1)
-        sn2 = self.add_node(ext_sn2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
+        sn1 = self.add_node(sn1)
+        sn2 = self.add_node(sn2)
 
         elem = devices.EVSource(
             part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=value)
@@ -585,17 +585,17 @@ class Circuit(list):
 
         return True
 
-    def add_vccs(self, part_id, ext_n1, ext_n2, ext_sn1, ext_sn2, value):
+    def add_vccs(self, part_id, n1, n2, sn1, sn2, value):
         """Adds a voltage-controlled current source (vccs) to the circuit
         (also takes care that its nodes are added as well).
 
         Parameters:
         name (string): the vccs name (eg "G1"). The first letter is always G.
-        ext_n1, ext_n2 (string): the output port nodes, where the output current is
+        n1, n2 (string): the output port nodes, where the output current is
                      forced. Eg. "outp", "outm" or "out_a", "out_b".
                      The usual convention is used: a positive current
-                     flows into ext_n1 and out of ext_n2.
-        ext_sn1, ext_sn2 (string): the input port nodes, where the input voltage is
+                     flows into n1 and out of n2.
+        sn1, sn2 (string): the input port nodes, where the input voltage is
                        read. Eg. "inp", "inm" or "in_a", "in_b".
                 alpha (float): The proportionality factor between input and output voltages:
                 I[G1] = alpha * (V(inp) - V(inn))
@@ -603,10 +603,10 @@ class Circuit(list):
         Returns: True
         """
 
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
-        sn1 = self.add_node(ext_sn1)
-        sn2 = self.add_node(ext_sn2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
+        sn1 = self.add_node(sn1)
+        sn2 = self.add_node(sn2)
 
         elem = devices.GISource(
             part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=value)
@@ -614,7 +614,7 @@ class Circuit(list):
         self.append(elem)
         return True
 
-    def add_switch(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, ic, model_label, models=None):
+    def add_switch(self, name, n1, n2, sn1, sn2, ic, model_label, models=None):
         """Adds a voltage-controlled or current-controlled switch to the circuit
         (also takes care that its nodes are added as well).
 
@@ -630,9 +630,9 @@ class Circuit(list):
         Parameters:
         name (string): the switch name (eg "S1" - voltage-controlled - or 'W1' -
                        current-controlled). The first letter is always S or W.
-        ext_n1, ext_n2 (string): the output port nodes, where the switch is connected.
+        n1, n2 (string): the output port nodes, where the switch is connected.
                      Eg. "outp", "outm" or "out_a", "out_b".
-        ext_sn1, ext_sn2 (string): the input port nodes, where the input voltage is
+        sn1, sn2 (string): the input port nodes, where the input voltage is
                        read. Eg. "inp", "inm" or "in_a", "in_b".
         ic (boolean): the initial conditions for transient simulation. Not currently
                       implemented!
@@ -644,10 +644,10 @@ class Circuit(list):
         Returns: True
         """
 
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
-        sn1 = self.add_node(ext_sn1)
-        sn2 = self.add_node(ext_sn2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
+        sn1 = self.add_node(sn1)
+        sn2 = self.add_node(sn2)
 
         if models is None:
             models = self.models
