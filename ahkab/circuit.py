@@ -108,6 +108,7 @@ class Circuit(list):
         self.nodes_dict = {}  # {int_node:ext_node}
         self.internal_nodes = 0
         self.models = {}
+        self.gnd = '0'
 
     def create_node(self, name):
         """Creates a new node, adds it to the circuit and returns it to the user
