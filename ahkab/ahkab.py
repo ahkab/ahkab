@@ -314,7 +314,12 @@ def run(circ, an_list=None):
     if not an_list:
         an_list = _queue
     else:
-        an_list = list(an_list)
+        if type(an_list) == tuple:
+            an_list = list(an_list)
+        elif type(an_list) == dict:
+            an_list = [an_list] # run(mycircuit, op1)
+        elif type(an_list) == list:
+            pass
 
     while len(an_list):
         an_item = an_list.pop(0)
