@@ -48,8 +48,9 @@ from ac import specs as ac_spec
 from transient import specs as tran_spec
 from pss import specs as pss_spec
 from symbolic import specs as symbolic_spec
+from pz import specs as pz_specs
 specs = {}
-for i in dc_spec, ac_spec, tran_spec, pss_spec, symbolic_spec:
+for i in dc_spec, ac_spec, tran_spec, pss_spec, symbolic_spec, pz_specs:
     specs.update(i)
 
 

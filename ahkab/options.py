@@ -91,6 +91,9 @@ ac_lin_step = 'LIN'
 ac_max_nr_iter = 20
 ac_phase_in_deg = False
 
+#pz
+pz_max = 1e12
+
 # plotting
 # Set to None to disable writing plots to disk
 plotting_show_plots = ('DISPLAY' in os.environ)

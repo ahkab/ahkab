@@ -39,6 +39,7 @@ import transient
 import ac
 import pss
 import symbolic
+import pz
 
 import netlist_parser
 
@@ -226,7 +227,7 @@ def new_pss(
                                  they are optional, but if they have already been
                                  computed reusing them saves time.
     outfile (string): the filename of the output file where the results will be written.
-                      '.tran' is automatically added at the end to prevent different
+                      '.pss' is automatically added at the end to prevent different
                       analyses from overwriting each-other's results.
                       If unset defaults to stdout.
     verbose (int): the verbosity level, from 0 (silent) to 6 (debug).
@@ -244,6 +245,42 @@ def new_pss(
     return {
         'type': "pss", "method": method, 'period': period, 'points': points,
         'autonomous': autonomous, 'x0': x0, 'outfile': outfile, 'verbose': verbose}
+
+
+def new_pz(
+    input_source, output_port, shift=0.0, MNA=None, outfile=None, verbose=0):
+    """Assembles a Pole-Zero analysis and returns the analysis object.
+
+    The analysis itself can be run with:
+    ahkab.run(...)
+    or queued with ahakab.queue(...) and then run subsequently.
+
+    Parameters:
+    input_source (str or instance): the input source for zero calculation
+    output_port (nodes tuple, node, or str): the output port.
+    shift (float): attempt the calculation at a shifted freq.
+    MNA (numpy matrices): the numpy matrice to be used to solve the circuit.
+                          It is optional, but, if it's already been
+                          computed, reusing it may save time.
+    outfile (string): the filename of the output file where the results will be written.
+                      '.pz' is automatically added at the end to prevent different
+                      analyses from overwriting each-other's results.
+                      If unset defaults to stdout.
+    verbose (int): the verbosity level, from 0 (silent) to 6 (debug).
+
+    Returns: the analysis object (a dict)
+    """
+    if outfile is None or outfile == 'stdout':
+        if options.cli:
+            outfile = 'stdout'
+        else:
+            ofi, outfile = tempfile.mkstemp(suffix='.pz')
+            _of.append(ofi)  # keep the file open until quitting
+    else:
+        outfile += '.pz'
+    return {
+        'type': "pz", 'input_source':input_source, 'output_port':output_port, 
+         shift: 'shift', MNA:'MNA', 'outfile': outfile, 'verbose': verbose}
 
 
 def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=0):
@@ -381,7 +418,7 @@ def process_postproc(postproc_list, title, results, outfilename):
 analysis = {'op': dc_analysis.op_analysis, 'dc': dc_analysis.dc_analysis,
             'tran': transient.transient_analysis, 'ac': ac.ac_analysis,
             'pss': pss.pss_analysis, 'symbolic': symbolic.symbolic_analysis,
-            'temp': set_temperature}
+            'temp': set_temperature, 'pz':pz.calculate_singularities}
 
 
 def main(filename, outfile="stdout", verbose=3):
