@@ -34,6 +34,43 @@ import circuit
 import dc_analysis 
 import devices
 import transient
+import plotting
+import options
+
+specs = {'pz': {'tokens': ({
+                           'label': 'output',
+                           'pos': 0,
+                           'type': str,
+                           'needed': True,
+                           'dest': 'output_port',
+                           'default': None
+                           },
+                           {
+                           'label': 'input',
+                           'pos': 1,
+                           'type': str,
+                           'needed': True,
+                           'dest': 'input_source',
+                           'default': None
+                           },
+                           {
+                           'label': 'zeros',
+                           'pos': 2,
+                           'type': bool,
+                           'needed': False,
+                           'dest': 'calc_zeros',
+                           'default': True
+                           },
+                           {
+                           'label': 'shift',
+                           'pos': 3,
+                           'type': float,
+                           'needed': False,
+                           'dest': 'shift',
+                           'default': 0.0
+                           })
+               }
+        }
 
 def enlarge_matrix(M):
     if M is None:
@@ -45,7 +82,9 @@ def calculate_poles(mc):
     return calculate_singularities(mc, input_source=None, output_port=None, 
                                    calc_zeros=False, MNA=None, shift=0)[0]
 
-def calculate_singularities(mc, input_source=None, output_port=None, calc_zeros=False, MNA=None, shift=0):
+def calculate_singularities(mc, input_source=None, output_port=None, 
+                            calc_zeros=False, MNA=None, shift=0, outfile=None,
+                            verbose=3):
     """Calculate poles and zeros.
 
     *Parameters:*
@@ -69,18 +108,24 @@ def calculate_singularities(mc, input_source=None, output_port=None, calc_zeros=
     if calc_zeros:
         if type(input_source) != str:
             input_source = input_source.part_id
+        if type(output_port) == str:
+            output_port = plotting.split_netlist_label(output_port)[0] 
+            output_port = [o[1:] for o in output_port]
+            output_port = map(str.lower, output_port)
         if np.isscalar(output_port):
             output_port = (output_port, mc.gnd)
-        output_port = map(mc.ext_node_to_int, output_port)
+        if (type(output_port) == tuple or type(output_port) == list) \
+           and type(output_port[0]) == str:
+            output_port = map(mc.ext_node_to_int, output_port)
         RIIN = []
         ROUT = []
-    if not MNA:
+    if MNA is None:
         MNA, N = dc_analysis.generate_mna_and_N(mc)
     D = transient.generate_D(mc, MNA[1:, 1:].shape)
     MNAinv = np.linalg.inv(MNA[1:, 1:] + shift*D[1:, 1:])
     nodes_m1 = len(mc.nodes_dict) - 1
     vde1 = -1
-    MC = np.zeros(N.shape)[1:, :]
+    MC = np.zeros((MNA.shape[0] - 1, 1))
     TCM = None
     dei_source = 0
     for e1 in mc:
@@ -147,7 +192,7 @@ def calculate_singularities(mc, input_source=None, output_port=None, calc_zeros=
     if calc_zeros and TCM is not None:
         # re-loop, get the ROUT elements
         vde1 = -1
-        MC = np.zeros(N.shape)[1:, :]
+        MC = np.zeros((MNA.shape[0] - 1, 1))
         ROUT = []
         for e1 in mc:
             if circuit.is_elem_voltage_defined(e1):
@@ -173,16 +218,25 @@ def calculate_singularities(mc, input_source=None, output_port=None, calc_zeros=
         RIIN = np.array(RIIN).reshape((-1, 1))
         RIIN = np.tile(RIIN, (1, RIIN.shape[0]))
         ROUT = np.diag(np.atleast_1d(np.array(ROUT)))
-        if ROUT.any() and ROUTIN:
-            ZTCM = TCM - np.dot(RIIN, ROUT)/ROUTIN
-            if np.linalg.det(ZTCM):
+        if ROUT.any():
+            try:
+                ZTCM = TCM - np.dot(RIIN, ROUT)/ROUTIN
+                ##if np.linalg.det(ZTCM):
                 zeros = 1./(2.*np.pi)*(1./np.linalg.eigvals(ZTCM) + shift)
-            else:
+            except ValueError:
                 return calculate_singularities(mc, input_source, output_port, 
                                            calc_zeros, MNA=MNA, 
-                                           shift=np.abs(np.random.uniform())*1e3)
+                                           shift=shift*np.abs(np.random.uniform()+1)*10)
+        elif shift < 1e12:
+            return calculate_singularities(mc, input_source, output_port, 
+                                       calc_zeros, MNA=MNA, 
+                                       shift=shift*np.abs(np.random.uniform()+1)*10)
         else:
             zeros = []
     else:
         zeros = []
+    poles = np.array(filter(lambda a: np.abs(a) < options.pz_max, poles))
+    zeros = np.array(filter(lambda a: np.abs(a) < options.pz_max, zeros))
+    print poles
+    print zeros
     return poles, zeros
