@@ -439,10 +439,15 @@ def parse_substitutions(slist):
         v1, v2 = l.split("=")
         letter_id1 = v1[0].upper() if v1[0].upper() != 'R' else 'G'
         letter_id2 = v2[0].upper() if v2[0].upper() != 'R' else 'G'
-        subs.update({
-            sympy.Symbol(letter_id1 + v1[1:].lower(), real=True):
-            sympy.Symbol(letter_id2 + v2[1:].lower(), real=True)
-        })
+        if letter_id1[0] in ('R', 'G', 'L', 'C', 'M'):
+            s1 = sympy.Symbol(letter_id1 + v1[1:], real=True, positive=True)
+        else:
+            s1 = sympy.Symbol(letter_id1 + v1[1:], real=True)
+        if letter_id2[0] in ('R', 'G', 'L', 'C', 'M'):
+            s2 = sympy.Symbol(letter_id2 + v2[1:], real=True, positive=True)
+        else:
+            s2 = sympy.Symbol(letter_id2 + v2[1:], real=True)
+        subs.update({s1:s2})
     return subs
 
 # TODO: THESE  WILL BE REMOVED - AS SOON AS SOME SYMPY BUGS ARE FIXED ####
