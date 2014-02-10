@@ -355,7 +355,6 @@ def set_temperature(T):
         printing.print_warning(u"The temperature will be set to %f \xB0 C.")
     constants.T = utilities.Celsius2Kelvin(T)
 
-
 def process_postproc(postproc_list, title, results, outfilename):
     """Runs the post-processing operations, such as plotting.
     postproc_list: list of post processing operations as returned by main()
@@ -445,3 +444,4 @@ def _handle_netlist_ics(circ, an_list, ic_list):
             elif an_list.index(an) == 0:
                 printing.print_general_error("Unknown x0 %s" % an["x0"])
                 sys.exit(54)
+
