@@ -17,10 +17,10 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module contains options and configuration switches 
+"""This module contains options and configuration switches
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import os
 
@@ -63,13 +63,13 @@ dc_sweep_skip_allowed = True
 # transient
 default_tran_method = "IMPLICIT_EULER"
 hmin = 1e-20
-transient_max_time_iter = 0 #disabled
+transient_max_time_iter = 0  # disabled
 transient_max_nr_iter = 20
 # use the prediction value as first guess for x(n+1), otherwise uses x(n)
 transient_prediction_as_x0 = True
 transient_use_aposteriori_step_control = True
 transient_no_step_control = False
-# we do not want to redo the iteraction if the aposteriori check suggests a step that is 
+# we do not want to redo the iteraction if the aposteriori check suggests a step that is
 # very close to the one we already used. 0.9 seems to be a good idea.
 transient_aposteriori_step_threshold = 0.9
 cmin = 1e-18

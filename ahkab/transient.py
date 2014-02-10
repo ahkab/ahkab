@@ -29,7 +29,7 @@ We need:
     6. a differentiation method to approximate dx/dt
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import sys, imp
 import numpy
@@ -441,12 +441,12 @@ def generate_D(circ, shape):
         elif isinstance(elem, devices.Capacitor):
             n1 = elem.n1
             n2 = elem.n2
-            D[n1, n1] = D[n1, n1] + elem.C
-            D[n1, n2] = D[n1, n2] - elem.C
-            D[n2, n2] = D[n2, n2] + elem.C
-            D[n2, n1] = D[n2, n1] - elem.C
+            D[n1, n1] = D[n1, n1] + elem.value
+            D[n1, n2] = D[n1, n2] - elem.value
+            D[n2, n2] = D[n2, n2] + elem.value
+            D[n2, n1] = D[n2, n1] - elem.value
         elif isinstance(elem, devices.Inductor):
-            D[ nv + i_eq, nv + i_eq ] = -1 * elem.L
+            D[ nv + i_eq, nv + i_eq ] = -1 * elem.value
             # Mutual inductors (coupled inductors)
             # need to add a -M dI/dt where I is the current in the OTHER inductor.
             if len(elem.coupling_devices):

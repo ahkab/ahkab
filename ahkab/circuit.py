@@ -17,19 +17,24 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import sys
 import math
 
 import devices
-import diode, ekv, mosq, switch
+import diode
+import ekv
+import mosq
+import switch
 import printing
 
 # will be added here by netlist_parser and circuit instances
 user_defined_modules_dict = {}
 
+
 class Circuit(list):
+
     """Every circuit is described in the ahkab simulator by a Circuit class.
     This class holds everything is needed to simulate the circuit (except
     the specification of the analyses to be performed).
@@ -60,15 +65,15 @@ class Circuit(list):
 
     The following methods are provided to add and remove elements to the circuit:
 
-    add_resistor(self, name, ext_n1, ext_n2, value)
-    add_capacitor(self, name, ext_n1, ext_n2, value, ic=None)
-    add_inductor(self, name, ext_n1, ext_n2, value, ic=None)
-    add_vsource(self, name, ext_n1, ext_n2, vdc, vac, function=None)
-    add_isource(self, name, ext_n1, ext_n2, idc, iac, function=None)
-    add_diode(self, name, ext_n1, ext_n2, Is=None, Rs=None, m=None, T=None, ic=None)
-    add_mos(self, name, ext_nd, ext_ng, ext_ns, ext_nb, w, l, model_label, models=None, m=None, n=None)
-    add_vcvs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha)
-    add_vccs(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, alpha)
+    add_resistor(self, name, n1, n2, value)
+    add_capacitor(self, name, n1, n2, value, ic=None)
+    add_inductor(self, name, n1, n2, value, ic=None)
+    add_vsource(self, name, n1, n2, dc_value, ac_value, function=None)
+    add_isource(self, name, n1, n2, dc_value, ac_value, function=None)
+    add_diode(self, name, n1, n2, Is=None, Rs=None, m=None, T=None, ic=None)
+    add_mos(self, name, nd, ng, ns, nb, w, l, model_label, models=None, m=None, n=None)
+    add_vcvs(self, name, n1, n2, sn1, sn2, alpha)
+    add_vccs(self, name, n1, n2, sn1, sn2, alpha)
     add_user_defined(self, module, label, param_dict)
     remove_elem(self, elem)
 
@@ -79,7 +84,7 @@ class Circuit(list):
     # get the ref node (gnd)
     gnd = mycircuit.get_ground_node()
     # add a node named n1 and a 600 ohm resistor connected between n1 and gnd
-    mycircuit.add_resistor(name="R1", ext_n1="n1", ext_n2=gnd, R=600)
+    mycircuit.add_resistor(name="R1", n1="n1", n2=gnd, R=600)
 
     Refer to the methods help for addtional info.
 
@@ -100,9 +105,10 @@ class Circuit(list):
     def __init__(self, title, filename=None):
         self.title = title
         self.filename = filename
-        self.nodes_dict = {} # {int_node:ext_node}
+        self.nodes_dict = {}  # {int_node:ext_node}
         self.internal_nodes = 0
         self.models = {}
+        self.gnd = '0'
 
     def create_node(self, name):
         """Creates a new node, adds it to the circuit and returns it to the user
@@ -124,8 +130,8 @@ class Circuit(list):
             if name == '0':
                 int_node = 0
             else:
-                int_node = len(self.nodes_dict) + 1*(not got_ref)
-            self.nodes_dict.update({int_node:name})
+                int_node = len(self.nodes_dict) + 1 * (not got_ref)
+            self.nodes_dict.update({int_node: name})
         else:
             raise ValueError
         return name
@@ -153,15 +159,15 @@ class Circuit(list):
         """
         got_ref = self.nodes_dict.has_key(0)
 
-        #test: do we already have it in the dictionary?
+        # test: do we already have it in the dictionary?
         try:
             self.nodes_dict.values().index(ext_name)
         except ValueError:
             if ext_name == '0':
                 int_node = 0
             else:
-                int_node = len(self.nodes_dict) + 1*(not got_ref)
-            self.nodes_dict.update({int_node:ext_name})
+                int_node = len(self.nodes_dict) + 1 * (not got_ref)
+            self.nodes_dict.update({int_node: ext_name})
         else:
             for (key, value) in self.nodes_dict.iteritems():
                 if value == ext_name:
@@ -256,7 +262,7 @@ class Circuit(list):
 
     def has_duplicate_elem(self):
         for index1 in range(len(self)):
-            for index2 in range(index1+1, len(self)):
+            for index2 in range(index1 + 1, len(self)):
                 if self[index1].part_id == self[index2].part_id:
                     return True
         return False
@@ -264,6 +270,7 @@ class Circuit(list):
     def get_ground_node(self):
         "Returns the (external) reference node. AKA GND."
         return '0'
+
     def get_elem_by_name(self, name):
         for e in self:
             if e.part_id.lower() == name.lower():
@@ -296,7 +303,7 @@ class Circuit(list):
             model_iter.name = model_label
         else:
             raise CircuitError, "Unknown model type %s" % (model_type,)
-        self.models.update({model_label:model_iter})
+        self.models.update({model_label: model_iter})
         return self.models
 
     def remove_model(self, model_label):
@@ -315,20 +322,20 @@ class Circuit(list):
             del self.models[model_label]
         # should print a warning here
 
-    def add_resistor(self, name, ext_n1, ext_n2, value):
+    def add_resistor(self, name, n1, n2, value):
         """Adds a resistor to the circuit (also takes care that the nodes are
         added as well).
 
         Parameters:
         name (string): the resistor name (eg "R1"). The first letter is replaced by an R
-        ext_n1, ext_n2 (string): the nodes to which the resistor is connected.
+        n1, n2 (string): the nodes to which the resistor is connected.
                     eg. "in" or "out_a"
         R (float): resistance (float)
 
         Returns: True
         """
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
 
         if value == 0:
             raise CircuitError, "ZERO-valued resistors are not allowed."
@@ -338,13 +345,13 @@ class Circuit(list):
         self.append(elem)
         return True
 
-    def add_capacitor(self, name, ext_n1, ext_n2, value, ic=None):
+    def add_capacitor(self, name, n1, n2, value, ic=None):
         """Adds a capacitor to the circuit (also takes care that the nodes are
         added as well).
 
         Parameters:
         name (string): the capacitor name (eg "C1"). The first letter is always C.
-        ext_n1, ext_n2 (string): the nodes to which the element is connected.
+        n1, n2 (string): the nodes to which the element is connected.
                     eg. "in" or "out_a"
         C (float): capacitance (float)
         ic (float): initial condition, see simulation types for how this affects
@@ -355,8 +362,8 @@ class Circuit(list):
         if value == 0:
             raise CircuitError, "ZERO-valued capacitors are not allowed."
 
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
 
         elem = devices.Capacitor(n1=n1, n2=n2, value=value, ic=ic)
         elem.part_id = name
@@ -364,13 +371,13 @@ class Circuit(list):
         self.append(elem)
         return True
 
-    def add_inductor(self, name, ext_n1, ext_n2, value, ic=None):
+    def add_inductor(self, name, n1, n2, value, ic=None):
         """Adds an inductor to the circuit (also takes care that the nodes are
         added as well).
 
         Parameters:
         name (string): the inductor name (eg "Lfilter"). The first letter is always L.
-        ext_n1, ext_n2 (string): the nodes to which the element is connected.
+        n1, n2 (string): the nodes to which the element is connected.
                     eg. "in" or "out_a"
         C (float): inductance
         ic (float): initial condition, see simulation types for how this affects
@@ -379,8 +386,8 @@ class Circuit(list):
         Returns: True
         """
 
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
 
         elem = devices.Inductor(n1=n1, n2=n2, value=value, ic=ic)
         elem.part_id = name
@@ -401,7 +408,7 @@ class Circuit(list):
 
         if L1elem is None or L2elem is None:
             error_msg = "One or more coupled inductors for %s were not found: %s (found: %s), %s (found: %s)." % \
-            (name, L1, L1elem is not None, L2, L2elem is not None)
+                (name, L1, L1elem is not None, L2, L2elem is not None)
             printing.print_general_error(error_msg)
             printing.print_general_error("Quitting.")
             sys.exit(30)
@@ -415,7 +422,7 @@ class Circuit(list):
 
         self.append(elem)
 
-    def add_vsource(self, part_id, n1, n2, value, vac=0, function=None):
+    def add_vsource(self, part_id, n1, n2, dc_value, ac_value=0, function=None):
         """Adds a voltage source to the circuit (also takes care that the nodes
         are added as well).
 
@@ -423,8 +430,8 @@ class Circuit(list):
         name (string): the volatge source name (eg "VA"). The first letter is always V.
         n1, n2 (string): the nodes to which the element is connected.
                     eg. "in" or "out_a"
-        vdc (float): DC voltage
-        vac (float): AC voltage (optional)
+        dc_value (float): DC voltage
+        ac_value (float): AC voltage (optional)
         function (function): optional time function. See devices.py for built-ins.
 
         Returns: True
@@ -432,7 +439,8 @@ class Circuit(list):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
 
-        elem = devices.VSource(part_id=part_id, n1=n1, n2=n2, value=value, abs_ac=vac)
+        elem = devices.VSource(
+            part_id=part_id, n1=n1, n2=n2, dc_value=dc_value, ac_value=ac_value)
 
         if function is not None:
             elem.is_timedependent = True
@@ -441,24 +449,25 @@ class Circuit(list):
         self.append(elem)
         return True
 
-    def add_isource(self, part_id, ext_n1, ext_n2, idc, iac=0, function=None):
+    def add_isource(self, part_id, n1, n2, dc_value, ac_value=0, function=None):
         """Adds a current source to the circuit (also takes care that the nodes
         are added as well).
 
         Parameters:
         name (string): the current source name (eg "IA"). The first letter is always I.
-        ext_n1, ext_n2 (string): the nodes to which the element is connected.
+        n1, n2 (string): the nodes to which the element is connected.
                     eg. "in" or "out_a"
-        idc (float): DC current
-        iac (float): AC current (optional)
+        dc_value (float): DC current
+        ac_value (float): AC current (optional)
         function (function): optional time function. See devices.py for built-ins.
 
         Returns: True
         """
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
 
-        elem = devices.ISource(part_id=part_id, n1=n1, n2=n2, idc=idc, abs_ac=iac)
+        elem = devices.ISource(
+            part_id=part_id, n1=n1, n2=n2, dc_value=dc_value, ac_value=ac_value)
 
         if function is not None:
             elem.is_timedependent = True
@@ -467,13 +476,13 @@ class Circuit(list):
         self.append(elem)
         return True
 
-    def add_diode(self, part_id, ext_n1, ext_n2, model_label, models=None, Area=None, T=None, ic=None, off=False):
+    def add_diode(self, part_id, n1, n2, model_label, models=None, Area=None, T=None, ic=None, off=False):
         """Adds a diode to the circuit (also takes care that the nodes
         are added as well).
 
         Parameters:
         name (string): the diode name (eg "D1"). The first letter is always D.
-        ext_n1, ext_n2 (string): the nodes to which the element is connected.
+        n1, n2 (string): the nodes to which the element is connected.
                     eg. "in" or "out_a"
         Area (float): Scaled device area (optional, defaults to 1.0)
         T (float): operating temperature (no temperature dependence yet)
@@ -485,29 +494,30 @@ class Circuit(list):
 
         Returns: True
         """
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
         if models is None:
             models = self.models
         if not models.has_key(model_label):
-            raise ModelError, "Unknown diode model id: "+model_label
+            raise ModelError, "Unknown diode model id: " + model_label
 
-        elem = diode.diode(part_id=part_id, n1=n1, n2=n2, model=models[model_label], AREA=Area, T=T, ic=ic, off=off)
+        elem = diode.diode(part_id=part_id, n1=n1, n2=n2, model=models[
+                           model_label], AREA=Area, T=T, ic=ic, off=off)
         self.append(elem)
 
         return True
 
-    def add_mos(self, part_id, ext_nd, ext_ng, ext_ns, ext_nb, w, l, model_label, models=None, m=None, n=None):
+    def add_mos(self, part_id, nd, ng, ns, nb, w, l, model_label, models=None, m=None, n=None):
         """Adds a mosfet to the circuit (also takes care that the nodes
         are added as well).
 
         Parameters:
 
         name (string): the mos name (eg "M1"). The first letter is always M.
-        ext_nd (string): drain node
-        ext_ng (string): gate node
-        ext_ns (string): source node
-        ext_nb (string): bulk node
+        nd (string): drain node
+        ng (string): gate node
+        ns (string): source node
+        nb (string): bulk node
         w (float): gate width
         l (float): gate length
         model_label (string): model identifier
@@ -522,39 +532,41 @@ class Circuit(list):
         if n is None:
             n = 1
 
-        nd = self.add_node(ext_nd)
-        ng = self.add_node(ext_ng)
-        ns = self.add_node(ext_ns)
-        nb = self.add_node(ext_nb)
+        nd = self.add_node(nd)
+        ng = self.add_node(ng)
+        ns = self.add_node(ns)
+        nb = self.add_node(nb)
 
         if models is None:
             models = self.models
-        
+
         if not models.has_key(model_label):
-            raise ModelError, "Unknown model id: "+model_label
-        
+            raise ModelError, "Unknown model id: " + model_label
+
         if isinstance(models[model_label], ekv.ekv_mos_model):
-            elem = ekv.ekv_device(part_id, nd, ng, ns, nb, w, l, models[model_label], m, n)
-        
+            elem = ekv.ekv_device(
+                part_id, nd, ng, ns, nb, w, l, models[model_label], m, n)
+
         elif isinstance(models[model_label], mosq.mosq_mos_model):
-            elem =  mosq.mosq_device(part_id, nd, ng, ns, nb, w, l, models[model_label], m, n)
-        
+            elem = mosq.mosq_device(
+                part_id, nd, ng, ns, nb, w, l, models[model_label], m, n)
+
         else:
-            raise Exception, "Unknown model type for "+model_label
+            raise Exception, "Unknown model type for " + model_label
 
         self.append(elem)
 
         return True
 
-    def add_vcvs(self, part_id, ext_n1, ext_n2, ext_sn1, ext_sn2, value):
+    def add_vcvs(self, part_id, n1, n2, sn1, sn2, value):
         """Adds a voltage-controlled voltage source (vcvs) to the circuit
         (also takes care that its nodes are added as well).
 
         Parameters:
         name (string): the vcvs name (eg "E1"). The first letter is always E.
-        ext_n1, ext_n2 (string): the output port nodes, where the output voltage is
+        n1, n2 (string): the output port nodes, where the output voltage is
                      forced. Eg. "outp", "outm" or "out_a", "out_b".
-        ext_sn1, ext_sn2 (string): the input port nodes, where the input voltage is
+        sn1, sn2 (string): the input port nodes, where the input voltage is
                      read. Eg. "inp", "inm" or "in_a", "in_b".
                 alpha (float): The proportionality factor between input and output voltages:
                 V(outp) - V(outn) = alpha * (V(inp) - V(inn))
@@ -562,28 +574,29 @@ class Circuit(list):
         Returns: True
         """
 
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
-        sn1 = self.add_node(ext_sn1)
-        sn2 = self.add_node(ext_sn2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
+        sn1 = self.add_node(sn1)
+        sn2 = self.add_node(sn2)
 
-        elem = devices.EVSource(part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=value)
+        elem = devices.EVSource(
+            part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=value)
 
         self.append(elem)
 
         return True
 
-    def add_vccs(self, part_id, ext_n1, ext_n2, ext_sn1, ext_sn2, value):
+    def add_vccs(self, part_id, n1, n2, sn1, sn2, value):
         """Adds a voltage-controlled current source (vccs) to the circuit
         (also takes care that its nodes are added as well).
 
         Parameters:
         name (string): the vccs name (eg "G1"). The first letter is always G.
-        ext_n1, ext_n2 (string): the output port nodes, where the output current is
+        n1, n2 (string): the output port nodes, where the output current is
                      forced. Eg. "outp", "outm" or "out_a", "out_b".
                      The usual convention is used: a positive current
-                     flows into ext_n1 and out of ext_n2.
-        ext_sn1, ext_sn2 (string): the input port nodes, where the input voltage is
+                     flows into n1 and out of n2.
+        sn1, sn2 (string): the input port nodes, where the input voltage is
                        read. Eg. "inp", "inm" or "in_a", "in_b".
                 alpha (float): The proportionality factor between input and output voltages:
                 I[G1] = alpha * (V(inp) - V(inn))
@@ -591,17 +604,18 @@ class Circuit(list):
         Returns: True
         """
 
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
-        sn1 = self.add_node(ext_sn1)
-        sn2 = self.add_node(ext_sn2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
+        sn1 = self.add_node(sn1)
+        sn2 = self.add_node(sn2)
 
-        elem = devices.GISource(part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=value)
+        elem = devices.GISource(
+            part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=value)
 
         self.append(elem)
         return True
 
-    def add_switch(self, name, ext_n1, ext_n2, ext_sn1, ext_sn2, ic, model_label, models=None):
+    def add_switch(self, name, n1, n2, sn1, sn2, ic, model_label, models=None):
         """Adds a voltage-controlled or current-controlled switch to the circuit
         (also takes care that its nodes are added as well).
 
@@ -617,9 +631,9 @@ class Circuit(list):
         Parameters:
         name (string): the switch name (eg "S1" - voltage-controlled - or 'W1' -
                        current-controlled). The first letter is always S or W.
-        ext_n1, ext_n2 (string): the output port nodes, where the switch is connected.
+        n1, n2 (string): the output port nodes, where the switch is connected.
                      Eg. "outp", "outm" or "out_a", "out_b".
-        ext_sn1, ext_sn2 (string): the input port nodes, where the input voltage is
+        sn1, sn2 (string): the input port nodes, where the input voltage is
                        read. Eg. "inp", "inm" or "in_a", "in_b".
         ic (boolean): the initial conditions for transient simulation. Not currently
                       implemented!
@@ -631,17 +645,18 @@ class Circuit(list):
         Returns: True
         """
 
-        n1 = self.add_node(ext_n1)
-        n2 = self.add_node(ext_n2)
-        sn1 = self.add_node(ext_sn1)
-        sn2 = self.add_node(ext_sn2)
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
+        sn1 = self.add_node(sn1)
+        sn2 = self.add_node(sn2)
 
         if models is None:
             models = self.models
         if not models.has_key(model_label):
-            raise ModelError, "Unknown switch model id: "+model_label
+            raise ModelError, "Unknown switch model id: " + model_label
 
-        elem = switch.switch_device(part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, model=models[model_label])
+        elem = switch.switch_device(
+            part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, model=models[model_label])
         self.append(elem)
         return True
 
@@ -659,13 +674,12 @@ class Circuit(list):
         else:
             fp, pathname, description = imp.find_module(module_name)
             module = imp.load_module(module_name, fp, pathname, description)
-            circuit.user_defined_modules_dict.update({module_name:module})
+            circuit.user_defined_modules_dict.update({module_name: module})
 
         elem_class = getattr(module, label)
 
         param_dict.update({"convert_units": convert_units})
         param_dict.update({"circuit_node": self.add_node})
-
 
         elem = elem_class(**param_dict)
         elem.part_id = "y%s" % name[1:]
@@ -673,8 +687,8 @@ class Circuit(list):
         if hasattr(elem, "check"):
             selfcheck_result, error_msg = elem.check()
             if not selfcheck_result:
-                raise NetlistParseError, "module: " + module_name + " elem type: "+ elem_type_name+" error: "+\
-                error_msg
+                raise NetlistParseError, "module: " + module_name + " elem type: " + elem_type_name + " error: " +\
+                    error_msg
 
         self.append(elem)
         return True
@@ -707,7 +721,7 @@ class Circuit(list):
         for n in nodes:
             for e in self:
                 if hasattr(elem, n1) and e.n1 == n or\
-                hasattr(elem, n2) and e.n2 == n:
+                        hasattr(elem, n2) and e.n2 == n:
                     remove_list.remove(n)
                     break
                 if elem.is_nonlinear:
@@ -740,9 +754,11 @@ class Circuit(list):
                     vde_index += 1
 
         if not found:
-            printing.print_warning("find_vde_index(): element %s was not found. This is a bug."%(id_wdescr,))
+            printing.print_warning(
+                "find_vde_index(): element %s was not found. This is a bug." % (id_wdescr,))
         else:
-            printing.print_info_line(("%s found at index %d" % (id_wdescr, vde_index), 6), verbose)
+            printing.print_info_line(
+                ("%s found at index %d" % (id_wdescr, vde_index), 6), verbose)
         return vde_index
 
     def find_vde(self, index):
@@ -781,25 +797,33 @@ def is_elem_voltage_defined(elem):
     False otherwise.
     """
     if isinstance(elem, devices.VSource) or isinstance(elem, devices.EVSource) or \
-    isinstance(elem, devices.HVSource) or isinstance(elem, devices.Inductor) \
-    or (hasattr(elem, "is_voltage_defined") and elem.is_voltage_defined):
+        isinstance(elem, devices.HVSource) or isinstance(elem, devices.Inductor) \
+            or (hasattr(elem, "is_voltage_defined") and elem.is_voltage_defined):
         return True
     else:
         return False
 
+
 class NodeNotFoundError(Exception):
+
     """Circuit Node exception."""
     pass
 
+
 class CircuitError(Exception):
+
     """General circuit assembly exception."""
     pass
 
+
 class ModelError(Exception):
+
     """Model not found exception."""
     pass
 
+
 class subckt:
+
     """This class holds the necessary information about a circuit.
     An instance of this class is returned by:
 
@@ -816,7 +840,9 @@ class subckt:
         self.connected_nodes_list = connected_nodes_list
         self.code = code
 
+
 class circuit_wrapper:
+
     """Within a subcircuit, the nodes name are fictious.
     The nodes of the subcircuit that are connected to the
     nodes of the circuit have to be renamed to them, the
@@ -833,7 +859,8 @@ class circuit_wrapper:
         self.prefix = subckt_label + "-" + subckt_name + "-"
         self.subckt_node_filter_dict = {}
         self.subckt_node_filter_dict.update(connection_nodes_dict)
-        self.subckt_node_filter_dict.update({'0':'0'})
+        self.subckt_node_filter_dict.update({'0': '0'})
+
     def add_node(self, ext_name):
         """We want to perform the following conversions:
         connected node in the subcircuit -> node in the upper circuit
@@ -843,6 +870,7 @@ class circuit_wrapper:
         And then call circ.add_node()
         """
         if not self.subckt_node_filter_dict.has_key(ext_name):
-            self.subckt_node_filter_dict.update({ext_name:self.prefix+ext_name})
+            self.subckt_node_filter_dict.update(
+                {ext_name: self.prefix + ext_name})
         int_node = self.circ.add_node(self.subckt_node_filter_dict[ext_name])
         return int_node

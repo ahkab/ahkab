@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import shooting
 import bfpss
@@ -25,49 +25,50 @@ import options
 
 # .SHOOTING PERIOD=n [points=n step=n autonomous=bool]
 
-specs = {'pss':{'tokens':({
-                          'label':'period',
-                          'pos':0,
-                          'type':float,
-                          'needed':True,
-                          'dest':'period',
-                          'default':None
-                         },
-                         {
-                          'label':'points',
-                          'pos':None,
-                          'type':float,
-                          'needed':True,
-                          'dest':'points',
-                          'default':None
-                         },
-                         {
-                          'label':'step',
-                          'pos':None,
-                          'type':float,
-                          'needed':False,
-                          'dest':'step',
-                          'default':None
-                         },
-                         {
-                          'label':'autonomous',
-                          'pos':None,
-                          'type':bool,
-                          'needed':False,
-                          'dest':'uic',
-                          'default':'0'
-                         },
-                         {
-                          'label':'method',
-                          'pos':None,
-                          'type':str,
-                          'needed':False,
-                          'dest':'method',
-                          'default':options.SHOOTINGPSS
-                         }
-                        )
-               }
-           }
+specs = {'pss': {'tokens': ({
+                            'label': 'period',
+                            'pos': 0,
+                            'type': float,
+                            'needed': True,
+                            'dest': 'period',
+                            'default': None
+                            },
+        {
+                            'label': 'points',
+                            'pos': None,
+                            'type': float,
+                            'needed': True,
+                            'dest': 'points',
+                            'default': None
+                            },
+                 {
+                            'label': 'step',
+                            'pos': None,
+                            'type': float,
+                            'needed': False,
+                            'dest': 'step',
+                            'default': None
+                            },
+                 {
+                            'label': 'autonomous',
+                            'pos': None,
+                            'type': bool,
+                            'needed': False,
+                            'dest': 'uic',
+                            'default': '0'
+                            },
+                 {
+                            'label': 'method',
+                            'pos': None,
+                            'type': str,
+                            'needed': False,
+                            'dest': 'method',
+                            'default': options.SHOOTINGPSS
+                            }
+                            )
+                 }
+         }
+
 
 def pss_analysis(*largs, **args):
     m = args.pop('method').lower()

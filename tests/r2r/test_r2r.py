@@ -20,7 +20,7 @@ def fit(y, x):
         print fit, success
 	return fit
 
-def _run_test(ref_run=False):
+def _run_test(ref_run=False, verbose=False):
 	title = "* MATRIX SIZE TEST: R-2R ladder\n"
 	start_block = "V1 1 0 type=vdc vdc=10e3\n"
 	middle_block1 = "R%(block)dh %(input)d %(output)d 1.3k\n"
@@ -46,9 +46,13 @@ def _run_test(ref_run=False):
 		fp.write(analysis)
 		fp.close()
 		start = time.time()
-		subprocess.check_output(["python", "../../ahkab/ahkab.py", "-v 0", filename % {'nodes':circuit_nodes}])
+		outstr = subprocess.check_output(["python", "../../ahkab/__main__.py", "-v 0", filename % {'nodes':circuit_nodes}])
 		stop = time.time()
 		times.append((stop-start))
+		if verbose:
+			with open(filename % {'nodes':circuit_nodes}, 'r') as fp:
+				print "".join(fp.readlines())
+			print outstr
 		print "Solving with %d nodes took %f s" % (circuit_nodes, times[-1])
 		os.remove(filename % {'nodes':circuit_nodes})
 
@@ -67,6 +71,7 @@ def test():
 		x = numpy.array(x, dtype='int64')
 		x_new, times_new = _run_test(ref_run)
 	else:
+		print "RUNNING REFERENCE TEST - RESULTS INVALID!"
 		x, times = _run_test(ref_run)
 		print "RUNNING REFERENCE TEST - RESULTS INVALID!"
 

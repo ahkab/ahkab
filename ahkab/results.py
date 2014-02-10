@@ -21,7 +21,7 @@
 This is the results module of the simulator.
 """
 
-__version__ = "0.08"
+__version__ = "0.091"
 
 import sys, time, copy, pickle
 import numpy
@@ -114,7 +114,7 @@ class solution:
                                                   nsamples=None, skip=0L, verbose=verbose)
         vlist = []
         for j in range(data.shape[0]):
-            vlist.append(data[j, :].T)
+            vlist.append(data[j,:].T)
         return zip(headers, vlist)
 
     # iterator methods
@@ -132,7 +132,7 @@ class solution:
             raise StopIteration
         else:
             next = self.iter_headers[self.iter_index], \
-                   self.iter_data[self.iter_index, :].T
+                   self.iter_data[self.iter_index,:].T
             self.iter_index += 1
         return next
 
@@ -148,7 +148,7 @@ class op_solution(solution):
         solution.__init__(self, circ, outfile)
         self.iterations = iterations
 
-        #We have mixed current and voltage results
+        # We have mixed current and voltage results
         # per primi vengono tanti valori di tensioni quanti sono i nodi del circuito meno 
         # uno, quindi tante correnti quanti sono gli elementi definiti in tensione presenti
         # (per questo, per misurare una corrente, si può fare uso di generatori di tensione 
@@ -162,9 +162,9 @@ class op_solution(solution):
         for index in range(nv_1):
             varname = ("V" + str(circ.nodes_dict[index + 1])).upper()
             self.variables += [varname]
-            self.results.update({varname:x[index, 0]})
-            self.errors.update({varname:error[index, 0]})
-            self.units.update({varname:"V"})
+            self.results.update({varname: x[index, 0]})
+            self.errors.update({varname: error[index, 0]})
+            self.units.update({varname: "V"})
             if circ.is_int_node_internal_only(index+1):
                 self.skip_nodes_list.append(index)
 
@@ -173,9 +173,9 @@ class op_solution(solution):
                 index = index + 1
                 varname = ("I("+elem.part_id.upper()+")").upper()
                 self.variables += [varname]
-                self.results.update({varname:x[index, 0]})
-                self.errors.update({varname:error[index, 0]})
-                self.units.update({varname:"A"})
+                self.results.update({varname: x[index, 0]})
+                self.errors.update({varname: error[index, 0]})
+                self.units.update({varname: "A"})
 
         self.op_info = self.get_elements_op(circ, x)
 
@@ -267,14 +267,13 @@ class op_solution(solution):
         return op_info
 
     def write_to_file(self, filename=None):
-        if filename is not None:
-            local_filename = filename
-        else:
-            filename = self.filename
-        if filename == None:
+        if filename is None and self.filename is None:
+            # maybe warn the user here?
             return
+        if filename is None:
+            filename = self.filename
         if filename != 'stdout':
-            fp = open(filename, "w")
+            fp = open(filename+"info", "w")
         else:
             fp = sys.stdout
         fp.write(self.timestamp+"\n")
@@ -295,6 +294,7 @@ class op_solution(solution):
         fp.flush()
         if filename != 'stdout':
             fp.close()
+            solution._add_data(self, self.x)
 
     def print_short(self):
         str_repr = ""
@@ -348,15 +348,15 @@ class ac_solution(solution):
     
         nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         self.variables += ["w"]
-        self.units.update({"w":"rad/s"})
+        self.units.update({"w": "rad/s"})
     
         for index in range(nv_1):
             varname_abs = "|V%s|" % (str(circ.nodes_dict[index + 1]),)
             varname_arg = "arg(V%s)" % (str(circ.nodes_dict[index + 1]),)
             self.variables += [varname_abs]
             self.variables += [varname_arg]
-            self.units.update({varname_abs:"V"})
-            self.units.update({varname_arg:""})
+            self.units.update({varname_abs: "V"})
+            self.units.update({varname_arg: ""})
             if circ.is_int_node_internal_only(index+1):
                 self.skip_nodes_list.append(index)
 
@@ -366,21 +366,21 @@ class ac_solution(solution):
                 varname_arg = "arg(I(%s))" % (elem.part_id.upper(),)
                 self.variables += [varname_abs]
                 self.variables += [varname_arg]
-                self.units.update({varname_abs:"A"})
-                self.units.update({varname_arg:""})
+                self.units.update({varname_abs: "A"})
+                self.units.update({varname_arg: ""})
 
     def __str__(self):
         return "<AC simulation results for %s (netlist %s). %s sweep, from %g Hz to %g Hz, \
 %d points. Run on %s, data filename %s.>" % \
-        (self.netlist_title, self.netlist_file, self.stype, self.ostart, self.ostop, self.opoints,self.timestamp, self.filename)
+        (self.netlist_title, self.netlist_file, self.stype, self.ostart, self.ostop, self.opoints, self.timestamp, self.filename)
 
     def add_line(self, omega, x):
         omega = numpy.mat(numpy.array([omega]))
 
         xsplit = numpy.mat(numpy.zeros((x.shape[0]*2, 1)))
         for i in range(x.shape[0]):
-            xsplit[2*i, 0] = numpy.abs(x[i,0])
-            xsplit[2*i+1, 0] = numpy.angle(x[i,0],deg=options.ac_phase_in_deg)
+            xsplit[2*i, 0] = numpy.abs(x[i, 0])
+            xsplit[2*i+1, 0] = numpy.angle(x[i, 0], deg=options.ac_phase_in_deg)
              
         data = numpy.concatenate((omega, xsplit), axis=0)
         solution._add_data(self, data)
@@ -538,7 +538,7 @@ class pss_solution(solution):
         self.period = period
         self.method = method
 
-        #We have mixed current and voltage results
+        # We have mixed current and voltage results
         nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         self.variables = ["T"]
         self.units.update({"T":"s"})
@@ -575,7 +575,7 @@ Run on %s, data filename %s.>" % \
 
     def asmatrix(self, verbose=3):
         allvalues = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0L, verbose=verbose)
-        return allvalues[0, :], allvalues[1:, :]
+        return allvalues[0,:], allvalues[1:,:]
 
     def get_type(self):
         return "PSS"
@@ -587,25 +587,29 @@ Run on %s, data filename %s.>" % \
         return self.variables[0]
 
 class symbolic_solution():
-    def __init__(self, results_dict, substitutions, circ, outfile=None):
+    def __init__(self, results_dict, substitutions, circ, outfile=None, tf=False):
         """Holds a set of Symbolic results.
             results_dict: the results dict returned by sympy.solve(),
             substitutions: the substitutions (dict) employed before solving,
             circ: the circuit instance of the simulated circuit.
+            tf: is this set of results a set of transfer functions?
         """
         self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
         self.netlist_file = circ.filename
         self.netlist_title = circ.title
         self.substitutions = substitutions
+        self.tf = tf
 
         # the keys are strings
-        #self.symbols = map(str, results_dict.keys())
+        # self.symbols = map(str, results_dict.keys())
         self.results = case_insensitive_dict()
         for symbol, result in results_dict.iteritems():
             self.results.update({str(symbol):result})
         
         self._symbols = results_dict.keys() # keep them, they're useful
         for expr in results_dict.values():
+            if tf:
+                expr = expr['gain']
             for symb in expr.atoms():
                 if symb.is_Symbol and not symb in self._symbols:
                     self._symbols.append(symb)
@@ -641,12 +645,28 @@ class symbolic_solution():
         return self.results.__repr__()
 
     def __str__(self):
-        str_repr = "Symbolic simulation results for %s (netlist %s).\nRun on %s.\n" % \
-        (self.netlist_title, self.netlist_file, self.timestamp)
+        str_repr = "Symbolic %s results for %s (netlist %s).\nRun on %s.\n" % \
+                   ('simulation'*(not self.tf) + 'transfer function'*self.tf, 
+                    self.netlist_title, self.netlist_file, self.timestamp)
         keys = self.results.keys()
-        keys.sort() 
-        for key in keys:
-            str_repr +=  str(key) + "\t = " + str(self.results[key]) +"\n"
+        keys.sort(lambda x, y: cmp(str(x), str(y))) 
+        if not self.tf:
+            for key in keys:
+                str_repr +=  str(key) + "\t = " + str(self.results[key]) + "\n"
+        else:
+            for key in keys:
+                str_repr +=  str(key) + ":\n\t%s:\t%s\n" % \
+                             ('gain', self.results[key]['gain'])
+                if self.results[key]['gain'] == self.results[key]['gain0']:
+                    continue
+                str_repr +=  "\t%s:\t%s\n" % \
+                             ('gain0', self.results[key]['gain0'])
+                for sing in ('poles', 'zeros'):
+                    if not len(self.results[key][sing]):
+                        continue
+                    str_repr += "\t%s:\n" % sing
+                    for p in self.results[key][sing]:
+                        str_repr +=  "\t\t" + str(p) + "\n"
         return str_repr
 
     def get_type(self):
