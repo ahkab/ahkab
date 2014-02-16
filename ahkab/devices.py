@@ -110,7 +110,7 @@ class Component(object):
             self.g = g_function
 
     def g(self, v):
-        return 1 / self.value
+        return 1./self.value
 
     def i(self, v):
         return 0
@@ -463,6 +463,35 @@ class pulse:
 
 class sin:
     # SIN(VO VA FREQ TD THETA)
+    """Sine wave
+
+    f(t) = 
+
+        t < td:  
+                 vo + va*sin(pi*phi/180)
+        t >= td: 
+                 vo + va*exp(-(time - td)*theta)*sin(2*pi*freq*(t - td) + pi*phi/180)
+
+    *Parameters:*
+
+    vo: float
+        Offset
+
+    va: float
+        RMS amplitude
+
+    freq: float
+        frequency in Hz
+
+    td: float, optional
+        time delay before beginning the sinusoidal time variation, in seconds. Defaults to 0.
+
+    theta: float optional    
+        damping factor in 1/s. Defaults to 0 (no damping).
+
+    phi: float, optional
+        Phase delay in degrees. Defaults to 0 (no phase delay).
+    """
     td = None
     vo = None
     va = None
@@ -470,29 +499,22 @@ class sin:
     theta = None
     _type = "V"
 
-    def __init__(self, vo=None, va=None, freq=None, td=None, theta=None):
+    def __init__(self, vo, va, freq, td=0., theta=0., phi=0.):
         self.vo = vo
         self.va = va
         self.freq = freq
         self.td = td
         self.theta = theta
+        self.phi = phi
 
     def value(self, time):
-        if not self.ready():
-            printing.print_general_error(
-                "Error: sin function not well defined. This is a bug.")
+        """Evaluate the sine function at the given time."""
         if time < self.td:
-            return self.vo
-        elif self.theta:
-            return self.vo + self.va * math.exp(-1 * (time - self.td) / self.theta) * math.sin(2 * math.pi * self.freq * (time - self.td))
+            return self.vo + self.va*math.sin(math.pi*self.phi/180.)
         else:
-            return self.vo + self.va * math.sin(2 * math.pi * self.freq * (time - self.td))
-
-    def ready(self):
-        if self.vo == None or self.va == None or self.freq == None or self.td == None or self.theta == None:
-            return False
-        else:
-            return True
+            return self.vo + self.va * math.exp((self.td - time)*self.theta) \
+                   * math.sin(2*math.pi*self.freq*(time - self.td) + \
+                              math.pi*self.phi/180.)
 
     def __str__(self):
         return "type=sin " + \
