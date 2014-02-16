@@ -478,7 +478,7 @@ class sin:
         Offset
 
     va: float
-        RMS amplitude
+        amplitude
 
     freq: float
         frequency in Hz
