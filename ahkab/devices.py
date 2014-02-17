@@ -110,7 +110,7 @@ class Component(object):
             self.g = g_function
 
     def g(self, v):
-        return 1 / self.value
+        return 1./self.value
 
     def i(self, v):
         return 0
@@ -411,6 +411,31 @@ class HVSource(Component):  # TODO: fixme
 #
 
 class pulse:
+    """Square wave aka pulse function 
+
+    *Parameters:*
+
+    v1: float
+        Square wave low value
+
+    v2: float
+        Square wave high value
+
+    td: float
+        Delay time to the first ramp, in s. Negative values are considered as zero.
+
+    tr: float
+        Rise time in seconds, from the low value to the pulse high value.
+
+    tf: float
+        Fall time in seconds, from the pulse high value to the low value.
+
+    pw: float
+        Pulse width in seconds.
+
+    per: float
+        Periodicity interval in seconds.
+    """
     # PULSE(V1 V2 TD TR TF PW PER)
     _type = "V"
     v1 = None
@@ -421,18 +446,17 @@ class pulse:
     tf = None
     pw = None
 
-    def __init__(self, v1=None, v2=None, td=None, tr=None, pw=None, tf=None, per=None):
+    def __init__(self, v1, v2, td, tr, pw, tf, per):
         self.v1 = v1
         self.v2 = v2
-        self.td = td
+        self.td = max(td, 0.0)
         self.per = per
         self.tr = tr
         self.tf = tf
         self.pw = pw
 
     def value(self, time):
-        if not self.ready():
-            print "Error: pulse function not well defined. This is a bug."
+        """Evaluate the pulse function at the given time."""
         time = time - self.per * int(time / self.per)
         if time < self.td:
             return self.v1
@@ -445,13 +469,6 @@ class pulse:
         else:
             return self.v1
 
-    def ready(self):
-        if self.v1 == None or self.v2 == None or self.td == None or self.tr == None or self.pw == None or \
-                self.tf == None or self.per == None:
-            return False
-        else:
-            return True
-
     def __str__(self):
         return "type=pulse " + \
             self._type.lower() + "1=" + str(self.v1) + " " + \
@@ -463,6 +480,35 @@ class pulse:
 
 class sin:
     # SIN(VO VA FREQ TD THETA)
+    """Sine wave
+
+    f(t) = 
+
+        t < td:  
+                 vo + va*sin(pi*phi/180)
+        t >= td: 
+                 vo + va*exp(-(time - td)*theta)*sin(2*pi*freq*(t - td) + pi*phi/180)
+
+    *Parameters:*
+
+    vo: float
+        Offset
+
+    va: float
+        amplitude
+
+    freq: float
+        frequency in Hz
+
+    td: float, optional
+        time delay before beginning the sinusoidal time variation, in seconds. Defaults to 0.
+
+    theta: float optional    
+        damping factor in 1/s. Defaults to 0 (no damping).
+
+    phi: float, optional
+        Phase delay in degrees. Defaults to 0 (no phase delay).
+    """
     td = None
     vo = None
     va = None
@@ -470,29 +516,22 @@ class sin:
     theta = None
     _type = "V"
 
-    def __init__(self, vo=None, va=None, freq=None, td=None, theta=None):
+    def __init__(self, vo, va, freq, td=0., theta=0., phi=0.):
         self.vo = vo
         self.va = va
         self.freq = freq
         self.td = td
         self.theta = theta
+        self.phi = phi
 
     def value(self, time):
-        if not self.ready():
-            printing.print_general_error(
-                "Error: sin function not well defined. This is a bug.")
+        """Evaluate the sine function at the given time."""
         if time < self.td:
-            return self.vo
-        elif self.theta:
-            return self.vo + self.va * math.exp(-1 * (time - self.td) / self.theta) * math.sin(2 * math.pi * self.freq * (time - self.td))
+            return self.vo + self.va*math.sin(math.pi*self.phi/180.)
         else:
-            return self.vo + self.va * math.sin(2 * math.pi * self.freq * (time - self.td))
-
-    def ready(self):
-        if self.vo == None or self.va == None or self.freq == None or self.td == None or self.theta == None:
-            return False
-        else:
-            return True
+            return self.vo + self.va * math.exp((self.td - time)*self.theta) \
+                   * math.sin(2*math.pi*self.freq*(time - self.td) + \
+                              math.pi*self.phi/180.)
 
     def __str__(self):
         return "type=sin " + \
@@ -503,6 +542,28 @@ class sin:
 
 
 class exp:
+    """Exponential time function
+
+    *Parameters:*
+
+    v1: float
+        Initial value
+
+    v2: float
+        Pulsed value
+
+    td1: float
+        Rise delay time in seconds.
+
+    td2: float
+        Fall delay time in seconds.
+
+    tau1: float
+        Rise time constant in seconds.
+
+    tau2: float
+        Fall time constant in seconds.
+    """
     # EXP(V1 V2 TD1 TAU1 TD2 TAU2)
     v1 = None
     v2 = None
@@ -512,7 +573,7 @@ class exp:
     tau2 = None
     _type = "V"
 
-    def __init__(self, v1=None, v2=None, td1=None, tau1=None, td2=None, tau2=None):
+    def __init__(self, v1, v2, td1, tau1, td2, tau2):
         self.v1 = v1
         self.v2 = v2
         self.td1 = td1
@@ -521,21 +582,12 @@ class exp:
         self.tau2 = tau2
 
     def value(self, time):
-        if not self.ready():
-            printing.print_general_error(
-                "Error: exp function not well defined. This is a bug.")
         if time < self.td1:
             return self.v1
         elif time < self.td2:
-            return self.v1 + (self.v2 - self.v1) * (1 - math.exp(-1 * (time - self.td1) / self.tau1))
+            return self.v1 + (self.v2 - self.v1) * (1 - math.exp(-1*(time - self.td1)/self.tau1))
         else:
-            return self.v1 + (self.v2 - self.v1) * (1 - math.exp(-1 * (time - self.td1) / self.tau1)) + (self.v1 - self.v2) * (1 - math.exp(-1 * (time - self.td2) / self.tau2))
-
-    def ready(self):
-        if self.v1 == None or self.v2 == None or self.td1 == None or self.tau1 == None or self.td2 == None \
-                or self.tau2 == None:
-            return False
-        return True
+            return self.v1 + (self.v2 - self.v1) * (1 - math.exp(-1*(time - self.td1)/self.tau1)) + (self.v1 - self.v2)*(1 - math.exp(-1*(time - self.td2)/self.tau2))
 
     def __str__(self):
         return "type=exp " + \
