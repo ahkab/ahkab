@@ -29,7 +29,7 @@ import transient
 import utilities
 import options
 
-if __name__ == "__main__":
+def cli():
     usage = "usage: \t%prog [options] <filename>\n\nThe filename is the netlist to be open. \
 Use - (a dash) to read from stdin."
     parser = OptionParser(
@@ -161,3 +161,6 @@ Use - (a dash) to read from stdin."
                0], outfile=cli_options.outfile, verbose=verbose)
 
     sys.exit(0)
+
+if __name__ == "__main__":
+    cli()
