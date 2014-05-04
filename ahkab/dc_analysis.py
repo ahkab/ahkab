@@ -510,7 +510,7 @@ def op_analysis(circ, x0=None, guess=True, outfile=None, verbose=3):
 
     if opsolution and outfile != 'stdout' and outfile is not None:
         opsolution.write_to_file()
-    if opsolution and verbose > 2 and options.cli:
+    if opsolution and (verbose > 2 or outfile == 'stdout') and options.cli:
         opsolution.write_to_file(filename='stdout')
 
     return opsolution
