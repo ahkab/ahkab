@@ -22,7 +22,6 @@ import numpy
 
 from . import constants
 from . import printing
-from . import dc_analysis
 from . import utilities
 from . import options
 
@@ -206,7 +205,7 @@ class diode_model:
             idiode_old = idiode
             idiode = self._get_i(vd) * dev.AREA
             di = idiode - idiode_old
-            if dc_analysis.convergence_check(x=(idiode, vd), dx=(di, dvd), residuum=((vd - ports_v[0]) / RS + idiode, ports_v[0] - vd - idiode * self.RS), nv_minus_one=1)[0]:
+            if utilities.convergence_check(x=(idiode, vd), dx=(di, dvd), residuum=((vd - ports_v[0]) / RS + idiode, ports_v[0] - vd - idiode * self.RS), nv_minus_one=1)[0]:
                 break
         dev.last_vd = vd
         return idiode
