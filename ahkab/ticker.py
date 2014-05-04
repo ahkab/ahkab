@@ -18,10 +18,8 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Implements a progress indicator.
+A progress indicator.
 """
-
-__version__ = "0.091"
 
 import sys
 

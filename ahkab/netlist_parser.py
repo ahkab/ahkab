@@ -23,31 +23,30 @@ The syntax is explained in the docs and it's based on [1] whenever possible.
 Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
 """
 
-__version__ = "0.091"
-
 import sys
 import imp
 import math
 import copy
-import ahkab
-import circuit
-import dc_analysis
-import devices
-import diode
-import mosq
-import ekv
-import switch
-import printing
-import utilities
-import plotting
-import options
+
+from . import ahkab
+from . import circuit
+from . import dc_analysis
+from . import devices
+from . import diode
+from . import mosq
+from . import ekv
+from . import switch
+from . import printing
+from . import utilities
+from . import plotting
+from . import options
 
 # analyses syntax
-from dc_analysis import specs as dc_spec
-from ac import specs as ac_spec
-from transient import specs as tran_spec
-from pss import specs as pss_spec
-from symbolic import specs as symbolic_spec
+from .dc_analysis import specs as dc_spec
+from .ac import specs as ac_spec
+from .transient import specs as tran_spec
+from .pss import specs as pss_spec
+from .symbolic import specs as symbolic_spec
 specs = {}
 for i in dc_spec, ac_spec, tran_spec, pss_spec, symbolic_spec:
     specs.update(i)

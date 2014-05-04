@@ -17,8 +17,6 @@ Functions:
 
 """
 
-__version__ = "0.091"
-
 import sys
 import copy
 import numpy

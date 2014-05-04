@@ -19,20 +19,19 @@
 
 """Brute-force periodic steady state analysis module"""
 
-__version__ = "0.091"
-
 import sys
 import numpy
-import transient
-import implicit_euler
-import dc_analysis
-import ticker
-import options
-import circuit
-import printing
-import utilities
-import results
-import devices
+
+from . import circuit
+from . import dc_analysis
+from . import devices
+from . import implicit_euler
+from . import options
+from . import printing
+from . import results
+from . import ticker
+from . import transient
+from . import utilities
 
 
 def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,

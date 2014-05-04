@@ -21,12 +21,21 @@
 This is the results module of the simulator.
 """
 
-__version__ = "0.091"
+import sys
+import time
+import copy
+import pickle
 
-import sys, time, copy, pickle
 import numpy
-import circuit, devices, printing, options, constants, csvlib
-VERSION = "0.07"
+
+from . import circuit
+from . import devices
+from . import printing
+from . import options
+from . import constants
+from . import csvlib
+
+VERSION = "0.09"
 csvlib.SEPARATOR = "\t"
 
 class solution:

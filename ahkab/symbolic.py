@@ -24,19 +24,17 @@ AC or DC.
 The principal method is solve(), which carries out the symbolic circuit solution.
 """
 
-__version__ = "0.091"
-
 import sympy
 from sympy.matrices import zeros as smzeros
 
-import circuit
-import devices
-import ekv
-import mosq
-import diode
-import printing
-import results
-import options
+from . import circuit
+from . import devices
+from . import ekv
+from . import mosq
+from . import diode
+from . import printing
+from . import results
+from . import options
 
 specs = {'symbolic': {'tokens': ({
                                  'label': 'tf',

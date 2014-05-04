@@ -79,12 +79,11 @@
     Anyway, from a theorical point of view, the above applies.
       """
 
-__version__ = "0.091"
-
 import numpy
 import sys
-import utilities
-import printing
+
+from . import utilities
+from . import printing
 
 order = None
 # FAST = True

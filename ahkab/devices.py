@@ -17,12 +17,11 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "0.091"
-
 import numpy
 import math
-import constants
-import printing
+
+from . import constants
+from . import printing
 
 """
 Contains various element classes.

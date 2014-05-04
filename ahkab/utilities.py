@@ -21,15 +21,13 @@
 This file holds miscellaneous utility functions needed by the simulator.
 """
 
-__version__ = "0.091"
-
 import os
 import os.path
 import operator
 
 import numpy
 
-import printing
+from . import printing
 
 # this is the machine precision on my Intel x86
 EPS = 2.22044604925e-16

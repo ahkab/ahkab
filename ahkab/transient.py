@@ -29,12 +29,20 @@ We need:
     6. a differentiation method to approximate dx/dt
 """
 
-__version__ = "0.091"
+import sys
+import imp
 
-import sys, imp
 import numpy
-import dc_analysis, implicit_euler, ticker, options, circuit, printing, utilities
-import devices, results
+
+from . import dc_analysis
+from . import implicit_euler
+from . import ticker
+from . import options
+from . import circuit
+from . import printing
+from . import utilities
+from . import devices
+from . import results
            
 # differentiation methods, add them here
 IMPLICIT_EULER = "IMPLICIT_EULER"

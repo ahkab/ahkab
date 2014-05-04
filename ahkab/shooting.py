@@ -19,21 +19,21 @@
 
 """Periodic steady state analysis based on the shooting method"""
 
-__version__ = "0.091"
 
 import sys
 import numpy
 import numpy.linalg
-import transient
-import implicit_euler
-import dc_analysis
-import ticker
-import options
-import circuit
-import printing
-import utilities
-import results
-import devices
+
+from . import transient
+from . import implicit_euler
+from . import dc_analysis
+from . import ticker
+from . import options
+from . import circuit
+from . import printing
+from . import utilities
+from . import results
+from . import devices
 
 
 def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,

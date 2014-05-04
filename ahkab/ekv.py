@@ -56,13 +56,12 @@ The Missing Features:
 - Quasistatic implementation
 """
 
-__version__ = "0.091"
-
-import constants
-import options
-import utilities
-import printing
 import math
+
+from . import constants
+from . import options
+from . import utilities
+from . import printing
 
 
 # DEFAULT VALUES FOR 500n CH LENGTH

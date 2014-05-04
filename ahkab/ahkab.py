@@ -21,8 +21,6 @@
 """ ahkab is an easy electronic circuit simulator.
 """
 
-__version__ = "0.091"
-
 import sys
 import tempfile
 from optparse import OptionParser
@@ -31,23 +29,24 @@ import numpy
 import sympy
 import matplotlib
 
-import ahkab
-
 # analyses
-import dc_analysis
-import transient
-import ac
-import pss
-import symbolic
+from . import dc_analysis
+from . import transient
+from . import ac
+from . import pss
+from . import symbolic
 
-import netlist_parser
+# parser
+from . import netlist_parser
 
-import options
-import constants
-import utilities
+# misc
+from . import options
+from . import constants
+from . import utilities
 
-import plotting
-import printing
+# data display
+from . import plotting
+from . import printing
 
 global _queue, _x0s, _print, _of
 
@@ -56,6 +55,7 @@ _print = False
 _x0s = {None: None}
 _of = []
 
+__version__ = '0.09'
 
 def new_op(guess=True, x0=None, outfile=None, verbose=0):
     """Assembles an OP analysis and returns the analysis object.

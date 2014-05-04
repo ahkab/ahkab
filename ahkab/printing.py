@@ -22,15 +22,14 @@ This is the printing module of the simulator. Using its functions, the output wi
 be somewhat uniform.
 """
 
-__version__ = "0.091"
-
 import sys
-import devices
-import options
-import diode
-import mosq
-import ekv
-import switch
+
+from . import devices
+from . import options
+from . import diode
+from . import mosq
+from . import ekv
+from . import switch
 
 
 def print_circuit(circ):

@@ -17,15 +17,14 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "0.091"
-
 import math
 import numpy
-import constants
-import printing
-import dc_analysis
-import utilities
-import options
+
+from . import constants
+from . import printing
+from . import dc_analysis
+from . import utilities
+from . import options
 
 """
 Contains a diode element and its model class.

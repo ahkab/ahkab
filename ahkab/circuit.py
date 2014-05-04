@@ -17,21 +17,18 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "0.091"
-
 import sys
 import math
 
-import devices
-import diode
-import ekv
-import mosq
-import switch
-import printing
+from . import devices
+from . import diode
+from . import ekv
+from . import mosq
+from . import printing
+from . import switch
 
 # will be added here by netlist_parser and circuit instances
 user_defined_modules_dict = {}
-
 
 class Circuit(list):
 

@@ -22,13 +22,12 @@ This module offers the functions needed to plot the results
 of a simulation
 """
 
-__version__ = "0.091"
-
 import re
 import numpy
 import pylab
-import printing
-import options
+
+from . import printing
+from . import options
 
 
 def read_data_header(filename):

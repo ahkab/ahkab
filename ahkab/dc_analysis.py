@@ -29,22 +29,22 @@ The actual solution is done by mdn_solver, that uses a modified
 version of the Newton Rhapson method.
 """
 
-__version__ = "0.091"
-
 import sys
 import re
+
 import numpy
 import numpy.linalg
-import devices
-import diode
-import constants
-import ticker
-import options
-import circuit
-import printing
-import utilities
-import dc_guess
-import results
+
+from . import devices
+from . import diode
+from . import constants
+from . import ticker
+from . import options
+from . import circuit
+from . import printing
+from . import utilities
+from . import dc_guess
+from . import results
 
 specs = {'op': {
     'tokens': ({

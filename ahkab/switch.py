@@ -33,11 +33,10 @@ sn2 o--+         +--o n2
 
 """
 
-__version__ = "0.091"
-
 import math
-import options
-import printing
+
+from . import options
+from . import printing
 
 
 class switch_device:

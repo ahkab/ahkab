@@ -28,18 +28,17 @@ In order for an AC analysis to be performed, an OP has to be computed first,
 if there is any non-linear device in the circuit.
 """
 
-__version__ = "0.091"
-
 import sys
 import numpy
-import dc_analysis
-import ticker
-import options
-import circuit
-import devices
-import printing
-import utilities
-import results
+
+from . import dc_analysis
+from . import ticker
+from . import options
+from . import circuit
+from . import devices
+from . import printing
+from . import utilities
+from . import results
 
 specs = {'ac': {'tokens': ({
                            'label': 'type',
