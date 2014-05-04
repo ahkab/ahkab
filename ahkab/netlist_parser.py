@@ -1505,11 +1505,11 @@ def parse_sub_instance(line, circ, subckts_dict, line_elements=None, models=None
     elements_list = main_netlist_parser(
         wrapped_circ, subckt.code, subckts_dict, models)
 
-    # Every subckt adds elemets with the _same description_ (elem.part_id[1:])
-    # We modify it so that each description is uniq for every instance
+    # Every subckt adds elements with the _same description_ (elem.part_id[1:])
+    # We modify it so that each description is unique for every instance
     for element in elements_list:
-        element = element[0] + element[1:] + \
-            "-" + wrapped_circ.prefix + element[1:]
+        element.part_id = element.part_id[0] + \
+            "-" + wrapped_circ.prefix + element.part_id[1:]
 
     return elements_list
 
