@@ -24,16 +24,16 @@
 import sys
 from optparse import OptionParser
 
-import ahkab
-import transient
-import utilities
-import options
+from . import ahkab
+from . import options
+from . import transient
+from . import utilities
 
 def cli():
-    usage = "usage: \t%prog [options] <filename>\n\nThe filename is the netlist to be open. \
-Use - (a dash) to read from stdin."
-    parser = OptionParser(
-        usage, version="%prog " + ahkab.__version__ + " (c) 2006-2013 Giuseppe Venturini")
+    usage = "usage: \t%prog [options] <filename>\n\nThe filename is the " + \
+            "netlist to be open. Use - (a dash) to read from stdin."
+    parser = OptionParser(usage, version="%prog " + ahkab.__version__ + \
+             " (c) 2006-2013 Giuseppe Venturini")
 
     # general options
     parser.add_option(
@@ -47,19 +47,19 @@ Use - (a dash) to read from stdin."
         default='stdout', help="Data output file. Defaults to stdout.")
     parser.add_option(
         "", "--dc-guess", action="store", type="string", dest="dc_guess",
-        default="guess", help="Guess to be used to start a op or dc analysis: \
-                      none or guess. Defaults to guess.")
+        default="guess", help="Guess to be used to start a op or dc " + \
+                              "analysis: none or guess. Defaults to guess.")
     parser.add_option(
         "-t", "--tran-method", action="store", type="string", dest="method",
-        default=transient.TRAP.lower(), help="Method to be used in transient \
-                      analysis: " + transient.IMPLICIT_EULER.lower() + ", " + transient.TRAP.lower() +
-        ", " + transient.GEAR2.lower() + ", " + transient.GEAR3.lower() + ", " +
-        transient.GEAR4.lower() + ", " + transient.GEAR5.lower() + " or " +
-        transient.GEAR6.lower() + ". Defaults to TRAP.")
+        default=transient.TRAP.lower(), help="Method to be used in transient "+\
+                "analysis: " + transient.IMPLICIT_EULER.lower() + ", " + \
+                transient.TRAP.lower() + ", " + transient.GEAR2.lower() + \
+                ", " + transient.GEAR3.lower() + ", " + \
+                transient.GEAR4.lower() + ", " + transient.GEAR5.lower() + \
+                " or " + transient.GEAR6.lower() + ". Defaults to TRAP.")
     parser.add_option(
         "", "--t-fixed-step", action="store_true", dest="no_step_control",
-        default=False, help="Disables the step control in transient analysis. \
-                      Useful if you want to perform a FFT on the results.")
+        default=False, help="Disables the step control in transient analysis.")
     parser.add_option(
         "", "--v-absolute-tolerance", action="store", type="string", dest="vea",
         default=None, help="Voltage absolute tolerance. Default: " +
@@ -74,38 +74,41 @@ Use - (a dash) to read from stdin."
         str(options.iea) + " A")
     parser.add_option(
         "", "--i-relative-tolerance", action="store", type="string", dest="ier",
-        default=None, help="Current relative tolerance. \
-                      Default: " + str(options.ier))
+        default=None, help="Current relative tolerance. " + \
+        "Default: " + str(options.ier))
     parser.add_option(
         "", "--h-min", action="store", type="string", dest="hmin", default=None,
         help="Minimum time step. Default: " + str(options.hmin))
     parser.add_option(
         "", "--dc-max-nr", action="store", type="string", dest="dc_max_nr_iter",
-        default=None, help="Maximum nr of NR iterations for dc analysis. \
-                      Default: " + str(options.dc_max_nr_iter))
+        default=None, help="Maximum nr of NR iterations for dc analysis. " + \
+        "Default: " + str(options.dc_max_nr_iter))
     parser.add_option("", "--t-max-nr", action="store", type="string",
-                      dest="transient_max_nr_iter", default=None, help="Maximum number of NR \
-                      iterations for each time step during transient analysis. \
-                      Default: " + str(options.transient_max_nr_iter))
+        dest="transient_max_nr_iter", default=None, help="Maximum number of NR \
+        iterations for each time step during transient analysis. " + \
+        "Default: " + str(options.transient_max_nr_iter))
     parser.add_option("", "--t-max-time", action="store", type="string",
-                      dest="transient_max_time_iter", default=None, help="Maximum number of \
-                      time iterations during transient analysis. Setting it to 0 (zero) \
-                      disables the limit. Default: " + str(options.transient_max_time_iter))
+        dest="transient_max_time_iter", default=None,
+        help="Maximum number of time iterations during " + \
+        "transient analysis. Setting it to 0 (zero) disables " + \
+        "the limit. Default: " + \
+        str(options.transient_max_time_iter))
     parser.add_option("", "--s-max-nr", action="store", type="string",
-                      dest="shooting_max_nr_iter", default=None, help="Maximum number of NR \
-                      iterations during shooting analysis. Setting it to 0 (zero) disables the \
-                      limit. Default: " + str(options.shooting_max_nr_iter))
+        dest="shooting_max_nr_iter", default=None,
+        help="Maximum number of NR iterations during shooting " + \
+        "analysis. Setting it to 0 (zero) disables the " + \
+        "limit. Default: " + str(options.shooting_max_nr_iter))
     parser.add_option(
-        "", "--gmin", action="store", type="string", dest="gmin", default=None,
-        help="The minimum conductance to ground. Inserted when requested. \
-                      Default: " + str(options.gmin))
+        "", "--gmin", action="store", type="string", dest="gmin",
+        default=None, help="The minimum conductance to ground. " + \
+        "Inserted when requested. Default: " + str(options.gmin))
     parser.add_option(
         "", "--cmin", action="store", type="string", dest="cmin", default=None,
         help="The minimum capacitance to ground. Default: " + str(options.cmin))
     parser.add_option(
         "", "--eps", action="store_true", dest="eps", default=False,
-        help="Calculate the machine precision. \
-                      The machine precision defaults to " + str(utilities.EPS))
+        help="Calculate the machine precision. " + \
+        "The machine precision defaults to " + str(utilities.EPS))
 
     (cli_options, remaning_args) = parser.parse_args()
 
