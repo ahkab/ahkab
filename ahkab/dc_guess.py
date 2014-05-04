@@ -20,13 +20,13 @@
 """This module provides the get_dc_guess() method.
 """
 
-__version__ = "0.091"
-
 import sys
+
 import numpy
 import numpy.linalg
-import circuit
-import utilities
+
+from . import circuit
+from . import utilities
 
 
 def get_dc_guess(circ, verbose=3):
