@@ -24,12 +24,7 @@ be somewhat uniform.
 
 import sys
 
-from . import devices
 from . import options
-from . import diode
-from . import mosq
-from . import ekv
-from . import switch
 
 
 def print_circuit(circ):
@@ -44,61 +39,7 @@ def print_circuit(circ):
         print circ.title
 
     for elem in circ:
-        print_netlist_elem_line(elem, circ)
-
-    return None
-
-
-def print_netlist_elem_line(elem, circ):
-    """Prints a elem to stdout from the provided circuit instance.
-
-    Parameters:
-    elem: the elem to be printed
-    circ: the circuit instance to which the element belongs.
-
-    Returns: None
-    """
-    if hasattr(elem, "n1") and hasattr(elem, "n2"):
-        ext_n1 = circ.nodes_dict[elem.n1]
-        ext_n2 = circ.nodes_dict[elem.n2]
-
-    sys.stdout.write(elem.part_id + " ")
-
-    if isinstance(elem, devices.Resistor) \
-        or isinstance(elem, diode.diode) \
-        or isinstance(elem, devices.ISource) \
-        or isinstance(elem, devices.VSource) \
-        or isinstance(elem, devices.Capacitor) \
-            or isinstance(elem, devices.Inductor):
-        sys.stdout.write(ext_n1 + " " + ext_n2 + " ")
-
-    elif isinstance(elem, devices.EVSource) \
-        or isinstance(elem, devices.GISource)   \
-            or isinstance(elem, switch.switch_device):
-        sys.stdout.write(ext_n1 + " " + ext_n2 + " " + circ.nodes_dict[elem.sn1] + " " +
-                         circ.nodes_dict[elem.sn2] + " ")
-
-    elif isinstance(elem, devices.InductorCoupling):
-        sys.stdout.write(" ")
-
-    elif isinstance(elem, mosq.mosq_device):  # quadratic mos
-        sys.stdout.write(
-            ext_n1 + " " + circ.nodes_dict[elem.ng] + " " + ext_n2 + " ")
-
-    elif isinstance(elem, ekv.ekv_device):
-        sys.stdout.write(ext_n1 + " " + circ.nodes_dict[
-                         elem.ng] + " " + ext_n2 + " " + circ.nodes_dict[elem.nb] + " ")
-
-    elif elem.letter_id == "y":
-        sys.stdout.write(ext_n1 + " " + ext_n2 + " ")
-
-    else:
-        print_general_error(
-            "\nUnknown element, this is probably a bug: " + elem.__class__.__name__)
-        sys.exit(1)
-
-    #   Defaults to `Component.__str__`
-    print str(elem)
+        print elem.print_netlist_elem_line(circ.nodes_dict)
 
     return None
 

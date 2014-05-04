@@ -38,14 +38,12 @@ This MOS Model follows the Square Law Mos Model:
 
 """
 
-__version__ = "0.091"
-
-import constants
-import options
-import utilities
-import printing
 import math
 
+from . import constants
+from . import options
+from . import utilities
+from . import printing
 
 # DEFAULT VALUES FOR 500n CH LENGTH
 COX_DEFAULT = .7e-3
@@ -127,10 +125,10 @@ class mosq_device:
 
     def __str__(self):
         mos_type = self._get_mos_type()
-        rep = " " + self.mosq_model.name + " w=" + str(self.device.W) + " l=" + \
-            str(self.device.L) + " M=" + str(self.device.M) + " N=" + \
-            str(self.device.N)
-
+        rep = self.part_id + " %(nd)s %(ng)s %(ns)s %(nb)%s " + \
+              self.mosq_model.name + " w=" + str(self.device.W) + " l=" + \
+              str(self.device.L) + " M=" + str(self.device.M) + " N=" + \
+              str(self.device.N)
         return rep
 
     def _get_mos_type(self):
@@ -249,6 +247,14 @@ class mosq_device:
             self.device.mckey = mckey
         else:
             self.device.mckey = None
+
+    def print_netlist_elem_line(self, nodes_dict):
+        mos_type = self._get_mos_type()
+        return "%s %s %s %s %s %s type=%s w=%g l=%g m=%g n=%g" % \
+              (self.part_id, nodes_dict[self.nd], nodes_dict[self.ng],
+              nodes_dict[self.ns], nodes_dict[self.nb], self.mosq_model.name,
+              mos_type, self.device.W, self.device.L, self.device.M,
+              self.device.N)
 
 
 class scaling_holder:

@@ -1,1 +1,1 @@
-from ahkab import *
+from . import *

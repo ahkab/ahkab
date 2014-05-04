@@ -28,7 +28,6 @@ import imp
 import math
 import copy
 
-from . import ahkab
 from . import circuit
 from . import dc_analysis
 from . import devices

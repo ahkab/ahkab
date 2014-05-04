@@ -20,8 +20,6 @@
 """This module contains options and configuration switches
 """
 
-__version__ = "0.091"
-
 import os
 
 # global: command line execution or module import

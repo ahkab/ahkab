@@ -114,6 +114,10 @@ class Component(object):
     def i(self, v):
         return 0
 
+    def print_netlist_elem_line(self, nodes_dict):
+        return "%s %s %s %g" % (self.part_id, nodes_dict[self.n1],
+                                nodes_dict[self.n2], self.value)
+
 
 class Resistor(Component):
     is_nonlinear = False
@@ -269,6 +273,19 @@ class ISource(Component):
         else:
             return self._time_function.value(time)
 
+    def print_netlist_elem_line(self, nodes_dict):
+        rep = ""
+        rep += "%s %s %s " % (self.part_id, nodes_dict[self.n1],
+                             nodes_dict[self.n2])
+        if self.dc_value is not None:
+            rep = rep + "type=idc value=" + str(self.dc_value) + " "
+        if self.abs_ac is not None:
+            rep = rep + "iac=" + \
+                str(self.abs_ac) + " " + "arg=" + str(self.arg_ac) + " "
+        if self.is_timedependent:
+            rep = rep + str(self._time_function)
+        return rep
+
 
 class VSource(Component):
 
@@ -322,6 +339,19 @@ class VSource(Component):
         else:
             return self._time_function.value(time)
 
+    def print_netlist_elem_line(self, nodes_dict):
+        rep = ""
+        rep += "%s %s %s " % (self.part_id, nodes_dict[self.n1],
+                             nodes_dict[self.n2])
+        if self.dc_value is not None:
+            rep = rep + "type=vdc value=" + str(self.dc_value) + " "
+        if self.abs_ac is not None:
+            #   TODO:   netlist parser doesn't accept `arg=` from `self.arg_ac`
+            rep = rep + "vac=" + str(self.abs_ac) + " "
+        if self.is_timedependent:
+            rep = rep + str(self._time_function)
+        return rep
+
 
 class EVSource(Component):
 
@@ -350,6 +380,11 @@ class EVSource(Component):
 
     def __str__(self):
         return "alpha=%s" % self.alpha
+
+    def print_netlist_elem_line(self, nodes_dict):
+        return "%s %s %s %s %s %g" % (self.part_id, nodes_dict[self.n1],
+                                nodes_dict[self.n2], nodes_dict[self.sn1],
+                                nodes_dict[self.sn2], self.alpha)
 
 
 class GISource(Component):
@@ -381,6 +416,11 @@ class GISource(Component):
 
     def __str__(self):
         return "value=%s" % self.alpha
+
+    def print_netlist_elem_line(self, nodes_dict):
+        return "%s %s %s %s %s %g" % (self.part_id, nodes_dict[self.n1],
+                                nodes_dict[self.n2], nodes_dict[self.sn1],
+                                nodes_dict[self.sn2], self.alpha)
 
 
 class HVSource(Component):  # TODO: fixme
