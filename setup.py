@@ -25,6 +25,7 @@ setup(
     description="a SPICE-like electronic circuit simulator",
     long_description=''.join([read('pypi_description.rst'), '\n\n',
                               read('CHANGES.rst')]),
+    entry_points = {'console_scripts': ['ahkab = ahkab.__main__:cli', ], },
     license="GPL",
     keywords="electronic circuit simulator numeric symbolic",
     url='http://ahkab.github.io/ahkab/',
