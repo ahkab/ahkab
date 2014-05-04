@@ -46,6 +46,8 @@ from . import utilities
 from . import dc_guess
 from . import results
 
+from utilities import convergence_check
+
 specs = {'op': {
     'tokens': ({
                'label': 'guess',
@@ -1011,53 +1013,3 @@ def modify_x0_for_ic(circ, x0):
     return xnew
 
 
-def convergence_check(x, dx, residuum, nv_minus_one, debug=False):
-    if not hasattr(x, 'shape'):
-        x = numpy.mat(numpy.array(x))
-        dx = numpy.mat(numpy.array(dx))
-        residuum = numpy.mat(numpy.array(residuum))
-    vcheck, vresults = voltage_convergence_check(
-        x[:nv_minus_one, 0], dx[:nv_minus_one, 0], residuum[:nv_minus_one, 0])
-    icheck, iresults = current_convergence_check(
-        x[nv_minus_one:], dx[nv_minus_one:], residuum[nv_minus_one:])
-    return vcheck and icheck, vresults + iresults
-
-
-def voltage_convergence_check(x, dx, residuum, debug=False):
-    return custom_convergence_check(x, dx, residuum, er=options.ver, ea=options.vea, eresiduum=options.iea, debug=debug)
-
-
-def current_convergence_check(x, dx, residuum, debug=False):
-    return custom_convergence_check(x, dx, residuum, er=options.ier, ea=options.iea, eresiduum=options.vea, debug=debug)
-
-
-def custom_convergence_check(x, dx, residuum, er, ea, eresiduum, vector_norm=lambda v: abs(v), debug=False):
-    all_check_results = []
-    if not hasattr(x, 'shape'):
-        x = numpy.mat(numpy.array(x))
-        dx = numpy.mat(numpy.array(dx))
-        residuum = numpy.mat(numpy.array(residuum))
-    if x.shape[0]:
-        if not debug:
-            ret = numpy.allclose(x, x + dx, rtol=er, atol=ea) and \
-                numpy.allclose(residuum, numpy.zeros(
-                               residuum.shape), atol=eresiduum, rtol=0)
-        else:
-            for i in range(x.shape[0]):
-                if vector_norm(dx[i, 0]) < er * vector_norm(x[i, 0]) + ea and vector_norm(residuum[i, 0]) < eresiduum:
-                    all_check_results.append(True)
-                else:
-                    all_check_results.append(False)
-                if not all_check_results[-1]:
-                    break
-
-            ret = not (False in all_check_results)
-    else:
-        # We get here when there's no variable to be checked. This is because there aren't variables
-        # of this type.
-        # Eg. the circuit has no voltage sources nor voltage defined elements. In this case, the actual check is done
-        # only by current_convergence_check, voltage_convergence_check always
-        # returns True.
-        ret = True
-
-    return ret, all_check_results
