@@ -160,8 +160,8 @@ def cli():
     ahkab._print = cli_options.print_circuit
 
     # Program execution
-    ahkab.main(filename=remaning_args[
-               0], outfile=cli_options.outfile, verbose=verbose)
+    ahkab.main(filename=remaning_args[0],
+               outfile=cli_options.outfile, verbose=verbose)
 
     sys.exit(0)
 
