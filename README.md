@@ -6,10 +6,9 @@ The code should be easy to read and modify, the main language is Python 2.x and 
 
 ### News! ###
 
- * **Update your scientific Python installation!** We benefit from the latest updates to numpy and get **a 40% speed-up** for all large networks simulations.
-
-![r2r](https://f.cloud.github.com/assets/5038142/1903519/85895ee4-7c83-11e3-9712-c63c7152ce23.png)
-
+ * The whole codebase has been going through a (yet incomplete) refactoring and documenting thorough effort.
+ * Tests have been added to the code base, to weed out bugs and have a consistent way to check for regressions. If you have tests you would like to suggest, please send a PR my way.
+ *  My resources are limited these days, so the much-needed work is proceeding slowly, albeit hopefully steadily. If you are interested and you would like to contribute to refactoring or documenting a particular feature, it would be very welcome.
 
 ### Supported simulations: ###
   * Numeric:
