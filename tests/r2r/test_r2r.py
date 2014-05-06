@@ -46,7 +46,7 @@ def _run_test(ref_run=False, verbose=False):
 		fp.write(analysis)
 		fp.close()
 		start = time.time()
-		outstr = subprocess.check_output(["python", "../../ahkab/__main__.py", "-v 0", filename % {'nodes':circuit_nodes}])
+		outstr = subprocess.check_output(["ahkab", "-v 0", filename % {'nodes':circuit_nodes}])
 		stop = time.time()
 		times.append((stop-start))
 		if verbose:
@@ -90,6 +90,7 @@ def test():
 			pylab.plot(xf_new, fitfunc(p_new, xf_new), 'k-', label=('Fit: $y = %.3e\ x^3 + %.3e\ x^2 + %.1f$ - NEW' % tuple(p_new.tolist())))
 		pylab.xlabel("Number of equations []")
 		pylab.ylabel("Time to convergence [s]")
+		pylab.grid(True)
 		pylab.legend(loc=0)
 		pylab.savefig("r2r.png", dpi=90, format='png')
 

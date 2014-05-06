@@ -6,7 +6,7 @@ import numpy
 from scipy.interpolate import InterpolatedUnivariateSpline
 from nose.tools import ok_, nottest, with_setup
 
-ahkab_path = "../../ahkab/__main__.py"
+ahkab_path = "ahkab"
 er = 1e-6
 ea = 1e-9
 
@@ -16,7 +16,7 @@ def _run_test(ref_run=False):
 	data_file = "colpitts" if not ref_run else "colpitts-ref"
 	print "Running test... "
 	start = time.time()
-	proc = subprocess.Popen(["python", ahkab_path, "-v", "0", "-o", data_file, netlist])
+	proc = subprocess.Popen([ahkab_path, "-v", "0", "-o", data_file, netlist])
 	proc.communicate()
 	stop = time.time()
 	times = stop-start
