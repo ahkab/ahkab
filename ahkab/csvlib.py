@@ -42,32 +42,16 @@ def write_csv(filename, data, headers, append=False):
     Returns: None
     """
 
-    #   Writing data in CSV format to `filename`
-    if not append:
-        fp = _get_fp(filename, mode="w")
-        headers = copy.copy(headers)
-        if not headers[0][0] == '#':
-            headers[0] = '#' + headers[0]
-        for hi in range(len(headers)):
-            fp.write(headers[hi])
-            if hi < len(headers) - 1:
-                fp.write(SEPARATOR)
-            else:
-                fp.write("\n")
-    #   Appending data in CSV format to `filename`, no headers
-    else:
-        fp = _get_fp(filename, mode="a")
+    mode = 'a' if append else 'w'
+    fp = _get_fp(filename, mode)
 
     if not data.shape[0] == len(headers):
         print "(W): write_csv(): data and headers don't match. Continuing anyway."
         print "DATA: " + str(data.shape) + " headers length: " + str(len(headers))
 
-    for j in range(data.shape[1]):
-        for i in range(len(headers)):
-            fp.write("{0:g}".format(data[i, j]))
-            if i < len(headers) - 1:
-                fp.write(SEPARATOR)
-        fp.write("\n")
+    headers = SEPARATOR.join(headers) if not append else ""
+    numpy.savetxt(fp, data.T, delimiter=SEPARATOR, header=headers, comments='#')
+
     _close_fp(fp, filename)
 
 
@@ -180,54 +164,18 @@ def load_csv(filename, load_headers=[], nsamples=None, skip=0L, verbose=3):
         print "Can't load data from stdout."
         return None, None, None, None
 
-    fp = _get_fp(filename, mode="r")
-    headers = None
-    data = None
-    sample_index = 0L
-    line_index = 0
-    EOF = False
+    headers = get_csv_headers(filename)
+    his = get_headers_index(headers, load_headers, verbose=verbose)
 
-    for line in fp:  # .readlines():
-        line = line.strip()
-        if line == '':
-            continue
-        if line[0] == '#' and headers is None:
-            line = line[1:]
-        if line[0] == '#' and headers is not None:
-            continue  # comment
-        if headers is None:
-            headers = line.split(SEPARATOR)
-            if len(load_headers):
-                his = get_headers_index(headers, load_headers, verbose=verbose)
-            else:
-                his = range(len(headers))
-        else:
-            line_index = line_index + 1
-            if line_index < skip:
-                continue
-            if data is None:
-                data = numpy.zeros((len(his), 1))
-            else:
-                data = numpy.concatenate(
-                    (data, numpy.zeros((len(his), 1))), axis=1)
-            data_values = line.split(SEPARATOR)
-            for i in range(len(data_values)):
-                if his.count(i) > 0:
-                    data[his.index(i), -1] = float(data_values[i])
-                else:
-                    pass
-            sample_index = sample_index + 1
-            if nsamples is not None and sample_index == nsamples:
-                break
+    fp = _get_fp(filename, mode="r")
+    data = np.loadtxt(fp, delimiter=SEPARATOR, usecols=his, unpack=True, skiprows=skip, ndmin=2)
     _close_fp(fp, filename)
 
-    if data is None or line == '' or nsamples > sample_index:
-        EOF = True
-    else:
-        EOF = False
-
-    pos = skip + sample_index
-
+    # prepare return values
+    EOF = (nsamples is None) or (nsamples == data.shape[1])
+    if nsamples is not None:
+        data = data[:, :min(nsamples, data.shape[1])]
+    pos = skip + data.shape[1]
     headers = map(headers.__getitem__, his)
 
     return data, headers, pos, EOF
