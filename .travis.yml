@@ -13,6 +13,6 @@ install:
 # - 'if [ $TRAVIS_PYTHON_VERSION == "3.3" ]; then pip install numpy scipy matplotlib --upgrade --use-mirrors; fi'
  - pip install nose coveralls --use-mirrors
 # command to run tests, e.g. python setup.py test
-script: nosetests --with-coverage --cover-package=ahkab -w tests/colpitts -w tests/r2r -w tests/ring3
+script: nosetests --with-coverage --cover-package=ahkab tests/*/*.py
 after_success:
  - coveralls

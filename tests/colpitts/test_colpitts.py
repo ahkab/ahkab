@@ -1,10 +1,22 @@
 import time
 import os, os.path
 import pickle
-import subprocess
+
 import numpy
 from scipy.interpolate import InterpolatedUnivariateSpline
+
 from nose.tools import ok_, nottest, with_setup
+
+import ahkab
+from ahkab.ahkab import main
+
+wd = os.getcwd()
+if os.path.split(wd)[1] == 'ahkab':
+	reference_path = os.path.join(wd, 'tests/colpitts')
+elif os.path.split(wd)[1] == 'tests':
+	reference_path = os.path.join(wd, 'colpitts')
+else:
+	reference_path = wd
 
 ahkab_path = "ahkab"
 er = 1e-6
@@ -12,28 +24,33 @@ ea = 1e-9
 
 
 def _run_test(ref_run=False):
-	netlist = "colpitts.ckt"
-	data_file = "colpitts" if not ref_run else "colpitts-ref"
+	netlist = os.path.join(reference_path, "colpitts.ckt")
+	if not ref_run:
+		data_file = os.path.join(reference_path, "colpitts")
+	else:
+		data_file = os.path.join(reference_path, "colpitts-ref")
 	print "Running test... "
 	start = time.time()
-	proc = subprocess.Popen([ahkab_path, "-v", "0", "-o", data_file, netlist])
-	proc.communicate()
+	main(filename=netlist, outfile=data_file, verbose=0)
 	stop = time.time()
-	times = stop-start
+	times = stop - start
 	print "Done. The test took %f s" % times
 	data = numpy.loadtxt(data_file+".tran")
 	return data, times
 
 def teardown_func():
-	for f in ("colpitts.tran", "colpitts.op"):
+	for f in (os.path.join(reference_path, "colpitts.tran"), 
+                  os.path.join(reference_path, "colpitts.opinfo")):
 		os.remove(f)
 
 @with_setup(None, teardown_func)
 def test():
-	ref_run = not os.path.isfile('colpitts-ref.tran')
+	"""Colpitts simulation"""
+	ref_file = os.path.join(reference_path, 'colpitts-ref.tran')
+	ref_run = not os.path.isfile(ref_file)
 
 	if not ref_run:
-		res = numpy.loadtxt("colpitts-ref.tran")
+		res = numpy.loadtxt(ref_file)
 	else:
 		print "RUNNING REFERENCE RUN - INVALID TEST!"
 
@@ -47,4 +64,5 @@ def test():
 
 if __name__ == '__main__':
 	test()
-	data = numpy.loadtxt("colpitts-ref.tran")
+	ref_file = os.path.join(reference_path, 'colpitts-ref.tran')
+	data = numpy.loadtxt(ref_file)
