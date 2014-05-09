@@ -79,6 +79,12 @@ def _run_test(ref_run=False, verbose=False):
 
 def test():
 	"""R-2R ladder speed test"""
+
+	# we do not want to execute this on Travis.
+	if 'TRAVIS' in os.environ:
+		# we skip the test. Travis builders are awfully slow
+		return 
+
 	pickle_file = os.path.join(reference_path, 'r2r.pickle') 
 	ref_run = not os.path.isfile(pickle_file)
 	if not ref_run:
