@@ -37,7 +37,7 @@ There are no packages for the time being (this program is at an early developmen
 
  * or stand-alone with a netlist file, the syntax being:
 
-    $ python ahkab -o graph.dat <netlist file>`
+    `$ python ahkab -o graph.dat <netlist file>`
 
 See `ahkab --help` for command line switches.
 
