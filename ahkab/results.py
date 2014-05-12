@@ -323,6 +323,7 @@ class op_solution(solution, _mutable_data):
         fp.flush()
         if filename != 'stdout':
             fp.close()
+        self._add_data(self.x)
 
     def print_short(self):
         str_repr = ""
