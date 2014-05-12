@@ -62,7 +62,6 @@ class NetlistTest(unittest.TestCase):
         cp = ConfigParser()
         cp.read(os.path.join(self.reference_path, '%s.ini' % self.test_id))
         self.skip = bool(cp.get('test', 'skip-on-travis'))
-        print self.test_id
         assert self.test_id == cp.get('test', 'name')
 
         netlist = cp.get('test', 'netlist')
@@ -87,10 +86,7 @@ class NetlistTest(unittest.TestCase):
                 self.rmfiles.append(os.path.join(self.reference_path, 
                                                  '%s.opinfo' % 
                                                  self.test_id))
-            #elif i == 'symbolic':
-            #    continue
-            else:
-                self.rmfiles.append(os.path.join(self.reference_path, 
+            self.rmfiles.append(os.path.join(self.reference_path, 
                                                  '%s.%s' % 
                                                  (self.test_id, i)))
 
@@ -167,7 +163,8 @@ class NetlistTest(unittest.TestCase):
                     with open(ref_file, 'w') as fp:
                         pickle.dump(res[t], fp)
                 else:
-                    res_file = '%s.%s' % (self.test_id, t)
+                    res_file = os.path.join(self.reference_path, 
+                                            '%s.%s' % (self.test_id, t))
                     os.rename(res_file, ref_file)
 
     def tearDown(self):
