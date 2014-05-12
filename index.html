@@ -31,17 +31,20 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <p><img src="https://github.com/ahkab/ahkab/wiki/images/logo.png" alt="logo" width=100></p>
+        <p><img src="https://github.com/ahkab/ahkab/wiki/images/logo.png" alt="logo"></p>
 
 <p>a SPICE-like electronic circuit simulator written in Python</p>
 
 <p>The code should be easy to read and modify, the main language is Python 2.x and it is platform-independent.</p>
 
+<p><a href="https://travis-ci.org/ahkab/ahkab"><img src="https://travis-ci.org/ahkab/ahkab.png?branch=master" alt="Build Status"></a> <a href="https://coveralls.io/r/ahkab/ahkab?branch=master"><img src="https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master" alt="Coverage Status"></a>
+<a href="https://pypi.python.org/pypi/ahkab/"><img src="http://img.shields.io/badge/version-0.09-brightgreen.png" alt="PyPi version"></a> <a href="https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE"><img src="http://img.shields.io/badge/license-GPL%20v2-brightgreen.png" alt="GPLv2 license"></a></p>
+
 <h3>
 <a name="news" class="anchor" href="#news"><span class="octicon octicon-link"></span></a>News!</h3>
 
 <ul>
-<li>The project <a href="https://github.com/ahkab/ahkab">moved to GitHub</a>. </li>
+<li>The whole codebase has been going through a (yet incomplete) refactoring and documenting thorough effort.</li>
 <li>
 <code>ahkab</code> can now be run stand-alone with a netlist file or <em>within Python scripts as a library</em>. This will likely become the preferred way in the future. See <strong><a href="https://github.com/ahkab/ahkab/wiki/Example:-Python-API">this butterworth filter simulation</a></strong> for an example/tentative tutorial.</li>
 </ul><h3>
@@ -75,15 +78,11 @@
 <a name="download-and-install" class="anchor" href="#download-and-install"><span class="octicon octicon-link"></span></a>Download and install</h3>
 
 <p>There are no packages for the time being (this program is at an early development stage). Go to <a href="https://github.com/ahkab/ahkab">ahkab on github</a> and follow the instructions to check out the code. You can find the list of the dependencies in the <a href="https://github.com/ahkab/ahkab/wiki/Install:-Notes">Install notes</a>.</p>
-<p>If you are using pip, in virtualenv or directly, you can easily install latest tarball by running the following:</p>
-
-<pre><code>pip install numpy sympy matplotlib 
-pip install https://github.com/ahkab/ahkab/tarball/master</code></pre>
 
 <h3>
 <a name="run-standalone" class="anchor" href="#run-standalone"><span class="octicon octicon-link"></span></a>Run standalone</h3>
 
-<pre><code>$ python ahkab -o graph.dat &lt;netlist file&gt;
+<pre><code>$ python ahkab -o graph.dat &lt;netlist file&gt;`
 </code></pre>
 
 <p>See <code>ahkab --help</code> for command line switches.</p>
@@ -91,11 +90,20 @@ pip install https://github.com/ahkab/ahkab/tarball/master</code></pre>
 <h3>
 <a name="documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation</h3>
 
-<p>The simulator can either be run from the command line with a netlist file or included in a python script. Both possibilities will be maintained for the foreseeable future. </p>
+<p><strong>Better documentation is coming your way!</strong></p>
 
-<p>Refer to the <a href="https://github.com/ahkab/ahkab/wiki/Help:-Netlist-Syntax">netlist syntax page</a> for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.</p>
+<p>The simulator can either be run from the command line with a netlist file or included in a python script.</p>
+
+<p>For the time being, please refer to the wiki, in particular the <a href="https://github.com/ahkab/ahkab/wiki/Help:-Netlist-Syntax">netlist syntax page</a> for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.</p>
 
 <p>The latter option is shown briefly in the <strong><a href="https://github.com/ahkab/ahkab/wiki/Example:-Python-API">Python API</a></strong> wiki page. The code comes with docstrings associated with <em>most</em> functions, type <code>help(ahkab.function_name)</code>.</p>
+
+<h3>
+<a name="how-this-project-was-born" class="anchor" href="#how-this-project-was-born"><span class="octicon octicon-link"></span></a>How this project was born</h3>
+
+<p>This project was born when I was an enthusiastic undergrad, apparently with plenty of free time, attending "Simulazione Circuitale" (<em>Circuit Simulation</em>) taught by <a href="http://brambilla.dei.polimi.it/">Prof. A. Brambilla</a> back in Italy at the Polytechnic University of Milan.</p>
+
+<p>I am grateful to prof. Brambilla for teaching one of the most interesting courses of my university years. -GV</p>
 
 <h3>
 <a name="contributors" class="anchor" href="#contributors"><span class="octicon octicon-link"></span></a>Contributors</h3>
