@@ -92,13 +92,19 @@ def _close_fp(fp, filename):
         fp.close()
 
 
-def get_headers_index(headers, load_headers, verbose=3):
+def get_headers_index(headers, load_headers=[], verbose=3):
     """Creates a list of integers. Each element in the list is the COLUMN index
     of the signal according to the supplied headers.
 
     headers: list of strings, the signal names, as returned by get_csv_headers()
 
+    load_headers : list, optional
+        The headers for the data to be loaded. If not provided, all indeces will
+        be returned.
+
     Returns a list of int."""
+    if not len(load_headers):
+        return list(range(len(headers)))
     his = []
     lowcase_headers = map(str.lower, headers)
 
@@ -163,7 +169,7 @@ def load_csv(filename, load_headers=[], nsamples=None, skip=0L, verbose=3):
 
     headers = get_csv_headers(filename)
     his = get_headers_index(headers, load_headers, verbose=verbose)
-    if len(his) != len(load_headers):
+    if len(load_headers) and len(his) != len(load_headers):
         raise ValueError("Specified header not found")
 
     fp = _get_fp(filename, mode="r")
