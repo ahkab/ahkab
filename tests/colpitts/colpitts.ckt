@@ -20,5 +20,5 @@ ib ns 0 type=idc idc=1.3m
 .model ekv nmos TYPE=n VTO=.4 KP=10e-6
 
 .op
-.tran tstop=250n tstep=.1n method=trap uic=2
+.tran tstop=25n tstep=.1n method=trap uic=2
 *.plot tran v(nd)

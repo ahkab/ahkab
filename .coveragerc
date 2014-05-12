@@ -1,0 +1,17 @@
+[run]
+branch = True
+source = ahkab
+include = ahkab/*
+omit =
+    */python?.?/*
+    */lib-python/?.?/*.py
+    */lib_pypy/_*.py
+    */site-packages/ordereddict.py
+    */site-packages/nose/*
+    */unittest2/*
+
+[report]
+show_missing = True
+
+[html]
+title = ahkab coverage report

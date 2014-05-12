@@ -1,0 +1,46 @@
+2014-01-25 08:43:24
+ahkab v. 0.07 (c) 2006-2013 Giuseppe Venturini
+
+Operating Point (OP) analysis
+
+Netlist: colpitts.ckt
+Title: mos colpitts oscillator
+At 300.00 K
+Options:
+	vea = 1.000000e-06
+	ver = 0.001000
+	iea = 1.000000e-09
+	ier = 0.001000
+	gmin = 0.000000e+00
+
+Convergence reached in 42 iterations.
+
+Results:
+Variable            Value                  Error  
+VDD                   2.5  V  (-2.5e-12 V, -0 %)  
+VND                   2.5  V  (-2.5e-12 V, -0 %)  
+VNS       -0.116200986997  V  ( 2.5e-10 V, -0 %)  
+VND1                  2.5  V  (-2.5e-10 V, -0 %)  
+VBIAS                 2.0  V    (-2e-12 V, -0 %)  
+I(VDD)            -0.0013  A        ( 0 A, -0 %)  
+I(L1)              0.0013  A         ( 0 A, 0 %)  
+I(VTEST)           0.0013  A         ( 0 A, 0 %)  
+I(VBIAS)              0.0  A         ( 0 A, 0 %)  
+
+ELEMENTS OP INFORMATION:
+R0  V(n1-n2):  0.0  [V]  I(n2-n1):  0.0  [A]  P:  0.0  [W]  
+-------------------
+C1  V(n1-n2):  2.616200987  [V]  Q:  2.93014510544e-12  [C]  E:  3.83292425844e-12  [J]  
+-------------------
+C2  V(n1-n2):  -0.116200986997  [V]  Q:  -1.30145105436e-13  [C]  E:  7.56149485222e-15  [J]  
+-------------------
+m1        N ch   STRONG INVERSION                         LINEAR                                                                                 
+beta  [A/V^2]:  0.000746574470194  Weff  [m]:    0.0002 (0.0002)   Leff      [m]:  1.33945110625e-06 (1e-06)  M/N:                          1/1  
+Vdb       [V]:        2.616200987   Vgb  [V]:        2.116200987    Vsb      [V]:                        0.0    Vp      [V]:      1.18126783831  
+VTH       [V]:                0.4   VOD  [V]:      1.61188671993   nq:                         1.44011732737    VA      [V]:      1.99917064176  
+Ids       [A]:   0.00129999988445  nv:             1.36453957998  Ispec      [A]:          3.84987888131e-06  TEF:               0.063129029685  
+gmg       [S]:   0.00184989038878   gms  [S]:  -0.00317451824956    rob    [Ohm]:              1537.82370727                                     
+if:                 475.729938341   ir:            23.4335578457     Qf  [C/m^2]:           0.00111108138735    Qr  [C/m^2]:  0.000227594358407  
+-------------------
+TOTAL POWER: 3.401061e-03 W
+-------------------

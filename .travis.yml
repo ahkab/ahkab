@@ -1,0 +1,19 @@
+language: python
+python:
+  - "2.7"
+#  - "3.3" one day!
+virtualenv:
+  system_site_packages: false
+before_install:
+ - 'if [ $TRAVIS_PYTHON_VERSION == "2.7" ]; then sudo apt-get build-dep -qq python-scipy python-numpy python-sympy; sudo apt-get install -qq python-matplotlib; fi'
+# - 'if [ $TRAVIS_PYTHON_VERSION == "3.3" ]; then sudo apt-get build-dep -qq python3-scipy python3-numpy; sudo apt-get build-dep -qq python-matplotlib; fi'
+# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
+install: 
+ - 'if [ $TRAVIS_PYTHON_VERSION == "2.7" ]; then pip install numpy scipy matplotlib sympy --upgrade --use-mirrors; fi'
+# - 'if [ $TRAVIS_PYTHON_VERSION == "3.3" ]; then pip install numpy scipy matplotlib --upgrade --use-mirrors; fi'
+ - python setup.py install
+ - pip install nose coveralls
+# command to run tests, e.g. python setup.py test
+script: nosetests -v -s --with-coverage --cover-package=ahkab tests/*/*.py
+after_success:
+ - coveralls

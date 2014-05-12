@@ -1,45 +1,68 @@
 import time
 import os, os.path
 import pickle
-import subprocess
+
 import numpy
+from scipy.interpolate import InterpolatedUnivariateSpline
+
 from nose.tools import ok_, nottest, with_setup
 
-ahkab_path = "../../ahkab/ahkab.py"
+import ahkab
+from ahkab.ahkab import main
+
+wd = os.getcwd()
+if os.path.split(wd)[1] == 'ahkab':
+	reference_path = os.path.join(wd, 'tests/colpitts')
+elif os.path.split(wd)[1] == 'tests':
+	reference_path = os.path.join(wd, 'colpitts')
+else:
+	reference_path = wd
+
+ahkab_path = "ahkab"
 er = 1e-6
 ea = 1e-9
 
 
 def _run_test(ref_run=False):
-	netlist = "colpitts.ckt"
-	data_file = "colpitts" if not ref_run else "colpitts-ref"
+	netlist = os.path.join(reference_path, "colpitts.ckt")
+	if not ref_run:
+		data_file = os.path.join(reference_path, "colpitts")
+	else:
+		data_file = os.path.join(reference_path, "colpitts-ref")
 	print "Running test... "
 	start = time.time()
-	proc = subprocess.Popen(["python", ahkab_path, "-v", "0", "-o", data_file, netlist])
-	proc.communicate()
+	main(filename=netlist, outfile=data_file, verbose=0)
 	stop = time.time()
-	times = stop-start
+	times = stop - start
 	print "Done. The test took %f s" % times
 	data = numpy.loadtxt(data_file+".tran")
 	return data, times
 
 def teardown_func():
-	for f in ("colpitts.tran", "colpitts.op"):
+	for f in (os.path.join(reference_path, "colpitts.tran"), 
+                  os.path.join(reference_path, "colpitts.opinfo")):
 		os.remove(f)
 
 @with_setup(None, teardown_func)
 def test():
-	ref_run = not os.path.isfile('colpitts-ref.tran')
+	"""Colpitts simulation"""
+	ref_file = os.path.join(reference_path, 'colpitts-ref.tran')
+	ref_run = not os.path.isfile(ref_file)
 
 	if not ref_run:
-		res = numpy.loadtxt("colpitts-ref.tran")
+		res = numpy.loadtxt(ref_file)
 	else:
 		print "RUNNING REFERENCE RUN - INVALID TEST!"
 
 	res_new, time_new = _run_test(ref_run)
+	
+	# Interpolate the results to compare.
+	d1 = InterpolatedUnivariateSpline(res_new[:, 0], res_new[:, 2])
+	d2 = InterpolatedUnivariateSpline(res[:, 0], res[:, 2])
 
-	ok_(numpy.allclose(res_new, res, rtol=er, atol=ea), "Test colpitts FAILED")
+	ok_(numpy.allclose(d1(res[:, 0]), d2(res[:, 0]), rtol=er, atol=ea), "Test colpitts FAILED")
 
 if __name__ == '__main__':
-	data = numpy.loadtxt("colpitts-ref.tran")
-	
+	test()
+	ref_file = os.path.join(reference_path, 'colpitts-ref.tran')
+	data = numpy.loadtxt(ref_file)

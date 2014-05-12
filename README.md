@@ -1,14 +1,19 @@
-ahkab
-=====
+#<img src="http://raw.github.com/wiki/ahkab/ahkab/images/logo_small.png" alt="Monkeying around" style="width: 80px;"/> ahkab
 
-a SPICE-like electronic circuit simulator written in Python
+***a SPICE-like electronic circuit simulator written in Python***
 
 The code should be easy to read and modify, the main language is Python 2.x and it is platform-independent.[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/3f4b146d6a15f66802f1906e5cf4f68c "githalytics.com")](http://githalytics.com/ahkab/ahkab)
 
 ### News! ###
 
- * The project [moved to GitHub](https://github.com/ahkab/ahkab). 
- * `ahkab` can now be run stand-alone with a netlist file or _within Python scripts as a library_. This will likely become the preferred way in the future. See **[this butterworth filter simulation](https://github.com/ahkab/ahkab/wiki/Example:-Python-API)** for an example/tentative tutorial.
+ * The whole codebase has been going through a (yet incomplete) refactoring and documenting thorough effort.
+ * Tests have been added to the code base, to weed out bugs and have a consistent way to check for regressions. If you have tests you would like to suggest, please send a PR my way.
+ *  My resources are limited these days, so the much-needed work is proceeding slowly, albeit hopefully steadily. If you are interested and you would like to contribute to refactoring or documenting a particular feature, it would be very welcome.
+
+[![Build Status](https://travis-ci.org/ahkab/ahkab.png?branch=master)](https://travis-ci.org/ahkab/ahkab) [![Coverage Status](https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master)](https://coveralls.io/r/ahkab/ahkab?branch=master)
+[![PyPi version](http://img.shields.io/badge/version-0.09-brightgreen.png)](https://pypi.python.org/pypi/ahkab/)
+<!--- [![PyPi downloads](https://pypip.in/download/ahkab/badge.png)](https://pypi.python.org/pypi/ahkab/) --->
+[![GPLv2 license](http://img.shields.io/badge/license-GPL%20v2-brightgreen.png)](https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE)
 
 ### Supported simulations: ###
   * Numeric:
@@ -26,9 +31,13 @@ The results are saved to disk, plotted or printed to stdout and can be read/proc
 
 There are no packages for the time being (this program is at an early development stage). Go to [ahkab on github](https://github.com/ahkab/ahkab) and follow the instructions to check out the code. You can find the list of the dependencies in the [Install notes](https://github.com/ahkab/ahkab/wiki/Install:-Notes).
 
-###Run standalone###
+###Usage###
 
-    $ python ahkab -o graph.dat <netlist file>`
+ * `ahkab` can be run _within Python scripts as a library_. This will likely become the preferred way in the future. See **[this butterworth filter simulation](https://github.com/ahkab/ahkab/wiki/Example:-Python-API)** for an example/tentative tutorial.
+
+ * or stand-alone with a netlist file, the syntax being:
+
+    `$ python ahkab -o graph.dat <netlist file>`
 
 See `ahkab --help` for command line switches.
 
@@ -40,8 +49,14 @@ Refer to the [netlist syntax page](https://github.com/ahkab/ahkab/wiki/Help:-Net
 
 The latter option is shown briefly in the **[Python API](https://github.com/ahkab/ahkab/wiki/Example:-Python-API)** wiki page. The code comes with docstrings associated with _most_ functions, type `help(ahkab.function_name)`.
 
+### How this project was born ###
+
+This project was born when I was an enthusistic undergrad, apparently with plenty of free time, attending "Simulazione Circuitale" (*Circuit Simulation*) taught by [Prof. A. Brambilla](http://brambilla.dei.polimi.it/) back in Italy at the Polytechnic University of Milan.
+
+I am grateful to prof. Brambilla for teaching one of the most interesting courses of my university years. -GV
+
 ### Contributors ###
-Giuseppe Venturini (@ggventurini on GH) Ian Daniher (@itdaniher, also on GH)
+[Giuseppe Venturini](https://github.com/ggventurini), [Ian Daniher](https://github.com/itdaniher), [Rob Crowther](https://github.com/weilawei).
 
 ### Bugs and patches ###
 
