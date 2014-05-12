@@ -60,7 +60,7 @@ def test():
 	d1 = InterpolatedUnivariateSpline(res_new[:, 0], res_new[:, 2])
 	d2 = InterpolatedUnivariateSpline(res[:, 0], res[:, 2])
 
-	ok_(numpy.allclose(d1(res[:, 0]), d1(res[:, 0]), rtol=er, atol=ea), "Test colpitts FAILED")
+	ok_(numpy.allclose(d1(res[:, 0]), d2(res[:, 0]), rtol=er, atol=ea), "Test colpitts FAILED")
 
 if __name__ == '__main__':
 	test()
