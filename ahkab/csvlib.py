@@ -8,7 +8,7 @@ Functions:
     load_csv(filename, load_headers=[], nsamples=None, skip=0L, verbose=3)
 
 2. MISC utilities
-    get_headers_index(headers, load_headers. verbose=3):
+    get_headers_index(headers, load_headers, verbose=3):
     get_csv_headers(filename):
 
 3. Internal routines
@@ -108,9 +108,6 @@ def get_headers_index(headers, load_headers, verbose=3):
         except ValueError:
             if verbose:
                 print "(W): header " + lh + " not found. Skipping."
-        except AttributeError:
-            if verbose:
-                print "(W): got spurious header " + str(lh) + " (not a string). Skipping."
     return his
 
 
@@ -166,9 +163,11 @@ def load_csv(filename, load_headers=[], nsamples=None, skip=0L, verbose=3):
 
     headers = get_csv_headers(filename)
     his = get_headers_index(headers, load_headers, verbose=verbose)
+    if len(his) != len(load_headers):
+        raise ValueError("Specified header not found")
 
     fp = _get_fp(filename, mode="r")
-    data = np.loadtxt(fp, delimiter=SEPARATOR, usecols=his, unpack=True, skiprows=skip, ndmin=2)
+    data = numpy.loadtxt(fp, delimiter=SEPARATOR, usecols=his, unpack=True, skiprows=skip, ndmin=2)
     _close_fp(fp, filename)
 
     # prepare return values
