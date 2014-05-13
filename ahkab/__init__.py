@@ -27,7 +27,8 @@
 # because does Windows have the DISPLAY env variable defined?
 import os
 import matplotlib
-if os.system('python -c "import matplotlib.pyplot as plt;plt.figure()"'):
+if os.system('python -c "import matplotlib.pyplot as plt;plt.figure()" > ' + 
+             '/dev/null 2>&1'):
     matplotlib.use('Agg')
 
 from .ahkab import __version__, new_op, new_dc, new_tran, new_ac, new_pss
