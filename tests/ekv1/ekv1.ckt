@@ -1,0 +1,10 @@
+EKV TEST
+m1 nd ng ns 0 nch w=1u l=1u
+vdd nd 0 type=vdc vdc=2.5
+vss ns 0 type=vdc vdc=0
+vbias ng 0 type=vdc vdc=.51
+
+.model ekv nch type=n vto=.5 kp=10e-6
+.op
+.dc source=vbias start=0 stop=2.5 step=0.01
+.plot dc i(vdd)
