@@ -546,7 +546,7 @@ class Circuit(list):
 
         elif isinstance(models[model_label], mosq.mosq_mos_model):
             elem = mosq.mosq_device(
-                part_id, nd, ng, ns, nb, w, l, models[model_label], m, n)
+                nd, ng, ns, nb, w, l, models[model_label], m, n, part_id)
 
         else:
             raise Exception, "Unknown model type for " + model_label
