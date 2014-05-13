@@ -179,7 +179,7 @@ class mosq_device:
             status = "ON"
 
         arr = [
-            [self.part_id + " ch", status, "", "", sat_status, "", "", "", "", "", ""], ]
+            [self.part_id + " ch", status, "", "", sat_status, "", "", "", "", "", "", ""], ]
         arr.append(
             ["beta", "[A/V^2]:", self.opdict['beta'], "Weff", "[m]:", str(self.opdict['W']) + " (" + str(self.device.W) + ")",
              "L", "[m]:", str(self.opdict['L']) + " (" + str(self.device.L) + ")", "M/N:", "", str(self.device.M) + "/" + str(self.device.N)])
