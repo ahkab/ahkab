@@ -1,0 +1,6 @@
+SIMPLE 1R 1V TEST
+r1 1 0 1k
+vd 1 0 type=vdc vdc=1
+.op
+.ac start=1 stop=100 nsteps=10
+.symbolic
