@@ -70,7 +70,7 @@ def write_headers(filename, headers):
 
 
 def _get_fp(filename, mode="r"):
-    if filename == 'stdout':
+    if filename == 'stdout' or filename == '-' or filename == sys.stdout:
         if mode == 'w' or mode == 'a':
             fp = sys.stdout
         else:
