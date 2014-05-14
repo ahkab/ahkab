@@ -132,7 +132,7 @@ class NetlistTest(unittest.TestCase):
                 else:
                     # Interpolate the results to compare.
                     d1 = InterpolatedUnivariateSpline(x.reshape((-1, )), res[k].reshape((-1, )))
-                    d2 = InterpolatedUnivariateSpline(ref[ref.x].reshape((-1, )), res[k].reshape((-1, )))
+                    d2 = InterpolatedUnivariateSpline(ref[ref.x].reshape((-1, )), ref[k].reshape((-1, )))
                     ok_(np.allclose(d1(x.reshape((-1, ))), d2(x.reshape((-1, ))), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         elif isinstance(res, results.op_solution):
             for k in res.keys():
@@ -294,7 +294,7 @@ class APITest(unittest.TestCase):
                 else:
                     # Interpolate the results to compare.
                     d1 = InterpolatedUnivariateSpline(x.reshape((-1, )), res[k].reshape((-1, )))
-                    d2 = InterpolatedUnivariateSpline(ref[ref.x].reshape((-1, )), res[k].reshape((-1, )))
+                    d2 = InterpolatedUnivariateSpline(ref[ref.x].reshape((-1, )), ref[k].reshape((-1, )))
                     ok_(np.allclose(d1(x.reshape((-1, ))), d2(x.reshape((-1, ))), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         elif isinstance(res, results.op_solution):
             for k in res.keys():
