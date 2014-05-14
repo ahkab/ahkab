@@ -31,6 +31,7 @@ version of the Newton Rhapson method.
 
 import sys
 import re
+import copy
 
 import numpy
 import numpy.linalg
@@ -982,7 +983,7 @@ def modify_x0_for_ic(circ, x0):
     """
 
     if isinstance(x0, results.op_solution):
-        x0 = x0.asmatrix()
+        x0 = copy.copy(x0.asmatrix())
         return_obj = True
     else:
         return_obj = False
