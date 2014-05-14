@@ -78,7 +78,7 @@ class NetlistTest(unittest.TestCase):
         self.refs = {}
         for t in self.types:
             self.refs.update({t: os.path.join(self.reference_path,
-                                 cp.get('test', t + '_ref'))})
+                                 cp.get('test', t + '-ref'))})
 
         # files to be removed after the test is completed successfully
         self.rmfiles = []
@@ -238,7 +238,7 @@ class APITest(unittest.TestCase):
         self.refs = {}
         for t in self.types:
             self.refs.update({t: os.path.join(self.reference_path,
-                                              self.test_id + '_ref' + '.'+ t)})
+                                              self.test_id + '-ref' + '.'+ t)})
 
         # update the an_list with abs paths
         for i in range(len(self.an_list)):
