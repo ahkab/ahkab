@@ -88,7 +88,7 @@ def _run_test(ref_run=False, verbose=False):
 	times = numpy.array(times, dtype='float64')
 	if ref_run:
 		with open(os.path.join(reference_path, 'r2r.pickle'), 'w') as fp:
-			pickle.dump((x, times, boxid), fp)
+			pickle.dump((x, times, get_boxid()), fp)
 	return x, times
 
 def test():
