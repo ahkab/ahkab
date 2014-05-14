@@ -23,6 +23,7 @@
 
 import sys
 import tempfile
+import copy
 from optparse import OptionParser
 
 import numpy
@@ -423,7 +424,7 @@ def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None
 def queue(*analysis):
     global _queue
     for an in analysis:  # let's hope the user knows what he's doing!
-        _queue += [an]
+        _queue += [copy.deepcopy(an)]
 
 
 def run(circ, an_list=None):
@@ -450,12 +451,11 @@ def run(circ, an_list=None):
     if not an_list:
         an_list = _queue
     else:
+        an_list = copy.deepcopy(an_list)
         if type(an_list) == tuple:
             an_list = list(an_list)
         elif type(an_list) == dict:
             an_list = [an_list] # run(mycircuit, op1)
-        elif type(an_list) == list:
-            pass
 
     while len(an_list):
         an_item = an_list.pop(0)
