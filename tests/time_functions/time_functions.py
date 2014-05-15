@@ -28,10 +28,11 @@ def test():
     ac_analysis = ahkab.new_ac(start=1e3, stop=1e5, points=100, outfile='time_functions')
     tran_analysis = ahkab.new_tran(tstart=0, tstop=1.2e-3, tstep=1e-6, x0=None, outfile='time_functions')
 
-    testbench = testing.APITest('time_functions', mycircuit, [op_analysis, ac_analysis, tran_analysis])
+    testbench = testing.APITest('time_functions', mycircuit, 
+                                [op_analysis, ac_analysis, tran_analysis],
+                                skip_on_travis=True)
     testbench.setUp()
     testbench.test()
-    testbench.tearDown()
 
     if cli:
         r = ahkab.run(mycircuit, an_list=[op_analysis, ac_analysis, tran_analysis])
@@ -59,6 +60,8 @@ def test():
         plt.xlabel('Angular frequency [rad/s]')
         plt.ylabel('arg(V(n4)) [rad]')
         fig.savefig('ac_plot.png')
+    else:
+        testbench.tearDown()
 
 if __name__ == '__main__':
     import pylab as plt
