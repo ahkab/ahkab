@@ -100,7 +100,7 @@ def test():
 	# we do not want to execute this on Travis.
 	if 'TRAVIS' in os.environ:
 		# we skip the test. Travis builders are awfully slow
-		return 
+		raise SkipTest 
 
 	pickle_file = os.path.join(reference_path, 'r2r.pickle') 
 	ref_run = not (os.path.isfile(pickle_file) and check_boxid(pickle_file))
