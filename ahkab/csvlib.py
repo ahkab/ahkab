@@ -8,7 +8,7 @@ Functions:
     load_csv(filename, load_headers=[], nsamples=None, skip=0L, verbose=3)
 
 2. MISC utilities
-    get_headers_index(headers, load_headers. verbose=3):
+    get_headers_index(headers, load_headers, verbose=3):
     get_csv_headers(filename):
 
 3. Internal routines
@@ -70,7 +70,7 @@ def write_headers(filename, headers):
 
 
 def _get_fp(filename, mode="r"):
-    if filename == 'stdout':
+    if filename == 'stdout' or filename == '-' or filename == sys.stdout:
         if mode == 'w' or mode == 'a':
             fp = sys.stdout
         else:
@@ -92,13 +92,19 @@ def _close_fp(fp, filename):
         fp.close()
 
 
-def get_headers_index(headers, load_headers, verbose=3):
+def get_headers_index(headers, load_headers=[], verbose=3):
     """Creates a list of integers. Each element in the list is the COLUMN index
     of the signal according to the supplied headers.
 
     headers: list of strings, the signal names, as returned by get_csv_headers()
 
+    load_headers : list, optional
+        The headers for the data to be loaded. If not provided, all indeces will
+        be returned.
+
     Returns a list of int."""
+    if not len(load_headers):
+        return list(range(len(headers)))
     his = []
     lowcase_headers = map(str.lower, headers)
 
@@ -108,9 +114,6 @@ def get_headers_index(headers, load_headers, verbose=3):
         except ValueError:
             if verbose:
                 print "(W): header " + lh + " not found. Skipping."
-        except AttributeError:
-            if verbose:
-                print "(W): got spurious header " + str(lh) + " (not a string). Skipping."
     return his
 
 
@@ -166,9 +169,11 @@ def load_csv(filename, load_headers=[], nsamples=None, skip=0L, verbose=3):
 
     headers = get_csv_headers(filename)
     his = get_headers_index(headers, load_headers, verbose=verbose)
+    if len(load_headers) and len(his) != len(load_headers):
+        raise ValueError("Specified header not found")
 
     fp = _get_fp(filename, mode="r")
-    data = np.loadtxt(fp, delimiter=SEPARATOR, usecols=his, unpack=True, skiprows=skip, ndmin=2)
+    data = numpy.loadtxt(fp, delimiter=SEPARATOR, usecols=his, unpack=True, skiprows=skip, ndmin=2)
     _close_fp(fp, filename)
 
     # prepare return values

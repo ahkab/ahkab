@@ -84,6 +84,7 @@ shooting_max_nr_iter = 10000
 symb_internal_solver = False
 symb_sympy_manual_solver = False
 
+# ac
 ac_log_step = 'LOG'
 ac_lin_step = 'LIN'
 ac_max_nr_iter = 20

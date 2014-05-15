@@ -38,6 +38,15 @@ from . import csvlib
 VERSION = "0.09"
 csvlib.SEPARATOR = "\t"
 
+class _mutable_data:
+    def __init__(self):
+        pass
+    def _add_data(self, data):
+        """Add the data matrix to the results set."""
+        csvlib.write_csv(self.filename, data, self.variables, append=self._init_file_done)
+        self._init_file_done = True
+
+
 class solution:
     def __init__(self, circ, outfile):
         """Base class storing a set of generic simulation results.
@@ -61,11 +70,7 @@ class solution:
         self.skip_nodes_list = []   # nodi da saltare, solo interni
         self.variables = []
         self.units = case_insensitive_dict()
-
-    def _add_data(self, data):
-        """Add the data matrix to the results set."""
-        csvlib.write_csv(self.filename, data, self.variables, append=self._init_file_done)
-        self._init_file_done = True
+        self.iter_index = 0
 
     def get_type(self):
         """Please redefine this function in the subclasses."""
@@ -145,7 +150,7 @@ class solution:
             self.iter_index += 1
         return next
 
-class op_solution(solution):
+class op_solution(solution, _mutable_data):
     def __init__(self, x, error, circ, outfile, iterations=0):
         """Holds a set of Operating Point results.
             x: the result set
@@ -198,6 +203,21 @@ class op_solution(solution):
                 self.errors[v], self.units[v], \
                 self.errors[v]/self.results[v]*100.0)
         return str_repr
+
+    def __getitem__(self, name):
+        """Get a specific variable, as from a dictionary."""
+        if not name.lower() in map(str.lower, self.variables):
+            raise KeyError
+        his = csvlib.get_headers_index(self.variables, [name], verbose=0)
+        return self.x[his]
+
+    def get(self, name, default=None, verbose=3):
+        """Get a solution by variable name."""
+        try:
+            data = self.__getitem__(name)
+        except KeyError:
+            return default
+        return data
 
     def get_type(self):
         return "OP"
@@ -303,6 +323,7 @@ class op_solution(solution):
         fp.flush()
         if filename != 'stdout':
             fp.close()
+        self._add_data(self.x)
 
     def print_short(self):
         str_repr = ""
@@ -317,7 +338,7 @@ class op_solution(solution):
         (It is assumed that one set of results is calculated with Gmin, the other without.)
         op1, op2: the results vectors, interchangeable
         
-        THIS METHOS IS UNBOUNDED.
+        THIS METHOD IS UNBOUNDED.
 
         Returns:
         The list of the variables that did not pass the test. They are extracted from 
@@ -340,7 +361,32 @@ class op_solution(solution):
                 print "Unrecognized unit... Bug."
         return check_failed_vars
 
-class ac_solution(solution):
+    def values(self, verbose=3):
+        """Get all of the results set's variables values."""
+        return self.x
+
+    def items(self, verbose=3):
+        vlist = []
+        for j in range(self.x.shape[0]):
+            vlist.append(self.x[j])
+        return zip(self.variables, vlist)
+
+    # iterator methods
+    def __iter__(self):
+        self.iter_index = 0
+        return self
+
+    def next(self):
+        if self.iter_index == len(self.variables):
+            self.iter_index = 0
+            raise StopIteration
+        else:
+            next = self.variables[self.iter_index], \
+                   self.x[self.iter_index]
+            self.iter_index += 1
+        return next
+
+class ac_solution(solution, _mutable_data):
     def __init__(self, circ, ostart, ostop, opoints, stype, op, outfile):
         """Holds a set of AC results.
             circ: the circuit instance of the simulated circuit
@@ -391,7 +437,7 @@ class ac_solution(solution):
             xsplit[2*i+1, 0] = numpy.angle(x[i, 0], deg=options.ac_phase_in_deg)
              
         data = numpy.concatenate((omega, xsplit), axis=0)
-        solution._add_data(self, data)
+        self._add_data(data)
 
     def get_type(self):
         return "AC"
@@ -402,7 +448,7 @@ class ac_solution(solution):
     def get_xlabel(self):
         return self.variables[0]
 
-class dc_solution(solution):
+class dc_solution(solution, _mutable_data):
     def __init__(self, circ, start, stop, sweepvar, stype, outfile):
         """Holds a set of DC results.
             circ: the circuit instance of the simulated circuit
@@ -454,7 +500,7 @@ class dc_solution(solution):
         sweepvalue = numpy.mat(numpy.array([sweepvalue]))
         x = op.asmatrix()
         data = numpy.concatenate((sweepvalue, x), axis=0)
-        solution._add_data(self, data)
+        self._add_data(data)
 
     def get_type(self):
         return "DC"
@@ -465,7 +511,7 @@ class dc_solution(solution):
     def get_xlabel(self):
         return self.variables[0]
 
-class tran_solution(solution):
+class tran_solution(solution, _mutable_data):
     def __init__(self, circ, tstart, tstop, op, method, outfile):
         """Holds a set of TRANSIENT results.
             circ: the circuit instance of the simulated circuit
@@ -513,7 +559,7 @@ method %s. Run on %s, data filename %s.>" % \
         if not self._lock:
             time = numpy.mat(numpy.array([time]))
             data = numpy.concatenate((time, x), axis=0)
-            solution._add_data(self, data)
+            self._add_data(data)
         else:
             printing.print_general_error(
                                 "Attempting to add values to a complete result set. BUG"
@@ -532,7 +578,7 @@ method %s. Run on %s, data filename %s.>" % \
         return self.variables[0]
 
 
-class pss_solution(solution):
+class pss_solution(solution, _mutable_data):
     def __init__(self, circ, method, period, outfile, t_array=None, x_array=None):
         """Holds a set of TRANSIENT results.
             circ: the circuit instance of the simulated circuit
@@ -579,7 +625,7 @@ Run on %s, data filename %s.>" % \
         """All the results are set at the same time for a PSS"""
         time = numpy.mat(numpy.array(t))
         data = numpy.concatenate((time, x), axis=0)
-        solution._add_data(self, data)
+        self._add_data(data)
 
     def asmatrix(self, verbose=3):
         allvalues = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0L, verbose=verbose)

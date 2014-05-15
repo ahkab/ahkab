@@ -1,5 +1,8 @@
 import time
-import os, os.path
+import os
+import os.path
+import hashlib
+import uuid
 import pickle
 import subprocess
 import scipy, scipy.optimize
@@ -21,8 +24,19 @@ elif os.path.split(wd)[1] == 'tests':
 else:
 	reference_path = wd
 
+# checking for time regression on different machines makes little sense
+# this is an easy -- and imperfect -- way to check whether ref and
+# current execution happen on the same box
+def get_boxid():
+	mac = hex(uuid.getnode())
+	return hashlib.sha512(mac).hexdigest()
 
-# fit the code
+def check_boxid(pickle_file):
+	with open(pickle_file, 'r') as fp:
+		_, _, ref_boxid = pickle.load(fp)
+	return ref_boxid == get_boxid()
+
+# fit the data
 fitfunc = lambda p, x: p[0]*x**3 + p[1]*x**2 + p[2] # Target function
 errfunc = lambda p, x, y: (fitfunc(p, x) - y) # Distance to the target function
 
@@ -74,7 +88,7 @@ def _run_test(ref_run=False, verbose=False):
 	times = numpy.array(times, dtype='float64')
 	if ref_run:
 		with open(os.path.join(reference_path, 'r2r.pickle'), 'w') as fp:
-			pickle.dump((x, times), fp)
+			pickle.dump((x, times, boxid), fp)
 	return x, times
 
 def test():
@@ -86,9 +100,10 @@ def test():
 		return 
 
 	pickle_file = os.path.join(reference_path, 'r2r.pickle') 
-	ref_run = not os.path.isfile(pickle_file)
+	ref_run = not (os.path.isfile(pickle_file) and check_boxid(pickle_file))
 	if not ref_run:
-		x, times = pickle.load(open(pickle_file, 'r'))
+		print "Running test..."
+		x, times, _ = pickle.load(open(pickle_file, 'r'))
 		x = numpy.array(x, dtype='int64')
 		x_new, times_new = _run_test(ref_run)
 		assert max(abs(times_new - times)) < REGRESSION_TIME

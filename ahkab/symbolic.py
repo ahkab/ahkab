@@ -303,7 +303,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             mna[elem.n2, elem.sn2] = mna[elem.n2, elem.sn2] + alpha
         elif isinstance(elem, devices.ISource):
             if elem.is_symbolic:
-                IDC = sympy.Symbol(elem.part_id.upper(), real=True)
+                IDC = sympy.Symbol(elem.part_id.upper())
             else:
                 IDC = elem.dc_value
             N[elem.n1, 0] = N[elem.n1, 0] + IDC
@@ -351,7 +351,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             mna[index, elem.n2] = -1
             if isinstance(elem, devices.VSource):
                 if elem.is_symbolic:
-                    VDC = sympy.Symbol(elem.part_id.upper(), real=True)
+                    VDC = sympy.Symbol(elem.part_id.upper())
                 else:
                     VDC = elem.dc_value
                 N[index, 0] = -VDC
