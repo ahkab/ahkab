@@ -22,7 +22,7 @@ def test():
     mycircuit.add_vsource("V1", n1="n1", n2='n5', dc_value=5, ac_value=.5, function=step)
     mycircuit.add_vsource("V2", n1="n5", n2=gnd, dc_value=5, ac_value=.5, function=damped_sin)
 
-    printing.print_circuit(mycircuit)
+    #printing.print_circuit(mycircuit)
 
     op_analysis = ahkab.new_op(outfile='time_functions')
     ac_analysis = ahkab.new_ac(start=1e3, stop=1e5, points=100, outfile='time_functions')
