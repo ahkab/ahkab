@@ -795,10 +795,10 @@ def generate_mna_and_N(circ, verbose=3):
         if elem.is_nonlinear:
             continue
         elif isinstance(elem, devices.Resistor):
-            mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1.0 / elem.value
-            mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1.0 / elem.value
-            mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1.0 / elem.value
-            mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1.0 / elem.value
+            mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + elem.g
+            mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - elem.g
+            mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - elem.g
+            mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + elem.g
         elif isinstance(elem, devices.Capacitor):
             pass  # In a capacitor I(V) = 0
         elif isinstance(elem, devices.GISource):
