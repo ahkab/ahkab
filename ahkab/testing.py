@@ -10,7 +10,7 @@ import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
 
 from nose.tools import ok_, nottest
-from nose.plugins.skip import Skip
+from nose.plugins.skip import SkipTest
 
 from . import csvlib
 from . import results
@@ -117,11 +117,11 @@ class NetlistTest(unittest.TestCase):
     def _run_test(self):
         # no reference runs with nose
         if sys.argv[0].endswith('nosetests') and self.ref_run:
-            raise Skip
+            raise SkipTest
         # check whether we are on travis or not and skip if needed.
         if 'TRAVIS' in os.environ and os.environ.get('TRAVIS', None):
             if self.skip:
-                raise Skip
+                raise SkipTest
         print "Running test... ",
         start = time.time()
         res = main(filename=self.netlist,
