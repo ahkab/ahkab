@@ -62,7 +62,7 @@ class NetlistTest(unittest.TestCase):
         # read the test config from <test_id>.ini
         cp = ConfigParser()
         cp.read(os.path.join(self.reference_path, '%s.ini' % self.test_id))
-        self.skip = bool(cp.get('test', 'skip-on-travis'))
+        self.skip = bool(int(cp.get('test', 'skip-on-travis')))
         assert self.test_id == cp.get('test', 'name')
 
         netlist = cp.get('test', 'netlist')
@@ -119,8 +119,7 @@ class NetlistTest(unittest.TestCase):
         if sys.argv[0].endswith('nosetests') and self.ref_run:
             raise SkipTest
         # check whether we are on travis or not and skip if needed.
-        if 'TRAVIS' in os.environ and os.environ.get('TRAVIS', None):
-            if self.skip:
+        if 'TRAVIS' in os.environ and self.skip:
                 raise SkipTest
         print "Running test... ",
         start = time.time()
