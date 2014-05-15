@@ -1,6 +1,7 @@
 import time
 import os
 import os.path
+import sys
 import hashlib
 import uuid
 import pickle
@@ -10,6 +11,8 @@ import numpy
 import matplotlib
 matplotlib.use('Agg')
 import pylab
+
+from nose.plugins.skip import SkipTest
 
 stand_alone_exec = False
 REGRESSION_TIME = 3 #s - if the test takes 3s additional time it's considered
@@ -108,7 +111,9 @@ def test():
 		x_new, times_new = _run_test(ref_run)
 		assert max(abs(times_new - times)) < REGRESSION_TIME
 		assert sum(times_new) > 3 # if we're that fast, something's off
-	else:
+	elif ref_run:
+		if sys.argv[0].endswith('nosetests'):
+			raise SkipTest
 		print "RUNNING REFERENCE TEST - RESULTS INVALID!"
 		x, times = _run_test(ref_run)
 		print "RUNNING REFERENCE TEST - RESULTS INVALID!"
