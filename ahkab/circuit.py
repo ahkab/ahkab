@@ -424,7 +424,7 @@ class Circuit(list):
         are added as well).
 
         Parameters:
-        name (string): the volatge source name (eg "VA"). The first letter is always V.
+        name (string): the voltage source name (eg "VA"). The first letter is always V.
         n1, n2 (string): the nodes to which the element is connected.
                     eg. "in" or "out_a"
         dc_value (float): DC voltage
@@ -691,7 +691,7 @@ class Circuit(list):
         return True
 
     def remove_elem(self, elem):
-        """Removes an element from ther circuit and takes care that no
+        """Removes an element from the circuit and takes care that no
         "orphan" nodes are left.
         circ: the circuit instance
         elem: the element to be removed
@@ -790,7 +790,7 @@ class Circuit(list):
 # STATIC METHODS
 def is_elem_voltage_defined(elem):
     """Returns:
-    True se the elem is a vsource, inductor, evsource or hvsource
+    True if the elem is a vsource, inductor, evsource or hvsource
     False otherwise.
     """
     if isinstance(elem, devices.VSource) or isinstance(elem, devices.EVSource) or \
