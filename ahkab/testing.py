@@ -78,7 +78,7 @@ class NetlistTest(unittest.TestCase):
         self.refs = {}
         for t in self.types:
             self.refs.update({t: os.path.join(self.reference_path,
-                                 cp.get('test', t + '-ref'))})
+                                 cp.get('test', t + '_ref'))})
 
         # files to be removed after the test is completed successfully
         self.rmfiles = []
