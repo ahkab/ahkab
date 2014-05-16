@@ -17,6 +17,96 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Every circuit is described in the ahkab simulator by an instance of the
+Circuit class.
+This class holds everything is needed to simulate the circuit (except
+the specification of the analyses to be performed).
+
+It is even possible to rewrite a netlist from a Circuit class: see the
+printing module.
+
+1. Nodes
+
+The nodes are stored in this way: we assign to each node a internal
+name, whatever is its external one (which is used in the netlist).
+Those are integers.
+
+The simulator uses always the internal names. When the results are
+presented to the user, the internal node is not showed, the external
+identifier (or external node name) is printed instead.
+
+This is done through:
+
+.. code-block:: python
+
+    my_circuit = Circuit()
+    ...
+    [ init code ]
+    ...
+    print "This is a node" + my_circuit.nodes_dict[int_node]
+
+2. A circuit is derived from a list. This list holds the elements.
+
+All the elements in the ``Circuit`` class must be appended to their
+``Circuit`` instance and connections should be ensure checking that
+the nodes the elements refer to are indeed circuit nodes..
+
+To simplify the operation of adding a component to a ``Circuit``,
+the following convenience methods are provided to the user to add and
+remove elements to the circuit:
+
+* :func:`add_resistor`
+
+* :func:`add_capacitor`
+
+* :func:`add_inductor`
+
+* :func:`add_vsource`
+
+* :func:`add_isource`
+
+* :func:`add_diode`
+
+* :func:`add_mos`
+
+* :func:`add_vcvs`
+
+* :func:`add_vccs`
+
+* :func:`add_user_defined`
+
+* :func:`remove_elem`
+
+Example:
+
+.. code-block:: python
+
+    mycircuit = circuit.Circuit(title="Example circuit", filename=None)
+    # no filename since there will be no deck associated with this circuit.
+    # get the ref node (gnd)
+    gnd = mycircuit.get_ground_node()
+    # add a node named n1 and a 600 ohm resistor connected between n1 and gnd
+    mycircuit.add_resistor(name="R1", n1="n1", n2=gnd, R=600)
+
+Refer to the methods help for addtional info.
+
+3. Internal only nodes
+
+The number of internal only nodes (added automatically by the simulator)
+is held in ``Circuit.internal_nodes``. That value shouldn't be changed by 
+hand.
+
+4. Device models.
+
+They are stored in ``Circuit.models`` (type dict), the following methods
+are provided to add and remove device models.
+
+* :func:`add_model`
+
+* :func:`remove_model`
+
+"""
+
 import sys
 import math
 
@@ -31,73 +121,6 @@ from . import switch
 user_defined_modules_dict = {}
 
 class Circuit(list):
-
-    """Every circuit is described in the ahkab simulator by a Circuit class.
-    This class holds everything is needed to simulate the circuit (except
-    the specification of the analyses to be performed).
-
-    It is even possible to rewrite a netlist from a Circuit class: see the
-    printing module.
-
-    1. Nodes
-    The nodes are stored in this way: we assign to each node a internal
-    name, whatever is its external one (which is used in the netlist).
-    Those are integers.
-
-    The simulator uses always the internal names. When the results are
-    presented to the user, the internal node is not showed, the external
-    identifier (or external node name) is printed instead.
-
-    This is done through:
-        my_circuit = Circuit()
-
-        ...
-        [ init code ]
-        ...
-
-        print "This is a node" + my_circuit.nodes_dict[int_node]
-
-    2. A Circuit is derived from a list. This list holds the elements.
-    All the elements in the Circuit must be appended to the Circuit.
-
-    The following methods are provided to add and remove elements to the circuit:
-
-    add_resistor(self, name, n1, n2, value)
-    add_capacitor(self, name, n1, n2, value, ic=None)
-    add_inductor(self, name, n1, n2, value, ic=None)
-    add_vsource(self, name, n1, n2, dc_value, ac_value, function=None)
-    add_isource(self, name, n1, n2, dc_value, ac_value, function=None)
-    add_diode(self, name, n1, n2, Is=None, Rs=None, m=None, T=None, ic=None)
-    add_mos(self, name, nd, ng, ns, nb, w, l, model_label, models=None, m=None, n=None)
-    add_vcvs(self, name, n1, n2, sn1, sn2, alpha)
-    add_vccs(self, name, n1, n2, sn1, sn2, alpha)
-    add_user_defined(self, module, label, param_dict)
-    remove_elem(self, elem)
-
-    Example:
-
-    mycircuit = circuit.Circuit(title="Example circuit", filename=None)
-    # no filename since there will be no deck associated with this circuit.
-    # get the ref node (gnd)
-    gnd = mycircuit.get_ground_node()
-    # add a node named n1 and a 600 ohm resistor connected between n1 and gnd
-    mycircuit.add_resistor(name="R1", n1="n1", n2=gnd, R=600)
-
-    Refer to the methods help for addtional info.
-
-    3. Internal only nodes
-    The number of internal only nodes (added automatically by the simulator)
-    is held in my_circuit.internal_nodes
-    That value shouldn't be changed by hand.
-
-    4. Device models.
-    They are stored in Circuit.models (type dict), the following methods
-    are provided to add and remove device models.
-
-    add_model(self, model_type, model_label, model_parameters)
-    remove_model(self, model_label)
-
-    """
 
     def __init__(self, title, filename=None):
         self.title = title
@@ -114,11 +137,21 @@ class Circuit(list):
         If there is a node in the circuit with the same name, ValueError is
         raised.
 
-        Parameters:
-        name: a string that is used as _unique_ identifier of the node.
+        **Parameters:**
 
-        Returns:
-        node: a string that identifies the node.
+        name : string
+            the _unique_ identifier of the node.
+
+        **Returns:**
+
+        node : string 
+            the _unique_ identifier of the node.
+
+        Raises ``ValueError`` if a new node with the given id cannot be created
+        for example because it already exists in the circuit. The only
+        exception is the ground node, which has the reserved id ``'0'``, and
+        where this method won't raise an exception.
+
         """
         got_ref = self.nodes_dict.has_key(0)
         try:
@@ -172,10 +205,19 @@ class Circuit(list):
         return int_node
 
     def generate_internal_only_node_label(self):
-        """Some devices are made of a group of other devices, connected by "internal only" nodes.
-        This method generates the external names for such nodes. They are NOT added.
+        """Some devices are made of a group of other devices, connected by
+        "internal only" nodes, which have the prefix ``'INT'`` and the
+        simulator treats specially, hiding them from the user if not
+        explicitly asked about them.
 
-        Returns: the ext_node that should be used
+        This method generates the external names for such nodes. 
+
+        .. note: They are NOT added to the circuit during their creation.
+
+        **Returns:**
+
+        ext_node : string
+            The corresponding external node id
         """
 
         ext_node = "INT" + str(self.internal_nodes)
@@ -183,14 +225,15 @@ class Circuit(list):
         return ext_node
 
     def is_int_node_internal_only(self, int_node):
-        """Returns:
-        True if the node was automatically added by the simulator,
-        False, otherwise.
+        """Check whether a supplied node id corresponds to an "internal node"
+        or not.
         """
         return self.nodes_dict[int_node].find("INT") > -1
 
     def is_nonlinear(self):
-        """Returns True if at least a element in the circuit is NL.
+        """Check whether the circuit is non-linear.
+
+        Returns ``True`` if at least a element in the circuit is NL.
         """
         for elem in self:
             if elem.is_nonlinear:
@@ -323,13 +366,28 @@ class Circuit(list):
         """Adds a resistor to the circuit (also takes care that the nodes are
         added as well).
 
-        Parameters:
-        name (string): the resistor name (eg "R1"). The first letter is replaced by an R
-        n1, n2 (string): the nodes to which the resistor is connected.
-                    eg. "in" or "out_a"
-        R (float): resistance (float)
+        **Parameters:**
 
-        Returns: True
+        name : string
+            the resistor name (eg "R1"). The first letter is replaced by an R
+
+        n1, n2 : string
+            the nodes to which the resistor is connected.
+
+        value : float,
+            The resistance between ``n1`` and ``n2`` in Ohm.
+
+        **Returns:** 
+
+            True
+
+        .. seealso:: 
+
+        :func:`add_resistor`, :func:`add_capacitor`, 
+        :func:`add_inductor`, :func:`add_vsource`, :func:`add_isource`,
+        :func:`add_diode`, :func:`add_mos`, :func:`add_vcvs`, :func:`add_vccs`,
+        :func:`add_user_defined`, :func:`remove_elem`
+ 
         """
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)

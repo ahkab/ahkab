@@ -1,20 +1,37 @@
-.. ahkab documentation master file, created by
-   sphinx-quickstart on Sun May  4 20:18:45 2014.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Ahkab
+=====
 
-Welcome to ahkab's documentation!
-=================================
+:Release: |release|
+:Date: |today|
 
-Contents:
+Ahkab (pronounced "uh, cab") is an open-source SPICE-like interactive circuit simulator.
 
 .. toctree::
    :maxdepth: 2
+
+   tutorial/index
+
+.. toctree::
+   :maxdepth: 1
+
+   hacking
+   api
+   release
+
+Reference
+---------
+
+.. toctree::
+   :maxdepth: 1
 
    default
    ahkab
    ac
    bfpss
+   circuit
+
+Documentation in progress
+-------------------------
 
 .. automodule: ahkab.__init__
    :members:
@@ -60,9 +77,6 @@ Contents:
    :members:
 
 .. automodule:: ahkab.transient
-   :members:
-
-.. automodule:: ahkab.circuit
    :members:
 
 .. automodule:: ahkab.dc_guess
