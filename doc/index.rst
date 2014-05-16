@@ -1,5 +1,5 @@
-Ahkab
-=====
+Ahkab |release| Docs
+====================
 
 :Release: |release|
 :Date: |today|
@@ -10,13 +10,6 @@ Ahkab (pronounced "uh, cab") is an open-source SPICE-like interactive circuit si
    :maxdepth: 2
 
    tutorial/index
-
-.. toctree::
-   :maxdepth: 1
-
-   hacking
-   api
-   release
 
 Reference
 ---------
