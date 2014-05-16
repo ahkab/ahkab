@@ -121,6 +121,18 @@ from . import switch
 user_defined_modules_dict = {}
 
 class Circuit(list):
+    """The circuit class.
+
+    **Parameters:**
+
+    title : string
+        The circuit title.
+
+    filename : string, optional
+        If the circuit instance corresponds to a netlist file on disk,
+        set this to the netlist filename.
+
+    .. deprecated:: the filename option was deprecated in v. 0.0.9
 
     def __init__(self, title, filename=None):
         self.title = title
