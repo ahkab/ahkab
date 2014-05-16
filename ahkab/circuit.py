@@ -132,8 +132,8 @@ class Circuit(list):
         If the circuit instance corresponds to a netlist file on disk,
         set this to the netlist filename.
 
-    .. deprecated:: the filename option was deprecated in v. 0.0.9
-
+    .. deprecated:: the filename option was deprecated in v. 0.09
+    """
     def __init__(self, title, filename=None):
         self.title = title
         self.filename = filename
