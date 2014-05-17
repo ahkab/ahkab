@@ -62,20 +62,20 @@ def write_csv(filename, data, headers, append=False):
 
     **Parameters:**
 
-    filename: string
+    filename : string
         the path to the file to be written.
         Use 'stdout' to write to stdout
 
-    data: ndarray
+    data : ndarray
         The data to be written. Notice that variables are swept across *rows*,
         time samples are swept along *columns*.
         Or equivalently: ``data[variable_index, sample_number]``
 
-    headers: a list of strings
+    headers : list of strings
         the signal names, ordered so that ``headers[i]`` corresponds to 
         ``data[i, :]``.
 
-    append: bool, optional
+    append : bool, optional
         If False, the file (if it exists) will be rewritten, otherwise
         it will be appended to.
 
