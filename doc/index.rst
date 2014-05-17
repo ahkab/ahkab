@@ -17,11 +17,11 @@ Reference
 .. toctree::
    :maxdepth: 1
 
-   default
    ahkab
    ac
    bfpss
    circuit
+   csvlib
 
 Documentation in progress
 -------------------------
@@ -39,10 +39,6 @@ Documentation in progress
    :members:
 
 .. automodule:: ahkab.symbolic
-   :members:
-
-
-.. automodule:: ahkab.csvlib
    :members:
 
 .. automodule:: ahkab.ekv
