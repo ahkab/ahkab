@@ -130,10 +130,10 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
 
     printing.print_info_line(("Building equations...", 3), verbose)
     eq = []
-    for i in to_real_list(mna * x + N):
+    for i in _to_real_list(mna * x + N):
         eq.append(sympy.Eq(i, 0))
 
-    x = to_real_list(x)
+    x = _to_real_list(x)
     if verbose > 4:
         printing.print_symbolic_equations(eq)
         print "To be solved for:"
@@ -251,7 +251,7 @@ def get_variables(circ):
     return x
 
 
-def to_real_list(M):
+def _to_real_list(M):
     """
     M.tolist() returns a list of lists, even when the symb matrix is really just a vector.
     we want a list of symbols! This fixes that.
