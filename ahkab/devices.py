@@ -16,6 +16,88 @@
 #
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
+"""
+This module contains several basic element classes.
+
+General form of a nonlinear element class:
+
+The class must provide:
+
+1. Element terminals:
+
+::
+
+    elem.n1 # the anode of the element
+    elem.n2 # the cathode of the element
+
+.. note:: a positive current is a current that flows into the anode and out of
+    the cathode. This convention is used throughout the simulator.
+
+2. ``elem.get_ports()``
+
+This method must return a tuple of pairs of nodes. 
+
+Eg.
+
+::
+
+    ((na, nb), (nc, nd), (ne, nf), ... )
+
+Each pair of nodes is used to determine a voltage that has effect on the
+current.
+
+For example, the source-referred model of an nmos may provide:
+
+::
+
+    ((n_gate, n_source), (n_drain, n_source))
+
+The positive terminal is the first.
+
+From that, the calling method builds a voltage vector corresponding to the
+ports vector:
+
+::
+
+    voltages_vector = ( Va-Vb, Vc-Vd, Ve-Vf, ...)
+
+That's passed to:
+
+3. ``elem.i(voltages_vector, time)``
+
+It returns the current flowing into the element if the voltages specified in
+the voltages_vector are applied to its ports, at the time given.
+
+4. ``elem.g(voltages_vector, port_index, time)`` 
+
+similarly returns the differential transconductance between the port at
+position ``port_index`` in the ``ports_vector`` (see point **2** above)
+and the element output current, when the operating point is specified by
+the voltages in the ``voltages_vector``.
+
+5. elem.is_nonlinear
+
+A non linear element must have a ``elem.is_nonlinear`` field set to True.
+
+6. elem.is_symbolic
+
+This boolean flag is used to know whether the element should be treated
+symbolically by the ymbolic solver or not. It is meant to be toggled
+by the user at will.
+
+Recommended:
+
+1. A non linear element may have a list/tuple of the same length of its
+``ports_vector`` in which there are the recommended guesses for dc analysis.
+
+Eg. ``Vgs`` is set to ``Vt0`` in mosfets.
+
+This is obviously useless for linear devices.
+
+2. Every element should have a ``print_netlist_elem_line(self, nodes_dict)``
+allowing the element to print a netlist entry that parses to itself.
+
+"""
 
 import numpy
 import math
@@ -23,71 +105,14 @@ import math
 from . import constants
 from . import printing
 
-"""
-Contains various element classes.
-
-General form of a _non linear_ element class:
-
-The class must provide:
-
-1. Element terminals:
-elem.n1 # the anode of the element
-elem.n2 # the cathode of the element
-
-Notice: a positive current is a current that flows into the anode and out of
-the cathode. This convention is used throughout the simulator.
-
-2. elem.get_ports()
-This method must return a tuple of pairs of nodes. Something like:
-((na, nb), (nc, nd), (ne, nf), ... )
-
-Each pair of nodes is used to determine a voltage that has effect on the
-current. I referred to them as a 'port' though it may not be a good idea.
-
-For example, an nmos has:
-((n_gate, n_source), (n_drain, n_source))
-
-The positive terminal is the first.
-
-From that, the calling method builds a voltage vector corresponding to the
-ports vector:
-voltages_vector = ( Va-Vb, Vc-Vd, Ve-Vf, ...)
-
-That's passed to:
-3. elem.i(voltages_vector, time)
-
-It returns the current flowing into the element if the voltages specified in
-the voltages_vector are applied to its ports, at the time given.
-
-4. elem.g(voltages_vector, port_index, time) is similar, but returns the
-differential transconductance between the port at position port_index in the
-ports_vector (see 2) and the current, when the operating point is specified by
-the voltages in the voltages_vector.
-
-5. elem.is_nonlinear
-A non linear element must have a elem.is_nonlinear field set to True.
-
-6. elem.is_symbolic
-This boolean flag is used to know whether the element should be treated
-symbolically by the ymbolic solver or not. It is meant to be toggled
-by the user at will.
-
-Recommended:
-1. A non linear element may have a list/tuple of the same length of its
-ports_vector in which there are the recommended guesses for dc analysis.
-Eg Vgs is set to Vt in mosfets.
-This is obviously useless for linear devices.
-
-2. Every element should have a meaningful __str__ method.
-It must return a line of paramaters without n1 n2, because a element cannot
-know the external names of its nodes. It is used to print the parsed netlist.
-
-"""
-
-
 class Component(object):
 
-    """Base Component class, also for debugging"""
+    """Base Component class. 
+
+    This component is not meant for direct use, rather all other (simple)
+    components are a subclass of this element.
+
+    """
 
     def __init__(self, part_id=None, n1=None, n2=None, is_nonlinear=False, is_symbolic=True, value=None):
         self.part_id = part_id
@@ -120,13 +145,22 @@ class Component(object):
 
 
 class Resistor(Component):
-    is_nonlinear = False
-    is_symbolic = True
+    """A resistor.
 
+    .. image:: images/elem/resistor.svg
+
+    """
+    #
+    #             /\    /\    /\
+    #     n1 o---+  \  /  \  /  \  +---o n2
+    #                \/    \/    \/
+    #
     def __init__(self, part_id='R', n1=None, n2=None, value=None):
         self.part_id = part_id
         self._value = value
         self._g = 1./value
+        self.is_nonlinear = False
+        self.is_symbolic = True
         self.n1 = n1
         self.n2 = n2
 
@@ -165,15 +199,26 @@ class Resistor(Component):
 
 
 class Capacitor(Component):
-    is_nonlinear = False
-    is_symbolic = True
+    """A capacitor.
 
+    .. image:: images/elem/capacitor.svg
+
+    """
+    #
+    #               |  |
+    #               |  |
+    #     n1 o------+  +-------o n2
+    #               |  |
+    #               |  |
+    #
     def __init__(self, part_id='C', n1=None, n2=None, value=None, ic=None):
         self.part_id = part_id
         self.value = value
         self.n1 = n1
         self.n2 = n2
         self.ic = ic
+        self.is_nonlinear = False
+        self.is_symbolic = True
 
     def g(self, v, time=0):
         return 0
@@ -198,9 +243,16 @@ class Capacitor(Component):
 
 
 class Inductor(Component):
-    is_nonlinear = False
-    is_symbolic = True
+    """An inductor.
 
+    .. image:: images/elem/inductor.svg
+
+    """
+    #
+    #             L
+    #  n1 o----((((((((----o n2
+    #
+    #
     def __init__(self, part_id='L', n1=None, n2=None, value=None, ic=None):
         self.value = value
         self.n1 = n1
@@ -208,17 +260,19 @@ class Inductor(Component):
         self.part_id = part_id
         self.ic = ic
         self.coupling_devices = []
+        self.is_nonlinear = False
+        self.is_symbolic = True
+
 
 
 class InductorCoupling(Component):
-    is_nonlinear = False
-    is_symbolic = True
-
     def __init__(self, part_id='K', L1=None, L2=None, value_L1=None, value_L2=None):
         self.value_L1 = value_L1
         self.value_21 = value_L2
         self.L1 = L1
         self.L2 = L2
+        self.is_nonlinear = False
+        self.is_symbolic = True
 
     def __str__(self):
         return "%s %s %g" % (self.L1, self.L2, self.value)
@@ -240,24 +294,25 @@ class InductorCoupling(Component):
 
 class ISource(Component):
 
-    """Generic (ideal) current source:
+    """An ideal current source.
+
+    .. image:: images/elem/isource.svg
+
     Defaults to a DC current source. To implement a time-varying source:
-    set _time_function to an appropriate function(time) and is_timedependent=True
+    set ``_time_function`` to an appropriate ``function(time)`` and
+    ``is_timedependent=True``
 
     n1: + node
     n2: - node
     dc_value: DC current (A)
+    ac_value: AC current (A)
 
-    Note: if DC voltage is set and is_timedependent == True, dc_value will be returned
-    if the current is evaluated in a DC analysis. This may be useful to simulate a OP
-    and then perform a transient analysis with the OP as starting point.
-    Otherwise the value in t=0 is used for DC analysis.
+    Note: if DC voltage is set and ``is_timedependent == True``, ``dc_value``
+    will be returned if the current is evaluated in a DC analysis. 
+    This may be useful to simulate a OP and then perform a transient analysis
+    with the OP as starting point.
+    Otherwise the value in ``t=0`` is used for DC analysis.
     """
-    is_nonlinear = False
-    is_symbolic = True
-    is_timedependent = False
-    _time_function = None
-
     def __init__(self, part_id='I', n1=None, n2=None, dc_value=None, ac_value=0):
         self.part_id = part_id
         self.dc_value = dc_value
@@ -265,6 +320,10 @@ class ISource(Component):
         self.arg_ac = numpy.angle(ac_value) if ac_value else None
         self.n1 = n1
         self.n2 = n2
+        self.is_nonlinear = False
+        self.is_symbolic = True
+        self.is_timedependent = False
+        self._time_function = None
 
     def __str__(self):
         rep = ""
@@ -304,25 +363,24 @@ class ISource(Component):
 
 
 class VSource(Component):
+    """An ideal voltage source.
 
-    """Generic (ideal) voltage source:
+    .. image:: images/elem/vsource.svg
+
     Defaults to a DC voltage source. To implement a time-varying source:
-    set _time_function to an appropriate function(time) and is_timedependent=True
+    set ``_time_function`` to an appropriate ``function(time)`` and
+    ``is_timedependent=True``
 
     n1: + node
     n2: - node
     dc_value: DC voltage (V)
+    ac_value: AC voltage (V)
 
     Note: if DC voltage is set and is_timedependent == True, dc_value will be returned
     if the voltage is evaluated in a DC analysis. This may be useful to simulate a OP
     and then perform a transient analysis with the OP as starting point.
     Otherwise the value in t=0 is used for DC analysis.
     """
-    is_nonlinear = False
-    is_symbolic = True
-    is_timedependent = False
-    _time_function = None
-    dc_guess = None  # defined in init
 
     def __init__(self, part_id='V', n1=None, n2=None, dc_value=1.0, ac_value=0):
         self.part_id = part_id
@@ -331,6 +389,10 @@ class VSource(Component):
         self.n2 = n2
         self.abs_ac = numpy.abs(ac_value) if ac_value else None
         self.arg_ac = numpy.angle(ac_value) if ac_value else None
+        self.is_nonlinear = False
+        self.is_symbolic = True
+        self.is_timedependent = False
+        self._time_function = None
         if dc_value is not None:
             self.dc_guess = [self.dc_value]
 

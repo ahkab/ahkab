@@ -35,6 +35,7 @@ Reference
    bfpss
    circuit
    csvlib
+   devices
    diode
    symbolic
 
@@ -91,8 +92,6 @@ Documentation in progress
 .. automodule:: ahkab.trap
 
 .. automodule:: ahkab.constants
-
-.. automodule:: ahkab.devices
 
 .. automodule:: ahkab.plotting
 

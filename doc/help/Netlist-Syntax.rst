@@ -55,11 +55,13 @@ Linear elements
 Resistors
 '''''''''
 
+.. image:: ../images/elem/resistor.svg
+
 **General syntax:**
 
-``R<string> n+ n- <value>``
+``R<string> n1 n2 <value>``
 
--  ``n+`` and ``n-`` are the element nodes.
+-  ``n1`` and ``n2`` are the element nodes.
 -  ``value`` is the element resistance. It may any non-zero value
    (negative values are supported too).
 
@@ -68,20 +70,22 @@ Resistors
 ::
 
     R1 1 0 1k
-    RAb_ input output 1e6
+    RAb_ input output 1.2e6
 
 Capacitors
 ''''''''''
 
+.. image:: ../images/elem/capacitor.svg
+
 **General syntax:**
 
-``C<string> n+ n- <value> [ic=<value>]``
+``C<string> n1 n2 <value> [ic=<value>]``
 
--  ``n+`` and ``n-`` are the element nodes.
+-  ``n1`` and ``n2`` are the element nodes.
 -  ``value`` is the capacitance in Farads.
 -  ``ic=<value>`` is an optional attribute that can be set to provide an
    initial value for a transient simulation. See also the discussion of
-   the UIC= parameter in TRAN simulations.
+   the ``UIC`` parameter in TRAN simulations.
 
 **Example:**
 
@@ -93,15 +97,17 @@ Capacitors
 Inductors
 '''''''''
 
+.. image:: ../images/elem/inductor.svg
+
 **General syntax:**
 
-``L<string> n+ n- <value> [ic=<float>]``
+``L<string> n1 n2 <value> [ic=<float>]``
 
--  ``n+`` and ``n-`` are the element nodes.
+-  ``n1`` and ``n2`` are the element nodes.
 -  ``value`` is the inductance in Henry.
 -  ``ic=<value>`` is an optional attribute that can be set to provide an
    initial value for a transient simulation. See also the discussion of
-   the UIC= parameter in TRAN simulations.
+   the ``UIC`` parameter in TRAN simulations.
 
 **Example:**
 
