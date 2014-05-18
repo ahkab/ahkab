@@ -67,18 +67,38 @@ specs = {'symbolic': {'tokens': ({
 
 def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=3):
     """Attempt a symbolic solution of the circuit.
-    circ: the circuit instance to be simulated.
-    source: the name (string) of the source to be used as input for the transfer
-           function. If None, no transfer function is evaluated.
-    ac_enable: take frequency dependency into consideration (default: True)
-    r0s: take transistors' output impedance into consideration (default: False)
-    subs: a dictionary of sympy Symbols to be substituted. It makes solving the circuit
-          easier. Eg. {R1:R2} - replace R1 with R2. It can be generated with
-          parse_substitutions()
-    outfile: output filename ('stdout' means print to stdout).
-    verbose: verbosity level 0 (silent) to 6 (painful).
 
-    Returns: a dictionary with the solutions.
+    **Parameters:**
+
+    circ : circuit instance
+        the circuit instance to be simulated.
+
+    source : string, optional
+        the ``part_id`` of the source to be used as input for the transfer
+           function. If ``None``, no transfer function is evaluated.
+
+    ac_enable : bool, optional
+        take frequency dependency into consideration (default: True).
+
+    r0s : bool, optional
+        take transistors' output impedance into consideration (default: False)
+
+    subs: dict, optional
+        a dictionary of sympy Symbols to be substituted. It makes solving the circuit
+        easier. Eg. ``subs={R1:R2}`` - replace R1 with R2. It can be generated with
+        :func:`parse_substitutions()`
+
+    outfile : string, optional
+        output filename - ``'stdout'`` means print to stdout, the default.
+
+    verbose: int, optional
+        verbosity level 0 (silent) to 6 (painful).
+
+    **Returns:** 
+
+    sol : dict
+        a dictionary with the solutions.
+
     """
     if subs is None:
         subs = {}  # no subs by default
@@ -427,10 +447,17 @@ def get_roots(expr):
 def parse_substitutions(slist):
     """Generates a substitution dictionary to be passed to solve()
 
-    slist is a list of strings like 'R2=R1', instructing the simulator
-    to use the value of R1 (R1) instead of R2.
+    **Parameters:**
 
-    returns: the dictionary of symbols to be passed to solve()
+    slist : a list of strings
+        The elements of the list should be according to the syntax
+        ``'<part_id1>=<part_id2>'``, eg ``'R2=R1'``, instructing the simulator
+         to use the value of R1 (R1) instead of R2.
+
+    **Returns:**
+
+    subs : dict
+        the dictionary of symbols to be passed to :func:`solve`.
     """
     subs = {}
     for l in slist:
