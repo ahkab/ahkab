@@ -125,12 +125,28 @@ class Resistor(Component):
 
     def __init__(self, part_id='R', n1=None, n2=None, value=None):
         self.part_id = part_id
-        self.value = value
+        self._value = value
+        self._g = 1./value
         self.n1 = n1
         self.n2 = n2
 
-    def g(self, v, time=0):
-        return 1.0 / self.value
+    @property
+    def g(self, v=0, time=0):
+        return self._g
+
+    @g.setter
+    def g(self, g):
+        self._g = g 
+        self._value = 1./g
+
+    @property
+    def value(self, v=0, time=0):
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        self._value = value
+        self._g = 1./value
 
     def i(self, v, time=0):
         return 0

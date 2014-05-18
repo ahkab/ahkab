@@ -285,6 +285,8 @@ class APITest(unittest.TestCase):
                 self.ref_data.update({t: res})
 
     def _run_test(self):
+        if 'TRAVIS' in os.environ and self.skip:
+                raise SkipTest
         print "Running test... ",
         start = time.time()
         res = run(self.circ, self.an_list)
