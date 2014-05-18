@@ -1,5 +1,5 @@
-Periodic Steady-State through Brute Force Analysis Module
----------------------------------------------------------
+ahkab.bfpss
+-----------
 
 .. automodule:: ahkab.bfpss
    :members:

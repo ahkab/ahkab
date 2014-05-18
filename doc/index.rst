@@ -22,6 +22,8 @@ Reference
    bfpss
    circuit
    csvlib
+   diode
+   symbolic
 
 Documentation in progress
 -------------------------
@@ -29,16 +31,10 @@ Documentation in progress
 .. automodule: ahkab.__init__
    :members:
 
-.. automodule:: ahkab.diode
-   :members:
-
 .. automodule:: ahkab.__main__
    :members:
 
 .. automodule:: ahkab.printing
-   :members:
-
-.. automodule:: ahkab.symbolic
    :members:
 
 .. automodule:: ahkab.ekv

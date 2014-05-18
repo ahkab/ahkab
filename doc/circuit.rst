@@ -1,5 +1,5 @@
-Circuit Module
---------------
+ahkab.circuit
+-------------
 
 .. automodule:: ahkab.circuit
    :members:
