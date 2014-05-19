@@ -105,6 +105,159 @@ import math
 from . import constants
 from . import printing
 
+time_fun_specs = {'sin': { #VO VA FREQ TD THETA
+    'tokens': ({
+               'label': 'vo',
+               'pos': 0,
+               'type': float,
+               'needed': True,
+               'dest': 'vo',
+               'default': None
+               },
+               {
+               'label': 'va',
+               'pos': 1,
+               'type': float,
+               'needed': True,
+               'dest': 'va',
+               'default': None
+               },
+               {
+               'label': 'freq',
+               'pos': 2,
+               'type': float,
+               'needed': True,
+               'dest': 'freq',
+               'default': None
+               },
+               {
+               'label': 'td',
+               'pos': 3,
+               'type': float,
+               'needed': False,
+               'dest': 'td',
+               'default': 0.
+               },
+               {
+               'label': 'theta',
+               'pos': 4,
+               'type': float,
+               'needed': False,
+               'dest': 'theta',
+               'default': 0
+               }
+               )
+        },'exp': { #EXP(V1 V2 TD1 TAU1 TD2 TAU2)
+    'tokens': ({
+               'label': 'v1',
+               'pos': 0,
+               'type': float,
+               'needed': True,
+               'dest': 'v1',
+               'default': None
+               },
+               {
+               'label': 'v2',
+               'pos': 1,
+               'type': float,
+               'needed': True,
+               'dest': 'v2',
+               'default': None
+               },
+               {
+               'label': 'td1',
+               'pos': 2,
+               'type': float,
+               'needed': False,
+               'dest': 'td1',
+               'default': 0.
+               },
+               {
+               'label': 'tau1',
+               'pos': 3,
+               'type': float,
+               'needed': True,
+               'dest': 'tau1',
+               'default': None
+               },
+               {
+               'label': 'td2',
+               'pos': 4,
+               'type': float,
+               'needed': False,
+               'dest': 'td2',
+               'default': float('inf')
+               },
+               {
+               'label': 'tau2',
+               'pos': 5,
+               'type': float,
+               'needed': False,
+               'dest': 'tau2',
+               'default': float('inf')
+               }
+               )
+        },'pulse': { #PULSE(V1 V2 TD TR TF PW PER)
+    'tokens': ({
+               'label': 'v1',
+               'pos': 0,
+               'type': float,
+               'needed': True,
+               'dest': 'v1',
+               'default': None
+               },
+               {
+               'label': 'v2',
+               'pos': 1,
+               'type': float,
+               'needed': True,
+               'dest': 'v2',
+               'default': None
+               },
+               {
+               'label': 'td',
+               'pos': 2,
+               'type': float,
+               'needed': False,
+               'dest': 'td',
+               'default': 0.
+               },
+               {
+               'label': 'tr',
+               'pos': 3,
+               'type': float,
+               'needed': True,
+               'dest': 'tr',
+               'default': None
+               },
+               {
+               'label': 'tf',
+               'pos': 4,
+               'type': float,
+               'needed': True,
+               'dest': 'tf',
+               'default': None
+               },
+               {
+               'label': 'pw',
+               'pos': 5,
+               'type': float,
+               'needed': True,
+               'dest': 'pw',
+               'default': None
+               },
+               {
+               'label': 'per',
+               'pos': 6,
+               'type': float,
+               'needed': True,
+               'dest': 'per',
+               'default': None
+               },
+               )
+}}
+
+
 class Component(object):
 
     """Base Component class. 
