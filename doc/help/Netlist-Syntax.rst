@@ -302,14 +302,20 @@ Christian Enz, Fabien Théodoloz, François Krummenacher at the
 Electronics Laboratories, Swiss Federal Institute of Technology (EPFL),
 Lausanne, Switzerland.
 
-It is described here: 2.6 - http://legwww.epfl.ch/ekv/pdf/ekv\_v262.pdf
-3.0 - http://www.nsti.org/publications/MSM/2002/pdf/346.pdf
+It is described here: 
 
-The authors are in no way responsible for any bug that is (very likely)
+- rev. 2.6 - http://legwww.epfl.ch/ekv/pdf/ekv\_v262.pdf
+- rev. 3.0 - http://www.nsti.org/publications/MSM/2002/pdf/346.pdf
+
+The authors are in no way responsible for any bug that may be
 present in my implementation. :)
 
-The model is missing: \* *channel length modulation* \* complex mobility
-reduction \* RSCE \* transcapacitances \* quasistatic implementation
+The model is missing:
+
+- channel length modulation,
+- complex mobility reduction, 
+- RSCE transcapacitances, 
+- the quasistatic modeling.
 
 It does identify weak, moderate and strong inversion zones, it is fully
 symmetrical, it treats N and P devices equally.
@@ -429,12 +435,20 @@ DC sweep
 Performs a DC sweep (repeated OP analysis with the value of a voltage or
 current source changing at every iteration).
 
-Parameters: \* src: the id of the source to be swept (V12, Ibias...).
-Only independent current and voltage sources. \* start: start value. \*
-stop: stop value. \* type: either "linear" or "log" \* step: sets the
-value of the source from an iteration (k) to the next (k+1): \*\* if
-type=log, S(k+1) = S(k) ``*`` step \*\* if type=linear, S(k+1) = S(k) +
-step
+Parameters: 
+
+- ``src``: the id of the source to be swept (V12, Ibias...).
+    Only independent current and voltage sources.
+
+- ``start`` and ``stop``: sweep start and stop values.
+
+- type: either ``linear`` or ``log``
+
+- step: sets the value of the source from an iteration :math:`(k)` to the next :math:`(k+1)`: 
+
+   - if ``type=log``, :math:`S(k+1) = S(k) \cdot step`
+
+   - if ``type=linear``, :math:`S(k+1) = S(k) + step`
 
 Transient analysis
 ^^^^^^^^^^^^^^^^^^
@@ -510,14 +524,18 @@ Shooting
 This analysis tries to find the periodic steady state (PSS) solution of
 the circuit.
 
-Parameters: \* period: the period of the solution. To be specified only
-in not autonomous circuits (which are somehow clocked). \* points: How
-many time points to use to discretize the solution. If step is set, this
-is automatically computed. \* step: Time step on the period. If points
-is set, this is automatically computed. \* method: the PSS algorithm to
-be employed. Options are: shooting (default) and brute-force. \*
-autonomous: self-explanatory boolean. If set to true, currently the
-simulator halts, autonomous circuits are not supported.
+Parameters: 
+
+- ``period``: the period of the solution. To be specified only
+   in not autonomous circuits (which are somehow clocked). 
+- ``points``: How many time points to use to discretize the solution. If ``step`` is set, this
+    is automatically computed.
+- ``step``: Time step on the period. If ``points`` is set, this is
+    automatically computed. 
+- method: the PSS algorithm to be employed. Options are: ``shooting`` 
+    (default) and ``brute-force``.
+- ``autonomous``: self-explanatory boolean. If set to ``True``, currently the
+    simulator halts, because autonomous circuits are not supported, yet.
 
 Symbolic small-signal and transfer function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -598,9 +616,16 @@ Plot
 
 ``.plot <simulation_type> [variable1 variable2 ... ]``
 
-Parameters: \* simulation\_type: the which simulation will have the data
-plotted. Currently the available options are tran, shooting and dc. \*
-variableN might be: \*\* a voltage, syntax ``V(<node>)`` or
-``V(<node2>, <node1>)``, the second will plot the difference of the node
-voltages. Eg ``V(in)`` or ``V(2,1)``. \*\* a current, syntax
-``I(<source name>)``, eg. ``I(V2)`` or ``I(Vsupply)``
+Parameters: 
+
+- ``simulation_type``: which simulation will have the data
+plotted. Currently the available options are ``tran``, ``shooting`` and ``dc``. 
+
+- ``variable1``, ``variable2``: the signals to be plotted.
+
+They may be:
+
+- a voltage, syntax ``V(<node>)``, to plot the voltage at the specified node,
+    or ``V(<node2>, <node1>)``, to plot the difference of the node
+    voltages. Eg ``V(in)`` or ``V(2,1)``. 
+- a current, syntax ``I(<source name>)``, eg. ``I(V2)`` or ``I(Vsupply)``
