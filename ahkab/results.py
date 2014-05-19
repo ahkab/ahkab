@@ -34,8 +34,8 @@ from . import printing
 from . import options
 from . import constants
 from . import csvlib
+from .__version__ import __version__
 
-VERSION = "0.09"
 csvlib.SEPARATOR = "\t"
 
 class _mutable_data:
@@ -306,7 +306,7 @@ class op_solution(solution, _mutable_data):
         else:
             fp = sys.stdout
         fp.write(self.timestamp+"\n")
-        fp.write("ahkab v. "+VERSION+u" (c) 2006-2013 Giuseppe Venturini\n\n")
+        fp.write("ahkab v. "+__version__+u" (c) 2006-2013 Giuseppe Venturini\n\n")
         fp.write("Operating Point (OP) analysis\n\n")
         fp.write("Netlist: %s\nTitle: %s\n" % (self.netlist_file, self.netlist_title))
         fp.write("At %.2f K\n" % (self.temp,))

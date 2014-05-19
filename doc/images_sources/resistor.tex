@@ -1,0 +1,13 @@
+\documentclass{standalone}
+	
+\usepackage[siunitx]{circuitikz}
+
+\begin{document}
+
+\begin{circuitikz}[scale=1.5, transform shape]
+\draw (0,0) node[anchor=south] {$n1$};
+\draw (0,0) to [R=R, i>_=i, o-o] (3,0);
+\draw (3,0) node[anchor=south] {$n2$};
+\end{circuitikz} 
+
+\end{document}

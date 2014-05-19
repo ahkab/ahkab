@@ -49,14 +49,14 @@ from . import utilities
 from . import plotting
 from . import printing
 
+from .__version__ import __version__
+
 global _queue, _x0s, _print, _of
 
 _queue = []
 _print = False
 _x0s = {None: None}
 _of = []
-
-__version__ = '0.09'
 
 def new_op(guess=True, x0=None, outfile=None, verbose=0):
     """Assembles an OP analysis and returns the analysis object.
