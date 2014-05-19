@@ -9,15 +9,16 @@ This page shows the operating point simulation of some circuits.
 A simple 1:1 current mirror
 """""""""""""""""""""""""""
 
-[[/images/m1.png]]
+.. image:: ../images/op_example/m1.png
 
-A 1:1 current mirror (fig. 1a) is employed to provide a copy an input
-current Iin to a load (Iout). A good current mirror complies with a
-mirroring ratio - one here - has a low input resistance - a good current
-sink - and a high output resistance - a good current source/low
-dependence of Iout on the output voltage. Please remember, "good" is a
-qualifier that is only meaningful in relation to the rest of the circuit
-where the mirror is employed.
+A 1:1 current mirror (fig. 1a) is employed to provide a copy of an input
+current to a load. The two currents being resp. :math:`I_{IN} and
+:math:`I_{OUT}`. A good current mirror complies with a
+mirroring ratio - equal to one here - has a low input resistance - it's
+a good current sink - and a high output resistance - it's a good current
+source or equi.v it's a low dependence of :math:`I_{out}` on the output 
+voltage. Please remember, "good" is a qualifier that is only meaningful
+in relation to the rest of the circuit where the mirror is employed.
 
 According to the EKV model, the drain currents of M0 and M1 are composed
 by two components: the forward current (:math:`i_f`) and the reverse 
@@ -28,8 +29,8 @@ again referred to the bulk voltage. [Channel-length modulation is neglected]
 
 The short between gate and drain of M0 ensures that there can't be
 channel at the drain side of M0. The reverse current is hence null. For
-the correct operation of the mirror (ie :math:`I_{out}` equal to
-:math:`I_{in}`), the channel has to be pinched off on the drain side of M1 
+the correct operation of the mirror (ie :math:`I_{OUT}` equal to
+:math:`I_{IN}`), the channel has to be pinched off on the drain side of M1 
 as well, because otherwise the output voltage would control the output
 current.
 
@@ -42,7 +43,7 @@ model:
 
 .. math::
 
-    I_d = I_s * (i_f - i_r)
+    I_d = I_s (i_f - i_r)
 
 Where :math:`I_s` is known as specific current and it is a scaling
 factor, in particular it is proportional to the W/L ratio of the device.
@@ -52,15 +53,19 @@ In this example and in the following, all devices are matched
 
 Therefore:
 
-``I_{out} = I_{in}``
+.. math::
 
-If M1 had a W/L k times bigger than M0, then :math:`I_{s1}` would
+    I_{OUT} = I_{IN}
+
+If M1 had a :math:`(W/L)` :math:`k` times bigger than M0, then :math:`I_{s1}` would
 have been proportionally bigger than :math:`I_{s0}` and:
 
-``I_{out} = k I_{in}``
+.. math::
+
+    I_{OUT} = k \cdot I_{IN}
 
 Netlist
-"""""""
+^^^^^^^
 
 ::
 
@@ -77,7 +82,7 @@ Netlist
     .op
 
 Simulation results
-""""""""""""""""""
+^^^^^^^^^^^^^^^^^^
 
 ::
 
@@ -114,12 +119,16 @@ Simulation results
     -------------------
     TOTAL POWER: 5.15842644346e-05 W
 
-Notice how the two transistors have the same if and a low ir
-(saturation). Channel length modulation (due to different drain
-voltages) explains for the discrepancy in Ids. # A different view of the
-1:1 current mirror Consider now the two transistors in fig. 2a.
+Notice how the two transistors have the same :math:`i_f` and a low 
+:math:`i_r` (saturation). Channel length modulation (due to different 
+drain voltages) explains for the discrepancy in :math:`I_{DS}` 
 
-[[/images/m2.png]]
+A different view of the 1:1 current mirror
+""""""""""""""""""""""""""""""""""""""""""
+
+Consider now the two transistors in fig. 2a.
+
+.. image:: ../images/op_example/m2.png
 
 The circuit is similar to the one in fig. 1a: the two transistors again
 share gate, source and bulk nodes (potential) and have a separate drain
@@ -146,67 +155,80 @@ Therefore both transistors can't be in saturation.
 
 The results are: 
 
- * M0: 
+* M0: :math:`if`, :math:`ir = Itot + if`
 
-``if``, ``ir = Itot + if``
+* M1: :math:`if`, :math:`ir = Itot - if`
 
-* M1:
+The rest of the circuit - not shown - would set the actual value of
+:math:`i_f` and :math:`I_{tot}`.
 
-``if``, ``ir = Itot - if``
+A 1:1/16th current mirror 
+"""""""""""""""""""""""""
 
-The rest of the circuit - not shown - would set the actual value of if
-and Itot. # A 1:1/16th current mirror A down-scaling current mirror is
-depicted in fig. 3a.
+A down-scaling current mirror is depicted in fig. 3a.
 
-[[/images/m3.png]]
+.. image:: ../images/op_example/m3.png
 
 Here again, the transistors share the same bulk and gate node, and,
 two-by-two, they also share drain/source node.
 
 While this circuit is more complex than the previous ones, it can be
 analyzed in the same fashion, taking into account the results already
-presented: \* each neighboring transistor pair acts like a current
-mirror, ie same if/ir, \* zero net charge can be created/destroyed at
-each instant.
+presented: 
+
+- each neighboring transistor pair acts like a current
+    mirror, ie same :math:`i_f`/:math:`i_r`,
+- zero net charge can be created or destroyed at each instant.
 
 Considering the currents, we have 17 forward currents and 17 reverse
 currents to be determined, for a total of 34 unknowns:
 
 We can write:
 
-* 15 equations of the type ``if = ir`` for neighboring
+* 15 equations of the type :math:`if = ir` for neighboring
    devices,
 
 * 1 equation for the mirror operation of the M0-M1 pair,
 
-* 1 equation setting ``ir = 0`` for M0 (drain-gate short),
+* 1 equation setting :math:`ir = 0` for M0 (drain-gate short),
 
-* 1 equation setting ``Is * if = Iin`` for M0 (KCL),
+* 1 equation setting :math:`Is \cdot if = Iin` for M0 (KCL),
 
-* 1 equation setting ``ir = 0`` for M16 (hp. in saturation),
+* 1 equation setting :math:`ir = 0` for M16 (hp. in saturation),
 
-* 15 equations to require that M1, M2,
-  M3... M16 have all the same drain current.
+* 15 equations to require that M1, M2, M3... M16 have all
+    the same drain current.
 
 That gives a total of 34 equations.
 
 It can be shown that the solution is: 
 
-* M0: :math:`if = Iin/Is``, ``ir = 0`
+- M0: :math:`if = Iin/Is``, ``ir = 0`
 
-* M1: ``if = Iin/Is``, ``ir = 15/16 Iin/Is`` 
+- M1: ``if = Iin/Is``, ``ir = 15/16 Iin/Is`` 
 
-* M2: ``if = 15/16 Iin/Is``, ``ir = 14/16 Iin/Is`` \* and so on...
+- M2: ``if = 15/16 Iin/Is``, ``ir = 14/16 Iin/Is`` \* and so on...
 
 The general form is:
 
-``M[n]``, for ``n = 1..16``, ``if = (17-n)/16 Iin/Is`` and ``ir = (16-n)/16 Iin/Is``.
+M[n], for :math:`n = 1..16`, :math:`if = (17-n)/16 \cdot I_{IN}/I_s` and
+:math:`i_r = (16-n)/16 \cdot I_{IN}/I_s`.
 
-M16 has ``if = 1/16 Iin/Is`` and ``ir = 0``. Its drain current - the
-mirror output current - is therefore ``Iin/16``. ## Netlist \*
-1-to-1/16th down-scaling current mirror m0 inc inc 0 0 nch w=1u l=1u
+M16 has :math:`if = 1/16 \cdot I_{IN}/I_s` and :math:`i_r = 0`. 
+Its drain current - the mirror output current - is therefore:
+
+.. math::
+
+    I_{OUT} = 1/16 \cdot I_{IN}.
+
+Netlist 
+^^^^^^^
 
 ::
+
+    * 1-to-1/16th down-scaling current mirror 
+
+    m0 inc inc 0 0 nch w=1u l=1u
 
     m16 out inc n1 0  nch w=1u l=1u
     m15 n1 inc n2 0 nch w=1u l=1u 
@@ -233,7 +255,7 @@ mirror output current - is therefore ``Iin/16``. ## Netlist \*
     .op
 
 Simulation results
-""""""""""""""""""
+^^^^^^^^^^^^^^^^^^
 
 ::
 
@@ -405,8 +427,8 @@ Simulation results
     -------------------
     TOTAL POWER: 1.964081209e-05 W
 
-The :math:`I_{out}/I_{in}` scaling factor is as expected,
-since :math:`I_{out} = 1uA` when :math:`Iin = 16uA`. 
+The :math:`I_{OUT}/I_{IN}` scaling factor is as expected,
+since :math:`I_{OUT} = 1uA` when :math:`I_{IN} = 16uA`. 
 Furthermore, the results regarding the subdivision of the drain
 current in :math:`i_f/i_r` and the mirroring of currents in neighboring
 devices agree with the expectations as well.
