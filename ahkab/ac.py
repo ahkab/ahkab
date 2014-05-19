@@ -18,12 +18,16 @@
 
 """ This module offers the methods required to perform an AC analysis.
 Our problem can be written as:
+
     MNA*x + AC*x + J*x + Nac = 0
+
 We need:
+
     1. the mna matrix MNA
     2. the AC matrix, holding the frequency dep parts
     3. The linearized non-linear elements end up in J
     4. Nac, the AC sources contribution
+
 In order for an AC analysis to be performed, an OP has to be computed first,
 if there is any non-linear device in the circuit.
 """
@@ -82,20 +86,34 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
                 outfile="stdout", verbose=3):
     """Performs an AC analysis of the circuit described by circ.
 
-    Parameters:
-    start (float): the start angular frequency for the AC analysis
-    stop (float): stop angular frequency
-    points (float): the number of points to be use the discretize the
-                    [start, stop] interval.
-    sweep_type (string): Either 'LOG' or 'LINEAR', defaults to 'LOG'.
-    outfile (string): the filename of the output file where the results will be written.
-                      '.ac' is automatically added at the end to prevent different
-                      analyses from overwriting each-other's results.
-                      If unset or set to None, defaults to stdout.
-    verbose (int): the verbosity level, from 0 (silent) to 6 (debug).
+    **Parameters:**
 
-    Returns: an AC results object
-        """
+    start : float
+        the start angular frequency for the AC analysis
+
+    stop : float
+        stop angular frequency
+
+    points : float,
+        the number of points to be use the discretize the
+        [start, stop] interval.
+
+    sweep_type : string,
+        Either 'LOG' or 'LINEAR', defaults to 'LOG'.
+
+    outfile : string
+        the filename of the output file where the results will be written.
+        '.ac' is automatically added at the end to prevent different
+        analyses from overwriting each-other's results.
+        If unset or set to None, defaults to stdout.
+
+    verbose : int,
+        the verbosity level, from 0 (silent) to 6 (debug).
+
+    **Returns:**
+
+    ACresult : AC results object
+    """
 
     if outfile == 'stdout':
         verbose = 0

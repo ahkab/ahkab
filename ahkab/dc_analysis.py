@@ -31,6 +31,7 @@ version of the Newton Rhapson method.
 
 import sys
 import re
+import copy
 
 import numpy
 import numpy.linalg
@@ -795,10 +796,10 @@ def generate_mna_and_N(circ, verbose=3):
         if elem.is_nonlinear:
             continue
         elif isinstance(elem, devices.Resistor):
-            mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1.0 / elem.value
-            mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1.0 / elem.value
-            mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1.0 / elem.value
-            mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1.0 / elem.value
+            mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + elem.g
+            mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - elem.g
+            mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - elem.g
+            mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + elem.g
         elif isinstance(elem, devices.Capacitor):
             pass  # In a capacitor I(V) = 0
         elif isinstance(elem, devices.GISource):
@@ -982,7 +983,7 @@ def modify_x0_for_ic(circ, x0):
     """
 
     if isinstance(x0, results.op_solution):
-        x0 = x0.asmatrix()
+        x0 = copy.copy(x0.asmatrix())
         return_obj = True
     else:
         return_obj = False

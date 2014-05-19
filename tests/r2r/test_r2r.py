@@ -1,6 +1,7 @@
 import time
 import os
 import os.path
+import sys
 import hashlib
 import uuid
 import pickle
@@ -10,6 +11,8 @@ import numpy
 import matplotlib
 matplotlib.use('Agg')
 import pylab
+
+from nose.plugins.skip import SkipTest
 
 stand_alone_exec = False
 REGRESSION_TIME = 3 #s - if the test takes 3s additional time it's considered
@@ -88,7 +91,7 @@ def _run_test(ref_run=False, verbose=False):
 	times = numpy.array(times, dtype='float64')
 	if ref_run:
 		with open(os.path.join(reference_path, 'r2r.pickle'), 'w') as fp:
-			pickle.dump((x, times, boxid), fp)
+			pickle.dump((x, times, get_boxid()), fp)
 	return x, times
 
 def test():
@@ -97,7 +100,7 @@ def test():
 	# we do not want to execute this on Travis.
 	if 'TRAVIS' in os.environ:
 		# we skip the test. Travis builders are awfully slow
-		return 
+		raise SkipTest 
 
 	pickle_file = os.path.join(reference_path, 'r2r.pickle') 
 	ref_run = not (os.path.isfile(pickle_file) and check_boxid(pickle_file))
@@ -108,7 +111,9 @@ def test():
 		x_new, times_new = _run_test(ref_run)
 		assert max(abs(times_new - times)) < REGRESSION_TIME
 		assert sum(times_new) > 3 # if we're that fast, something's off
-	else:
+	elif ref_run:
+		if sys.argv[0].endswith('nosetests'):
+			raise SkipTest
 		print "RUNNING REFERENCE TEST - RESULTS INVALID!"
 		x, times = _run_test(ref_run)
 		print "RUNNING REFERENCE TEST - RESULTS INVALID!"
