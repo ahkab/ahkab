@@ -34,19 +34,17 @@ class ticker:
     If you wish to change the progress indicator, change self.progress to
     something else.
     """
-    progress = ("-", "\\", "|", "/")
-    _index = 0
-    _step = 0
-    _display = False
-    increments_for_step = 1
-
     def __init__(self, increments_for_step=10):
+        self.progress = ("-", "\\", "|", "/")
+        self._index = 0
+        self._step = 0
+        self._display = False
         self.increments_for_step = increments_for_step
 
-    def step(self, enable):
+    def step(self):
         """After calling this function ticker.increments_for_step times
         the status is incremented."""
-        if not enable:
+        if not self._display:
             return
         if (self._index + 1) % self.increments_for_step == 0:
             if (self._step + 1) % len(self.progress) == 0:
@@ -60,21 +58,21 @@ class ticker:
         else:
             self._index = self._index + 1
 
-    def hide(self, enable):
-        """Before printing to screen, call this to hide the progress
+    def hide(self, enable=None):
+        """Before printing text to screen, call this to hide the progress
         indicator.
         """
-        if not enable:
+        if enable == False:
             return
         sys.stdout.write("\b")
         sys.stdout.flush()
         self._display = False
 
-    def display(self, enable):
+    def display(self, enable=None):
         """Print to screen the progress indicator. Call hide to hide it
         again.
         """
-        if not enable:
+        if enable == False:
             return
         sys.stdout.write(self.progress[self._step])
         sys.stdout.flush()
@@ -89,8 +87,8 @@ if __name__ == "__main__":
     # test
     import time
     tk = ticker()
-    tk.display()
-    for i in range(100000):
-        time.sleep(0.0001)
+    tk.display(True)
+    for i in range(1000):
+        time.sleep(0.005)
         tk.step()
     tk.hide()

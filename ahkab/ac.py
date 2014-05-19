@@ -42,7 +42,6 @@ import sys
 import numpy
 
 from . import dc_analysis
-from . import ticker
 from . import options
 from . import circuit
 from . import devices
@@ -218,8 +217,6 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
 
     iter_n = 0  # contatore d'iterazione
     printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
-    tick = ticker.ticker(increments_for_step=1)
-    tick.display(verbose > 1)
 
     x = x0
     for omega in omega_iter:
@@ -237,14 +234,11 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
             skip_Tt = True,
             verbose = 0)
         if solved:
-            tick.step(verbose > 1)
             iter_n = iter_n + 1
             # hooray!
             sol.add_line(omega, x)
         else:
             break
-
-    tick.hide(verbose > 1)
 
     if solved:
         printing.print_info_line(("done.", 1), verbose)

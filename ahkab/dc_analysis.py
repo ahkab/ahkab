@@ -420,7 +420,7 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
         solved = True
         sol.add_op(sweep_value, x)
 
-        tick.step(verbose > 2)
+        tick.step()
 
     tick.hide(verbose > 2)
     if solved:
@@ -647,7 +647,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
     iteration = 0L
     while iteration < MAXIT:  # newton iteration counter
         iteration += 1
-        tick.step(print_steps)
+        tick.step()
         if nonlinear_circuit:
             # build dT(x)/dx (stored in J) and Tx(x)
             J, Tx = build_J_and_Tx(x, mna_size, circ, time)
