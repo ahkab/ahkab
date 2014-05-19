@@ -12,7 +12,7 @@ A simple 1:1 current mirror
 .. image:: ../images/op_example/m1.png
 
 A 1:1 current mirror (fig. 1a) is employed to provide a copy of an input
-current to a load. The two currents being resp. :math:`I_{IN} and
+current to a load. The two currents being resp. :math:`I_{IN}` and
 :math:`I_{OUT}`. A good current mirror complies with a
 mirroring ratio - equal to one here - has a low input resistance - it's
 a good current sink - and a high output resistance - it's a good current
@@ -57,8 +57,8 @@ Therefore:
 
     I_{OUT} = I_{IN}
 
-If M1 had a :math:`(W/L)` :math:`k` times bigger than M0, then :math:`I_{s1}` would
-have been proportionally bigger than :math:`I_{s0}` and:
+If M1 had a form factor :math:`k` times bigger than M0, then :math:`I_{s1}`
+would have been proportionally bigger than :math:`I_{s0}` and:
 
 .. math::
 
@@ -155,12 +155,12 @@ Therefore both transistors can't be in saturation.
 
 The results are: 
 
-* M0: :math:`if`, :math:`ir = Itot + if`
+* M0: :math:`i_f`, :math:`i_r = I_{TOT} + i_f`
 
-* M1: :math:`if`, :math:`ir = Itot - if`
+* M1: :math:`i_f`, :math:`i_r = I_{TOT} - i_f`
 
 The rest of the circuit - not shown - would set the actual value of
-:math:`i_f` and :math:`I_{tot}`.
+:math:`i_f` and :math:`I_{TOT}`.
 
 A 1:1/16th current mirror 
 """""""""""""""""""""""""
@@ -176,8 +176,7 @@ While this circuit is more complex than the previous ones, it can be
 analyzed in the same fashion, taking into account the results already
 presented: 
 
-- each neighboring transistor pair acts like a current
-    mirror, ie same :math:`i_f`/:math:`i_r`,
+- each neighboring transistor pair acts like a current mirror, ie same :math:`i_f`/:math:`i_r`,
 - zero net charge can be created or destroyed at each instant.
 
 Considering the currents, we have 17 forward currents and 17 reverse
@@ -185,16 +184,15 @@ currents to be determined, for a total of 34 unknowns:
 
 We can write:
 
-* 15 equations of the type :math:`if = ir` for neighboring
-   devices,
+* 15 equations of the type :math:`i_f = i_r` for neighboring devices,
 
 * 1 equation for the mirror operation of the M0-M1 pair,
 
-* 1 equation setting :math:`ir = 0` for M0 (drain-gate short),
+* 1 equation setting :math:`i_r = 0` for M0 (drain-gate short),
 
-* 1 equation setting :math:`Is \cdot if = Iin` for M0 (KCL),
+* 1 equation setting :math:`I_s \cdot i_f = I_{IN}` for M0 (KCL),
 
-* 1 equation setting :math:`ir = 0` for M16 (hp. in saturation),
+* 1 equation setting :math:`i_r = 0` for M16 (hp. in saturation),
 
 * 15 equations to require that M1, M2, M3... M16 have all
     the same drain current.
@@ -203,18 +201,20 @@ That gives a total of 34 equations.
 
 It can be shown that the solution is: 
 
-- M0: :math:`if = Iin/Is``, ``ir = 0`
+- M0: :math:`i_f = I_{IN}/I_s`, :math:`i_r = 0`
 
-- M1: ``if = Iin/Is``, ``ir = 15/16 Iin/Is`` 
+- M1: :math:`i_f = I_{IN}/I_s`, :math:`i_r = 15/16 \cdot I_{IN}/I_s` 
 
-- M2: ``if = 15/16 Iin/Is``, ``ir = 14/16 Iin/Is`` \* and so on...
+- M2: :math:`i_f = 15/16 I_{IN}/I_s`, :math:`i_r = 14/16 \cdot I_{IN}/I_s`
+
+- and so on...
 
 The general form is:
 
-M[n], for :math:`n = 1..16`, :math:`if = (17-n)/16 \cdot I_{IN}/I_s` and
+M[n], for :math:`n = 1 \dots 16`, :math:`i_f = (17 - n)/16 \cdot I_{IN}/I_s` and
 :math:`i_r = (16-n)/16 \cdot I_{IN}/I_s`.
 
-M16 has :math:`if = 1/16 \cdot I_{IN}/I_s` and :math:`i_r = 0`. 
+M16 has :math:`i_f = 1/16 \cdot I_{IN}/I_s` and :math:`i_r = 0`. 
 Its drain current - the mirror output current - is therefore:
 
 .. math::
