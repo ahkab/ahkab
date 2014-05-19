@@ -435,6 +435,8 @@ class EVSource(Component):
 
     """Linear voltage controlled voltage source (ideal)
 
+    .. image:: images/elem/vcvs.svg
+
     Source port is a open circuit, dest. port is a ideal voltage source:
     (Vn1 - Vn2) = alpha * (Vsn1 - Vsn2)
 
@@ -468,6 +470,8 @@ class EVSource(Component):
 class GISource(Component):
 
     """Linear voltage controlled current source
+
+    .. image:: images/elem/vccs.svg
 
     Source port is a short circuit, dest. port is a ideal current source:
     Io = alpha * Is
@@ -504,10 +508,10 @@ class GISource(Component):
 class HVSource(Component):  # TODO: fixme
 
     """Linear current controlled voltage source
-    """
-    is_nonlinear = False
-    is_symbolic = True
 
+    .. image:: images/elem/ccvs.svg
+
+    """
     def __init__(self, part_id='H', n1=None, n2=None, value=None, sn1=None, sn2=None):
         print "HVSource not implemented. TODO"
         self.part_id = part_id
@@ -516,11 +520,32 @@ class HVSource(Component):  # TODO: fixme
         self.alpha = value
         self.sn1 = sn1
         self.sn2 = sn2
-        import sys
-        sys.exit(1)
+        self.is_nonlinear = False
+        self.is_symbolic = True
 
     def __str__(self):
         raise Exception, "HVSource not implemented. TODO"
+
+class FISource(Component):  # TODO: fixme
+
+    """Linear current-controlled current source
+
+    .. image:: images/elem/cccs.svg
+
+    """
+    def __init__(self, part_id='F', n1=None, n2=None, value=None, sn1=None, sn2=None):
+        print "HVSource not implemented. TODO"
+        self.part_id = part_id
+        self.n1 = n1
+        self.n2 = n2
+        self.alpha = value
+        self.sn1 = sn1
+        self.sn2 = sn2
+        self.is_nonlinear = False
+        self.is_symbolic = True
+
+    def __str__(self):
+        raise Exception, "FVSource not implemented. TODO"
 
 
 #
@@ -532,36 +557,28 @@ class pulse:
 
     *Parameters:*
 
-    v1: float
+    v1 : float
         Square wave low value
 
-    v2: float
+    v2 : float
         Square wave high value
 
-    td: float
+    td : float
         Delay time to the first ramp, in s. Negative values are considered as zero.
 
-    tr: float
+    tr : float
         Rise time in seconds, from the low value to the pulse high value.
 
-    tf: float
+    tf : float
         Fall time in seconds, from the pulse high value to the low value.
 
-    pw: float
+    pw : float
         Pulse width in seconds.
 
-    per: float
+    per : float
         Periodicity interval in seconds.
     """
     # PULSE(V1 V2 TD TR TF PW PER)
-    _type = "V"
-    v1 = None
-    v2 = None
-    td = None
-    per = None
-    tr = None
-    tf = None
-    pw = None
 
     def __init__(self, v1, v2, td, tr, pw, tf, per):
         self.v1 = v1
@@ -571,6 +588,7 @@ class pulse:
         self.tr = tr
         self.tf = tf
         self.pw = pw
+        self._type = "V"
 
     def value(self, time):
         """Evaluate the pulse function at the given time."""
@@ -596,7 +614,6 @@ class pulse:
 
 
 class sin:
-    # SIN(VO VA FREQ TD THETA)
     """Sine wave
 
     f(t) = 
@@ -608,30 +625,25 @@ class sin:
 
     *Parameters:*
 
-    vo: float
+    vo : float
         Offset
 
-    va: float
+    va : float
         amplitude
 
-    freq: float
+    freq : float
         frequency in Hz
 
-    td: float, optional
+    td : float, optional
         time delay before beginning the sinusoidal time variation, in seconds. Defaults to 0.
 
-    theta: float optional    
+    theta : float optional    
         damping factor in 1/s. Defaults to 0 (no damping).
 
-    phi: float, optional
+    phi : float, optional
         Phase delay in degrees. Defaults to 0 (no phase delay).
     """
-    td = None
-    vo = None
-    va = None
-    freq = None
-    theta = None
-    _type = "V"
+    # SIN(VO VA FREQ TD THETA)
 
     def __init__(self, vo, va, freq, td=0., theta=0., phi=0.):
         self.vo = vo
@@ -640,6 +652,7 @@ class sin:
         self.td = td
         self.theta = theta
         self.phi = phi
+        self._type = "V"
 
     def value(self, time):
         """Evaluate the sine function at the given time."""
@@ -663,32 +676,25 @@ class exp:
 
     *Parameters:*
 
-    v1: float
+    v1 : float
         Initial value
 
-    v2: float
+    v2 : float
         Pulsed value
 
-    td1: float
+    td1 : float
         Rise delay time in seconds.
 
-    td2: float
+    td2 : float
         Fall delay time in seconds.
 
-    tau1: float
+    tau1 : float
         Rise time constant in seconds.
 
-    tau2: float
+    tau2 : float
         Fall time constant in seconds.
     """
     # EXP(V1 V2 TD1 TAU1 TD2 TAU2)
-    v1 = None
-    v2 = None
-    td1 = None
-    tau1 = None
-    td2 = None
-    tau2 = None
-    _type = "V"
 
     def __init__(self, v1, v2, td1, tau1, td2, tau2):
         self.v1 = v1
@@ -697,14 +703,18 @@ class exp:
         self.tau1 = tau1
         self.td2 = td2
         self.tau2 = tau2
+        self._type = "V"
 
     def value(self, time):
         if time < self.td1:
             return self.v1
         elif time < self.td2:
-            return self.v1 + (self.v2 - self.v1) * (1 - math.exp(-1*(time - self.td1)/self.tau1))
+            return self.v1 + (self.v2 - self.v1) * \
+                   (1 - math.exp(-1*(time - self.td1)/self.tau1))
         else:
-            return self.v1 + (self.v2 - self.v1) * (1 - math.exp(-1*(time - self.td1)/self.tau1)) + (self.v1 - self.v2)*(1 - math.exp(-1*(time - self.td2)/self.tau2))
+            return self.v1 + (self.v2 - self.v1) * \
+                   (1 - math.exp(-1*(time - self.td1)/self.tau1)) + \
+                   (self.v1 - self.v2)*(1 - math.exp(-1*(time - self.td2)/self.tau2))
 
     def __str__(self):
         return "type=exp " + \

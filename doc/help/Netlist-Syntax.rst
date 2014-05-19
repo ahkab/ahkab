@@ -166,6 +166,8 @@ Independent sources
 Voltage source
 ''''''''''''''
 
+.. image:: ../images/elem/vsource.svg
+
 **General syntax:**
 
 ``v<string> n1 n2 [type=vdc vdc=float] [type=vac vac=float] [type=....]``
@@ -179,6 +181,8 @@ Where the third type (if added) is one of: \* Sinusoidal source:
 
 Current source
 ''''''''''''''
+
+.. image:: ../images/elem/isource.svg
 
 **General syntax:**
 
@@ -194,6 +198,8 @@ Dependent sources
 Voltage-Controlled Voltage Source (VCVS)
 ''''''''''''''''''''''''''''''''''''''''
 
+.. image:: ../images/elem/vcvs.svg
+
 **General syntax:**
 
 ``E<string> n+ n- ns+ ns- <value>``
@@ -207,6 +213,8 @@ Voltage-Controlled Voltage Source (VCVS)
 
 Voltage-Controlled Current Source (VCCS)
 ''''''''''''''''''''''''''''''''''''''''
+
+.. image:: ../images/elem/vccs.svg
 
 **General syntax:**
 
@@ -227,6 +235,8 @@ easily be added as external modules.
 
 Diode 
 '''''
+
+.. image:: ../images/elem/diode.svg
 
 **General syntax:**
 

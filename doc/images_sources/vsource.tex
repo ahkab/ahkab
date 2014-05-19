@@ -1,0 +1,13 @@
+\documentclass{standalone}
+	
+\usepackage[siunitx]{circuitikz}
+
+\begin{document}
+
+\begin{circuitikz}[scale=1.5, transform shape]
+\draw (0,0) node[anchor=east] {$n2$};
+\draw (0,0) to [american voltage source=V, i<=i, o-o] (0,3);
+\draw (0,3) node[anchor=east] {$n1$};
+\end{circuitikz} 
+
+\end{document}
