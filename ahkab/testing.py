@@ -21,10 +21,14 @@
 A straight-forward framework to buid tests to ensure no regressions
 occur during development.
 
-Two types of tests are defined here:
+Two classes for describing tests are defined in this module:
 
 - :class:`NetlistTest`, used to run a netlist-based test,
-- :class:`APITest`, used to sun an API based test.
+- :class:`APITest`, used to run an API-based test.
+
+Every test, no matter which class is referenced internally, is 
+univocally identified by a alphanumeric id, which will
+be referred to as ``test_id`` in the following.
 
 
 Directory structure
@@ -41,29 +45,30 @@ id as the test, ie:
 Running tests
 \"\"\"\"\"\"\"\"\"\"\"\"\"
 
-The test is performed calling nose from either:
+The test is performed with as working directory one among the following:
 
- - The ahkab repo root,
+ - The ahkab repository root,
 
  - ``tests/``
 
  - ``tests/<test_id>``
 
-this is necessary for the framework to find the reference files.
+this is necessary for the framework to find its way to the reference files.
 
-To run a test you can either run it manually:
+More specifically a test can either be run manually through the Python
+interpreter:
 
 ::
 
     python tests/<test_id>/test_<test_id>.py
 
-or with ``nose``:
+or with the ``nose`` testing package:
 
 ::
 
     nosetests tests/<test_id>/test_<test_id>.py
 
-To run all tests, issue:
+To run the whole test suite, issue:
 
 ::
 
@@ -77,78 +82,84 @@ Please refer to the `nose documentation`_ for more info about the command
 Running your tests for the first time
 \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"
 
-The first time you run a new test, no reference data is available to be used
-to check the test results. If you call ``nose``, the test will fail.
+The first time you run a test you defined yourself, no reference data will be
+available to check the test results and decide whether the test was passed or
+if a test fail occurred.
+
+In this case, if you call ``nose``, the test will (expectedly) fail.
 
 Please run the test manually (see above) and the test framework will generate
 the reference data for you.
 
 Please *check the generated reference data carefully!*
-Wrong reference means wrong tests!
+Wrong reference defeats the whole concept of running tests!
 
 
 Overview of a typical test based on :class:`NetlistTest`
 \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"
 
-Every test is identified by a unique alphanumeric id, which will
-be referred to as ``test_id`` in the following.
+Each test is composed by multiple files.
 
 Required files
 ^^^^^^^^^^^^^^
 
 The main directory must contain:
 
-- ``<test_id>.ini``, a configuration file giving the details of the test,
+- ``<test_id>.ini``, an INI configuration file containing the details of the
+  test,
 
 - ``test_<test_id>.py``, the script executing the test,
 
 - ``<test_id>.ckt``, the main netlist file to be run.
 
 - the reference data files for checking the pass/fail status of the test.
-  These can be automatically generatedi, as it will be shown below.
+  These can be automatically generated, as it will be shown below.
 
 With the exception of the netlist file, which is free for the test writer
 to define, and the data files, which clearly depend on the test at hand,
-the other files are examined in the next sections.
+the other files have a predefined structure which will be examined
+in more detail in the next sections.
 
 Configuration file
 ''''''''''''''''''
 
-Few rules are there regarding the entris in the configuration file.
+Few rules are there regarding the entries in the configuration file.
 
-They are:
+They are as follows:
 
 - The file name must be ``<test_id>.ini``,
 
 - It must be located under ``tests/<test_id>/``,
 
-- It must have a ``[test]`` section,
-
-- There must be the following entries:
+- It must have a ``[test]`` section, containing the following entries:
 
   - ``name``, set to the ``<test_id>``, for error-checking,
 
   - ``netlist``, set to the netlist filename, ``<test_id>.ckt``, prepended
-    with the relative to the ``tests/<test_id>/`` location, 
+    with the the netlist path relative to ``tests/<test_id>/`` (most of 
+    the time that means just ``<test_id>.ckt``)
 
   - ``type``, a comma-separated list of analyses that will be executed during
-    the test. Values may be ``op``, ``dc``, ``tran``, ``symbolic`` and so on.
+    the test. Values may be ``op``, ``dc``, ``tran``, ``symbolic``... and so on.
 
-  - One entry ``<analysis>_ref`` for each of the analyses listed in ``type``.
+  - One entry ``<analysis>_ref`` for each of the analyses listed in the 
+    ``type`` entry above.
     The value is recommended to be set to ``<test_id>-ref.<analysis>`` or
     ``<test_id>-ref.<analysis>.pickle``, if you prefer to save data in
-    Python's ``pickle`` format. Notice only trusted ``pickle`` files should
+    Python's pickle format. Notice only trusted pickle files should
     ever be loaded.
 
   - ``skip-on-travis``, set to either ``0`` or ``1``, to flag whether this
-    test should be run on Travis-CI or not. Torture tests, CPU or memory,
-    long-lasting tests and similar should be disable to not exceed:
+    test should be run on Travis-CI or not. Torture tests, tests needing
+    lots of CPU or memory, and long-lasting tests in general should be
+    disabled on Travis-CI to not exceed:
 
-    - a total build time of 50 minutes
+    - a total build time of 50 minutes,
 
     - A no stdout activity time of 10 minutes.
 
-An example script file follows for reference.
+The contents of an example test configuration file ``rtest1.ini``
+follow, as an example.
 
 ::
 
@@ -164,7 +175,13 @@ An example script file follows for reference.
 Script file
 '''''''''''
 
-It is probably easier to introduce test scripts with an example.
+The test script file is where most of the action takes place and where
+the highest amount of flexibility is available. 
+
+That said, the ahkab testing framework was designed to make for extremely
+simple and straight-forward test scripts.
+
+It is probably easier to introduce writing the scripts with an example.
 
 Below is a typical script file.
 
@@ -179,28 +196,19 @@ Below is a typical script file.
 
     def test():
         # this requires a netlist ``mytest.ckt``
-        # and a configuration file ``mytestr.ini``
+        # and a configuration file ``mytest.ini``
         nt = NetlistTest('mytest')
         nt.setUp()
         nt.test()
         nt.tearDown()
 
+    # It is recommended to set the docstring to a meaningful value
     test.__doc__ = "My test description, printed out by nose"
 
     if __name__ == '__main__':
         nt = NetlistTest('mytest')
         nt.setUp()
         nt.test()
-
-The file is straight-forward, and in most cases a simple:
-
-::
-
-    :%s/mytest/<test_id>/g
-
-- in VIM - will suffice to generate your own script file. 
-
-A few notes:
 
 Notice how a function `test()` is defined, as that will be
 run by ``nose``, and a ``'__main__'`` block is defined too,
@@ -217,11 +225,18 @@ As such, the :func:`NetlistTest.tearDown()` function is not executed
 in the ``'__main__'`` block, so that the test output are preserved for
 inspection.
 
+That said, the example file should be easy to understand and in most cases
+a simple:
+
+::
+
+    :%s/mytest/<test_id>/g
+
+in VIM - will suffice to generate your own script file. Just remember to save
+to ``test_<test_id>.py``.
+
 Overview of a typical test based on :class:`APITest`
 \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"
-
-Every test is identified by a unique alphanumeric id, which will
-be referred to as ``test_id`` in the following.
 
 Required files
 ^^^^^^^^^^^^^^
@@ -231,14 +246,14 @@ The main directory must contain:
 - ``test_<test_id>.py``, the script executing the test,
 
 - the reference data files for checking the pass/fail status of the test.
-  These can be automatically generatedi, as it will be shown below.
+  These can be automatically generated, as it will be shown below.
 
 Script file
 '''''''''''
 
-It is probably easier to introduce the API test scripts with an example.
+Again, it is probably easier to introduce the API test scripts with an example.
 
-Below is a typical script file.
+Below is a typical test script file:
 
 ::
 
@@ -273,9 +288,9 @@ Below is a typical script file.
         # ...
 
         ## create a testbench
-        # testbench = testing.APITest('<test_id>', mycircuit, 
-        #                            [op_analysis, ac_analysis],
-        #                            skip_on_travis=True)
+        testbench = testing.APITest('<test_id>', mycircuit, 
+                                    [op_analysis, ac_analysis],
+                                    skip_on_travis=True)
 
         ## setup and test
         testbench.setUp()
@@ -309,16 +324,17 @@ Below is a typical script file.
         test()
         plt.show()
 
-A few notes:
+Once again, a function ``test()`` is defined, as that will be the
+entry point of ``nose``, and a ``'__main__'`` block is defined as well,
+to allow running the script from the command line.
 
-Notice how a function :func:`test()` is
-defined, as that will be run by ``nose``, and a ``'__main__'`` block
-is defined too, to allow running the script from the command line.
+Inside ``test()``, the circuit to be tested is defined, accessing the
+``ahkab`` module directly, to set up elements, sources and analyses.
+Directly calling ``ahkab.run()`` is not necessary, :func:`APITest.test`
+will take care of that for you.
 
-It is slightly non-standard, as :func:`NetlistTest.setUp()` and
-:func:`NetlistTest.tearDown()` are called inside ``test()``, but this
-was found to be an acceptable compromise between complexity and following
-standard practices.
+Notice how :func:`APITest.setUp()` and :func:`APITest.tearDown()` are
+called inside ``test()`` as before.
 
 The script is meant to be run from the command line in case a regression
 is detected by ``nose``, possibly with the aid of a debugger.
