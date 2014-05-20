@@ -28,7 +28,7 @@ Two classes for describing tests are defined in this module:
 
 Every test, no matter which class is referenced internally, is 
 univocally identified by a alphanumeric id, which will
-be referred to as ``test_id`` in the following.
+be referred to as ``<test_id>`` in the following.
 
 
 Directory structure
@@ -49,9 +49,9 @@ The test is performed with as working directory one among the following:
 
  - The ahkab repository root,
 
- - ``tests/``
+ - ``tests/``,
 
- - ``tests/<test_id>``
+ - ``tests/<test_id>``.
 
 this is necessary for the framework to find its way to the reference files.
 
@@ -210,7 +210,7 @@ Below is a typical script file.
         nt.setUp()
         nt.test()
 
-Notice how a function `test()` is defined, as that will be
+Notice how a function ``test()`` is defined, as that will be
 run by ``nose``, and a ``'__main__'`` block is defined too,
 to allow running the script from the command line.
 
@@ -222,7 +222,7 @@ standard practices.
 The script is meant to be run from the command line in case a regression
 is detected by ``nose``, possibly with the aid of a debugger.
 As such, the :func:`NetlistTest.tearDown()` function is not executed
-in the ``'__main__'`` block, so that the test output are preserved for
+in the ``'__main__'`` block, so that the test outputs are preserved for
 inspection.
 
 That said, the example file should be easy to understand and in most cases
@@ -330,16 +330,16 @@ to allow running the script from the command line.
 
 Inside ``test()``, the circuit to be tested is defined, accessing the
 ``ahkab`` module directly, to set up elements, sources and analyses.
-Directly calling ``ahkab.run()`` is not necessary, :func:`APITest.test`
-will take care of that for you.
+Directly calling :func:`ahkab.run()` is not necessary,
+:func:`APITest.test()` will take care of that for you.
 
 Notice how :func:`APITest.setUp()` and :func:`APITest.tearDown()` are
-called inside ``test()`` as before.
+called inside ``test()``, as in the previous case.
 
 The script is meant to be run from the command line in case a regression
 is detected by ``nose``, possibly with the aid of a debugger.
-As such, the :func:`NetlistTest.tearDown()` function is not executed
-in the ``'__main__'`` block, so that the test output are preserved for
+As such, the :func:`APITest.tearDown()` function is not executed
+in the ``'__main__'`` block, so that the test outputs are preserved for
 inspection.
 
 Additionally, plotting is performed if the test is directly run from
