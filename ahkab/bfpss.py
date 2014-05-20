@@ -185,7 +185,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
             dx, x, nv_indices, ni_indices, vector_norm)
         if converged:
             break
-        tick.step(verbose > 2)
+        tick.step()
 
         if options.shooting_max_nr_iter and iteration == options.shooting_max_nr_iter:
             printing.print_general_error(
@@ -304,7 +304,7 @@ def build_CMAT(mna, D, step, points, tick, n_of_var=None, verbose=3):
                     continue  # temp = Z
             CMAT = set_submatrix(
                 row=li * n_of_var, col=ci * n_of_var, dest_matrix=CMAT, source_matrix=temp)
-        tick.step(verbose > 2)
+        tick.step()
     tick.hide(verbose > 2)
     printing.print_info_line(("done.", 5), verbose)
 
@@ -327,7 +327,7 @@ def build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
             for index in xrange(points):
                 x = set_submatrix(
                     row=index * n_of_var, col=0, dest_matrix=x, source_matrix=x0)
-                tick.step(verbose > 2)
+                tick.step()
 
     tick.hide(verbose > 2)
     printing.print_info_line(("done.", 5), verbose)
@@ -344,7 +344,7 @@ def build_Tf(sTf, points, tick, n_of_var, verbose=3):
     for index in xrange(1, points):
         Tf = set_submatrix(
             row=index * n_of_var, col=0, dest_matrix=Tf, source_matrix=sTf)
-        tick.step(verbose > 2)
+        tick.step()
 
     tick.hide(verbose > 2)
     printing.print_info_line(("done.", 5), verbose)
@@ -378,7 +378,7 @@ def build_Tt(circ, points, step, tick, n_of_var, verbose=3):
             if circuit.is_elem_voltage_defined(elem):
                 v_eq = v_eq + 1
             # print Tt[index*n_of_var:(index+1)*n_of_var]
-        tick.step(verbose > 2)
+        tick.step()
     tick.hide(verbose > 2)
     printing.print_info_line(("done.", 5), verbose)
 

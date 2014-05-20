@@ -190,7 +190,7 @@ def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
             # break
         else:
             conv_counter = 0
-            tick.step(verbose > 2)
+            tick.step()
 
         if options.shooting_max_nr_iter and iteration == options.shooting_max_nr_iter:
             printing.print_general_error(
@@ -282,7 +282,7 @@ def build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3):
                                             Tt[elem.n2 - 1, 0] - elem.I(time)
                     if circuit.is_elem_voltage_defined(elem):
                             v_eq = v_eq + 1
-            tick.step(verbose > 2)
+            tick.step()
             Tass_vector.append(Tf + Tt)
     tick.hide(verbose > 2)
     printing.print_info_line(("done.", 5), verbose)

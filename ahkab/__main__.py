@@ -28,11 +28,12 @@ from . import ahkab
 from . import options
 from . import transient
 from . import utilities
+from .__version__ import __version__
 
 def cli():
     usage = "usage: \t%prog [options] <filename>\n\nThe filename is the " + \
             "netlist to be open. Use - (a dash) to read from stdin."
-    parser = OptionParser(usage, version="%prog " + ahkab.__version__ + \
+    parser = OptionParser(usage, version="%prog " + __version__ + \
              " (c) 2006-2013 Giuseppe Venturini")
 
     # general options

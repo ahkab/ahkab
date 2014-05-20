@@ -16,27 +16,32 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-""" This module offers the methods required to perform an AC analysis.
-Our problem can be written as:
+""" This module contains the methods required to perform an AC analysis.
 
-    MNA*x + AC*x + J*x + Nac = 0
+Our AC analysis problem can be written as:
+
+.. math::
+
+    MNA\\ x + AC(\\omega )\\ x + J x + N_{ac}(\\omega) = 0
 
 We need:
 
-    1. the mna matrix MNA
-    2. the AC matrix, holding the frequency dep parts
-    3. The linearized non-linear elements end up in J
-    4. Nac, the AC sources contribution
+    1. the mna matrix :math:`MNA`,
+    2. the :math:`AC` matrix, holding the frequency dependent parts,
+    3. :math:`J`, the Jacobian matrix from The linearized non-linear elements,
+    4. :math:`N_{ac}`, the AC sources contribution.
 
-In order for an AC analysis to be performed, an OP has to be computed first,
-if there is any non-linear device in the circuit.
+An OP has to be computed first if there is any non-linear device in the circuit.
+
+When all the matrices are available, it is possible to solve the system
+for the frequency values specified by the user, providing the resulting
+matrix is not singular (and possibly well conditioned). 
 """
 
 import sys
 import numpy
 
 from . import dc_analysis
-from . import ticker
 from . import options
 from . import circuit
 from . import devices
@@ -52,33 +57,32 @@ specs = {'ac': {'tokens': ({
                            'dest': 'sweep_type',
                            'default': options.ac_log_step
                            },
-        {
+                          {
                            'label': 'start',
                            'pos': 1,
                            'type': float,
                            'needed': True,
                            'dest': 'start',
                            'default': None
-                           },
-                {
+                          },
+                          {
                            'label': 'stop',
                            'pos': 2,
                            'type': float,
                            'needed': True,
                            'dest': 'stop',
                            'default': None
-                           },
-        {
-                'label': 'nsteps',
+                          },
+                          {
+                           'label': 'nsteps',
                            'pos': 3,
-                'type': float,
-                'needed': True,
-                'dest': 'points',
-                'default': None
-                }
-)
-}
-}
+                           'type': float,
+                           'needed': True,
+                           'dest': 'points',
+                           'default': None
+                          })
+               }
+        }
 
 
 def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
@@ -112,7 +116,8 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
 
     **Returns:**
 
-    ACresult : AC results object
+    ACresult : AC solution
+        The AC analysis results
     """
 
     if outfile == 'stdout':
@@ -212,8 +217,6 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
 
     iter_n = 0  # contatore d'iterazione
     printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
-    tick = ticker.ticker(increments_for_step=1)
-    tick.display(verbose > 1)
 
     x = x0
     for omega in omega_iter:
@@ -231,14 +234,11 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
             skip_Tt = True,
             verbose = 0)
         if solved:
-            tick.step(verbose > 1)
             iter_n = iter_n + 1
             # hooray!
             sol.add_line(omega, x)
         else:
             break
-
-    tick.hide(verbose > 1)
 
     if solved:
         printing.print_info_line(("done.", 1), verbose)
@@ -252,30 +252,45 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
 
 def generate_AC(circ, shape):
     """Generates the AC coefficients matrix.
-    Shape is the REDUCED MNA shape, AC will be of the same shape.
 
-    It's easy to set up the voltage lines, we know that line 2 refers to
+    The ``shape`` is the *reduced* MNA shape, the :math:`AC` matrix will
+    be of the same shape.
+
+    **Implementation details:**
+
+    It's easy to set up the voltage lines, since line 2 refers to
     node 2, etc...
 
-    A capacitor between nodes n1 and n2 determines the following elements:
+    A capacitor between two example nodes ``n1`` and ``n2`` introduces the
+    following elements:
 
-    (KCL node n1) +j*w*C V(n1) - j*w*C V(n2) + ... = ...
-    (KCL node n2) -j*w*C V(n1) + j*w*C V(n2) + ... = ...
+    .. math::
+
+        \\mathrm{(KCL\\ node\\ n1)}\\qquad +j\\omega C\\ V(n1) - j\\omega C V(n2) + ... = ...
+
+        \\mathrm{(KCL\\ node\\ n2)}\\qquad -j\\omega C\\ V(n1) + j\\omega C V(n2) + ... = ...
 
     Inductors generate, together with voltage sources, ccvs, vcvs, a
-    additional line in the mna matrix, and hence in AC too. The current
-    flowing through the device gets added to the x vector.
+    additional line in the :math:`MNA` matrix, and hence in :math:`AC` too.
+    The current flowing through the device gets added to the unknowns vector,
+    :math:`x`.
 
-    In inductors, we have:
+    For example, in the case of an inductors, we have:
 
-    (KVL over n1 and n2) V(n1) - V(n2) - j*w*L I(inductor) = 0
+    .. math::
+
+        \\mathrm{(KVL\\ over\\ n1\\ and\\ n2)}\\qquad V(n1) - V(n2) - j\\omega L\\ I(\\mathrm{inductor}) = 0
 
     To understand on which line is the KVL line for an inductor, we use the
-    *order* of the elements in `circuit`:
-    First are all voltage lines, then the current ones in the same order of
-    the elements that introduce them.
+    *order* of the elements in :mod:`ahkab.circuit`:
+    First are assembled all the voltage rows, then the current ones in the same order in which
+    the elements that introduce them are found in :mod:`ahkab.circuit`.
 
-    Returns: the UNREDUCED AC matrix
+    **Returns:**
+ 
+    AC : ndarray
+        the *unreduced* AC matrix
+
     """
     AC = numpy.matrix(numpy.zeros((shape[0] + 1, shape[1] + 1)))
     nv = len(circ.nodes_dict)  # - 1
@@ -343,8 +358,9 @@ def generate_Nac(circ):
 
 
 def generate_J(xop, circ, mna, Nac, data_filename, verbose=0):
+    """Build the linearized matrix :math:`J`.
+    """
     # setup J
-    # build the linearized matrix (stored in J)
     J = numpy.mat(numpy.zeros(mna.shape))
     Tlin = numpy.mat(numpy.zeros(Nac.shape))
     for elem in circ:

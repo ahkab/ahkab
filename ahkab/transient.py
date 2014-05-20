@@ -364,7 +364,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
             thebuffer.add((time, x, dxdt))
             if output_buffer is not None:
                 output_buffer.add((x, ))
-            tick.step(verbose > 1)
+            tick.step()
         else:
             # If we get here, Newton failed to converge. We need to reduce the step...
             if use_step_control:

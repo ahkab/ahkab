@@ -1,5 +1,5 @@
-AC Analysis Module
-------------------
+ahkab.ac
+--------
 
 .. automodule:: ahkab.ac
    :members:

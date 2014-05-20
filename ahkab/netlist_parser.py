@@ -46,10 +46,16 @@ from .ac import specs as ac_spec
 from .transient import specs as tran_spec
 from .pss import specs as pss_spec
 from .symbolic import specs as symbolic_spec
+from .devices import time_fun_specs
+from .devices import sin, pulse, exp
+
 specs = {}
 for i in dc_spec, ac_spec, tran_spec, pss_spec, symbolic_spec:
     specs.update(i)
 
+time_functions = {}
+for i in  sin, pulse, exp:
+    time_functions.update({i.__name__:i})
 
 def parse_circuit(filename, read_netlist_from_stdin=False):
     """Parse a SPICE-like netlist and return a circuit instance
@@ -967,109 +973,48 @@ def parse_time_function(ftype, line_elements, stype):
 
     Returns: a time-<function instance
     """
-    if ftype == 'pulse':
-        function = parse_pulse_time_function(line_elements, stype)
-    elif ftype == 'exp':
-        function = parse_exp_time_function(line_elements, stype)
-    elif ftype == 'sin':
-        function = parse_sin_time_function(line_elements, stype)
-    else:
-        raise NetlistParseError, "unknown signal type."
-    # This way it knows if it is a v/i source in __str__
-    function._type = "V" * \
-        (stype.lower() == "voltage") + "I" * (stype.lower() == "current")
-    return function
+    if not ftype in time_fun_specs:
+        raise NetlistParseError, "Unknown time function: %s" % an_type
+    prot_params = list(copy.deepcopy(time_fun_specs[ftype]['tokens']))
+    #PULSE(V1 V2 TD TR TF PW PER)
 
-
-def parse_pulse_time_function(line_elements, stype):
-    """This is called by parse_time_function() to actually parse this
-    type of functions.
-    """
-    function = devices.pulse()
-    for token in line_elements:
-        (param, value) = parse_param_value_from_string(token)
-        if stype == "voltage" and param == 'v1' or stype == "current" \
-                and param == 'i1':
-            function.v1 = convert_units(value)
-        elif stype == "voltage" and param == 'v2' or stype == "current" \
-                and param == 'i2':
-            function.v2 = convert_units(value)
-        elif param == 'td':
-            function.td = convert_units(value)
-        elif param == 'per':
-            function.per = convert_units(value)
-        elif param == 'tr':
-            function.tr = convert_units(value)
-        elif param == 'tf':
-            function.tf = convert_units(value)
-        elif param == 'pw':
-            function.pw = convert_units(value)
+    fun_params = {}
+    for i in range(len(line_elements[1:])):
+        token = line_elements[i + 1]
+        if token[0] == "*":
+            break
+        if is_valid_value_param_string(token):
+            (label, value) = token.split('=')
         else:
-            raise NetlistParseError, "unknown param for time function pulse: " + \
-                param
+            label, value = None, token
+        assigned = False
+        for t in prot_params:
+            if (label is None and t['pos'] == i) or label == t['label']:
+                fun_params.update({t['dest']: convert(value, t['type'])})
+                assigned = True
+                break
+        if assigned:
+            prot_params.pop(prot_params.index(t))
+            continue
+        else:
+            raise NetlistParseError, "Unknown .%s parameter: pos %d (%s=)%s" % \
+                                     (ftype.upper(), i, label, value)
 
-    if not function.ready():
+    missing = []
+    for t in prot_params:
+        if t['needed']:
+            missing.append(t['label'])
+    if len(missing):
         raise NetlistParseError, \
-            "required parameters are missing for time function pulse."
-    return function
+            "%s: required parameters are missing: %s" % (ftype, " ".join(line_elements))
+    # load defaults for unsupplied parameters
+    for t in prot_params:
+        fun_params.update({t['dest']: t['default']})
 
-
-def parse_exp_time_function(line_elements, stype):
-    """This is called by parse_time_function() to actually parse this
-    type of functions.
-    """
-    function = devices.exp()
-    for token in line_elements:
-        (param, value) = parse_param_value_from_string(token)
-        if stype == "voltage" and param == 'v1' or \
-                stype == "current" and param == 'i1':
-            function.v1 = convert_units(value)
-        elif stype == "voltage" and param == 'v2' or \
-                stype == "current" and param == 'i2':
-            function.v2 = convert_units(value)
-        elif param == 'td1':
-            function.td1 = convert_units(value)
-        elif param == 'tau1':
-            function.tau1 = convert_units(value)
-        elif param == 'td2':
-            function.td2 = convert_units(value)
-        elif param == 'tau2':
-            function.tau2 = convert_units(value)
-        else:
-            raise NetlistParseError, "unknown param for time function exp: " + \
-                param
-
-    if not function.ready():
-        raise NetlistParseError, "required params are missing for time function exp."
-    return function
-
-
-def parse_sin_time_function(line_elements, stype):
-    """This is called by parse_time_function() to actually parse this
-    type of functions.
-    """
-    function = devices.sin()
-    for token in line_elements:
-        (param, value) = parse_param_value_from_string(token)
-        if stype == "voltage" and param == 'vo' \
-                or stype == "current" and param == 'io':
-            function.vo = convert_units(value)
-        elif stype == "voltage" and param == 'va' or \
-                stype == "current" and param == 'ia':
-            function.va = convert_units(value)
-        elif param == 'freq':
-            function.freq = convert_units(value)
-        elif param == 'theta':
-            function.theta = convert_units(value)
-        elif param == 'td':
-            function.td = convert_units(value)
-        else:
-            raise NetlistParseError, "unknown param for time function sin: " + \
-                param
-
-    if not function.ready():
-        raise NetlistParseError, "required params are missing for time function sin."
-    return function
+    fun = time_functions[ftype](**fun_params)
+    fun._type = "V" * \
+        (stype.lower() == "voltage") + "I" * (stype.lower() == "current")
+    return fun
 
 
 def convert_units(string_value):

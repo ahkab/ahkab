@@ -52,7 +52,7 @@ specs = {'pss': {'tokens': ({
                             'pos': None,
                             'type': bool,
                             'needed': False,
-                            'dest': 'uic',
+                            'dest': 'autonomous',
                             'default': '0'
                             },
                  {

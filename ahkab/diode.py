@@ -17,6 +17,20 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+This module contains a diode element and its model class.
+
+.. image:: images/elem/diode.svg
+
+"""
+
+#
+#         |\|
+#  n1 o---| ]---o n2
+#         |/|
+#
+
+
 import math
 import numpy
 
@@ -25,24 +39,43 @@ from . import printing
 from . import utilities
 from . import options
 
-"""
-Contains a diode element and its model class.
-
-         |\|
-  n1 o---| |---o n2
-         |/|
-
-
-"""
-
 
 class diode:
-    letter_id = "d"
-    is_nonlinear = True
-    is_symbolic = True
-    dc_guess = [0.425]
+    """A diode element.
+
+    **Parameters:**
+
+    n1, n2 : string
+        The diode anode and cathode.
+
+    model : model instance
+        The diode model providing the mathemathical modeling.
+
+    ic : float
+        The diode initial voltage condition for transient analysis
+        (ie :math:`V_D = V(n_1) - V(n_2)` at :math:`t = 0`).
+
+    off : bool
+         Whether the diode should be initially assumed to be off when
+         computing an OP.
+
+    The other are the physical parameters reported in the following table:
+
+    +---------------+-------------------+-----------------------------------+
+    | *Parameter*   | *Default value*   | *Description*                     |
+    +===============+===================+===================================+
+    | AREA          | 1.0               | Area multiplier                   |
+    +---------------+-------------------+-----------------------------------+
+    | T             | circuit temp      | Operating temperature             |
+    +---------------+-------------------+-----------------------------------+
+
+    """
 
     def __init__(self, n1, n2, model, AREA=None, T=None, ic=None, off=False):
+        self.letter_id = "d"
+        self.is_nonlinear = True
+        self.is_symbolic = True
+        self.dc_guess = [0.425]
         class dev_class:
             pass
         self.device = dev_class()
@@ -73,7 +106,8 @@ class diode:
         return self.device.T
 
     def set_temperature(self, T):
-        """Set the operating temperature IN KELVIN degrees"""
+        """Set the operating temperature IN KELVIN degrees
+        """
         self.device.T = T
 
     def __str__(self):
@@ -143,9 +177,33 @@ TM2_DEFAULT = 0.0
 T_DEFAULT = utilities.Celsius2Kelvin(26.85)
 AREA_DEFAULT = 1.0
 
-
 class diode_model:
 
+    """A diode model implementing the `Shockley diode equation 
+    <http://en.wikipedia.org/wiki/Shockley_diode_equation#Shockley_diode_equation>`__.
+
+    Currently the capacitance modeling part is missing.
+
+    The principal parameters are:
+
+    +---------------+-------------------+-----------------------------------+
+    | *Parameter*   | *Default value*   | *Description*                     |
+    +===============+===================+===================================+
+    | IS            | 1e-14 A           | Specific current                  |
+    +---------------+-------------------+-----------------------------------+
+    | N             | 1.0               | Emission coefficient              |
+    +---------------+-------------------+-----------------------------------+
+    | ISR           | 0.0 A             | Recombination current             |
+    +---------------+-------------------+-----------------------------------+
+    | NR            | 2.0               | Recombination coefficient         |
+    +---------------+-------------------+-----------------------------------+
+    | RS            | 0.0 ohm           | Series resistance per unit area   |
+    +---------------+-------------------+-----------------------------------+
+
+    please refer to a textbook description of the Shockley diode equation
+    or to the source file ``diode.py`` file for the other parameters.
+
+    """
     def __init__(self, name, IS=None, N=None, ISR=None, NR=None, RS=None,
                  CJ0=None, M=None, VJ=None, FC=None, CP=None, TT=None,
                  BV=None, IBV=None, KF=None, AF=None, FFE=None, TEMP=None,

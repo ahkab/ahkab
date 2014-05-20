@@ -31,10 +31,11 @@ if os.system('python -c "import matplotlib.pyplot as plt;plt.figure()" > ' +
              '/dev/null 2>&1'):
     matplotlib.use('Agg')
 
-from .ahkab import __version__, new_op, new_dc, new_tran, new_ac, new_pss
+from .ahkab import new_op, new_dc, new_tran, new_ac, new_pss
 from .ahkab import new_symbolic, queue, run, new_x0, icmodified_x0
 from .ahkab import get_op_x0, set_temperature, process_postproc, main
+from .__version__ import __version__
 
-__all__ = [__version__, new_op, new_dc, new_tran, new_ac, new_pss,
+__all__ = [new_op, new_dc, new_tran, new_ac, new_pss,
            new_symbolic, queue, run, new_x0, icmodified_x0,
            get_op_x0, set_temperature, process_postproc, main]

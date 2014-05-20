@@ -1,0 +1,21 @@
+\documentclass{standalone}
+	
+\usepackage[siunitx]{circuitikz}
+
+\begin{document}
+
+\begin{circuitikz}[scale=1., transform shape, american voltages]
+    \draw (-3,-.5) -- (1,-0.5) -- (1,3.5) -- (-3,3.5) -- (-3,-0.5);
+    \draw (-3.5,0) node[anchor=east] {$sn2$};
+    \draw (-3.5,3) node[anchor=east] {$sn1$};
+    \draw (-2, 0) to[short] (-2, 3);
+    \draw (-3.5, 0) to[short, *-] (-2, 0);
+    \draw (-3.5, 3) to[short, *-] (-2, 3);
+    \draw (-3.5, 3) to[open, v=$V_s$] (-3.5, 0);
+    \draw (1.5,0) node[anchor=west] {$n2$};
+    \draw (0,0) to[short, -*] (1.5,0);
+    \draw (0,0) to[cV=$\alpha \cdot V_{s}$] (0, 3);
+    \draw (1.5,3) node[anchor=west] {$n1$};
+    \draw (0,3) to[short, -*] (1.5,3);
+\end{circuitikz}
+\end{document}
