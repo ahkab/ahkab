@@ -4,3 +4,4 @@ scipy
 sympy
 matplotlib
 alabaster
+nose
