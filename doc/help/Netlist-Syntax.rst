@@ -147,6 +147,8 @@ More information is available in the [MutualInductors] page.
 Voltage-controlled switch
 '''''''''''''''''''''''''
 
+.. image:: ../images/elem/switch.svg
+
 **General syntax:**
 
 ``S<string> n+ n- ns+ ns- <model_id>``
@@ -242,8 +244,10 @@ Diode
 
 ``D<string> N+ N- <model_id> [<AREA=float> <T=float> <IC=float> <OFF=boolean>]``
 
-MOS Transistor
-''''''''''''''
+MOS Transistors
+'''''''''''''''
+
+.. image:: ../images/elem/mos.svg
 
 **General syntax:**
 
