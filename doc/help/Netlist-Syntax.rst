@@ -119,6 +119,8 @@ Inductors
 Mutual Inductors
 ''''''''''''''''
 
+.. image:: ../images/elem/mutual_inductors.svg
+
 **General syntax:**
 
 Either:
@@ -133,8 +135,6 @@ or
    need to be specified before the coupling can be inserted.
 -  ``value`` is the coupling factor, ``k``. It is a needs to be less
    than 1.
-
-More information is available in the [MutualInductors] page.
 
 **Example:**
 
