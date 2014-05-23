@@ -181,7 +181,7 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
             printing.print_symbolic_results(sol)
 
     if source is not None:
-        src = sympy.Symbol(source.upper(), real=True)
+        src = sympy.Symbol(source.upper())
         printing.print_info_line(("Calculating small-signal symbolic transfer functions (%s))..." %
                                  (str(src),), 2), verbose, print_nl=False)
         tfs = calculate_gains(sol, src)
