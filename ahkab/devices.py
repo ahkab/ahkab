@@ -419,11 +419,11 @@ class Inductor(Component):
 
 
 class InductorCoupling(Component):
-    def __init__(self, part_id='K', L1=None, L2=None, value_L1=None, value_L2=None):
-        self.value_L1 = value_L1
-        self.value_21 = value_L2
+    def __init__(self, part_id='K', L1=None, L2=None, K=None, M=None):
         self.L1 = L1
         self.L2 = L2
+        self.M = M
+        self.K = K
         self.is_nonlinear = False
         self.is_symbolic = True
 
@@ -439,6 +439,10 @@ class InductorCoupling(Component):
         if Lret is None:
             raise Exception, "Mutual inductors bug."
         return Lret
+
+    def print_netlist_elem_line(self, nodes_dict):
+        return "%s %s %s %g" % (self.part_id, self.L1, self.L2, self.K)
+
 
 #
 # SOURCES
