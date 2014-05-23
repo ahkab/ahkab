@@ -1,0 +1,16 @@
+\documentclass{standalone}
+	
+\usepackage[siunitx]{circuitikz}
+
+\begin{document}
+
+\begin{circuitikz}[scale=1., transform shape, american currents]
+\draw (0,2) node[transformer core] (T) {}
+(T.base) node{K};
+\draw (T.A1) to[open, *-*] (T.A2);
+\draw (T.B1) to[open, *-*] (T.B2);
+\node[draw=none] at (-1.5,1) {inductor1};
+\node[draw=none] at (1.5,1) {inductor2};
+\end{circuitikz}
+
+\end{document}

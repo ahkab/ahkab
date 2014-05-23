@@ -1,0 +1,22 @@
+\documentclass{standalone}
+	
+\usepackage[siunitx]{circuitikz}
+
+\begin{document}
+
+\begin{circuitikz}[scale=1.5, transform shape]
+    \draw 
+    (0,0) node[nmos] (mos1) {}
+    (mos1.base) node[anchor=west] {$nb$}
+    (mos1.gate) node[anchor=east] {$ng$}
+   (mos1.drain) node[anchor=south] {$nd$}
+   (mos1.source) node[anchor=north] {$ns$};
+\draw
+    (2,0) node[pmos] (mos2) {}
+    (mos2.base) node[anchor=west] {$nb$}
+    (mos2.gate) node[anchor=east] {$ng$}
+   (mos2.drain) node[anchor=north] {$nd$}
+   (mos2.source) node[anchor=south] {$ns$};
+\end{circuitikz} 
+
+\end{document}

@@ -119,6 +119,8 @@ Inductors
 Mutual Inductors
 ''''''''''''''''
 
+.. image:: ../images/elem/mutual_inductors.svg
+
 **General syntax:**
 
 Either:
@@ -134,8 +136,6 @@ or
 -  ``value`` is the coupling factor, ``k``. It is a needs to be less
    than 1.
 
-More information is available in the [MutualInductors] page.
-
 **Example:**
 
 ::
@@ -146,6 +146,8 @@ More information is available in the [MutualInductors] page.
 
 Voltage-controlled switch
 '''''''''''''''''''''''''
+
+.. image:: ../images/elem/switch.svg
 
 **General syntax:**
 
@@ -242,8 +244,10 @@ Diode
 
 ``D<string> N+ N- <model_id> [<AREA=float> <T=float> <IC=float> <OFF=boolean>]``
 
-MOS Transistor
-''''''''''''''
+MOS Transistors
+'''''''''''''''
+
+.. image:: ../images/elem/mos.svg
 
 **General syntax:**
 

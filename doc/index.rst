@@ -10,7 +10,7 @@ Help
 ----
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    help/Netlist-Syntax
 
@@ -18,7 +18,7 @@ Examples
 --------
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    examples/Python_API
    examples/OP_simulation
@@ -38,6 +38,7 @@ Reference
    devices
    diode
    symbolic
+   testing 
 
 Documentation in progress
 -------------------------
