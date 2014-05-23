@@ -1,0 +1,11 @@
+* Miller test
+vg 1 0 type=vdc vdc=1
+rg 1 4 2k
+ri 4 0 2k
+ci 4 0 100p
+cf 4 5 1p
+gm 5 0 4 0 0.01
+ro 5 0 10e3
+
+.op
+.symbolic tf=vg
