@@ -71,8 +71,8 @@ class diode:
 
     """
 
-    def __init__(self, n1, n2, model, AREA=None, T=None, ic=None, off=False):
-        self.letter_id = "d"
+    def __init__(self, part_id, n1, n2, model, AREA=None, T=None, ic=None, off=False):
+        self.part_id = part_id
         self.is_nonlinear = True
         self.is_symbolic = True
         self.dc_guess = [0.425]
@@ -148,6 +148,20 @@ class diode:
 
     def print_op_info(self, ports_v):
         print self.get_op_info(ports_v),
+
+    def print_netlist_elem_line(self, nodes_dict):
+        ret = "%s %s %s %s" % (self.part_id, self.n1, self.n2, self.model.name)
+        # append the optional part:
+        # [<AREA=float> <T=float> <IC=float> <OFF=boolean>]
+        ret += " AREA=%g" % self.device.AREA
+        if self.device.T is not None:
+            ret += " T=%g" % self.device.T
+        if self.ic is not None:
+            ret += " IC=%g" % self.ic
+        if self.off:
+            ret += " OFF=1"
+        return ret
+
 
 IS_DEFAULT = 1e-14  # A
 N_DEFAULT = 1.0
