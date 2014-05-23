@@ -341,6 +341,8 @@ class Circuit(list):
 
         """
 
+        if not 'name' in model_parameters:
+            model_parameters.update({'name':model_label})
         if model_type == "ekv":
             model_iter = ekv.ekv_mos_model(**model_parameters)
             model_iter.name = model_label
@@ -462,7 +464,7 @@ class Circuit(list):
         self.append(elem)
         return True
 
-    def add_inductor_coupling(self, name, L1, L2, Kvalue):
+    def add_inductor_coupling(self, name, L1, L2, value):
         """ Write DOC XXX
         """
         L1elem, L2elem = None, None
@@ -480,9 +482,9 @@ class Circuit(list):
             printing.print_general_error("Quitting.")
             sys.exit(30)
 
-        M = math.sqrt(L1elem.L * L2elem.L) * Kvalue
+        M = math.sqrt(L1elem.value * L2elem.value) * value
 
-        elem = devices.InductorCoupling(L1=L1, L2=L2, K=Kvalue, M=M)
+        elem = devices.InductorCoupling(L1=L1, L2=L2, K=value, M=M)
         elem.part_id = name
         L1elem.coupling_devices.append(elem)
         L2elem.coupling_devices.append(elem)
