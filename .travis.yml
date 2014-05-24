@@ -13,7 +13,7 @@ before_install:
   - ./miniconda.sh -b
   - export PATH=/home/travis/miniconda/bin:$PATH
   - conda update --yes conda
-  - conda install setuptools
+  - conda install --yes setuptools
 
 # Install packages
 install:
