@@ -17,7 +17,7 @@ before_install:
 # Install packages
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib sympy nose dateutil 
-  - sudo pip install nose coveralls
+  - sudo pip install setuptools coveralls
   - python setup.py install
  
 # Run the tests
