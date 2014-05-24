@@ -10,9 +10,9 @@ def test():
     sinf = ahkab.devices.sin(0, 220, 50.)
     cir.add_vsource('V1', 'inr', cir.gnd, 1., 0., sinf)
     cir.add_resistor('R0', 'inr', 'in', .001)
-    cir.add_inductor('L1', 'in', cir.gnd, 100e-9)
-    cir.add_inductor('L2', 'int1', 'int2', 100e-9)
-    cir.add_inductor_coupling('K1', 'L1', 'L2', .9)
+    cir.add_inductor('L1', 'in', cir.gnd, 100e-6)
+    cir.add_inductor('L2', 'int1', 'int2', 100e-6)
+    cir.add_inductor_coupling('K1', 'L1', 'L2', .04)
     cir.add_model('diode', 'pnj', {'IS':1e-10})
     cir.add_diode('D1', 'int1', 'int4', 'pnj')
     cir.add_diode('D2', 'int3', 'int2', 'pnj')
@@ -32,7 +32,11 @@ def test():
 
     ## create a testbench
     testbench = testing.APITest('rectifier', cir, [op1, tran1],
-                                skip_on_travis=False)
+                                skip_on_travis=False, ea=1e-3, er=1e-2)
+
+    ahkab.options.default_tran_method = "TRAP"
+    ahkab.options.hmin = 1e-20
+    ahkab.options.transient_max_nr_iter = 100
 
     ## setup and test
     testbench.setUp()
@@ -69,6 +73,7 @@ def test():
         plt.ylabel('Voltage [V]')
         plt.xlabel('Time [s]')
         fig.savefig('rectf2_plot.png')
+
     else:
         testbench.tearDown()
 
