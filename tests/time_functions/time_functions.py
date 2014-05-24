@@ -30,7 +30,7 @@ def test():
 
     testbench = testing.APITest('time_functions', mycircuit, 
                                 [op_analysis, ac_analysis, tran_analysis],
-                                skip_on_travis=True)
+                                skip_on_travis=True, er=1e-3, ea=1e-5)
     testbench.setUp()
     testbench.test()
 
