@@ -32,7 +32,7 @@ def test():
 
     ## create a testbench
     testbench = testing.APITest('rectifier', cir, [op1, tran1],
-                                skip_on_travis=False, ea=1e-2, er=1e-1)
+                                skip_on_travis=False, ea=1e-1, er=1.)
 
     ahkab.options.default_tran_method = "TRAP"
     ahkab.options.hmin = 1e-20
