@@ -13,11 +13,12 @@ before_install:
   - ./miniconda.sh -b
   - export PATH=/home/travis/miniconda/bin:$PATH
   - conda update --yes conda
+  - conda install setuptools
 
 # Install packages
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib sympy nose dateutil 
-  - sudo pip install setuptools coveralls
+  - sudo pip install nose coveralls
   - python setup.py install
  
 # Run the tests
