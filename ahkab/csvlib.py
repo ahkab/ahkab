@@ -252,7 +252,7 @@ def load_csv(filename, load_headers=None, nsamples=None, skip=0L, verbose=3):
 
     headers = get_headers(filename)
     his = get_headers_index(headers, load_headers, verbose=verbose)
-    if len(load_headers) and len(his) != len(load_headers):
+    if load_headers and len(his) != len(load_headers):
         raise ValueError("Specified header not found")
 
     fp = _get_fp(filename, mode="r")

@@ -655,7 +655,7 @@ class APITest(unittest.TestCase):
         if hasattr(res, 'get_x'):
             x = res.get_x()
             for k in res.keys():
-                if res[k] is x:
+                if np.all(res[k] == x):
                     continue
                 else:
                     # Interpolate the results to compare.
