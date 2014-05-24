@@ -359,6 +359,8 @@ import unittest
 from ConfigParser import ConfigParser
 
 import numpy as np
+import sympy
+
 from scipy.interpolate import InterpolatedUnivariateSpline
 
 from nose.tools import ok_, nottest
@@ -488,7 +490,7 @@ class NetlistTest(unittest.TestCase):
         if hasattr(res, 'get_x'):
             x = res.get_x()
             for k in res.keys():
-                if res[k] is x:
+                if np.all(res[k] == x):
                     continue
                 else:
                     # Interpolate the results to compare.
@@ -506,7 +508,12 @@ class NetlistTest(unittest.TestCase):
             elif res is not None:
                 for k in res.keys():
                     assert k in ref
-                    assert res[k] == ref[k]
+                    if isinstance(res[k], dict): # hence ref[k] will be a dict too
+                        self._check(res[k], ref[k])
+                    elif isinstance(ref[k], sympy.Basic) and isinstance(ref[k], sympy.Basic):
+                        assert (res[k] == ref[k]) or (sympy.simplify(ref[k]/res[k]) == 1)
+                    else:
+                        assert res[k] == ref[k]
 
     def test(self):
         """Run the test."""
@@ -673,7 +680,12 @@ class APITest(unittest.TestCase):
             elif res is not None:
                 for k in res.keys():
                     assert k in ref
-                    assert res[k] == ref[k]
+                    if isinstance(res[k], dict): # hence ref[k] will be a dict too
+                        self._check(res[k], ref[k])
+                    elif isinstance(ref[k], sympy.Basic) and isinstance(ref[k], sympy.Basic):
+                        assert (res[k] == ref[k]) or (sympy.simplify(ref[k]/res[k]) == 1)
+                    else:
+                        assert res[k] == ref[k]
 
     def test(self):
         """Run the test."""
