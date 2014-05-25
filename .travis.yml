@@ -13,13 +13,12 @@ before_install:
   - ./miniconda.sh -b
   - export PATH=/home/travis/miniconda/bin:$PATH
   - conda update --yes conda
-  - conda install --yes setuptools
 
 # Install packages
 install:
   - conda create --quiet --yes -n buildenv python=$TRAVIS_PYTHON_VERSION
   - source activate buildenv
-  - conda install --yes numpy scipy matplotlib sympy nose
+  - conda install --yes numpy scipy matplotlib sympy nose setuptools
   - pip install nose coveralls
   - python setup.py install
  
