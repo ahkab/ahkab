@@ -107,8 +107,6 @@ def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
         sys.exit(0)
 
     (points, step) = check_step_and_points(step, points, period)
-    print "points", points
-    print "step", step
 
     n_of_var = mna.shape[0]
     locked_nodes = circ.get_locked_nodes()
@@ -237,6 +235,7 @@ def check_step_and_points(step, points, period):
         print "Warning: shooting had both step and n. of points setted. Using", step, "step. (NA)"
         points = None
 
+    points = int(points)
     if points:
         step = (1.0 * period) / (points - 1)
     else:

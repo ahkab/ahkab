@@ -427,7 +427,7 @@ def parse_elem_inductor_coupling(line, circ, line_elements=None, elements=[]):
         printing.print_general_error(error_msg)
         raise NetlistParseError, ""
 
-    M = math.sqrt(L1elem.L * L2elem.L) * Kvalue
+    M = math.sqrt(L1elem.value * L2elem.value) * Kvalue
 
     elem = devices.InductorCoupling(L1=L1, L2=L2, K=Kvalue, M=M)
     elem.part_id = name
@@ -976,11 +976,10 @@ def parse_time_function(ftype, line_elements, stype):
     if not ftype in time_fun_specs:
         raise NetlistParseError, "Unknown time function: %s" % an_type
     prot_params = list(copy.deepcopy(time_fun_specs[ftype]['tokens']))
-    #PULSE(V1 V2 TD TR TF PW PER)
 
     fun_params = {}
-    for i in range(len(line_elements[1:])):
-        token = line_elements[i + 1]
+    for i in range(len(line_elements)):
+        token = line_elements[i]
         if token[0] == "*":
             break
         if is_valid_value_param_string(token):
