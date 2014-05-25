@@ -18,7 +18,7 @@ before_install:
 # Install packages
 install:
   - conda create --quiet --yes -n buildenv python=$TRAVIS_PYTHON_VERSION
-  - conda activate buildenv
+  - source activate buildenv
   - conda install --yes numpy scipy matplotlib sympy nose
   - pip install nose coveralls
   - python setup.py install
