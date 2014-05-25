@@ -41,7 +41,7 @@ def test():
 
     ## create a testbench
     testbench = testing.APITest('rectifier', cir, [op1, tran1],
-                                skip_on_travis=False, ea=1e-1, er=1.)
+                                skip_on_travis=True, ea=1e-1, er=1.)
 
     ahkab.options.nl_voltages_lock = False
     ahkab.options.nl_voltages_factor = 20

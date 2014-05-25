@@ -3,7 +3,7 @@ from ahkab import options
 options.plotting_show_plots = False
 
 def test():
-    nt = NetlistTest('ring3', er=1e-3, ea=1e-5)
+    nt = NetlistTest('ring3', er=1e-2, ea=1e-3)
     nt.setUp()
     nt.test()
     nt.tearDown()
