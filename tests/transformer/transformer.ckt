@@ -1,0 +1,13 @@
+Transformer TEST
+* from http://www.seas.upenn.edu/~jan/spice/spice.transformer.html
+VIN 2 0 type=vdc vdc=0 type=sin 0 170 60 0 0
+* ^^^ This defines a sinusoid of 170 V amplitude and 60 Hz.
+RS 2 1 10
+L1 1 0 2000
+L2 3 0 20
+K L1 L2 0.99999
+RL 3 0 500
+.TRAN 0.2M 25M
+.PSS 0.016666666666666666 POINTS=100 method=shooting
+.PLOT TRAN V(2) V(3)
+.END
