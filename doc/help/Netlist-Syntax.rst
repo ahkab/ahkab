@@ -307,24 +307,30 @@ such as:
 
     V1 1 2 vdc=10m type=sin VO=10m VA=1.2 FREQ=500k TD=1n THETA=0
 
-Sinusoidal source
-^^^^^^^^^^^^^^^^^
 
-A damped sinusoidal voltage source:
+Sinusoidal waveform
+^^^^^^^^^^^^^^^^^^^
+
+A damped sinusoidal time function.
+
+.. image:: ../images/elem/sin.svg
+
+It may be described with the syntax:
 
 ::
 
     type=sin <VO> <VA> <FREQ> <TD> <THETA> <PHASE>
 
 
-or with the more verbose syntax:
+or with the more verbose variant:
 
 ::
 
-    type=sin VO=<float> VA=<float> FREQ=<float> TD=<float> THETA=<float>
+    type=sin VO=<float> VA=<float> FREQ=<float> TD=<float> THETA=<float> PHASE=<float>
 
 
-Described by:
+
+Mathematically described by:
 
 * When :math:`t < td`:
 
@@ -343,13 +349,77 @@ Where:
 * :math:`V\!O` is the offset voltage in Volt.
 * :math:`V\!A` is the amplitude in Volt.
 * :math:`F\!R\!E\!Q` is the frequency in Hertz.
-* :math:`T\!D` is the delay in seconds
-* :math:`T\!H\!E\!T\!A` is the damping factor per second
-* :math:`P\!H\!A\!S\!E` is the phase in degrees
+* :math:`T\!D` is the delay in seconds.
+* :math:`T\!H\!E\!T\!A` is the damping factor per second.
+* :math:`P\!H\!A\!S\!E` is the phase in degrees.
 
-* Exp. source type=exp v1=<float> v2=float td1=float tau1=<float> td2=<float> tau2=<float> 
+Exponential source
+^^^^^^^^^^^^^^^^^^
 
-* Pulsed source type=pulse v1=<float> v2=<float> td=<float> tr=<float> tf=<float> pw=<float> per=<float>
+.. image:: ../images/elem/exp.svg
+
+An exponential waveform may be described with one of the following syntaxes:
+
+::
+
+     type=EXP <V1> <V2> <TD1> <TAU1> [<TD2> <TAU2>]
+::
+
+    type=exp v1=<float> v2=float td1=float tau1=<float> td2=<float> tau2=<float> 
+
+
+Example:
+
+::
+
+     VIN input 0 type=vdc vdc=0 type=exp 4 1 2n 30n 60n 40n
+
+
+Mathematically, it is described by the equations:
+
+* :math:`0 \le t < TD1`:
+
+.. math::
+
+    f(t) = V1
+
+* :math:`TD1 < t < TD2`
+
+.. math::
+
+    f(t) = V1+(V2-V1) \cdot \left[1-\exp \left(-\frac{t-TD1}{TAU1}\right)\right]
+
+* :math: t > TD2
+
+.. math::
+
+    f(t) = V1+(V2-V1) \cdot \left[1-\exp \left(-\frac{t-TD1}{TAU1}\right)\right]+(V1-V2) \cdot \left[1-\exp \left(-\frac{t-TD2}{TAU2}\right)\right]
+
+**Parameters:**
+
+=========  ==================  =============  =======
+Parameter  Meaning             Default value  Units
+=========  ==================  =============  =======
+V1         initial value                      V or A
+V2         pulsed value	                      V or A
+TD1        rise delay time     0.0            s
+TAU1       rise time constant                 s
+TD2        fall delay time     Infinity       s
+TAU2       fall time constant  Infinity       s
+=========  ==================  =============  =======
+
+
+Pulsed source 
+^^^^^^^^^^^^^
+
+A square wave.
+
+.. image:: ../images/elem/pulse.svg
+
+::
+
+    type=pulse v1=<float> v2=<float> td=<float> tr=<float> tf=<float> pw=<float> per=<float>
+
 
 Device models
 """""""""""""
