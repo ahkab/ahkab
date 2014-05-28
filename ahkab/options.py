@@ -27,6 +27,7 @@ import os
 
 encoding = 'utf8'
 from matplotlib import rcParams as plotting_rcParams
+encoding = 'utf8'
 
 # global: command line execution or module import
 # when cli is False, no printing and no weird stdout stuff.

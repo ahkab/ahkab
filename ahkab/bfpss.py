@@ -287,8 +287,8 @@ def build_CMAT(mna, D, step, points, tick, n_of_var=None, verbose=3):
     I = np.mat(np.eye(n_of_var))
     M = mna + C1 * D
     N = C0 * D
-    # Z = numpy.mat(numpy.zeros((n_of_var, n_of_var)))
-    CMAT = numpy.mat(numpy.zeros((n_of_var * points, n_of_var * points)))
+    # Z = np.mat(np.zeros((n_of_var, n_of_var)))
+    CMAT = np.mat(np.zeros((n_of_var * points, n_of_var * points)))
     for li in range(points):  # li = line index
         for ci in range(points):
             if li == 0:
@@ -360,7 +360,7 @@ def build_Tt(circ, points, step, tick, n_of_var, verbose=3):
     printing.print_info_line(("Building Tt...", 5), verbose, print_nl=False)
     tick.reset()
     tick.display(verbose > 2)
-    Tt = numpy.zeros((points * n_of_var, 1))
+    Tt = np.zeros((points * n_of_var, 1))
     for index in range(1, points):
         v_eq = 0
         time = index * step

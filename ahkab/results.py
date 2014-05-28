@@ -946,7 +946,7 @@ class symbolic_solution():
                    ('simulation'*(not self.tf) + 'transfer function'*self.tf, 
                     self.netlist_title, self.netlist_file, self.timestamp)
         keys = list(self.results.keys())
-        keys.sort()
+        keys.sort(lambda x, y: cmp(str(x), str(y))) 
         if not self.tf:
             for key in keys:
                 str_repr +=  str(key) + "\t = " + str(self.results[key]) + "\n"
@@ -1045,21 +1045,21 @@ class pz_solution(solution, _mutable_data):
         if np.prod(self.zeros.shape):
             for i in range(self.zeros.shape[0]):
                 self.variables += ['z%d' % i]
-        for v in self.variables:
-            self.units.update({v: "rad/s"})
-        self.csv_headers = []
-        for i in range(len(self.variables)):
-            self.csv_headers.append("Re(%s)" % self.variables[i])
-            self.csv_headers.append("Im(%s)" % self.variables[i])
+            for v in self.variables:
+                self.units.update({v: "rad/s"})
+            self.csv_headers = []
+            for i in range(len(self.variables)):
+                self.csv_headers.append("Re(%s)" % self.variables[i])
+                self.csv_headers.append("Im(%s)" % self.variables[i])
 
-        # save in Re/Im form
-        sdata = data.reshape(-1).view(np.float_).reshape((-1, 1))
-        self._add_data(sdata)
+            # save in Re/Im form
+            sdata = data.reshape(-1).view(np.float_).reshape((-1, 1))
+            self._add_data(sdata)
 
-        # store local data too:
-        self.data = case_insensitive_dict()
-        for i in range(len(self.variables)):
-            self.data.update({self.variables[i]: data[i, 0]})
+            # store local data too:
+            self.data = case_insensitive_dict()
+            for i in range(len(self.variables)):
+                self.data.update({self.variables[i]: data[i, 0]})
 
     def _add_data(self, data):
         """Remember to call this method with REAL data - already split in ABS and PHASE."""

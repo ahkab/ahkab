@@ -53,6 +53,7 @@ from __future__ import (unicode_literals, absolute_import,
 import io
 import sys
 import copy
+import os
 import numpy as np
 
 from . import options

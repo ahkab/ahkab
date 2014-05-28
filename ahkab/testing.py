@@ -530,7 +530,7 @@ class NetlistTest(unittest.TestCase):
         if 'TRAVIS' in os.environ and self.skip:
             self._reset_sim_opts()
             raise SkipTest
-        print("Running test... ", end=' ')
+        print("Running test... ", end="")
         start = time.time()
         res = main(filename=self.netlist,
                    outfile=os.path.join(self.reference_path, self.test_id),
@@ -564,8 +564,8 @@ class NetlistTest(unittest.TestCase):
                     d2 = InterpolatedUnivariateSpline(refx, np.real_if_close(ref[k]).reshape((-1, )))
                     ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         elif isinstance(res, results.op_solution):
-            for k in ref.keys():
-                assert k in res
+            for k in list(res.keys()):
+                assert k in ref
                 ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         elif isinstance(res, results.pz_solution):
             # recover the reference signularities from Re/Im data
@@ -585,8 +585,8 @@ class NetlistTest(unittest.TestCase):
                 for i, j in zip(res, ref):
                     self._check(i, j)
             elif res is not None:
-                for k in ref.keys():
-                    assert k in res
+                for k in list(res.keys()):
+                    assert k in ref
                     if isinstance(res[k], dict): # hence ref[k] will be a dict too
                         self._check(res[k], ref[k])
                     elif isinstance(ref[k], sympy.Basic) and isinstance(res[k], sympy.Basic):
@@ -598,8 +598,10 @@ class NetlistTest(unittest.TestCase):
         """Run the test."""
         res = self._run_test()
         if not self.ref_run:
+            ok_(set(list(res.keys())) == set(list(self.ref_data.keys())),
+                "Reference and test data have a different number of nodes")
             for t in list(res.keys()):
-                ok_(t in self.ref_data, 'simulation %s not in the reference data' % t)
+                ok_(t in self.ref_data, 'simulation %s not in the reference data')
                 print("Checking results for %s analysis..." % t)
                 self._check(res[t], self.ref_data[t])
         else:
@@ -813,8 +815,10 @@ class APITest(unittest.TestCase):
         """Run the test."""
         res = self._run_test()
         if not self.ref_run:
+            ok_(set(list(res.keys())) == set(list(self.ref_data.keys())),
+                "Reference and test data have a different number of nodes")
             for t in list(res.keys()):
-                ok_(t in self.ref_data, 'simulation %s not in the reference data' % t)
+                ok_(t in self.ref_data, 'simulation %s not in the reference data')
                 print("Checking results for %s analysis..." % t)
                 self._check(res[t], self.ref_data[t])
         else:

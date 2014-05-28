@@ -158,7 +158,7 @@ class diode:
         if reduced:
             delete_i = [pos for pos, i in enumerate(indices[0]) if i == -1]
             istamp = np.delete(istamp, delete_i, axis=0)
-            indices = zip(*[(i, j) for i, j in zip(*indices) if i != -1])
+            indices = tuple(zip(*[(i, j) for i, j in zip(*indices) if i != -1]))
         return indices, istamp
 
     def i(self, op_index, ports_v, time=0):  # with gmin added
@@ -196,7 +196,7 @@ class diode:
             zap_rc = [pos for pos, i in enumerate(indices[1][:2]) if i == -1]
             stamp = np.delete(stamp, zap_rc, axis=0)
             stamp = np.delete(stamp, zap_rc, axis=1)
-            indices = zip(*[(i, y) for i, y in zip(*indices) if (i != -1 and y != -1)])
+            indices = tuple(zip(*[(i, y) for i, y in zip(*indices) if (i != -1 and y != -1)]))
             stamp_flat = stamp.reshape(-1)
             stamp_folded = []
             indices_folded = []
@@ -207,7 +207,7 @@ class diode:
                 else:
                     w = indices_folded.index(it)
                     stamp_folded[w] += stamp_flat[ix]
-            indices = zip(*indices_folded)
+            indices = tuple(zip(*indices_folded))
             stamp = np.array(stamp_folded)
         return indices, stamp
 

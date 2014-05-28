@@ -40,7 +40,6 @@ following, we have the following regions implemented:
    :math:`I_D = 1/2 k_n W/L (V_{GS}-V_T)^2 * [1 + \lambda*(V_{DS}-V_{GS}+V_T)]`
 
 """
-from __future__ import division
 
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
@@ -198,7 +197,7 @@ class mosq_device:
         if reduced:
             delete_i = [pos for pos, i in enumerate(indices[0]) if i == -1]
             istamp = np.delete(istamp, delete_i, axis=0)
-            indices = zip(*[(i, j) for i, j in zip(*indices) if i != -1])
+            indices = tuple(zip(*[(i, j) for i, j in zip(*indices) if i != -1]))
         return indices, istamp
 
     def update_status_dictionary(self, ports_v):
@@ -284,7 +283,7 @@ class mosq_device:
             zap_rc = [pos for pos, i in enumerate(indices[1][:4]) if i == -1]
             stamp = np.delete(stamp, zap_rc, axis=0)
             stamp = np.delete(stamp, zap_rc, axis=1)
-            indices = zip(*[(i, y) for i, y in zip(*indices) if (i != -1 and y != -1)])
+            indices = tuple(zip(*[(i, y) for i, y in zip(*indices) if (i != -1 and y != -1)]))
             stamp_flat = stamp.reshape(-1)
             stamp_folded = []
             indices_folded = []
@@ -295,7 +294,7 @@ class mosq_device:
                 else:
                     w = indices_folded.index(it)
                     stamp_folded[w] += stamp_flat[ix]
-            indices = zip(*indices_folded)
+            indices = tuple(zip(*indices_folded))
             stamp = np.array(stamp_folded)
         return indices, stamp
 
@@ -504,23 +503,26 @@ class mosq_mos_model:
 
         vsqrt1 = max(-vbs + 2*self.PHI, 0.)
         vsqrt2 = max(2*self.PHI, 0.)
+        if debug:
+            print("PHI:", self.PHI, "vbs:", vbs)
+
         VT = self.VTO + svt + self.GAMMA * \
             (math.sqrt(vsqrt1) - math.sqrt(vsqrt2))
         if vgs < VT:
             ids = options.iea * (vgs / VT + vds / VT) / 100
             if debug:
-                print "OFF: %g" % ids
+                print("OFF: %g" % ids)
         else:
             if vds < vgs - VT -0.5*self.LAMBDA*(VT - vgs)**2:
                 ids = (skp + 1) * self.KP * device.W / \
                       device.L * ((vgs - VT) * vds - .5 * vds ** 2)
                 if debug:
-                    print "OHMIC: %g" % ids
+                    print("OHMIC: %g" % ids)
             else:
                 ids = (skp + 1) * .5 * self.KP * device.W / device.L * (
                       vgs - VT) ** 2 * (1 + self.LAMBDA * (vds - vgs + VT + 0.25*self.LAMBDA*(VT - vgs)**2))
                 if debug:
-                    print "SAT: %g" % ids
+                    print("SAT: %g" % ids)
         Ids = self.NPMOS * device.M / device.N * ids
 
         opdict.update(
@@ -571,7 +573,7 @@ class mosq_mos_model:
                             + vgs - self.VTO) / (device.L * vsqrt1**.5)
         gmb = self.NPMOS * (1 + skp) * gmb * device.M / device.N
         if debug:
-            print "gmb %g" % gmb
+            print("gmb %g" % gmb)
         return gmb
 
     def get_gmd(self, device, xxx_todo_changeme2, opdict=None, debug=False):
@@ -593,7 +595,7 @@ class mosq_mos_model:
                       (vgs - VT)**2
         gmd = (1 + skp) * gmd * device.M / device.N
         if debug:
-            print "gmd %g" % gmd
+            print("gmd %g" % gmd)
         return gmd
 
     def get_gm(self, device, xxx_todo_changeme3, opdict=None, debug=False):
@@ -616,7 +618,7 @@ class mosq_mos_model:
                     (-2 * self.GAMMA * (-vsqrt2**.5 + vsqrt1**.5) + 2*vgs - 2*self.VTO)
         gm = (1 + skp) * gm * device.M / device.N
         if debug:
-            print "gmg %g" % gm
+            print("gmg %g" % gm)
         return gm
 
     def _self_check(self):

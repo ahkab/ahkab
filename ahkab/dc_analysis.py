@@ -987,7 +987,8 @@ def build_x0_from_user_supplied_ic(circ, icdict):
          if circuit.is_elem_voltage_defined(elem)]
     ni = len(voltage_defined_elem_names)  # number of current variables
     x0 = np.zeros((nv + ni, 1))
-    for label, value in icdict.items():
+    for label in icdict.keys():
+        value = icdict[label]
         if Vregex.search(label):
             ext_node = Vregex.findall(label)[0]
             int_node = circ.ext_node_to_int(ext_node)
