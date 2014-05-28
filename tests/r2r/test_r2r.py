@@ -1,11 +1,31 @@
+# -*- coding: utf-8 -*-
+# test_r2r.py
+# R2r ladder timed test
+# Copyright 2012 Giuseppe Venturini
+#
+# This file is part of the ahkab simulator.
+#
+# Ahkab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 2 of the License.
+#
+# Ahkab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License v2
+# along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import print_function, division, unicode_literals
 import time
 import os
-import os.path
+import io
 import sys
 import hashlib
 import uuid
-import pickle
+import scipy.io
 import subprocess
+import base64
 import scipy, scipy.optimize
 import numpy
 import matplotlib
@@ -32,12 +52,10 @@ else:
 # current execution happen on the same box
 def get_boxid():
     mac = hex(uuid.getnode())
-    return hashlib.sha512(mac).hexdigest()
+    return base64.b64encode(hashlib.sha512(mac).hexdigest())
 
-def check_boxid(pickle_file):
-    with open(pickle_file, 'r') as fp:
-        _, _, ref_boxid = pickle.load(fp)
-    return ref_boxid == get_boxid()
+def check_boxid(mat_file):
+    return scipy.io.loadmat(mat_file)['boxid']
 
 # fit the data
 fitfunc = lambda p, x: p[0]*x**3 + p[1]*x**2 + p[2] # Target function
@@ -90,8 +108,8 @@ def _run_test(ref_run=False, verbose=False):
     x = numpy.array(x, dtype='int64')
     times = numpy.array(times, dtype='float64')
     if ref_run:
-        with open(os.path.join(reference_path, 'r2r.pickle'), 'w') as fp:
-            pickle.dump((x, times, get_boxid()), fp)
+        scipy.io.savemat(os.path.join(reference_path, 'r2r.mat'), 
+                         {'x':x, 'times':times, 'boxid':get_boxid()})
     return x, times
 
 def test():
@@ -102,15 +120,16 @@ def test():
         # we skip the test. Travis builders are awfully slow
         raise SkipTest 
 
-    pickle_file = os.path.join(reference_path, 'r2r.pickle') 
-    ref_run = not (os.path.isfile(pickle_file) and check_boxid(pickle_file))
+    mat_file = os.path.join(reference_path, 'r2r.mat') 
+    ref_run = not (os.path.isfile(mat_file) and check_boxid(mat_file))
     if not ref_run:
         print("Running test...")
-        x, times, _ = pickle.load(open(pickle_file, 'r'))
+        d = scipy.io.loadmat(mat_file)
+        x, times = d['x'].reshape((-1,)), d['times'].reshape((-1,))
         x = numpy.array(x, dtype='int64')
         x_new, times_new = _run_test(ref_run)
-        assert max(abs(times_new - times)) < REGRESSION_TIME
-        assert sum(times_new) > 3 # if we're that fast, something's off
+        assert numpy.max(times_new - times) < REGRESSION_TIME
+        assert numpy.sum(times_new) > 3 # if we're that fast, something's off
     elif ref_run:
         if sys.argv[0].endswith('nosetests'):
             raise SkipTest
