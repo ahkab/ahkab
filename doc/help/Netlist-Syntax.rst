@@ -37,17 +37,21 @@ In general, an element is declared with the following general syntax:
 
 ``<K><description_string> <n1> <n2> [value] [<option>=<value>] [...] ...``
 
-Where: \* ``<K>`` is a character, a unique identifier for each type of
-element (e.g. R for resistor) \* ``<description_string>`` is a string
-without spaces (e.g 1) \* ``<n1>``, a string, is the node of the circuit
-to which the anode of the element is connected. \* ``<n2>``, a string,
-is the node of the circuit to which the cathode of the element is
-connected. \* ``[value]`` if supported, is the 'value' of the element,
-in mks (e.g. R1 1 0 500k) \* ``<option>=<value>`` are the parameters of
-the element
+Where:
+
+* ``<K>`` is a character, a unique identifier for each type of
+  element (e.g. R for resistor)
+* ``<description_string>`` is a string without spaces (e.g ``1``)
+* ``<n1>``, a string, is the the node of the circuit
+  to which the anode of the element is connected.
+* ``<n2>``, a string, is the node of the circuit to which the cathode of
+  the element is connected.
+* ``[value]`` if supported, is the 'value' of the element, in mks
+  (e.g. R1 1 0 500k)
+* ``<option>=<value>`` are the parameters of the element
 
 Nodes may have any label, without spaces, except the *reference* *node*
-which has to be 0.
+which has to be ``0``.
 
 Linear elements
 ^^^^^^^^^^^^^^^
@@ -84,8 +88,8 @@ Capacitors
 -  ``n1`` and ``n2`` are the element nodes.
 -  ``value`` is the capacitance in Farads.
 -  ``ic=<value>`` is an optional attribute that can be set to provide an
-   initial value for a transient simulation. See also the discussion of
-   the ``UIC`` parameter in TRAN simulations.
+   initial value voltage value for a transient simulation.
+   See also the discussion of the ``UIC`` parameter in TRAN simulations.
 
 **Example:**
 
@@ -151,11 +155,11 @@ Voltage-controlled switch
 
 **General syntax:**
 
-``S<string> n+ n- ns+ ns- <model_id>``
+``S<string> n1 n2 ns1 ns2 <model_id>``
 
--  ``n+`` and ``n-`` are the nodes corresponding to the output port,
+-  ``n1`` and ``n2`` are the nodes corresponding to the output port,
    where the switch opens and closes the connection.
--  ``ns+`` and ``ns-`` are the nodes corresponding to the driving port,
+-  ``ns1`` and ``ns2`` are the nodes corresponding to the driving port,
    where the voltage setting the switch status is read.
 -  ``model_id`` is the model describing the switch operation. Notice
    that even if an ideal switch is a (piece-wise) linear element, its
@@ -174,12 +178,7 @@ Voltage source
 
 ``v<string> n1 n2 [type=vdc vdc=float] [type=vac vac=float] [type=....]``
 
-Where the third type (if added) is one of: \* Sinusoidal source:
-``type=sin vo=<float> va=<float> freq=<float> td=<float> theta=<float>``
-\* Exp. source
-``type=exp v1=<float> v2=float td1=float tau1=<float> td2=<float> tau2=<float>``
-\* Pulsed source
-``type=pulse v1=<float> v2=<float> td=<float> tr=<float> tf=<float> pw=<float> per=<float>``
+Where the third type (if added) is one of: 
 
 Current source
 ''''''''''''''
@@ -253,12 +252,19 @@ MOS Transistors
 
 ``M<string> nd ng ns nb <model_id> w=<float> l=<float>``
 
-A MOS device declaration requires: \* ``nd``: the drain node \* ``ng``:
-the gate node \* ``ns``: the source node \* ``nb``: the bulk node \*
-``model_id``: this is a string that links this device to a ``.model``
-declaration in the netlist. The model is actually responsible of the
-operation of the device. \* ``w``: gate width, in meters \* ``l``: gate
-length, in meters.
+A MOS device declaration requires:
+
+* ``nd``: the drain node,
+* ``ng``: the gate node,
+* ``ns``: the source node,
+* ``nb``: the bulk node 
+
+* ``<model_id>``: is a string that links this device to a ``.model``
+  declaration in the netlist. The model is actually responsible of the
+  operation of the device. 
+
+* ``w``: gate width, in meters
+* ``l``: gate length, in meters.
 
 User-defined elements
 '''''''''''''''''''''
@@ -272,14 +278,11 @@ should write a Python module that supplies the element class. The
 simulator will attempt to load the module ``<module_name>`` and it will
 then look for a class named ``<type>`` within.
 
-See doc(netlist\_parser.parse\_elem\_user\_defined) for further
+See :func:`netlist_parser.parse_elem_user_defined` for further
 information.
 
-Other
-^^^^^
-
 Subcircuit calls
-''''''''''''''''
+^^^^^^^^^^^^^^^^
 
 **General syntax:**
 
@@ -290,6 +293,133 @@ Insert a subcircuit, connected as specified.
 All nodes in the subcircuit specification must be connected to a circuit
 node. The call can be placed before or after the corresponding .subckt
 directive.
+
+Time functions
+""""""""""""""
+
+Time functions may be used in conjuction with an independent source
+to define its time-dependent behaviour.
+
+This is typically done adding a ``type=...`` section in the element decalration,
+such as:
+
+::
+
+    V1 1 2 vdc=10m type=sin VO=10m VA=1.2 FREQ=500k TD=1n THETA=0
+
+
+Sinusoidal waveform
+^^^^^^^^^^^^^^^^^^^
+
+A damped sinusoidal time function.
+
+.. image:: ../images/elem/sin.svg
+
+It may be described with the syntax:
+
+::
+
+    type=sin <VO> <VA> <FREQ> <TD> <THETA> <PHASE>
+
+
+or with the more verbose variant:
+
+::
+
+    type=sin VO=<float> VA=<float> FREQ=<float> TD=<float> THETA=<float> PHASE=<float>
+
+
+
+Mathematically described by:
+
+* When :math:`t < td`:
+
+.. math::
+
+    V(t) = V\!O
+
+* When :math:`t \ge td`:
+
+.. math::
+
+    V(t) = V\!O + V\!A \cdot \mathrm{exp}[-{T\!H\!E\!T\!A} \cdot (t - T\!D)] \cdot \mathrm{sin}[2 \pi F\!R\!E\!Q (t - T\!D) + (P\!H\!A\!S\!E/360)]
+
+Where:
+
+* :math:`V\!O` is the offset voltage in Volt.
+* :math:`V\!A` is the amplitude in Volt.
+* :math:`F\!R\!E\!Q` is the frequency in Hertz.
+* :math:`T\!D` is the delay in seconds.
+* :math:`T\!H\!E\!T\!A` is the damping factor per second.
+* :math:`P\!H\!A\!S\!E` is the phase in degrees.
+
+Exponential source
+^^^^^^^^^^^^^^^^^^
+
+.. image:: ../images/elem/exp.svg
+
+An exponential waveform may be described with one of the following syntaxes:
+
+::
+
+     type=EXP <V1> <V2> <TD1> <TAU1> [<TD2> <TAU2>]
+::
+
+    type=exp v1=<float> v2=float td1=float tau1=<float> td2=<float> tau2=<float> 
+
+
+Example:
+
+::
+
+     VIN input 0 type=vdc vdc=0 type=exp 4 1 2n 30n 60n 40n
+
+
+Mathematically, it is described by the equations:
+
+* :math:`0 \le t < TD1`:
+
+.. math::
+
+    f(t) = V1
+
+* :math:`TD1 < t < TD2`
+
+.. math::
+
+    f(t) = V1+(V2-V1) \cdot \left[1-\exp \left(-\frac{t-TD1}{TAU1}\right)\right]
+
+* :math: t > TD2
+
+.. math::
+
+    f(t) = V1+(V2-V1) \cdot \left[1-\exp \left(-\frac{t-TD1}{TAU1}\right)\right]+(V1-V2) \cdot \left[1-\exp \left(-\frac{t-TD2}{TAU2}\right)\right]
+
+**Parameters:**
+
+=========  ==================  =============  =======
+Parameter  Meaning             Default value  Units
+=========  ==================  =============  =======
+V1         initial value                      V or A
+V2         pulsed value	                      V or A
+TD1        rise delay time     0.0            s
+TAU1       rise time constant                 s
+TD2        fall delay time     Infinity       s
+TAU2       fall time constant  Infinity       s
+=========  ==================  =============  =======
+
+
+Pulsed source 
+^^^^^^^^^^^^^
+
+A square wave.
+
+.. image:: ../images/elem/pulse.svg
+
+::
+
+    type=pulse v1=<float> v2=<float> td=<float> tr=<float> tf=<float> pw=<float> per=<float>
+
 
 Device models
 """""""""""""
@@ -520,10 +650,7 @@ be executed
 Periodic Steady State (PSS)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Shooting
-^^^^^^^^
-
-``.SHOOTING period=n [points=n step=n method=<string> autonomous=bool]``
+``.PSS period=n [points=n step=n method=<string> autonomous=bool]``
 
 This analysis tries to find the periodic steady state (PSS) solution of
 the circuit.
@@ -531,15 +658,15 @@ the circuit.
 Parameters: 
 
 - ``period``: the period of the solution. To be specified only
-   in not autonomous circuits (which are somehow clocked). 
+  in not autonomous circuits (which are somehow clocked). 
 - ``points``: How many time points to use to discretize the solution. If ``step`` is set, this
-    is automatically computed.
+  is automatically computed.
 - ``step``: Time step on the period. If ``points`` is set, this is
-    automatically computed. 
-- method: the PSS algorithm to be employed. Options are: ``shooting`` 
-    (default) and ``brute-force``.
+  automatically computed. 
+- ``method``: the PSS algorithm to be employed. Options are: ``shooting`` 
+  (default) and ``brute-force``.
 - ``autonomous``: self-explanatory boolean. If set to ``True``, currently the
-    simulator halts, because autonomous circuits are not supported, yet.
+  simulator halts, because autonomous circuits are not supported, yet.
 
 Symbolic small-signal and transfer function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

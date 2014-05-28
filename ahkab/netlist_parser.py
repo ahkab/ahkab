@@ -1114,7 +1114,7 @@ def parse_postproc(circ, postproc_direc):
                 for glabel in line_elements[2:]:
                     graph_labels = graph_labels + " " + glabel
 
-                l2l1 = plotting.split_netlist_label(graph_labels)
+                l2l1 = plotting._split_netlist_label(graph_labels)
 
                 if plot_postproc["analysis"] == "ac":
                     l2l1ac = []
