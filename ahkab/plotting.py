@@ -21,6 +21,7 @@
 This module offers the functions needed to plot the results
 of a simulation
 """
+from __future__ import print_function, division, unicode_literals
 
 import re
 import pylab
@@ -50,7 +51,7 @@ def _split_netlist_label(labels_string):
         l1 = None
         ret_labels.append((l2, l1))
     if len(ret_labels) == 0:
-        raise Exception, "Unrecognized plot labels: " + labels_string
+        raise Exception("Unrecognized plot labels: " + labels_string)
     return ret_labels
 
 
