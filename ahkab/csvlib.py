@@ -47,6 +47,7 @@ The separator can be selected setting:
 #    _get_fp(filename, mode='rb')
 #    _close_fp(fp, filename)
 
+from __future__ import print_function, division, unicode_literals
 import io
 import sys
 import copy
@@ -124,7 +125,7 @@ def write_headers(filename, headers):
 def _get_fp(filename, mode="r"):
     if filename == 'stdout' or filename == '-' or filename == sys.stdout:
         if mode == 'w' or mode == 'a' or mode == 'wb' or mode == 'ab':
-            fp = sys.stdout
+            fp = sys.stdout if not hasattr(sys.stdout, 'buffer') else sys.stdout.buffer
         else:
             print("(EE) Mode %s is not supported for stdout." % (mode,))
             fp = None
@@ -193,7 +194,7 @@ def get_headers(filename):
 
     """
 
-    fp = _get_fp(filename)
+    fp = _get_fp(filename, 'r')
     headers = None
     line = ""
     while line == "":
