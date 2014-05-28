@@ -53,7 +53,7 @@ def read_data(filename, label, labels=None):
     if labels == None:
         labels = read_data_header(filename)
     else:
-        labels = map(str.upper, labels)
+        labels = list(map(str.upper, labels))
     try:
         index = labels.index(label)
         fp = open(filename, "r")
@@ -91,7 +91,7 @@ def split_netlist_label(labels_string):
         l1 = None
         ret_labels.append((l2, l1))
     if len(ret_labels) == 0:
-        raise Exception, "Unrecognized plot labels: " + labels_string
+        raise Exception("Unrecognized plot labels: " + labels_string)
     return ret_labels
 
 

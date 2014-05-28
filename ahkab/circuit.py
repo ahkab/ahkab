@@ -165,9 +165,9 @@ class Circuit(list):
         where this method won't raise an exception.
 
         """
-        got_ref = self.nodes_dict.has_key(0)
+        got_ref = 0 in self.nodes_dict
         try:
-            self.nodes_dict.values().index(name)
+            list(self.nodes_dict.values()).index(name)
         except ValueError:
             if name == '0':
                 int_node = 0
@@ -199,11 +199,11 @@ class Circuit(list):
 
         Returns: the internal node name (an INTEGER) assigned to the node.
         """
-        got_ref = self.nodes_dict.has_key(0)
+        got_ref = 0 in self.nodes_dict
 
         # test: do we already have it in the dictionary?
         try:
-            self.nodes_dict.values().index(ext_name)
+            list(self.nodes_dict.values()).index(ext_name)
         except ValueError:
             if ext_name == '0':
                 int_node = 0
@@ -211,7 +211,7 @@ class Circuit(list):
                 int_node = len(self.nodes_dict) + 1 * (not got_ref)
             self.nodes_dict.update({int_node: ext_name})
         else:
-            for (key, value) in self.nodes_dict.iteritems():
+            for (key, value) in self.nodes_dict.items():
                 if value == ext_name:
                     int_node = key
         return int_node
@@ -282,13 +282,13 @@ class Circuit(list):
 
         Returns: the int id, int_node associated.
         """
-        items = self.nodes_dict.items()
+        items = list(self.nodes_dict.items())
         values = [value for key, value in items]
 
         try:
             index = values.index(ext_node)
         except ValueError:
-            raise NodeNotFoundError, "Node %s not found in the circuit." % ext_node
+            raise NodeNotFoundError("Node %s not found in the circuit." % ext_node)
 
         return items[index][0]
 
@@ -308,7 +308,7 @@ class Circuit(list):
         try:
             ret = self.nodes_dict[int_node]
         except KeyError:
-            raise NodeNotFoundError, ""
+            raise NodeNotFoundError("")
 
         return ret
 
@@ -356,7 +356,7 @@ class Circuit(list):
             model_iter = switch.vswitch_model(**model_parameters)
             model_iter.name = model_label
         else:
-            raise CircuitError, "Unknown model type %s" % (model_type,)
+            raise CircuitError("Unknown model type %s" % (model_type,))
         self.models.update({model_label: model_iter})
         return self.models
 
@@ -372,7 +372,7 @@ class Circuit(list):
 
         returns: None
         """
-        if self.models is not None and self.models.has_key(model_label):
+        if self.models is not None and model_label in self.models:
             del self.models[model_label]
         # should print a warning here
 
@@ -407,7 +407,7 @@ class Circuit(list):
         n2 = self.add_node(n2)
 
         if value == 0:
-            raise CircuitError, "ZERO-valued resistors are not allowed."
+            raise CircuitError("ZERO-valued resistors are not allowed.")
 
         elem = devices.Resistor(n1=n1, n2=n2, value=value)
         elem.part_id = name
@@ -429,7 +429,7 @@ class Circuit(list):
         Returns: True
         """
         if value == 0:
-            raise CircuitError, "ZERO-valued capacitors are not allowed."
+            raise CircuitError("ZERO-valued capacitors are not allowed.")
 
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
@@ -567,8 +567,8 @@ class Circuit(list):
         n2 = self.add_node(n2)
         if models is None:
             models = self.models
-        if not models.has_key(model_label):
-            raise ModelError, "Unknown diode model id: " + model_label
+        if model_label not in models:
+            raise ModelError("Unknown diode model id: " + model_label)
 
         elem = diode.diode(part_id=part_id, n1=n1, n2=n2, model=models[
                            model_label], AREA=Area, T=T, ic=ic, off=off)
@@ -609,8 +609,8 @@ class Circuit(list):
         if models is None:
             models = self.models
 
-        if not models.has_key(model_label):
-            raise ModelError, "Unknown model id: " + model_label
+        if model_label not in models:
+            raise ModelError("Unknown model id: " + model_label)
 
         if isinstance(models[model_label], ekv.ekv_mos_model):
             elem = ekv.ekv_device(
@@ -621,7 +621,7 @@ class Circuit(list):
                 nd, ng, ns, nb, w, l, models[model_label], m, n, part_id)
 
         else:
-            raise Exception, "Unknown model type for " + model_label
+            raise Exception("Unknown model type for " + model_label)
 
         self.append(elem)
 
@@ -721,8 +721,8 @@ class Circuit(list):
 
         if models is None:
             models = self.models
-        if not models.has_key(model_label):
-            raise ModelError, "Unknown switch model id: " + model_label
+        if model_label not in models:
+            raise ModelError("Unknown switch model id: " + model_label)
 
         elem = switch.switch_device(
             part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, model=models[model_label])
@@ -738,7 +738,7 @@ class Circuit(list):
         XXX WRITE DOC
         """
 
-        if circuit.user_defined_modules_dict.has_key(module_name):
+        if module_name in circuit.user_defined_modules_dict:
             module = circuit.user_defined_modules_dict[module_name]
         else:
             fp, pathname, description = imp.find_module(module_name)
@@ -756,8 +756,8 @@ class Circuit(list):
         if hasattr(elem, "check"):
             selfcheck_result, error_msg = elem.check()
             if not selfcheck_result:
-                raise NetlistParseError, "module: " + module_name + " elem type: " + elem_type_name + " error: " +\
-                    error_msg
+                raise NetlistParseError("module: " + module_name + " elem type: " + elem_type_name + " error: " +\
+                    error_msg)
 
         self.append(elem)
         return True
@@ -938,7 +938,7 @@ class circuit_wrapper:
 
         And then call circ.add_node()
         """
-        if not self.subckt_node_filter_dict.has_key(ext_name):
+        if ext_name not in self.subckt_node_filter_dict:
             self.subckt_node_filter_dict.update(
                 {ext_name: self.prefix + ext_name})
         int_node = self.circ.add_node(self.subckt_node_filter_dict[ext_name])

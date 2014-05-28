@@ -56,6 +56,8 @@ The Missing Features:
 - Quasistatic implementation
 """
 
+from __future__ import print_function, division
+
 import math
 
 from . import constants
@@ -133,7 +135,7 @@ class ekv_device:
 
         devcheck, reason = self.ekv_model._device_check(self.device)
         if not devcheck:
-            raise Exception, reason + " out of boundaries."
+            raise Exception(reason + " out of boundaries.")
 
     def get_drive_ports(self, op):
         """Returns a tuple of tuples of ports nodes, as:
@@ -177,10 +179,10 @@ class ekv_device:
     def update_status_dictionary(self, ports_v):
         if self.opdict is None:
             self.opdict = {}
-        if not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gmd')) or \
-            not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gmg')) or \
-            not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gms')) or \
-                not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('Ids')):
+        if not (self.opdict['state'] == ports_v[0] and 'gmd' in self.opdict) or \
+            not (self.opdict['state'] == ports_v[0] and 'gmg' in self.opdict) or \
+            not (self.opdict['state'] == ports_v[0] and 'gms' in self.opdict) or \
+                not (self.opdict['state'] == ports_v[0] and 'Ids' in self.opdict):
 
             self.opdict['state'] == ports_v[0]
             self.opdict['gmd'] = self.g(0, ports_v[0], 0)
@@ -201,7 +203,7 @@ class ekv_device:
 
     def print_op_info(self, ports_v):
         arr = self.get_op_info(ports_v)
-        print arr,
+        print(arr, end=' ')
 
     def get_op_info(self, ports_v):
         """Operating point info, for design/verification. """
@@ -341,7 +343,7 @@ class ekv_mos_model:
         if VTO is not None:
             self.VTO = self.NPMOS * float(VTO)
             if self.VTO < 0:
-                print "(W): model %s has internal negative VTO (%f V)." % (self.name, self.VTO)
+                print("(W): model %s has internal negative VTO (%f V)." % (self.name, self.VTO))
         elif VFB is not None:
             self.VTO = VFB + PHI + GAMMA * PHI  # inv here??
         else:
@@ -371,7 +373,7 @@ class ekv_mos_model:
 
         sc, sc_reason = self._self_check()
         if not sc:
-            raise Exception, sc_reason + " out of range"
+            raise Exception(sc_reason + " out of range")
 
     def set_device_temperature(self, T):
         """Change the temperature of the device. VTO, KP and PHI get updated.
@@ -474,14 +476,15 @@ class ekv_mos_model:
 
         return VP, nv, nq
 
-    def get_ids(self, device, (vd, vg, vs), opdict=None, debug=False):
+    def get_ids(self, device, xxx_todo_changeme, opdict=None, debug=False):
         """Returns:
             IDS, the drain-to-source current (de-normalized),
             qs, the (scaled) charge at the source,
             qr, the (scaled) charge at the drain.
         """
+        (vd, vg, vs) = xxx_todo_changeme
         if debug:
-            print "=== Current for vd:", vd, "vg:", vg, "vs:", vs
+            print("=== Current for vd:", vd, "vg:", vg, "vs:", vs)
         ip_abs_err = self.get_ip_abs_err(device) if opdict[
             'ip_abs_err'] is None else opdict['ip_abs_err']
 
@@ -498,7 +501,7 @@ class ekv_mos_model:
         vd = VD / self.scaling.Ut
 
         if debug:
-            print "Scaled voltages: vd:", vd, "vp:", vp, "vs:", vs
+            print("Scaled voltages: vd:", vd, "vp:", vp, "vs:", vs)
 
         v_ifn = vp - vs
         ifn = self.get_ismall(v_ifn, opdict['ip_abs_err'], max(
@@ -515,14 +518,14 @@ class ekv_mos_model:
             opdict['irn'], ISMALL_GUESS_MIN), debug=debug)
 
         if debug:
-            print "vd:", vd, "vg:", VG / self.scaling.Ut, "vs:", vs, "vds:", vd - vs
-            print "v_ifn:", v_ifn, "v_irn:", v_irn
-            print "ifn:", ifn, "irn:", irn
-            print "ip_abs_err:", ip_abs_err
-            print "Vth:", self.scaling.Ut
-            print "nv", nv, "Is", self.scaling.Is
-            print "Weff:", device.W, "Leff:", Leff
-            print "NPMOS:", self.NPMOS, "CS_FACTOR", CS_FACTOR
+            print("vd:", vd, "vg:", VG / self.scaling.Ut, "vs:", vs, "vds:", vd - vs)
+            print("v_ifn:", v_ifn, "v_irn:", v_irn)
+            print("ifn:", ifn, "irn:", irn)
+            print("ip_abs_err:", ip_abs_err)
+            print("Vth:", self.scaling.Ut)
+            print("nv", nv, "Is", self.scaling.Is)
+            print("Weff:", device.W, "Leff:", Leff)
+            print("NPMOS:", self.NPMOS, "CS_FACTOR", CS_FACTOR)
 
         qf = self.ismall2qsmall(ifn)
         qr = self.ismall2qsmall(irn)
@@ -551,12 +554,13 @@ class ekv_mos_model:
         opdict.update({'WMSI': WMSI})
 
         if debug:
-            print "current:", Ids
+            print("current:", Ids)
 
         return Ids, qf, qr
 
-    def get_leq_virp(self, device, (vd, vg, vs), Vp, Leff, ifn):
+    def get_leq_virp(self, device, xxx_todo_changeme1, Vp, Leff, ifn):
         # if ifn > 0 and Vp - constants.Vth()*vd > 0:
+        (vd, vg, vs) = xxx_todo_changeme1
         assert vd >= vs
         Vc = self.UCRIT * device.N * Leff
         Vdss  = Vc * \
@@ -597,8 +601,9 @@ class ekv_mos_model:
 
         return Leq, v_irp
 
-    def get_gms(self, device, (vd, vg, vs), opdict=None, debug=False):
+    def get_gms(self, device, xxx_todo_changeme2, opdict=None, debug=False):
         """Returns the source-bulk transconductance or d(IDS)/d(VS-VB)."""
+        (vd, vg, vs) = xxx_todo_changeme2
         (j1, j2, j3), CS_FACTOR = self.get_voltages(vd, vg, vs)
         Ids, qf, qr = self.get_ids(device, (vd, vg, vs), opdict, debug)
         if CS_FACTOR == +1:
@@ -607,8 +612,9 @@ class ekv_mos_model:
             gms = -self.scaling.Gs * qr
         return gms
 
-    def get_gmd(self, device, (vd, vg, vs), opdict=None, debug=False):
+    def get_gmd(self, device, xxx_todo_changeme3, opdict=None, debug=False):
         """Returns the drain-bulk transconductance or d(IDS)/d(VD-VB)."""
+        (vd, vg, vs) = xxx_todo_changeme3
         (j1, j2, j3), CS_FACTOR = self.get_voltages(vd, vg, vs)
         Ids, qf, qr = self.get_ids(device, (vd, vg, vs), opdict, debug)
         if CS_FACTOR == +1:
@@ -617,8 +623,9 @@ class ekv_mos_model:
             gmd = self.scaling.Gs * qf
         return gmd
 
-    def get_gmg(self, device, (vd, vg, vs), opdict=None, debug=False):
+    def get_gmg(self, device, xxx_todo_changeme4, opdict=None, debug=False):
         """Returns the gate-bulk transconductance or d(IDS)/d(VG-VB)."""
+        (vd, vg, vs) = xxx_todo_changeme4
         VP, nv, nq = self.get_vp_nv_nq(float(vg))
         Ids, qf, qr = self.get_ids(device, (vd, vg, vs), opdict, debug)
         (j1, j2, j3), CS_FACTOR = self.get_voltages(vd, vg, vs)
@@ -636,11 +643,9 @@ class ekv_mos_model:
             iguess = 1.0
         # sanity checks
         if math.isnan(vsmall):
-            raise Exception, \
-                "Attempted to calculate a current corresponding to a NaN voltage."
+            raise Exception("Attempted to calculate a current corresponding to a NaN voltage.")
         if not ip_abs_err > 0:
-            raise Exception, \
-                "The normalized current absolute error has been set to a negative value."
+            raise Exception("The normalized current absolute error has been set to a negative value.")
         # if vsmall < 0:
         #   return 0.0
 
@@ -659,10 +664,10 @@ class ekv_mos_model:
 
             numeric_problem = numeric_problem_i or numeric_problem_v
             if debug:
-                print "Numeric problem:", numeric_problem
-                print "ABS: deltai < ip_abs_err", deltai, "<", ip_abs_err, ":", abs(deltai) < ip_abs_err
-                print "REL: deltai < ismall*options.ier", deltai, "<", ismall * options.ier, abs(deltai) < ismall * options.ier
-                print deltai, ismall
+                print("Numeric problem:", numeric_problem)
+                print("ABS: deltai < ip_abs_err", deltai, "<", ip_abs_err, ":", abs(deltai) < ip_abs_err)
+                print("REL: deltai < ismall*options.ier", deltai, "<", ismall * options.ier, abs(deltai) < ismall * options.ier)
+                print(deltai, ismall)
             # absolute and relative value convergence checks.
             if ((abs(deltai) < ip_abs_err or numeric_problem) and abs(deltai) < ismall * options.ier) or \
                     (abs(deltai) < ip_abs_err * 1e-6 or numeric_problem):
@@ -677,7 +682,7 @@ class ekv_mos_model:
                 check = False
             # convergence was not reached, update ismall
             if math.isnan(ismall):
-                print "Ismall is NaN!!"
+                print("Ismall is NaN!!")
                 exit()
             if ismall == 0:
                 # this is a sign we went below the machine resolution
@@ -697,7 +702,7 @@ class ekv_mos_model:
                 else:
                     ismall = ismall + deltai
         if debug:
-            print str(iter_c) + " iterations."
+            print(str(iter_c) + " iterations.")
         return ismall
 
     def get_vsmall(self, ismall, verbose=3):
@@ -708,7 +713,7 @@ class ekv_mos_model:
         if abs(ismall) < utilities.EPS:
             ismall = utilities.EPS  # otherwise we get log(0)
             if verbose == 6:
-                print "EKV: Machine precision limited the resolution on i. (i<EPS)"
+                print("EKV: Machine precision limited the resolution on i. (i<EPS)")
             numeric_problem = True
         else:
                     numeric_problem = False
@@ -726,7 +731,7 @@ class ekv_mos_model:
             ismall = utilities.EPS
             numeric_problem = True
             if verbose == 6:
-                print "EKV: Machine precision limited the resolution on dv/di in the NR iteration. (i<EPS)"
+                print("EKV: Machine precision limited the resolution on dv/di in the NR iteration. (i<EPS)")
         else:
             numeric_problem = False
         dvdi = 1.0 / (math.sqrt(.25 + ismall) - .5) * .5 / \
@@ -737,7 +742,7 @@ class ekv_mos_model:
         """ i(f,r) -> q(f,r)
         Convert a source/drain scaled current to the corresponding normalized charge."""
         if verbose == 6:  # ismall is lower than EPS, errors here are usually not important
-            print "EKV: Machine precision limited the resolution on q(s,d). (i<EPS)"
+            print("EKV: Machine precision limited the resolution on q(s,d). (i<EPS)")
         qsmall = math.sqrt(.25 + ismall) - .5
         return qsmall
 
@@ -790,7 +795,7 @@ if __name__ == '__main__':
     ekv_m.print_model()
 
     # gmUt/Ids test
-    import mosq
+    from . import mosq
     msq = mosq.mosq(1, 2, 3, kp=50e-6, w=10e-6,
                     l=1e-6, vt=.4, lambd=0.0, mos_type='n')
     data0 = []
@@ -801,7 +806,7 @@ if __name__ == '__main__':
     if True:
         vs = 1
         for Vhel in range(1, 2500):
-            print ".",
+            print(".", end=' ')
             vg = Vhel / 1000.0
             ma.update_status_dictionary(((vd, vg, 0),))
             data0.append(ma.opdict['Ids'])

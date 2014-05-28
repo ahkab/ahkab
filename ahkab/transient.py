@@ -188,32 +188,32 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
         printing.print_info_line(("Using the supplied op as x(t=%g)." % (tstart,), 5), verbose)
         
     if verbose > 4:
-        print "x0:"
+        print("x0:")
         opsol.print_short()
     
     # setup the df method
     printing.print_info_line(("Selecting the appropriate DF ("+method+")... ", 5), verbose, print_nl=False)
     if method == IMPLICIT_EULER:
-        import implicit_euler as df
+        from . import implicit_euler as df
     elif method == TRAP:
-        import trap as df
+        from . import trap as df
     elif method == GEAR1:
-        import gear as df
+        from . import gear as df
         df.order = 1
     elif method == GEAR2:
-        import gear as df
+        from . import gear as df
         df.order = 2
     elif method == GEAR3:
-        import gear as df
+        from . import gear as df
         df.order = 3
     elif method == GEAR4:
-        import gear as df
+        from . import gear as df
         df.order = 4
     elif method == GEAR5:
-        import gear as df
+        from . import gear as df
         df.order = 5
     elif method == GEAR6:
-        import gear as df
+        from . import gear as df
         df.order = 6
     else:
         df = import_custom_df_module(method, print_out=(outfile != "stdout"))
@@ -238,7 +238,12 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
         printing.print_general_error("df doesn't need any value?")
         sys.exit(1)
     if use_step_control:
-        thebuffer = dfbuffer(length=max(max_x, max_dx, pmax_x, pmax_dx) + 1, width=3)
+        buffer_len = 0
+        for mx in (max_x, max_dx, pmax_x, pmax_dx):
+            if mx is not None:
+                buffer_len = max(buffer_len, mx)
+        buffer_len += 1
+        thebuffer = dfbuffer(length=buffer_len, width=3)
     else:
         thebuffer = dfbuffer(length=max(max_x, max_dx) + 1, width=3)
     thebuffer.add((tstart, x0, None)) #setup the first values
@@ -254,7 +259,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
     # import implicit_euler to be used in the first iterations
     # this is because we don't have any dx when we start, nor any past point value
     if (max_x is not None and max_x > 0) or max_dx is not None:
-        import implicit_euler
+        from . import implicit_euler
     
     printing.print_info_line(("MNA (reduced):", 5), verbose)
     printing.print_info_line((str(mna), 5), verbose)
@@ -292,6 +297,8 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
     rerror[nv-1:, 0] = options.ier
     
     iter_n = 0  # contatore d'iterazione
+    # when to start predicting the next point
+    start_pred_iter = max(*[i for i in (0, pmax_x, pmax_dx_plus_1) if i is not None])
     lte = None
     sol = results.tran_solution(circ, tstart, tstop, op=x0, method=method, outfile=outfile)
     printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
@@ -301,8 +308,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
         if iter_n < max(max_x, max_dx_plus_1):
             x_coeff, const, x_lte_coeff, prediction, pred_lte_coeff = \
             implicit_euler.get_df((thebuffer.get_df_vector()[0],), tstep, \
-            predict=(use_step_control and (iter_n >= max(pmax_x, pmax_dx_plus_1))))
-            
+            predict=(use_step_control and iter_n >= start_pred_iter))
         else:
             [x_coeff, const, x_lte_coeff, prediction, pred_lte_coeff] = \
             df.get_df(thebuffer.get_df_vector(), tstep, predict=use_step_control)
@@ -331,7 +337,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
                     lte = abs((x_lte_coeff / (pred_lte_coeff - x_lte_coeff)) * (prediction - x1))
                     # it should NEVER happen that new_step > 2*tstep, for stability
                     new_step_coeff = 2 
-                    for index in xrange(x.shape[0]):
+                    for index in range(x.shape[0]):
                         if lte[index, 0] != 0:
                             new_value = ((aerror[index, 0] + rerror[index, 0]*abs(x[index, 0])) / lte[index, 0]) \
                             ** (1.0 / (df.order+1))
@@ -395,7 +401,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
         else:
             ret_value = sol
     else:
-        print "failed."
+        print("failed.")
         ret_value =  None
     
     return ret_value
@@ -414,7 +420,7 @@ def check_step(tstep, time, tstop, HMAX):
         tstep = tstop - time
     elif tstep < options.hmin:
         printing.print_general_error("Step size too small: "+str(tstep))
-        raise Exception, "Step size too small"
+        raise Exception("Step size too small")
     return tstep
 
 def generate_D(circ, shape):
@@ -542,7 +548,7 @@ def import_custom_df_module(method, print_out):
     try:
         df = imp.load_module(imp.find_module(method.lower()))
         if print_out:
-            print "Custom df module "+method.lower()+" loaded."
+            print("Custom df module "+method.lower()+" loaded.")
     except:
         printing.print_general_error("Unrecognized method: "+method.lower()+".")
         df = None

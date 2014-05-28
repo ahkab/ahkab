@@ -127,7 +127,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
             J[:, :] = 0
             T[:, 0] = 0
             td[:, 0] = 0
-        for index in xrange(1, points):
+        for index in range(1, points):
             for elem in circ:
                 # build all dT(xn)/dxn (stored in J) and T(x)
                 if elem.is_nonlinear:
@@ -176,7 +176,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
         residuo = CMAT * x + T + Tf + Tt
         dx = -1 * (numpy.linalg.inv(J) * residuo)
         # td
-        for index in xrange(points):
+        for index in range(points):
             td[index, 0] = dc_analysis.get_td(
                 dx[index * n_of_var:(index + 1) * n_of_var, 0], locked_nodes, n=-1)
         x = x + min(abs(td))[0, 0] * dx
@@ -204,7 +204,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
         sol = results.pss_solution(
             circ=circ, method="brute-force", period=period, outfile=outfile, t_array=t, x_array=x.T)
     else:
-        print "failed."
+        print("failed.")
         sol = None
     return sol
 
@@ -226,8 +226,8 @@ def set_submatrix(row, col, dest_matrix, source_matrix):
 
     Returns dest_matrix
     """
-    for li in xrange(source_matrix.shape[0]):
-        for ci in xrange(source_matrix.shape[1]):
+    for li in range(source_matrix.shape[0]):
+        for ci in range(source_matrix.shape[1]):
             if source_matrix[li, ci] != 0:
                 dest_matrix[row + li, col + ci] = source_matrix[li, ci]
     return dest_matrix
@@ -251,10 +251,10 @@ def check_step_and_points(step, points, period):
     Returns: (points, step)
     """
     if step is None and points is None:
-        print "Warning: shooting had no step nor n. of points setted. Using", options.shooting_default_points, "points."
+        print("Warning: shooting had no step nor n. of points setted. Using", options.shooting_default_points, "points.")
         points = options.shooting_default_points
     elif step is not None and points is not None:
-        print "Warning: shooting had both step and n. of points setted. Using", step, "step. (NA)"
+        print("Warning: shooting had both step and n. of points setted. Using", step, "step. (NA)")
         points = None
 
     if points:
@@ -286,8 +286,8 @@ def build_CMAT(mna, D, step, points, tick, n_of_var=None, verbose=3):
     N = C0 * D
     # Z = numpy.mat(numpy.zeros((n_of_var, n_of_var)))
     CMAT = numpy.mat(numpy.zeros((n_of_var * points, n_of_var * points)))
-    for li in xrange(points):  # li = line index
-        for ci in xrange(points):
+    for li in range(points):  # li = line index
+        for ci in range(points):
             if li == 0:
                 if ci == 0:
                     temp = 1.0 * I
@@ -322,9 +322,9 @@ def build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
         if isinstance(x0, results.op_solution):
             x0 = x0.asmatrix()
         if x0.shape[0] != n_of_var:
-            print "Warning x0 has the wrong dimensions. Using all 0s."
+            print("Warning x0 has the wrong dimensions. Using all 0s.")
         else:
-            for index in xrange(points):
+            for index in range(points):
                 x = set_submatrix(
                     row=index * n_of_var, col=0, dest_matrix=x, source_matrix=x0)
                 tick.step()
@@ -341,7 +341,7 @@ def build_Tf(sTf, points, tick, n_of_var, verbose=3):
     tick.display(verbose > 2)
     Tf = numpy.mat(numpy.zeros((points * n_of_var, 1)))
 
-    for index in xrange(1, points):
+    for index in range(1, points):
         Tf = set_submatrix(
             row=index * n_of_var, col=0, dest_matrix=Tf, source_matrix=sTf)
         tick.step()
@@ -358,7 +358,7 @@ def build_Tt(circ, points, step, tick, n_of_var, verbose=3):
     tick.reset()
     tick.display(verbose > 2)
     Tt = numpy.zeros((points * n_of_var, 1))
-    for index in xrange(1, points):
+    for index in range(1, points):
         v_eq = 0
         time = index * step
         for elem in circ:

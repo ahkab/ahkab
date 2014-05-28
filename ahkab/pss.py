@@ -75,5 +75,5 @@ def pss_analysis(*largs, **args):
     elif m == options.BFPSS:
         r = bfpss.bfpss(*largs, **args)
     else:
-        raise Exception, "Unknown PSS method %s" % m
+        raise Exception("Unknown PSS method %s" % m)
     return r

@@ -61,8 +61,8 @@ def test():
         ## re-run the test to grab the results
         res = ahkab.run(cir, an_list=[op1, tran1])
         # print-out for good measure
-        print "OP Results:"
-        print list(res['op'].items())
+        print("OP Results:")
+        print(list(res['op'].items()))
         ## plot and save interesting data
         fig = plt.figure()
         plt.title(cir.title + " inputs")

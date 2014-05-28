@@ -21,6 +21,8 @@
 """ ahkab is a easy electronic circuit simulator.
 """
 
+from __future__ import print_function, division
+
 import sys
 from optparse import OptionParser
 
@@ -143,10 +145,10 @@ def cli():
         options.cmin = float(cli_options.cmin)
     if cli_options.eps:
         utilities.EPS = utilities.calc_eps()
-        print "Detected machine precision: " + str(utilities.EPS)
+        print("Detected machine precision: " + str(utilities.EPS))
 
     if not len(remaning_args) == 1:
-        print "Usage: ./ahkab.py [options] <filename>\n./ahkab.py -h for help"
+        print("Usage: ./ahkab.py [options] <filename>\n./ahkab.py -h for help")
         sys.exit(1)
     if remaning_args[0] == '-':
         read_netlist_from_stdin = True

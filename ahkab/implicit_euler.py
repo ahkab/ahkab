@@ -90,7 +90,7 @@ def get_df(pv_array, suggested_step, predict=True):
 
     if predict and len(pv_array) > 1 and pv_array[1][1] is not None:
         predict = numpy.mat(numpy.zeros(pv_array[0][1].shape))
-        for index in xrange(predict.shape[0]):
+        for index in range(predict.shape[0]):
             predict[index, 0] = (pv_array[0][1][index, 0] - pv_array[1][1][index, 0]) \
                 / (pv_array[0][0] - pv_array[1][0]) * suggested_step + pv_array[0][1][index, 0]
         predict_lte_coeff = -0.5 * suggested_step * \

@@ -22,6 +22,7 @@ This is the printing module of the simulator. Using its functions, the output wi
 be somewhat uniform.
 """
 
+from __future__ import print_function, division
 import sys
 
 from . import options
@@ -36,10 +37,10 @@ def print_circuit(circ):
     Returns: None
     """
     if circ.title:
-        print circ.title
+        print(circ.title)
 
     for elem in circ:
-        print elem.print_netlist_elem_line(circ.nodes_dict)
+        print(elem.print_netlist_elem_line(circ.nodes_dict))
 
     return None
 
@@ -53,16 +54,16 @@ def print_analysis(an):
     Returns: None
     """
     if an["type"] == "op":
-        print ".op"
+        print(".op")
     elif an["type"] == "dc":
-        print ".dc", an["source_name"], "start =", an["start"], "stop =", an["stop"], "step =", an["step"], "type =", an["stype"]
+        print(".dc", an["source_name"], "start =", an["start"], "stop =", an["stop"], "step =", an["step"], "type =", an["stype"])
     elif an["type"] == "tran":
         sys.stdout.write(".tran tstep=" + str(an["tstep"]) + " tstop=" + str(
             an["tstop"]) + " tstart=" + str(an["tstart"]))
         if an["method"] is not None:
-            print " method=" + an["method"]
+            print(" method=" + an["method"])
         else:
-            print ""
+            print("")
     elif an["type"] == "shooting":
         sys.stdout.write(".shooting period=" + str(
             an["period"]) + " method=" + str(an["method"]))
@@ -70,7 +71,7 @@ def print_analysis(an):
             sys.stdout.write(" points=" + str(an["points"]))
         if an["step"] is not None:
             sys.stdout.write(" step=" + str(an["step"]))
-        print " autonomous=", an["autonomous"]
+        print(" autonomous=", an["autonomous"])
 
 
 def print_general_error(description, print_to_stdout=False):
@@ -84,7 +85,7 @@ def print_general_error(description, print_to_stdout=False):
     """
     the_error_message = "E: " + description
     if print_to_stdout:
-        print the_error_message
+        print(the_error_message)
     else:
         sys.stderr.write(the_error_message + "\n")
     return None
@@ -101,18 +102,19 @@ def print_warning(description, print_to_stdout=False):
     """
     the_warning_message = "W: " + description
     if print_to_stdout:
-        print the_warning_message
+        print(the_warning_message)
     else:
         sys.stderr.write(the_warning_message + "\n")
     return None
 
 
-def print_info_line((msg, relevance), verbose, print_nl=True):
+def print_info_line(xxx_todo_changeme, verbose, print_nl=True):
+    (msg, relevance) = xxx_todo_changeme
     if verbose >= relevance:
         if print_nl:
-            print msg
+            print(msg)
         else:
-            print msg,
+            print(msg, end=' ')
     # suppressed.
 
 
@@ -129,38 +131,38 @@ def print_parse_error(nline, line, print_to_stdout=False):
     print_general_error(
         "Parse error on line " + str(nline) + ":", print_to_stdout)
     if print_to_stdout:
-        print line
+        print(line)
     else:
         sys.stderr.write(line + "\n")
     return None
 
 
 def print_symbolic_results(x):
-    keys = x.keys()
+    keys = list(x.keys())
     keys.sort(lambda x, y: cmp(str(x), str(y)))
     for key in keys:
-        print str(key) + "\t = " + str(x[key])
+        print(str(key) + "\t = " + str(x[key]))
     return None
 
 
 def print_symbolic_transfer_functions(x):
-    keys = x.keys()
+    keys = list(x.keys())
     keys.sort(lambda x, y: cmp(str(x), str(y)))
     for key in keys:
-        print str(key) + " = " + str(x[key]['gain'])
-        print '\tDC: ' + str(x[key]['gain0'])
+        print(str(key) + " = " + str(x[key]['gain']))
+        print('\tDC: ' + str(x[key]['gain0']))
         for index in range(len(x[key]['poles'])):
-            print '\tP' + str(index) + ":", str(x[key]['poles'][index])
+            print('\tP' + str(index) + ":", str(x[key]['poles'][index]))
         for index in range(len(x[key]['zeros'])):
-            print '\tZ' + str(index) + ":", str(x[key]['zeros'][index])
+            print('\tZ' + str(index) + ":", str(x[key]['zeros'][index]))
     return None
 
 
 def print_symbolic_equations(eq_list):
-    print "+--"
+    print("+--")
     for eq in eq_list:
-        print "| " + str(eq)
-    print "+--"
+        print("| " + str(eq))
+    print("+--")
     return
 
 
@@ -172,21 +174,21 @@ def print_result_check(badvars, verbose=2):
     Returns: None
     """
     if len(badvars):
-        print "Warning: solution is heavvily dependent on gmin."
-        print "Affected variables:"
+        print("Warning: solution is heavvily dependent on gmin.")
+        print("Affected variables:")
         for bv in badvars:
-            print bv
+            print(bv)
     else:
         if verbose:
-            print "Difference check is within margins."
-            print "(Voltage: er=" + str(options.ver) + ", ea=" + str(options.vea) + \
+            print("Difference check is within margins.")
+            print("(Voltage: er=" + str(options.ver) + ", ea=" + str(options.vea) + \
                 ", Current: er=" + \
-                str(options.ier) + ", ea=" + str(options.iea) + ")"
+                str(options.ier) + ", ea=" + str(options.iea) + ")")
     return None
 
 
 def table_print(twodarray, separator='  '):
-    print table_setup(twodarray, separator=separator)
+    print(table_setup(twodarray, separator=separator))
 
 
 def table_setup(twodarray, separator='  '):

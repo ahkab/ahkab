@@ -117,7 +117,7 @@ def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
         circ=circ, tstart=0, tstep=step, tstop=10 * points * step, method="TRAP", x0=None, mna=mna, N=Tf,
         D=D, use_step_control=False, outfile=outfile + ".tran", return_req_dict={"points": points}, verbose=0)
     if xtran is None:
-        print "failed."
+        print("failed.")
         return None
     printing.print_info_line(("done.", 3), verbose)
 
@@ -204,13 +204,13 @@ def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
         t = numpy.mat(numpy.arange(points) * step)
         t = t.reshape((1, points))
         xmat = x[0]
-        for index in xrange(1, points):
+        for index in range(1, points):
             xmat = numpy.concatenate((xmat, x[index]), axis=1)
         sol = results.pss_solution(
             circ=circ, method="shooting", period=period, outfile=outfile, t_array=t, x_array=xmat)
         # print_results(circ, x, fdata, points, step)
     else:
-        print "failed."
+        print("failed.")
         sol = None
     return sol
 
@@ -229,10 +229,10 @@ def check_step_and_points(step, points, period):
     Returns: (points, step)
     """
     if step is None and points is None:
-        print "Warning: shooting had no step nor n. of points setted. Using", options.shooting_default_points, "points."
+        print("Warning: shooting had no step nor n. of points setted. Using", options.shooting_default_points, "points.")
         points = options.shooting_default_points
     elif step is not None and points is not None:
-        print "Warning: shooting had both step and n. of points setted. Using", step, "step. (NA)"
+        print("Warning: shooting had both step and n. of points setted. Using", step, "step. (NA)")
         points = None
 
     points = int(points)
@@ -243,7 +243,7 @@ def check_step_and_points(step, points, period):
         if points % 1 != 0:
             step = step + (step * (points % 1)) / int(points)
             points = int((1.0 * period) / step)
-            print "Warning: adapted step is", step
+            print("Warning: adapted step is", step)
         else:
             points = int(points)
 
@@ -264,7 +264,7 @@ def build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3):
 
     tick.reset()
     tick.display(verbose > 2)
-    for index in xrange(0, points):
+    for index in range(0, points):
             Tt = numpy.zeros((n_of_var, 1))
             v_eq = 0
             time = index * step
@@ -313,7 +313,7 @@ def get_variable_MAass_and_Tass(circ, xi, xi_minus_1, M, D, step, n_of_var):
                     Tass[n1 - 1, 0] = Tass[n1 - 1, 0] + elem.i(index, v_ports)
                 if n2:
                     Tass[n2 - 1, 0] = Tass[n2 - 1, 0] - elem.i(index, v_ports)
-                for pindex in xrange(len(ports)):
+                for pindex in range(len(ports)):
                     if n1:
                         if ports[pindex][0]:
                             J[n1 - 1, ports[pindex][0] - 1] = \

@@ -45,11 +45,11 @@ def get_dc_guess(circ, verbose=3):
     # A DC guess has meaning only if the circuit has NL elements
     if not circ.is_nonlinear():
         if verbose:
-            print "skipped. (linear circuit)"
+            print("skipped. (linear circuit)")
         return None
 
     if verbose > 3:
-        print ""
+        print("")
 
     nv = len(circ.nodes_dict)
     M = numpy.mat(numpy.zeros((1, nv)))
@@ -96,16 +96,16 @@ def get_dc_guess(circ, verbose=3):
                 index = index + 1
 
     if verbose == 5:
-        print "DBG: get_dc_guess(): M and T, no reduction"
-        print M
-        print T
+        print("DBG: get_dc_guess(): M and T, no reduction")
+        print(M)
+        print(T)
     M = utilities.remove_row_and_col(M, rrow=10 * M.shape[0], rcol=0)
 
     if not one_element_with_dc_guess_found:
         if verbose == 5:
-            print "DBG: get_dc_guess(): no element has a dc_guess"
+            print("DBG: get_dc_guess(): no element has a dc_guess")
         elif verbose <= 3:
-            print "skipped."
+            print("skipped.")
         return None
 
     # We wish to find the linearly dependent lines of the M matrix.
@@ -133,9 +133,9 @@ def get_dc_guess(circ, verbose=3):
                 T = utilities.remove_row(T, rrow=i)
                 break
     if verbose == 5:
-        print "DBG: get_dc_guess(): M and T, after removing LD lines"
-        print M
-        print T
+        print("DBG: get_dc_guess(): M and T, after removing LD lines")
+        print(M)
+        print(T)
 
     # Remove empty columns:
     # If a column is empty, we have no guess regarding the corresponding
@@ -148,9 +148,9 @@ def get_dc_guess(circ, verbose=3):
             removed_index.append(i)
 
     if verbose > 3:
-        print "DBG: get_dc_guess(): M and T, after removing empty columns."
-        print M
-        print "T\n", T
+        print("DBG: get_dc_guess(): M and T, after removing empty columns.")
+        print(M)
+        print("T\n", T)
 
     # Now, we have a set of equations to be solved.
     # There are three cases:
@@ -173,11 +173,11 @@ def get_dc_guess(circ, verbose=3):
                 eig = numpy.linalg.eig(M)[0]
                 cond = abs(eig).max() / abs(eig).min()
                 if verbose:
-                    print "cond=" + str(cond) + ". No guess."
+                    print("cond=" + str(cond) + ". No guess.")
                 return None
         else:
             if verbose:
-                print "Guess matrix is singular. No guess."
+                print("Guess matrix is singular. No guess.")
             return None
 
     # Now we want to:
@@ -196,12 +196,12 @@ def get_dc_guess(circ, verbose=3):
         Rp = numpy.concatenate((Rp, numpy.mat(numpy.zeros((v_eq, 1)))), axis=0)
 
     if verbose == 5:
-        print circ.nodes_dict
+        print(circ.nodes_dict)
 
     if verbose and verbose < 4:
-        print "done."
+        print("done.")
     if verbose > 3:
-        print "Guess:"
-        print Rp
+        print("Guess:")
+        print(Rp)
 
     return Rp

@@ -38,6 +38,8 @@ This MOS Model follows the Square Law Mos Model:
 
 """
 
+from __future__ import print_function, division
+
 import math
 
 from . import constants
@@ -110,7 +112,7 @@ class mosq_device:
 
         devcheck, reason = self.mosq_model._device_check(self.device)
         if not devcheck:
-            raise Exception, reason + " out of boundaries."
+            raise Exception(reason + " out of boundaries.")
 
     def get_drive_ports(self, op):
         """Returns a tuple of tuples of ports nodes, as:
@@ -154,10 +156,10 @@ class mosq_device:
     def update_status_dictionary(self, ports_v):
         if self.opdict is None:
             self.opdict = {}
-        if not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gmd')) or \
-            not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gm')) or \
-            not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gmb')) or \
-                not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('Ids')):
+        if not (self.opdict['state'] == ports_v[0] and 'gmd' in self.opdict) or \
+            not (self.opdict['state'] == ports_v[0] and 'gm' in self.opdict) or \
+            not (self.opdict['state'] == ports_v[0] and 'gmb' in self.opdict) or \
+                not (self.opdict['state'] == ports_v[0] and 'Ids' in self.opdict):
 
             self.opdict['state'] == ports_v[0]
             self.opdict['gmd'] = self.g(0, ports_v[0], 0)
@@ -167,7 +169,7 @@ class mosq_device:
 
     def print_op_info(self, ports_v):
         arr = self.get_op_info(ports_v)
-        print arr,
+        print(arr, end=' ')
 
     def get_op_info(self, ports_v):
         """Operating point info, for design/verification. """
@@ -307,7 +309,7 @@ class mosq_mos_model:
         if VTO is not None:
             self.VTO = self.NPMOS * float(VTO)
             if self.VTO < 0:
-                print "(W): model %s has internal negative VTO (%f V)." % (self.name, self.VTO)
+                print("(W): model %s has internal negative VTO (%f V)." % (self.name, self.VTO))
         elif VFB is not None:
             self.VTO = VFB + PHI + GAMMA * PHI  # inv here??
         else:
@@ -334,7 +336,7 @@ class mosq_mos_model:
 
         sc, sc_reason = self._self_check()
         if not sc:
-            raise Exception, sc_reason + " out of range"
+            raise Exception(sc_reason + " out of range")
 
     def set_device_temperature(self, T):
         """Change the temperature of the device. VTO, KP and PHI get updated.
@@ -399,7 +401,7 @@ class mosq_mos_model:
 
     def get_svt_skp(self, device, debug=False):
         if device.mckey and debug:
-            print "Monte carlo enabled. key:", device.mckey
+            print("Monte carlo enabled. key:", device.mckey)
         if device.mckey:
             svt = device.mckey[0] * self.AVT / math.sqrt(
                 2 * device.W * device.L)
@@ -409,14 +411,15 @@ class mosq_mos_model:
             svt, skp = 0, 0
         return svt, skp
 
-    def get_ids(self, device, (vds, vgs, vbs), opdict=None, debug=False):
+    def get_ids(self, device, xxx_todo_changeme, opdict=None, debug=False):
         """Returns:
             IDS, the drain-to-source current (de-normalized),
             qs, the (scaled) charge at the source,
             qr, the (scaled) charge at the drain.
         """
+        (vds, vgs, vbs) = xxx_todo_changeme
         if debug:
-            print "=== Current for vds:", vds, "vgs:", vgs, "vbs:", vbs
+            print("=== Current for vds:", vds, "vgs:", vgs, "vbs:", vbs)
 
         (vds, vgs, vbs), CS_FACTOR = self.get_voltages(vds, vgs, vbs)
 
@@ -424,7 +427,7 @@ class mosq_mos_model:
         svt, skp = self.get_svt_skp(device, debug=debug)
 
         if debug:
-            print "PHI:", self.PHI, "vbs:", vbs
+            print("PHI:", self.PHI, "vbs:", vbs)
 
         VT = self.VTO + svt + self.GAMMA * \
             (math.sqrt(-vbs + 2 * self.PHI) - math.sqrt(2 * self.PHI))
@@ -455,17 +458,18 @@ class mosq_mos_model:
         return Ids
 
         if debug:
-            print "vd:", vd, "vg:", VG / self.scaling.Ut, "vs:", vs, "vds:", vd - vs
-            print "v_ifn:", v_ifn, "v_irn:", v_irn
-            print "ifn:", ifn, "irn:", irn
-            print "ip_abs_err:", ip_abs_err
-            print "Vth:", self.scaling.Ut
-            print "nv", nv, "Is", self.scaling.Is
-            print "Weff:", device.W, "Leff:", Leff
-            print "NPMOS:", self.NPMOS, "CS_FACTOR", CS_FACTOR
+            print("vd:", vd, "vg:", VG / self.scaling.Ut, "vs:", vs, "vds:", vd - vs)
+            print("v_ifn:", v_ifn, "v_irn:", v_irn)
+            print("ifn:", ifn, "irn:", irn)
+            print("ip_abs_err:", ip_abs_err)
+            print("Vth:", self.scaling.Ut)
+            print("nv", nv, "Is", self.scaling.Is)
+            print("Weff:", device.W, "Leff:", Leff)
+            print("NPMOS:", self.NPMOS, "CS_FACTOR", CS_FACTOR)
 
-    def get_gmb(self, device, (vds, vgs, vbs), opdict=None, debug=False):
+    def get_gmb(self, device, xxx_todo_changeme1, opdict=None, debug=False):
         """Returns the source-bulk transconductance or d(IDS)/d(VS-VB)."""
+        (vds, vgs, vbs) = xxx_todo_changeme1
         svt, skp = self.get_svt_skp(device, debug=False)
         (vds, vgs, vbs), CS_FACTOR = self.get_voltages(vds, vgs, vbs)
         VT = self.VTO + svt + self.GAMMA * \
@@ -487,8 +491,9 @@ class mosq_mos_model:
         gmb = self.NPMOS * (1 + skp) * gmb * device.M / device.N
         return gmb
 
-    def get_gmd(self, device, (vds, vgs, vbs), opdict=None, debug=False):
+    def get_gmd(self, device, xxx_todo_changeme2, opdict=None, debug=False):
         """Returns the drain-bulk transconductance or d(IDS)/d(VD-VB)."""
+        (vds, vgs, vbs) = xxx_todo_changeme2
         svt, skp = self.get_svt_skp(device, debug=False)
         (vds, vgs, vbs), CS_FACTOR = self.get_voltages(vds, vgs, vbs)
         VT = self.VTO + svt + self.GAMMA * \
@@ -507,8 +512,9 @@ class mosq_mos_model:
         gmd = (1 + skp) * gmd * device.M / device.N
         return gmd
 
-    def get_gm(self, device, (vds, vgs, vbs), opdict=None, debug=False):
+    def get_gm(self, device, xxx_todo_changeme3, opdict=None, debug=False):
         """Returns the gate-bulk transconductance or d(IDS)/d(VG-VB)."""
+        (vds, vgs, vbs) = xxx_todo_changeme3
         svt, skp = self.get_svt_skp(device, debug=False)
         (vds, vgs, vbs), CS_FACTOR = self.get_voltages(vds, vgs, vbs)
         if CS_FACTOR < 0:

@@ -348,7 +348,7 @@ class Resistor(Component):
         return strarr
 
     def print_op_info(self, ports_v):
-        print self.get_op_info(ports_v)
+        print(self.get_op_info(ports_v))
 
 
 class Capacitor(Component):
@@ -392,7 +392,7 @@ class Capacitor(Component):
         return strarr
 
     def print_op_info(self, ports_v):
-        print self.get_op_info(ports_v)
+        print(self.get_op_info(ports_v))
 
 
 class Inductor(Component):
@@ -437,7 +437,7 @@ class InductorCoupling(Component):
         elif Lselected.upper() == self.L2.upper():
             Lret = self.L1
         if Lret is None:
-            raise Exception, "Mutual inductors bug."
+            raise Exception("Mutual inductors bug.")
         return Lret
 
     def print_netlist_elem_line(self, nodes_dict):
@@ -670,7 +670,7 @@ class HVSource(Component):  # TODO: fixme
 
     """
     def __init__(self, part_id='H', n1=None, n2=None, value=None, sn1=None, sn2=None):
-        print "HVSource not implemented. TODO"
+        print("HVSource not implemented. TODO")
         self.part_id = part_id
         self.n1 = n1
         self.n2 = n2
@@ -681,7 +681,7 @@ class HVSource(Component):  # TODO: fixme
         self.is_symbolic = True
 
     def __str__(self):
-        raise Exception, "HVSource not implemented. TODO"
+        raise Exception("HVSource not implemented. TODO")
 
 class FISource(Component):  # TODO: fixme
 
@@ -691,7 +691,7 @@ class FISource(Component):  # TODO: fixme
 
     """
     def __init__(self, part_id='F', n1=None, n2=None, value=None, sn1=None, sn2=None):
-        print "HVSource not implemented. TODO"
+        print("HVSource not implemented. TODO")
         self.part_id = part_id
         self.n1 = n1
         self.n2 = n2
@@ -702,7 +702,7 @@ class FISource(Component):  # TODO: fixme
         self.is_symbolic = True
 
     def __str__(self):
-        raise Exception, "FVSource not implemented. TODO"
+        raise Exception("FVSource not implemented. TODO")
 
 
 #

@@ -33,6 +33,8 @@ sn2 o--+         +--o n2
 
 """
 
+from __future__ import print_function, division
+
 import math
 
 from . import options
@@ -147,7 +149,7 @@ class switch_device:
         """
         if self.opdict is None:
             self.opdict = {}
-        if not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('R')):
+        if not (self.opdict['state'] == ports_v[0] and 'R' in self.opdict):
             self.opdict['state'] = ports_v[0]
             self.opdict['R'] = float(1.0 / self.g(0, ports_v[0], 0))
             self.opdict['I'] = float(self.i(0, ports_v[0]))
@@ -157,7 +159,7 @@ class switch_device:
         """Prints out the information regarding the OP status.
         """
         arr = self.get_op_info(ports_v)
-        print arr,
+        print(arr, end=' ')
 
     def get_op_info(self, ports_v):
         """Operating point info, for design/verification. """
@@ -193,7 +195,7 @@ class switch_device:
         if port_index == 1:
             return self.model.get_gm(ports_v, self.device)
         else:
-            raise Exception, "Unknown port index passed to switch: bug"
+            raise Exception("Unknown port index passed to switch: bug")
 
     def get_value_function(self, identifier):
         def get_value(self):
@@ -282,12 +284,12 @@ class vswitch_model:
         self._set_status(dev.is_on)
         if vin > self.V and not dev.is_on and R1 - R2 == 0.0:
             if debug:
-                print "Switching ON: %g" % (vin,)
+                print("Switching ON: %g" % (vin,))
             dev.is_on = True
             self._set_status(dev.is_on)
         if vin < self.V and dev.is_on and R1 - R2 == 0.0:
             if debug:
-                print "Switching OFF: %g" % (vin,)
+                print("Switching OFF: %g" % (vin,))
             dev.is_on = False
             self._set_status(dev.is_on)
         self.is_on = dev.is_on
@@ -308,21 +310,24 @@ class vswitch_model:
                    "RON", "[ohm]", self.RON, "ROFF", "[ohm]", self.ROFF])
         printing.table_print(arr)
 
-    def get_i(self, (vout, vin), dev, debug=False):
+    def get_i(self, xxx_todo_changeme, dev, debug=False):
         """Returns the output current.
         """
+        (vout, vin) = xxx_todo_changeme
         self._update_status(vin, dev)
         R = self.A * math.tanh((vin - self.V) * self.SLOPE) + self.B
         return vout / R
 
-    def get_go(self, (vout, vin), dev, debug=False):
+    def get_go(self, xxx_todo_changeme1, dev, debug=False):
         """Returns the output conductance d(I)/d(Vn1-Vn2)."""
+        (vout, vin) = xxx_todo_changeme1
         self._update_status(vin, dev)
         R = self.A * math.tanh((vin - self.V) * self.SLOPE) + self.B
         return 1. / R
 
-    def get_gm(self, (vout, vin), dev, debug=False):
+    def get_gm(self, xxx_todo_changeme2, dev, debug=False):
         """Returns the source to output transconductance or d(I)/d(Vsn1-Vsn2)."""
+        (vout, vin) = xxx_todo_changeme2
         self._update_status(vin, dev)
         gm = self.A * self.SLOPE * (math.tanh(self.SLOPE * (self.V - vin)) ** 2 - 1) / (
             self.A * math.tanh(self.SLOPE * (self.V - vin)) - self.B) ** 2
@@ -338,8 +343,8 @@ if __name__ == '__main__':
     RON = abs(1e3 * numpy.random.randn())
     ROFF = abs(1e4 * numpy.random.randn())
     # VT = 0.; VH=1.; RON=100;
-    print "Testing a switch with:"
-    print "VT: %g\tVH: %g\tRON:%g\tROFF:%g" % (VT, VH, RON, ROFF)
+    print("Testing a switch with:")
+    print("VT: %g\tVH: %g\tRON:%g\tROFF:%g" % (VT, VH, RON, ROFF))
     m = vswitch_model(name='test', VT=VT, VH=VH, RON=RON, ROFF=ROFF)
     VOs = [-12.5, -7.5, -2.5, 2.5, 7.5, 12.5]
     VIs = [-12.5, -7.5, -2.5, 2.5, 7.5, 12.5]

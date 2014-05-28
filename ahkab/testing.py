@@ -350,13 +350,18 @@ Module reference
 
 """
 
+from __future__ import print_function, division
+
 import time
 import os
 import sys
 import pickle
 import unittest
 
-from ConfigParser import ConfigParser
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import ConfigParser
 
 import numpy as np
 import sympy
@@ -448,21 +453,21 @@ class NetlistTest(unittest.TestCase):
 
         # Are we in a reference run?
         self.ref_run = False
-        for i in self.refs.values():
+        for i in list(self.refs.values()):
             self.ref_run = not os.path.isfile(i)
             if self.ref_run:
-                print "RUNNING REFERENCE RUN - INVALID TEST!"
+                print("RUNNING REFERENCE RUN - INVALID TEST!")
                 break
         if not self.ref_run:
             self._load_references()
 
     def _load_references(self):
-        for t, file_ref in self.refs.items():
+        for t, file_ref in list(self.refs.items()):
             if 'pickle' in file_ref:
-                with open(file_ref, 'r') as fp:
+                with open(file_ref, 'rb') as fp:
                     self.ref_data.update({t: pickle.load(fp)})
             else:
-                data, headers, _, _ = csvlib.load_csv(file_ref, [], None, 0L, verbose=0)
+                data, headers, _, _ = csvlib.load_csv(file_ref, [], None, 0, verbose=0)
                 res = _MyDict()
                 for i, h in enumerate(headers):
                     res.update({h: data[i, :]})
@@ -476,20 +481,20 @@ class NetlistTest(unittest.TestCase):
         # check whether we are on travis or not and skip if needed.
         if 'TRAVIS' in os.environ and self.skip:
                 raise SkipTest
-        print "Running test... ",
+        print("Running test... ", end=' ')
         start = time.time()
         res = main(filename=self.netlist,
                    outfile=os.path.join(self.reference_path, self.test_id),
                    verbose=0)
         stop = time.time()
         times = stop - start
-        print "done.\nThe test took %f s" % times
+        print("done.\nThe test took %f s" % times)
         return res
 
     def _check(self, res, ref):
         if hasattr(res, 'get_x'):
             x = res.get_x()
-            for k in res.keys():
+            for k in list(res.keys()):
                 if np.all(res[k] == x):
                     continue
                 else:
@@ -498,7 +503,7 @@ class NetlistTest(unittest.TestCase):
                     d2 = InterpolatedUnivariateSpline(ref[ref.x].reshape((-1, )), ref[k].reshape((-1, )))
                     ok_(np.allclose(d1(x.reshape((-1, ))), d2(x.reshape((-1, ))), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         elif isinstance(res, results.op_solution):
-            for k in res.keys():
+            for k in list(res.keys()):
                 assert k in ref
                 ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         else:
@@ -506,7 +511,7 @@ class NetlistTest(unittest.TestCase):
                 for i, j in zip(res, ref):
                     self._check(i, j)
             elif res is not None:
-                for k in res.keys():
+                for k in list(res.keys()):
                     assert k in ref
                     if isinstance(res[k], dict): # hence ref[k] will be a dict too
                         self._check(res[k], ref[k])
@@ -521,14 +526,14 @@ class NetlistTest(unittest.TestCase):
         if not self.ref_run:
             ok_(set(list(res.keys())) == set(list(self.ref_data.keys())),
                 "Reference and test data have a different number of nodes")
-            for t in res.keys():
+            for t in list(res.keys()):
                 ok_(t in self.ref_data, 'simulation %s not in the reference data')
-                print "Checking results for %s analysis..." % t
+                print("Checking results for %s analysis..." % t)
                 self._check(res[t], self.ref_data[t])
         else:
-            for t, ref_file in self.refs.items():
+            for t, ref_file in list(self.refs.items()):
                 if '.pickle' in ref_file:
-                    with open(ref_file, 'w') as fp:
+                    with open(ref_file, 'wb') as fp:
                         pickle.dump(res[t], fp)
                 else:
                     res_file = os.path.join(self.reference_path, 
@@ -626,21 +631,21 @@ class APITest(unittest.TestCase):
 
         # Are we in a reference run?
         self.ref_run = False
-        for i in self.refs.values():
+        for i in list(self.refs.values()):
             self.ref_run = not os.path.isfile(i)
             if self.ref_run:
-                print "RUNNING REFERENCE RUN - INVALID TEST!"
+                print("RUNNING REFERENCE RUN - INVALID TEST!")
                 break
         if not self.ref_run:
             self._load_references()
 
     def _load_references(self):
-        for t, file_ref in self.refs.items():
+        for t, file_ref in list(self.refs.items()):
             if '.symbolic' in file_ref:
                 with open(file_ref, 'rb') as fp:
                     self.ref_data.update({t: pickle.load(fp)})
             else:
-                data, headers, _, _ = csvlib.load_csv(file_ref, [], None, 0L, verbose=0)
+                data, headers, _, _ = csvlib.load_csv(file_ref, [], None, 0, verbose=0)
                 res = _MyDict()
                 for i, h in enumerate(headers):
                     res.update({h: data[i, :]})
@@ -650,18 +655,18 @@ class APITest(unittest.TestCase):
     def _run_test(self):
         if 'TRAVIS' in os.environ and self.skip:
                 raise SkipTest
-        print "Running test... ",
+        print("Running test... ", end=' ')
         start = time.time()
         res = run(self.circ, self.an_list)
         stop = time.time()
         times = stop - start
-        print "done.\nThe test took %f s" % times
+        print("done.\nThe test took %f s" % times)
         return res
 
     def _check(self, res, ref):
         if hasattr(res, 'get_x'):
             x = res.get_x()
-            for k in res.keys():
+            for k in list(res.keys()):
                 if np.all(res[k] == x):
                     continue
                 else:
@@ -670,7 +675,7 @@ class APITest(unittest.TestCase):
                     d2 = InterpolatedUnivariateSpline(ref[ref.x].reshape((-1, )), ref[k].reshape((-1, )))
                     ok_(np.allclose(d1(x.reshape((-1, ))), d2(x.reshape((-1, ))), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         elif isinstance(res, results.op_solution):
-            for k in res.keys():
+            for k in list(res.keys()):
                 assert k in ref
                 ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         else:
@@ -678,7 +683,7 @@ class APITest(unittest.TestCase):
                 for i, j in zip(res, ref):
                     self._check(i, j)
             elif res is not None:
-                for k in res.keys():
+                for k in list(res.keys()):
                     assert k in ref
                     if isinstance(res[k], dict): # hence ref[k] will be a dict too
                         self._check(res[k], ref[k])
@@ -693,9 +698,9 @@ class APITest(unittest.TestCase):
         if not self.ref_run:
             ok_(set(list(res.keys())) == set(list(self.ref_data.keys())),
                 "Reference and test data have a different number of nodes")
-            for t in res.keys():
+            for t in list(res.keys()):
                 ok_(t in self.ref_data, 'simulation %s not in the reference data')
-                print "Checking results for %s analysis..." % t
+                print("Checking results for %s analysis..." % t)
                 self._check(res[t], self.ref_data[t])
         else:
             # move ref files into place

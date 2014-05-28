@@ -74,12 +74,12 @@ class solution:
 
     def get_type(self):
         """Please redefine this function in the subclasses."""
-        raise Exception, "Undefined"
+        raise Exception("Undefined")
 
     def asmatrix(self, verbose=3):
         """Return all data as a (possibly huge) python matrix."""
         data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[], 
-                                                  nsamples=None, skip=0L, verbose=verbose)
+                                                  nsamples=None, skip=0, verbose=verbose)
         return data.T
 
     # Access as a dictionary BY VARIABLE NAME:
@@ -90,7 +90,7 @@ class solution:
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
         data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], 
-                                                  nsamples=None, skip=0L, verbose=0)
+                                                  nsamples=None, skip=0, verbose=0)
         return data.T
 
     def get(self, name, default=None, verbose=3):
@@ -98,18 +98,18 @@ class solution:
         try:
             data, headers, pos, EOF = csvlib.load_csv(self.filename, 
                                                       load_headers=[name], 
-                                                      nsamples=None, skip=0L, verbose=verbose)
+                                                      nsamples=None, skip=0, verbose=verbose)
         except KeyError:
             return default
         return data.T
 
     def has_key(self, name):
         """Determine whether the result set contains a variable."""
-        return name.upper() in map(str.upper, self.variables)
+        return name.upper() in list(map(str.upper, self.variables))
 
     def __contains__(self, name):
         """Determine whether the result set contains a variable."""
-        return name.upper() in map(str.upper, self.variables)
+        return name.upper() in list(map(str.upper, self.variables))
 
     def keys(self):
         """Get all of the results set's variables names."""
@@ -119,17 +119,17 @@ class solution:
         """Get all of the results set's variables values."""
         data, headers, pos, EOF = csvlib.load_csv(self.filename, 
                                                   load_headers=self.variables, 
-                                                  nsamples=None, skip=0L, verbose=verbose)
+                                                  nsamples=None, skip=0, verbose=verbose)
         return data.T
 
     def items(self, verbose=3):
         data, headers, pos, EOF = csvlib.load_csv(self.filename, 
                                                   load_headers=self.variables, 
-                                                  nsamples=None, skip=0L, verbose=verbose)
+                                                  nsamples=None, skip=0, verbose=verbose)
         vlist = []
         for j in range(data.shape[0]):
             vlist.append(data[j,:].T)
-        return zip(headers, vlist)
+        return list(zip(headers, vlist))
 
     # iterator methods
     def __iter__(self):
@@ -137,10 +137,10 @@ class solution:
         self.iter_data, self.iter_headers, pos, EOF = csvlib.load_csv(self.filename, 
                                                                       load_headers=[], 
                                                                       nsamples=None, 
-                                                                      skip=0L)
+                                                                      skip=0)
         return self
 
-    def next(self):
+    def __next__(self):
         if self.iter_index == len(self.iter_headers):
             self.iter_index = 0
             raise StopIteration
@@ -206,7 +206,7 @@ class op_solution(solution, _mutable_data):
 
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
-        if not name.lower() in map(str.lower, self.variables):
+        if not name.lower() in list(map(str.lower, self.variables)):
             raise KeyError
         his = csvlib.get_headers_index(self.variables, [name], verbose=0)
         return self.x[his]
@@ -235,7 +235,7 @@ class op_solution(solution, _mutable_data):
             line = (v, self.results[v], self.units[v],\
                 "(% .2g %s, %.0f %%)" % (self.errors[v], 
                 self.units[v], relerror))
-            line = map(str, line)
+            line = list(map(str, line))
             table.append(line)
         return table
 
@@ -306,7 +306,7 @@ class op_solution(solution, _mutable_data):
         else:
             fp = sys.stdout
         fp.write(self.timestamp+"\n")
-        fp.write("ahkab v. "+__version__+u" (c) 2006-2013 Giuseppe Venturini\n\n")
+        fp.write("ahkab v. "+__version__+" (c) 2006-2013 Giuseppe Venturini\n\n")
         fp.write("Operating Point (OP) analysis\n\n")
         fp.write("Netlist: %s\nTitle: %s\n" % (self.netlist_file, self.netlist_title))
         fp.write("At %.2f K\n" % (self.temp,))
@@ -330,7 +330,7 @@ class op_solution(solution, _mutable_data):
         for v in self.variables:
             str_repr += "%s: %e %s,\t" % \
                 (v, self.results[v], self.units[v])
-        print str_repr[:-2]
+        print(str_repr[:-2])
 
     @staticmethod
     def gmin_check(op2, op1):
@@ -358,7 +358,7 @@ class op_solution(solution, _mutable_data):
                                             abs(op2.results[v])) + options.iea:
                     check_failed_vars.append(v)
             else:
-                print "Unrecognized unit... Bug."
+                print("Unrecognized unit... Bug.")
         return check_failed_vars
 
     def values(self, verbose=3):
@@ -369,14 +369,14 @@ class op_solution(solution, _mutable_data):
         vlist = []
         for j in range(self.x.shape[0]):
             vlist.append(self.x[j])
-        return zip(self.variables, vlist)
+        return list(zip(self.variables, vlist))
 
     # iterator methods
     def __iter__(self):
         self.iter_index = 0
         return self
 
-    def next(self):
+    def __next__(self):
         if self.iter_index == len(self.variables):
             self.iter_index = 0
             raise StopIteration
@@ -628,7 +628,7 @@ Run on %s, data filename %s.>" % \
         self._add_data(data)
 
     def asmatrix(self, verbose=3):
-        allvalues = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0L, verbose=verbose)
+        allvalues = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0, verbose=verbose)
         return allvalues[0,:], allvalues[1:,:]
 
     def get_type(self):
@@ -657,11 +657,11 @@ class symbolic_solution():
         # the keys are strings
         # self.symbols = map(str, results_dict.keys())
         self.results = case_insensitive_dict()
-        for symbol, result in results_dict.iteritems():
+        for symbol, result in results_dict.items():
             self.results.update({str(symbol):result})
         
-        self._symbols = results_dict.keys() # keep them, they're useful
-        for expr in results_dict.values():
+        self._symbols = list(results_dict.keys()) # keep them, they're useful
+        for expr in list(results_dict.values()):
             if tf:
                 expr = expr['gain']
             for symb in expr.atoms():
@@ -672,19 +672,19 @@ class symbolic_solution():
             self.save()
 
     def as_symbol(self, variable):
-        symbs = filter(lambda x: x.name.lower() == variable.lower(), self._symbols)
+        symbs = [x for x in self._symbols if x.name.lower() == variable.lower()]
         if len(symbs) == 0:
-            raise ValueError, "No symbol %s in the results set."%(variable,)
+            raise ValueError("No symbol %s in the results set."%(variable,))
         else:
             return symbs[0]
             
     def as_symbols(self, spacedstr):
-        return map(self.as_symbol, spacedstr.split())
+        return list(map(self.as_symbol, spacedstr.split()))
         
     def save(self):
         if not self.filename:
-            raise Exception, "Writing the results to file requires setting the \
-                              'filename' attribute"
+            raise Exception("Writing the results to file requires setting the \
+                              'filename' attribute")
         with open(self.filename, 'wb') as fp:
             pickle.dump(self, fp)
     
@@ -702,7 +702,7 @@ class symbolic_solution():
         str_repr = "Symbolic %s results for %s (netlist %s).\nRun on %s.\n" % \
                    ('simulation'*(not self.tf) + 'transfer function'*self.tf, 
                     self.netlist_title, self.netlist_file, self.timestamp)
-        keys = self.results.keys()
+        keys = list(self.results.keys())
         keys.sort(lambda x, y: cmp(str(x), str(y))) 
         if not self.tf:
             for key in keys:
@@ -752,26 +752,26 @@ class symbolic_solution():
 
     def keys(self):
         """Get all of the results set's variable's names."""
-        return self.results.keys()
+        return list(self.results.keys())
 
     def values(self):
         """Get all of the results set's variable's values."""
-        return self.results.values()
+        return list(self.results.values())
 
     def items(self):
-        return self.results.items()
+        return list(self.results.items())
 
     # iterator methods
     def __iter__(self):
         return self
 
-    def next(self):
-        if self.iter_index == len(self.results.keys())-1:
+    def __next__(self):
+        if self.iter_index == len(list(self.results.keys()))-1:
             self.iter_index = 0
             raise StopIteration
         else:
             self.iter_index += 1
-        return self.results.keys()[self.iter_index], \
+        return list(self.results.keys())[self.iter_index], \
                self.results[self._symbols[self.iter_index]]
 
 
@@ -787,7 +787,7 @@ class case_insensitive_dict():
 
     def __repr__(self):
         rpr = "{"
-        keys = self._dict.keys()
+        keys = list(self._dict.keys())
         for i in range(len(keys)):
             rpr += "%s: %s" % (keys[i], self._dict[keys[i]])
             if i < len(keys) - 1:
@@ -798,15 +798,15 @@ class case_insensitive_dict():
 
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
-        keys = self._dict.keys()
-        i = map(str.upper, keys).index(name.upper())
+        keys = list(self._dict.keys())
+        i = list(map(str.upper, keys)).index(name.upper())
         return self._dict[keys[i]]
 
     def get(self, name, default=None):
         """Given the key 'name', return its corresp. value. If not found, return 'default'
         """
         try:
-            keys = self._dict.keys()
+            keys = list(self._dict.keys())
             i = map(str.upper, keys).index(name.upper())
         except KeyError:
             return default
@@ -814,23 +814,23 @@ class case_insensitive_dict():
 
     def has_key(self, name):
         """Determine whether the result set contains a variable."""
-        return name.upper() in map(str.upper, self._dict.keys())
+        return name.upper() in list(map(str.upper, list(self._dict.keys())))
 
     def __contains__(self, name):
         """Determine whether the result set contains a variable."""
-        return name.upper() in map(str.upper, self._dict.keys())
+        return name.upper() in list(map(str.upper, list(self._dict.keys())))
 
     def keys(self):
         """Get all keys"""
-        return self._dict.keys()
+        return list(self._dict.keys())
 
     def values(self):
         """Get all values"""
-        return self._dict.values()
+        return list(self._dict.values())
 
     def items(self):
         """Get all keys and values pairs"""
-        return self._dict.items()
+        return list(self._dict.items())
         
     def update(self, adict):
         """Update the dictionary contents with the dictionary 'adict'"""

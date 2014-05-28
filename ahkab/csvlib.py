@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 # csvlib.py
 # Implementation of routines for CSV data I/O
 # Copyright 2012 Giuseppe Venturini
@@ -44,15 +44,17 @@ The separator can be selected setting:
 # Additionally the following internal functions are
 # available:
 #3. Internal routines
-#    _get_fp(filename, mode='r')
+#    _get_fp(filename, mode='rb')
 #    _close_fp(fp, filename)
 
-
+import io
 import sys
 import copy
 import numpy
 
-SEPARATOR = "\t"
+from . import options
+
+SEPARATOR = u"\t"
 
 
 def write_csv(filename, data, headers, append=False):
@@ -81,12 +83,12 @@ def write_csv(filename, data, headers, append=False):
 
     """
 
-    mode = 'a' if append else 'w'
+    mode = 'ab' if append else 'wb'
     fp = _get_fp(filename, mode)
 
     if not data.shape[0] == len(headers):
-        print "(W): write_csv(): data and headers don't match. Continuing anyway."
-        print "DATA: " + str(data.shape) + " headers length: " + str(len(headers))
+        print("(W): write_csv(): data and headers don't match. Continuing anyway.")
+        print("DATA: " + str(data.shape) + " headers length: " + str(len(headers)))
 
     headers = SEPARATOR.join(headers) if not append else ""
     numpy.savetxt(fp, data.T, delimiter=SEPARATOR, header=headers, comments='#')
@@ -107,7 +109,7 @@ def write_headers(filename, headers):
         the signal names, ordered.
 
     """
-    fp = _get_fp(filename, mode="w")
+    fp = _get_fp(filename, mode="wb")
     headers = copy.copy(headers)
     if not headers[0][0] == '#':
         headers[0] = '#' + headers[0]
@@ -121,13 +123,13 @@ def write_headers(filename, headers):
 
 def _get_fp(filename, mode="r"):
     if filename == 'stdout' or filename == '-' or filename == sys.stdout:
-        if mode == 'w' or mode == 'a':
+        if mode == 'w' or mode == 'a' or mode == 'wb' or mode == 'ab':
             fp = sys.stdout
         else:
-            print "(EE) Mode %s is not supported for stdout." % (mode,)
+            print("(EE) Mode %s is not supported for stdout." % (mode,))
             fp = None
     else:
-        fp = open(filename, mode)
+        fp = io.open(filename, mode)#, encoding=options.encoding)
     return fp
 
 
@@ -163,14 +165,14 @@ def get_headers_index(headers, load_headers=None, verbose=3):
     if load_headers is None or not len(load_headers):
         return list(range(len(headers)))
     his = []
-    lowcase_headers = map(str.lower, headers)
+    lowcase_headers = [i.lower() for i in headers]
 
     for lh in load_headers:
         try:
             his = his + [lowcase_headers.index(lh.lower())]
         except ValueError:
             if verbose:
-                print "(W): header " + lh + " not found. Skipping."
+                print("(W): header " + lh + " not found. Skipping.")
     return his
 
 
@@ -191,7 +193,7 @@ def get_headers(filename):
 
     """
 
-    fp = _get_fp(filename, mode="r")
+    fp = _get_fp(filename)
     headers = None
     line = ""
     while line == "":
@@ -203,7 +205,7 @@ def get_headers(filename):
     return headers
 
 
-def load_csv(filename, load_headers=None, nsamples=None, skip=0L, verbose=3):
+def load_csv(filename, load_headers=None, nsamples=None, skip=0, verbose=3):
     """Reads data in CVS format from filename.
 
     Supports:
@@ -247,7 +249,7 @@ def load_csv(filename, load_headers=None, nsamples=None, skip=0L, verbose=3):
     """
 
     if filename == 'stdout':
-        print "Can't load data from stdout."
+        print("Can't load data from stdout.")
         return None, None, None, None
 
     headers = get_headers(filename)
@@ -255,7 +257,7 @@ def load_csv(filename, load_headers=None, nsamples=None, skip=0L, verbose=3):
     if load_headers and len(his) != len(load_headers):
         raise ValueError("Specified header not found")
 
-    fp = _get_fp(filename, mode="r")
+    fp = _get_fp(filename)
     data = numpy.loadtxt(fp, delimiter=SEPARATOR, usecols=his, unpack=True, skiprows=skip, ndmin=2)
     _close_fp(fp, filename)
 
@@ -264,6 +266,6 @@ def load_csv(filename, load_headers=None, nsamples=None, skip=0L, verbose=3):
     if nsamples is not None:
         data = data[:, :min(nsamples, data.shape[1])]
     pos = skip + data.shape[1]
-    headers = map(headers.__getitem__, his)
+    headers = list(map(headers.__getitem__, his))
 
     return data, headers, pos, EOF

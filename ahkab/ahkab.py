@@ -21,6 +21,8 @@
 """ ahkab is an easy electronic circuit simulator.
 """
 
+from __future__ import print_function, division
+
 import sys
 import tempfile
 import copy
@@ -543,7 +545,7 @@ def set_temperature(T):
     """Set the simulation temperature, in Celsius"""
     T = float(T)
     if T > 300:
-        printing.print_warning(u"The temperature will be set to %f \xB0 C.")
+        printing.print_warning("The temperature will be set to %f \xB0 C.")
     constants.T = utilities.Celsius2Kelvin(T)
 
 
@@ -639,18 +641,18 @@ def main(filename, outfile="stdout", verbose=3):
         sys.exit(3)
 
     if verbose > 3 or _print:
-        print "Parsed circuit:"
+        print("Parsed circuit:")
         printing.print_circuit(circ)
 
     ic_list = netlist_parser.parse_ics(directives)
     _handle_netlist_ics(circ, an_list=[], ic_list=ic_list)
     results = {}
     for an in netlist_parser.parse_analysis(circ, directives):
-        if 'outfile' not in an.keys() or not an['outfile']:
+        if 'outfile' not in list(an.keys()) or not an['outfile']:
             an.update(
                 {'outfile': outfile + ("." + an['type']) * (outfile != 'stdout')})
-        if 'verbose' in an.keys() and (an['verbose'] is None or an['verbose'] < verbose) \
-           or not 'verbose' in an.keys():
+        if 'verbose' in list(an.keys()) and (an['verbose'] is None or an['verbose'] < verbose) \
+           or not 'verbose' in list(an.keys()):
             an.update({'verbose': verbose})
         _handle_netlist_ics(circ, [an], ic_list=[])
         if verbose >= 4:
@@ -667,12 +669,12 @@ def main(filename, outfile="stdout", verbose=3):
 
 def _handle_netlist_ics(circ, an_list, ic_list):
     for ic in ic_list:
-        ic_label = ic.keys()[0]
+        ic_label = list(ic.keys())[0]
         icdict = ic[ic_label]
         _x0s.update({ic_label: new_x0(circ, icdict)})
     for an in an_list:
         if 'x0' in an and isinstance(an['x0'], str):
-            if an['x0'] in _x0s.keys():
+            if an['x0'] in list(_x0s.keys()):
                 an['x0'] = _x0s[an['x0']]
             elif an_list.index(an) == 0:
                 printing.print_general_error("Unknown x0 %s" % an["x0"])

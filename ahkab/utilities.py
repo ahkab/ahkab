@@ -29,6 +29,7 @@ import numpy
 
 from . import printing
 from . import options
+from functools import reduce
 
 # this is the machine precision on my Intel x86
 EPS = 2.22044604925e-16
@@ -107,7 +108,7 @@ def fact(num):
     """Returns: num!"""
     if num == 1:
         return 1
-    return reduce(operator.mul, xrange(2, num + 1))
+    return reduce(operator.mul, range(2, num + 1))
 
 
 def calc_eps():
@@ -137,14 +138,17 @@ class combinations:
         self._sub_iter = None
         self._i = 0
         if len(self.L) < k:
-            raise Exception, "The set has to be bigger than the subset."
+            raise Exception("The set has to be bigger than the subset.")
         if k <= 0:
-            raise Exception, "The size of the subset has to be positive."
+            raise Exception("The size of the subset has to be positive.")
 
     def __iter__(self):
         return self
 
     def next(self):
+        return self.__next__()
+
+    def __next__(self):
         """Get the next combination.
         Returns a list.
         """
@@ -153,14 +157,14 @@ class combinations:
             if self._sub_iter == None:
                 self._sub_iter = combinations(self.L[self._i + 1:], self.k - 1)
             try:
-                nxt = self._sub_iter.next()
+                nxt = self._sub_iter.__next__()
                 cur = self.L[self._i]
             except StopIteration:
                 if self._i < len(self.L) - self.k:
                     self._i = self._i + 1
                     self._sub_iter = combinations(
                         self.L[self._i + 1:], self.k - 1)
-                    return self.next()
+                    return self.__next__()
                 else:
                     raise StopIteration
         else:
@@ -188,6 +192,9 @@ class log_axis_iterator:
         self.nsteps = nsteps
 
     def next(self):
+        return self.__next__()
+
+    def __next__(self):
         """Iterator method: get the next value
         """
         if self.index < self.nsteps:
@@ -229,6 +236,9 @@ class lin_axis_iterator:
         self.nsteps = nsteps
 
     def next(self):
+        return self.__next__()
+
+    def __next__(self):
         """Iterator method: get the next value
         """
         if self.index == 0:

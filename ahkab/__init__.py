@@ -25,6 +25,7 @@
 # matplotlib fail (and, sometimes, the test as well).
 # If we check for $DISPLAY, that makes us probably lose in portability,
 # because does Windows have the DISPLAY env variable defined?
+from __future__ import print_function
 import os
 import matplotlib
 if os.system('python -c "import matplotlib.pyplot as plt;plt.figure()" > ' + 

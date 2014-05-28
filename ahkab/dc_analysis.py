@@ -47,7 +47,7 @@ from . import utilities
 from . import dc_guess
 from . import results
 
-from utilities import convergence_check
+from .utilities import convergence_check
 
 specs = {'op': {
     'tokens': ({
@@ -215,22 +215,22 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
         except numpy.linalg.linalg.LinAlgError:
             n_iter = 0
             converged = False
-            print "failed."
+            print("failed.")
             printing.print_general_error("J Matrix is singular")
         except OverflowError:
             n_iter = 0
             converged = False
-            print "failed."
+            print("failed.")
             printing.print_general_error("Overflow")
 
         if not converged:
             if verbose == 6:
                 for ivalue in range(len(convergence_by_node)):
                     if not convergence_by_node[ivalue] and ivalue < nv - 1:
-                        print "Convergence problem node %s" % (circ.int_node_to_ext(ivalue),)
+                        print("Convergence problem node %s" % (circ.int_node_to_ext(ivalue),))
                     elif not convergence_by_node[ivalue] and ivalue >= nv - 1:
                         e = circ.find_vde(ivalue)
-                        print "Convergence problem current in %s" % e.part_id
+                        print("Convergence problem current in %s" % e.part_id)
             if n_iter == MAXIT - 1:
                 printing.print_general_error(
                     "Error: MAXIT exceeded (" + str(MAXIT) + ")")
@@ -259,7 +259,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 def build_gmin_matrix(circ, gmin, mna_size, verbose):
     printing.print_info_line(("Building Gmin matrix...", 5), verbose)
     Gmin_matrix = numpy.mat(numpy.zeros((mna_size, mna_size)))
-    for index in xrange(len(circ.nodes_dict) - 1):
+    for index in range(len(circ.nodes_dict) - 1):
         Gmin_matrix[index, index] = gmin
         # the three missing terms of the stample matrix go on [index,0] [0,0] [0, index] but since
         # we discarded the 0 row and 0 column, we simply don't need to add them
@@ -304,7 +304,7 @@ def more_solve_methods_available(standard_solving, gmin_stepping, source_steppin
 
 def get_solve_methods():
     standard_solving = {"enabled": False, "failed": False}
-    g_indices = range(int(numpy.log(options.gmin)), 0)
+    g_indices = list(range(int(numpy.log(options.gmin)), 0))
     g_indices.reverse()
     gmin_stepping = {"enabled": False, "failed":
                      False, "factors": g_indices, "index": 0}
@@ -346,7 +346,7 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
             "DC analysis has log sweeping and negative stepping.")
         sys.exit(1)
     if (stop - start) * step < 0:
-        raise ValueError, "Unbonded stepping in DC analysis."
+        raise ValueError("Unbonded stepping in DC analysis.")
 
     points = (stop - start) / step + 1
     sweep_type = sweep_type.upper()[:3]
@@ -365,7 +365,7 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
         sys.exit(1)
 
     source_elem = None
-    for index in xrange(len(circ)):
+    for index in range(len(circ)):
         if circ[index].part_id.lower() == elem_descr:
             if elem_type == 'v':
                 if isinstance(circ[index], devices.VSource):
@@ -411,11 +411,11 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
         if x is None:
             tick.hide(verbose > 2)
             if not options.dc_sweep_skip_allowed:
-                print "Could't solve the circuit for sweep value:", start + index * step
+                print("Could't solve the circuit for sweep value:", start + index * step)
                 solved = False
                 break
             else:
-                print "Skipping sweep value:", start + index * step
+                print("Skipping sweep value:", start + index * step)
                 continue
         solved = True
         sol.add_op(sweep_value, x)
@@ -489,7 +489,7 @@ def op_analysis(circ, x0=None, guess=True, outfile=None, verbose=3):
     if solved1 and not solved2:
         printing.print_general_error("Can't solve without Gmin.")
         if verbose:
-            print "Displaying latest valid results."
+            print("Displaying latest valid results.")
             op1.write_to_file(filename='stdout')
         opsolution = op1
     elif solved1 and solved2:
@@ -500,9 +500,9 @@ def op_analysis(circ, x0=None, guess=True, outfile=None, verbose=3):
         printing.print_result_check(badvars, verbose=verbose)
         check_ok = not (len(badvars) > 0)
         if not check_ok and verbose:
-            print "Solution with Gmin:"
+            print("Solution with Gmin:")
             op1.write_to_file(filename='stdout')
-            print "Solution without Gmin:"
+            print("Solution without Gmin:")
             op2.write_to_file(filename='stdout')
         opsolution = op2
     else:  # not solved1
@@ -521,7 +521,7 @@ def print_elements_ops(circ, x):
     tot_power = 0
     i_index = 0
     nv_1 = len(circ.nodes_dict) - 1
-    print "OP INFORMATION:"
+    print("OP INFORMATION:")
     for elem in circ:
         ports_v_v = []
         if hasattr(elem, "print_op_info"):
@@ -547,7 +547,7 @@ def print_elements_ops(circ, x):
                     tempv = tempv - x[port[1] - 1]
                 ports_v_v = ((tempv,),)
             elem.print_op_info(ports_v_v)
-            print "-------------------"
+            print("-------------------")
         if isinstance(elem, devices.GISource):
             v = 0
             v = v + x[elem.n1 - 1] if elem.n1 != 0 else v
@@ -569,7 +569,7 @@ def print_elements_ops(circ, x):
             i_index = i_index + 1
         elif circuit.is_elem_voltage_defined(elem):
             i_index = i_index + 1
-    print "TOTAL POWER: " + str(float(tot_power)) + " W"
+    print("TOTAL POWER: " + str(float(tot_power)) + " W")
 
     return None
 
@@ -636,15 +636,15 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
                       # if no guess was specified, its all zeros
     else:
         if not x.shape[0] == mna_size:
-            raise Exception, "x0s size is different from expected: " + \
-                str(x.shape[0]) + " " + str(mna_size)
+            raise Exception("x0s size is different from expected: " + \
+                str(x.shape[0]) + " " + str(mna_size))
     if T is None:
         printing.print_warning(
             "dc_analysis.mdn_solver called with T==None, setting T=0. BUG or no sources in circuit?")
         T = numpy.mat(numpy.zeros((mna_size, 1)))
 
     converged = False
-    iteration = 0L
+    iteration = 0
     while iteration < MAXIT:  # newton iteration counter
         iteration += 1
         tick.step()
@@ -688,7 +688,7 @@ def build_J_and_Tx(x, mna_size, element_list, time):
 
 def update_J_and_Tx(J, Tx, x, elem, time):
     out_ports = elem.get_output_ports()
-    for index in xrange(len(out_ports)):
+    for index in range(len(out_ports)):
         n1, n2 = out_ports[index]
         dports = elem.get_drive_ports(index)
         v_dports = []
@@ -705,7 +705,7 @@ def update_J_and_Tx(J, Tx, x, elem, time):
             Tx[n1 - 1, 0] = Tx[n1 - 1, 0] + iel
         if n2:
             Tx[n2 - 1, 0] = Tx[n2 - 1, 0] - iel
-        for iindex in xrange(len(dports)):
+        for iindex in range(len(dports)):
             if n1 or n2:
                 g = elem.g(index, v_dports, iindex, time)
             if n1:
@@ -820,7 +820,7 @@ def generate_mna_and_N(circ, verbose=3):
             pass
             # we'll add its lines afterwards
         else:
-            print "dc_analysis.py: BUG - Unknown linear element. Ref. #28934"
+            print("dc_analysis.py: BUG - Unknown linear element. Ref. #28934")
     # process vsources
     # i generatori di tensione non sono pilotabili in tensione: g � infinita
     # for each vsource, introduce a new variable: the current flowing through it.
@@ -849,11 +849,11 @@ def generate_mna_and_N(circ, verbose=3):
                 # N[index,0] = 0 pass, it's already zero
                 pass
             elif isinstance(elem, devices.HVSource):
-                print "dc_analysis.py: BUG - hvsources are not implemented yet."
+                print("dc_analysis.py: BUG - hvsources are not implemented yet.")
                 sys.exit(33)
             else:
-                print "dc_analysis.py: BUG - found an unknown voltage_def elem."
-                print elem
+                print("dc_analysis.py: BUG - found an unknown voltage_def elem.")
+                print(elem)
                 sys.exit(33)
 
     # Seems a good place to run some sanity check
@@ -874,7 +874,7 @@ def check_circuit(circ):
     if len(circ.nodes_dict) < 2:
         test_passed = False
         reason = "the circuit has less than two nodes."
-    elif not circ.nodes_dict.has_key(0):
+    elif 0 not in circ.nodes_dict:
         test_passed = False
         reason = "the circuit has no ref. Quitting."
     elif len(circ) < 2:
@@ -908,7 +908,7 @@ def check_ground_paths(mna, circ, reduced_mna=True, verbose=3):
     else:
         r_c = 0
     to_be_checked_for_nonlinear_paths = []
-    for node in circ.nodes_dict.iterkeys():
+    for node in circ.nodes_dict.keys():
         if node == 0:
             continue
             # ground
@@ -961,10 +961,10 @@ def build_x0_from_user_supplied_ic(circ, icdict):
     voltage_defined_elem_names = \
         [elem.part_id for elem in circ if circuit.is_elem_voltage_defined(
             elem)]
-    voltage_defined_elem_names = map(str.lower, voltage_defined_elem_names)
+    voltage_defined_elem_names = list(map(str.lower, voltage_defined_elem_names))
     ni = len(voltage_defined_elem_names)  # number of current variables
     x0 = numpy.mat(numpy.zeros((nv + ni, 1)))
-    for label, value in icdict.iteritems():
+    for label, value in icdict.items():
         if Vregex.search(label):
             ext_node = Vregex.findall(label)[0]
             int_node = circ.ext_node_to_int(ext_node)
@@ -974,7 +974,7 @@ def build_x0_from_user_supplied_ic(circ, icdict):
             index = voltage_defined_elem_names.index(element_name)
             x0[nv + index, 0] = value
         else:
-            raise ValueError, "Unrecognized label " + label
+            raise ValueError("Unrecognized label " + label)
     return x0[1:, :]
 
 

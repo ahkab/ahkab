@@ -136,8 +136,8 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
     x = _to_real_list(x)
     if verbose > 4:
         printing.print_symbolic_equations(eq)
-        print "To be solved for:"
-        print x
+        print("To be solved for:")
+        print(x)
         # print "Matrix is singular: ", (mna.det() == 0)
     # print -1.0*mna.inv()*N #too heavy
     # print sympy.solve_linear_system(mna.row_join(-N), x)
@@ -167,7 +167,7 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
             ("Auxiliary simplification solved the problem.", 3), verbose)
         sol = sol_h
 
-    for ks in sol.keys():
+    for ks in list(sol.keys()):
         sol.update({ks: sol[ks].subs(subs_g)})
 
     # sol = sol_to_dict(sol, x)
@@ -204,7 +204,7 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
 
 def calculate_gains(sol, xin, optimize=True):
     gains = {}
-    for key, value in sol.iteritems():
+    for key, value in sol.items():
         tf = {}
         gain = sympy.together(value.diff(xin)) if optimize else value.diff(xin)
         (ps, zs) = get_roots(gain)
@@ -484,11 +484,11 @@ def help_the_solver(eqs, xs, debug=False):
     while iter_flag:
         iter_flag, eqs, subs = help_the_solver_iter(eqs, xs)
         if iter_flag:
-            xs.remove(subs.keys()[0])
+            xs.remove(list(subs.keys())[0])
             sol.update(subs)
         if debug:
-            for key, value in subs.iteritems():
-                print key, "=", value
+            for key, value in subs.items():
+                print(key, "=", value)
     return eqs, xs, sol
 
 
@@ -529,7 +529,7 @@ def local_solve(eqs, xs):
     while len(eqs):
         eqs, single_sol = local_solve_iter(eqs, xs)
         new_sol = {}
-        for key, value in sol.iteritems():
+        for key, value in sol.items():
             new_sol.update({key: value.subs(single_sol)})
         new_sol.update(single_sol)
         sol = new_sol
@@ -544,9 +544,9 @@ def local_solve_iter(eqs, xs):
     for eq in eqs:
         for x in xs:
             if eq.has(x):
-                print "Solving for", x
+                print("Solving for", x)
                 single_sol = {x: sympy.solve(eq, x)[0]}
                 eqs.remove(eq)
-                print single_sol
+                print(single_sol)
                 return eqs, single_sol
     return eqs, {}

@@ -30,6 +30,7 @@ This module contains a diode element and its model class.
 #         |/|
 #
 
+from __future__ import print_function, division
 
 import math
 import numpy
@@ -90,7 +91,7 @@ class diode:
             self.device.T = constants.T
 
         if ic is not None:  # fixme
-            print "(W): ic support in diodes is very experimental."
+            print("(W): ic support in diodes is very experimental.")
             self.dc_guess = ic
         self.ic = ic
         self.off = off
@@ -98,9 +99,9 @@ class diode:
             if self.ic is None:
                 self.ic = 0
             else:
-                print "(W): IC statement in diodes takes precedence over OFF."
-                print "(W): If you are performing a transient simulation with uic=2,"
-                print "(W): you may want to check the initial value."
+                print("(W): IC statement in diodes takes precedence over OFF.")
+                print("(W): If you are performing a transient simulation with uic=2,")
+                print("(W): you may want to check the initial value.")
 
     def _get_T(self):
         return self.device.T
@@ -133,7 +134,7 @@ class diode:
 
     def g(self, op_index, ports_v, port_index, time=0):
         if not port_index == 0:
-            raise Exception, "Attepted to evaluate a diode's gm on an unknown port."
+            raise Exception("Attepted to evaluate a diode's gm on an unknown port.")
         return self.model.get_gm(op_index, ports_v, port_index, self.device)
 
     def get_op_info(self, ports_v_v):
@@ -147,7 +148,7 @@ class diode:
         return strarr
 
     def print_op_info(self, ports_v):
-        print self.get_op_info(ports_v),
+        print(self.get_op_info(ports_v), end=' ')
 
     def print_netlist_elem_line(self, nodes_dict):
         ret = "%s %s %s %s" % (self.part_id, self.n1, self.n2, self.model.name)
