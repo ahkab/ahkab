@@ -1,0 +1,10 @@
+* Output resistance of a degenerated MOS transistor
+m1 low gate deg 0 pch w=1u l=1u
+rs deg s 1k
+v1 gate 0 type=vdc vdc=1
+v3 s 0 type=vdc vdc=1
+v2 low 0 type=vdc vdc=1
+
+.model ekv pch type=p kp=10e-6 vto=-1
+.op
+.symbolic tf=v2

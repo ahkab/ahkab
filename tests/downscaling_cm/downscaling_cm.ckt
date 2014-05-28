@@ -1,0 +1,29 @@
+* 1-to-1/16th down-scaling current mirror
+
+m0 inc inc 0 0 nch w=1u l=1u
+
+m16 out inc n1 0  nch w=1u l=1u
+m15 n1 inc n2 0 nch w=1u l=1u
+m14 n2 inc n3 0 nch w=1u l=1u
+m13 n3 inc n4 0 nch w=1u l=1u
+m12 n4 inc n5 0 nch w=1u l=1u
+m11 n5 inc n6 0 nch w=1u l=1u
+m10 n6 inc n7 0 nch w=1u l=1u
+m9 n7 inc n8 0 nch w=1u l=1u
+m8 n8 inc n9 0 nch w=1u l=1u
+m7 n9 inc n10 0 nch w=1u l=1u
+m6 n10 inc n11 0 nch w=1u l=1u
+m5 n11 inc n12 0 nch w=1u l=1u
+m4 n12 inc n13 0 nch w=1u l=1u
+m3 n13 inc n14 0 nch w=1u l=1u
+m2 n14 inc n15 0 nch w=1u l=1u
+m1 n15 inc 0 0 nch w=1u l=1u
+
+i1 0 inc type=idc idc=16e-6
+v1 out 0 type=vdc vdc=5
+
+.model ekv nch TYPE=n VTO=.4 KP=400e-6
+
+.op
+.dc source=i1 start=0 stop=100u step=2u
+.plot dc i(v1)

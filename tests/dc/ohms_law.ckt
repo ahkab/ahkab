@@ -1,0 +1,5 @@
+OHM'S LAW
+v1 supply 0 type=vdc vdc=5
+ra supply 0 100
+rb supply 0 1k
+.op

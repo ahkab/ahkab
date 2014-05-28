@@ -1,0 +1,9 @@
+Resistor test 1
+
+v1 1 0 type=vdc vdc=1000m
+r1 1 2 1k
+r2 2 0 1k
+
+.op
+.dc source=v1 start=0 stop=5 step=.1
+.plot dc v(2) v(1)

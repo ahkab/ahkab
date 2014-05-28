@@ -1,0 +1,9 @@
+*Multiple dc sources
+v1 1 0 type=vdc vdc=24
+v2 3 0 type=vdc vdc=15
+r1 1 2 10k
+r2 2 3 8.1k
+r3 2 0 4.7k
+.op
+.end
+

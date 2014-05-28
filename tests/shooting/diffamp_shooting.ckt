@@ -1,0 +1,6 @@
+* Shooting solution
+
+.include diffamp.spc
+
+.op
+.shooting period=100u points=100 method=shooting
