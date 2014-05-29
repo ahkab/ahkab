@@ -82,6 +82,8 @@ class diode:
         self.device.AREA = AREA if AREA is not None else 1.0
         self.device.T = T
         self.device.last_vd = .425
+        self.device._gm_db = {} # hold the latest gm, just in case
+        self.device._i_db = {} # hold the latest i, just in case
         self.n1 = n1
         self.n2 = n2
         self.ports = ((self.n1, self.n2),)
@@ -128,12 +130,20 @@ class diode:
 
     def i(self, op_index, ports_v, time=0):  # with gmin added
         v = ports_v[0]
-        i = self.model.get_i(op_index, ports_v, self.device)
+        if v in self.device._i_db:
+            i = self.device._i_db[v]
+        else:
+            i = self.model.get_i(v, self.device)
         return i
 
     def g(self, op_index, ports_v, port_index, time=0):
         if not port_index == 0:
             raise Exception, "Attepted to evaluate a diode's gm on an unknown port."
+        v = ports_v[0]
+        if v in self.device._gm_db:
+            i = self.device._gm_db[v]
+        else:
+            i = self.model.get_i(v, self.device)
         return self.model.get_gm(op_index, ports_v, port_index, self.device)
 
     def get_op_info(self, ports_v_v):
@@ -254,15 +264,14 @@ class diode_model:
         self.last_vd = None
         self.VT = constants.Vth(self.T)
 
-    def get_i(self, op_index, ports_v, dev):
+    def get_i(self, vext, dev):
         if dev.T != self.T:
             self.set_temperature(dev.T)
         if not self.RS:
-            i = self._get_i(
-                ports_v[0]) * dev.AREA if self.RS == 0 else self._get_irs(ports_v, dev)
-            dev.last_vd = ports_v[0]
+            i = self._get_i(vext) * dev.AREA
+            dev.last_vd = vext
         else:
-            i = self._get_irs(ports_v, dev)
+            i = self._get_irs(vext, dev)
         return i
 
     def _get_irs(self, ports_v, dev):
