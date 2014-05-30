@@ -1101,7 +1101,7 @@ def parse_postproc(circ, postproc_direc):
                 plot_postproc["type"] = "plot"
                 plot_postproc["analysis"] = line_elements[1]
                 if not (plot_postproc["analysis"] == "tran" or
-                        plot_postproc["analysis"] == "shooting" or
+                        plot_postproc["analysis"] == "pss" or
                         plot_postproc["analysis"] == "ac" or
                         plot_postproc["analysis"] == "dc"
                         ):
