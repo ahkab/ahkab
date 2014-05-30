@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 import os
+import re
 from setuptools import setup, find_packages
-__version__ = "0.09"
+
+with open('ahkab/__version__.py') as version_file:
+    __version__ = re.findall("__version__ = '([^']*)'", version_file.read())[0]
 
 def read(fname):
     try:
