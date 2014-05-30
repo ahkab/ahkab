@@ -6,7 +6,8 @@ The code should be easy to read and modify, the main language is Python 2.x and 
 
 ### News! ###
 
- * The whole codebase has been going through a (yet incomplete) refactoring and documenting thorough effort.
+ * Ahkab v0.10 released, including several bugfixes and improvements. Check out [the release notes](https://github.com/ahkab/ahkab/releases/tag/v0.10) for more!
+ * The whole codebase has been going through a (yet incomplete) refactoring and documenting effort. The [new documentation is available on RTD](http://ahkab.readthedocs.org/en/latest/).
  * Tests have been added to the code base, to weed out bugs and have a consistent way to check for regressions. If you have tests you would like to suggest, please send a PR my way.
  *  My resources are limited these days, so the much-needed work is proceeding slowly, albeit hopefully steadily. If you are interested and you would like to contribute to refactoring or documenting a particular feature, it would be very welcome.
 
