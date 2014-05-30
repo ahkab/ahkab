@@ -34,7 +34,7 @@ def cli():
     usage = "usage: \t%prog [options] <filename>\n\nThe filename is the " + \
             "netlist to be open. Use - (a dash) to read from stdin."
     parser = OptionParser(usage, version="%prog " + __version__ + \
-             " (c) 2006-2013 Giuseppe Venturini")
+             " (c) 2006-2014 Giuseppe Venturini")
 
     # general options
     parser.add_option(
