@@ -16,7 +16,7 @@ def assemble():
     cir.add_inductor('L2b', cir.gnd, 'int2', .5)
     cir.add_inductor_coupling('K1a', 'L1a', 'L2a', .98)
     cir.add_inductor_coupling('K1b', 'L1b', 'L2b', .98)
-    cir.add_model('diode', 'pnj', {'IS':1e-9, 'RS':1})
+    cir.add_model('diode', 'pnj', {'IS':1e-9, 'RS':RS})
     cir.add_diode('D1', 'int1', 'int4', 'pnj')
     cir.add_diode('D2', 'int3', 'int2', 'pnj')
     cir.add_diode('D3', 'int2', 'int4', 'pnj')
@@ -49,7 +49,7 @@ def test():
 
     ## define analyses
     op1 = ahkab.new_op(outfile='rectifier')
-    tran1 = ahkab.new_tran(0, 200e-3, 1e-3, outfile='rectifier', 
+    tran1 = ahkab.new_tran(0, 200e-3, 1e-4, outfile='rectifier', 
                            verbose=0+cli*6)
 
 
@@ -57,6 +57,7 @@ def test():
     testbench = testing.APITest('rectifier', cir, [op1, tran1],
                                 skip_on_travis=True, ea=1e-1, er=1.)
 
+    ahkab.options.gmin = 1e-7
     ahkab.options.nl_voltages_lock = False
     ahkab.options.nl_voltages_factor = 20
     ahkab.options.iea = 1e-1
