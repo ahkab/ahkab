@@ -488,10 +488,12 @@ class NetlistTest(unittest.TestCase):
     def _run_test(self):
         # no reference runs with nose
         if sys.argv[0].endswith('nosetests') and self.ref_run:
+            self._reset_sim_opts()
             raise SkipTest
         # check whether we are on travis or not and skip if needed.
         if 'TRAVIS' in os.environ and self.skip:
-                raise SkipTest
+            self._reset_sim_opts()
+            raise SkipTest
         print "Running test... ",
         start = time.time()
         res = main(filename=self.netlist,
@@ -681,7 +683,8 @@ class APITest(unittest.TestCase):
 
     def _run_test(self):
         if 'TRAVIS' in os.environ and self.skip:
-                raise SkipTest
+            self._reset_sim_opts()
+            raise SkipTest
         print "Running test... ",
         start = time.time()
         res = run(self.circ, self.an_list)
