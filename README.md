@@ -4,7 +4,7 @@
 
 The code should be easy to read and modify, the main language is Python 2.x and it is platform-independent.[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/3f4b146d6a15f66802f1906e5cf4f68c "githalytics.com")](http://githalytics.com/ahkab/ahkab)
 
-### News! ###
+## News! ##
 
  * Ahkab v0.10 released, including several bugfixes and improvements. Check out [the release notes](https://github.com/ahkab/ahkab/releases/tag/v0.10) for more!
  * The whole codebase has been going through a (yet incomplete) refactoring and documenting effort. The [new documentation is available on RTD](http://ahkab.readthedocs.org/en/latest/).
@@ -16,7 +16,7 @@ The code should be easy to read and modify, the main language is Python 2.x and 
 <!--- [![PyPi downloads](https://pypip.in/download/ahkab/badge.png)](https://pypi.python.org/pypi/ahkab/) --->
 
 
-### Supported simulations: ###
+## Supported simulations: ##
   * Numeric:
     * **Operating point**, with guess computation to speed up the solution. See example: [Downscaling current mirror](https://github.com/ahkab/ahkab/wiki/Example:-OP-simulation)
     * **DC sweep**
@@ -28,13 +28,56 @@ The code should be easy to read and modify, the main language is Python 2.x and 
 
 The results are saved to disk, plotted or printed to stdout and can be read/processed by the most common tools (eg. [Octave](http://www.gnu.org/software/octave/), [gnuplot](http://www.gnuplot.info/), [Matlab](http://www.mathworks.com/products/matlab/), [gwave](http://www.telltronics.org/software/gwave/) and others)
 
-###Download and install###
+##Install##
 
-There are no packages for the time being (this program is at an early development stage). Go to [ahkab on github](https://github.com/ahkab/ahkab) and follow the instructions to check out the code. You can find the list of the dependencies in the [Install notes](https://github.com/ahkab/ahkab/wiki/Install:-Notes).
+The program requires:
+* the **Python 2 interpreter** (at least v.2.6, also see `[0]`),
+* numpy, matplotlib and sympy.
 
-###Usage###
+If you need more information about the dependencies, check the [Install notes](https://github.com/ahkab/ahkab/wiki/Install:-Notes).
 
- * `ahkab` can be run _within Python scripts as a library_. This will likely become the preferred way in the future. See **[this butterworth filter simulation](https://github.com/ahkab/ahkab/wiki/Example:-Python-API)** for an example/tentative tutorial.
+##Usage##
+
+ * `ahkab` can be run _within Python scripts as a library_. 
+
+###Example###
+ 
+<img src="https://raw.githubusercontent.com/ahkab/ahkab/master/doc/images/readme_example/bpf.svg" alt="Example schematic: a 5th order 1kHz band-pass Butterworth filter"/>
+
+```python
+from ahkab import new_ac, run
+from ahkab.circuit import Circuit
+from ahkab.plotting import plot_results # calls matplotlib for you
+import numpy as np
+
+# Define the circuit
+cir = ahkab.circuit.Circuit('Butterworth 1kHz band-pass filter')
+cir.add_vsource('V1', 'n1', cir.gnd, dc_value=0., ac_value=1.)
+cir.add_resistor('R1', 'n1', 'n2', 50.)
+cir.add_inductor('L1', 'n2', 'n3', 0.245894)
+cir.add_capacitor('C1', 'n3', 'n4', 1.03013e-07)
+cir.add_inductor('L2', 'n4', cir.gnd, 9.83652e-05)
+cir.add_capacitor('C2', 'n4', cir.gnd, 0.000257513)
+cir.add_inductor('L3', 'n4', 'n5', 0.795775)
+cir.add_capacitor('C3', 'n5', 'n6', 3.1831e-08)
+cir.add_inductor('L4', 'n6', cir.gnd, 9.83652e-05)
+cir.add_capacitor('C4', 'n6', cir.gnd, 0.000257513)
+cir.add_capacitor('C5', 'n7', 'n8', 1.03013e-07)
+cir.add_inductor('L5', 'n6', 'n7', 0.245894)
+cir.add_resistor('R2', 'n8', cir.gnd, 50.)
+
+# Define the analysis
+ac1 = new_ac(2.*np.pi*.97e3, 2.*np.pi*1.03e3, 1e2, x0=None)
+
+# run it
+res = run(cir, ac1)
+
+# plot the results
+plot_results('5th order 1kHz Butterworth filter', [('|Vn8|',"")], res['ac']
+             outfilename='bpf_transfer_fn.png')
+```
+
+<img src="https://raw.githubusercontent.com/ahkab/ahkab/master/doc/images/readme_example/bpf.svg" alt="Example schematic: a 5th order 1kHz band-pass Butterworth filter"/>
 
  * or stand-alone with a netlist file, the syntax being:
 
@@ -43,8 +86,6 @@ There are no packages for the time being (this program is at an early developmen
 See `ahkab --help` for command line switches.
 
 ###Documentation###
-
-The simulator can either be run from the command line with a netlist file or included in a python script. Both possibilities will be maintained for the foreseeable future. 
 
 Refer to the [netlist syntax page](https://github.com/ahkab/ahkab/wiki/Help:-Netlist-Syntax) for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.
 
