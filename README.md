@@ -42,7 +42,7 @@ If you need more information about the dependencies, check the [Install notes](h
 
 ###Example###
  
-<img src="https://raw.githubusercontent.com/ahkab/ahkab/master/doc/images/readme_example/bpf.svg" alt="Example schematic: a 5th order 1kHz band-pass Butterworth filter"/>
+<img src="https://raw.githubusercontent.com/ahkab/ahkab/master/doc/images/readme_example/pbf.svg" alt="Example schematic: a 5th order 1kHz band-pass Butterworth filter"/>
 
 ```python
 from ahkab import new_ac, run
@@ -77,7 +77,7 @@ plot_results('5th order 1kHz Butterworth filter', [('|Vn8|',"")], res['ac']
              outfilename='bpf_transfer_fn.png')
 ```
 
-<img src="https://raw.githubusercontent.com/ahkab/ahkab/master/doc/images/readme_example/bpf.svg" alt="Example schematic: a 5th order 1kHz band-pass Butterworth filter"/>
+<img src="https://raw.githubusercontent.com/ahkab/ahkab/master/doc/images/readme_example/bpf_results.svg" alt="Example: AC simulation resultsr"/>
 
  * or stand-alone with a netlist file, the syntax being:
 
