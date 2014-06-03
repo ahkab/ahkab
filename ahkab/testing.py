@@ -194,10 +194,18 @@ Below is a typical script file.
     # user input
     options.plotting_show_plots = False
 
+    def myoptions():
+        # optionally, set non-standard options
+        sim_opts = {}
+        sim_opts.update({'gmin':1e-9})
+        sim_opts.update({'iea':1e-3})
+        sim_opts.update({'transient_max_nr_iter':200})
+        return sim_opts
+
     def test():
         # this requires a netlist ``mytest.ckt``
         # and a configuration file ``mytest.ini``
-        nt = NetlistTest('mytest')
+        nt = NetlistTest('mytest', sim_opts=myoptions())
         nt.setUp()
         nt.test()
         nt.tearDown()
@@ -206,7 +214,7 @@ Below is a typical script file.
     test.__doc__ = "My test description, printed out by nose"
 
     if __name__ == '__main__':
-        nt = NetlistTest('mytest')
+        nt = NetlistTest('mytest', sim_opts=myoptions())
         nt.setUp()
         nt.test()
 
@@ -345,6 +353,9 @@ inspection.
 Additionally, plotting is performed if the test is directly run from
 the command line.
 
+In case non-standard simulation options are necessary, they can be set
+as in the previous example.
+
 Module reference
 \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"
 
@@ -391,6 +402,9 @@ class NetlistTest(unittest.TestCase):
 
     er : float, optional
         Allowed absolute error (applies to numeric results only).
+
+    sim_opts : dict, optional
+        A dictionary containing the options to be used for the test.
     """
 
     def __init__(self, test_id, er=1e-6, ea=1e-9, sim_opts={}):
@@ -480,8 +494,17 @@ class NetlistTest(unittest.TestCase):
             else:
                 data, headers, _, _ = csvlib.load_csv(file_ref, [], None, 0L, verbose=0)
                 res = _MyDict()
-                for i, h in enumerate(headers):
-                    res.update({h: data[i, :]})
+                if os.path.splitext(file_ref)[1][1:].lower() == 'ac':
+                    res.update({headers[0]:data[0, :]})
+                    for i, h in enumerate(headers):
+                         if h[0] == h[-1] == '|':
+                             pi = headers.index('arg('+h[1:-1]+')')
+                             res.update({h[1:-1]:data[i, :]*np.exp(1j*data[pi, :])})
+                         else:
+                             continue
+                else:
+                    for i, h in enumerate(headers):
+                        res.update({h: data[i, :]})
                 res.x = headers[0]
                 self.ref_data.update({t: res})
 
@@ -510,11 +533,23 @@ class NetlistTest(unittest.TestCase):
             for k in res.keys():
                 if np.all(res[k] == x):
                     continue
+                elif np.any(np.iscomplex(res[k])) or np.any(np.iscomplex(ref[k])):
+                    # Interpolate Re and Im of the results to compare.
+                    x = x.reshape((-1, ))
+                    refx = ref[ref.x].reshape((-1, ))
+                    d1 = InterpolatedUnivariateSpline(x, np.real(res[k]).reshape((-1, )))
+                    d2 = InterpolatedUnivariateSpline(refx, np.real(ref[k]).reshape((-1, )))
+                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED (Re)" % self.test_id)
+                    d1 = InterpolatedUnivariateSpline(x, np.imag(res[k]).reshape((-1, )))
+                    d2 = InterpolatedUnivariateSpline(refx, np.imag(ref[k]).reshape((-1, )))
+                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED (Im)" % self.test_id)
                 else:
                     # Interpolate the results to compare.
-                    d1 = InterpolatedUnivariateSpline(x.reshape((-1, )), res[k].reshape((-1, )))
-                    d2 = InterpolatedUnivariateSpline(ref[ref.x].reshape((-1, )), ref[k].reshape((-1, )))
-                    ok_(np.allclose(d1(x.reshape((-1, ))), d2(x.reshape((-1, ))), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
+                    x = x.reshape((-1, ))
+                    refx = ref[ref.x].reshape((-1, ))
+                    d1 = InterpolatedUnivariateSpline(x, np.real_if_close(res[k]).reshape((-1, )))
+                    d2 = InterpolatedUnivariateSpline(refx, np.real_if_close(ref[k]).reshape((-1, )))
+                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         elif isinstance(res, results.op_solution):
             for k in res.keys():
                 assert k in ref
@@ -583,6 +618,9 @@ class APITest(unittest.TestCase):
 
     er : float, optional
         Allowed absolute error (applies to numeric results only).
+
+    sim_opts : dict, optional
+        A dictionary containing the options to be used for the test.
 
     skip_on_travis : bool, optional
         Should we skip the test on Travis? Set to ``True`` for long tests
@@ -676,8 +714,17 @@ class APITest(unittest.TestCase):
             else:
                 data, headers, _, _ = csvlib.load_csv(file_ref, [], None, 0L, verbose=0)
                 res = _MyDict()
-                for i, h in enumerate(headers):
-                    res.update({h: data[i, :]})
+                if os.path.splitext(file_ref)[1][1:].lower() == 'ac':
+                    res.update({headers[0]:data[0, :]})
+                    for i, h in enumerate(headers):
+                         if h[0] == h[-1] == '|':
+                             pi = headers.index('arg('+h[1:-1]+')')
+                             res.update({h[1:-1]:data[i, :]*np.exp(1j*data[pi, :])})
+                         else:
+                             continue
+                else:
+                    for i, h in enumerate(headers):
+                        res.update({h: data[i, :]})
                 res.x = headers[0] if not t == 'op' else None
                 self.ref_data.update({t: res})
 
@@ -699,11 +746,23 @@ class APITest(unittest.TestCase):
             for k in res.keys():
                 if np.all(res[k] == x):
                     continue
+                elif np.any(np.iscomplex(res[k])) or np.any(np.iscomplex(ref[k])):
+                    # Interpolate Re and Im of the results to compare.
+                    x = x.reshape((-1, ))
+                    refx = ref[ref.x].reshape((-1, ))
+                    d1 = InterpolatedUnivariateSpline(x, np.real(res[k]).reshape((-1, )))
+                    d2 = InterpolatedUnivariateSpline(refx, np.real(ref[k]).reshape((-1, )))
+                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED (Re)" % self.test_id)
+                    d1 = InterpolatedUnivariateSpline(x, np.imag(res[k]).reshape((-1, )))
+                    d2 = InterpolatedUnivariateSpline(refx, np.imag(ref[k]).reshape((-1, )))
+                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED (Im)" % self.test_id)
                 else:
                     # Interpolate the results to compare.
-                    d1 = InterpolatedUnivariateSpline(x.reshape((-1, )), res[k].reshape((-1, )))
-                    d2 = InterpolatedUnivariateSpline(ref[ref.x].reshape((-1, )), ref[k].reshape((-1, )))
-                    ok_(np.allclose(d1(x.reshape((-1, ))), d2(x.reshape((-1, ))), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
+                    x = x.reshape((-1, ))
+                    refx = ref[ref.x].reshape((-1, ))
+                    d1 = InterpolatedUnivariateSpline(x, np.real_if_close(res[k]).reshape((-1, )))
+                    d2 = InterpolatedUnivariateSpline(refx, np.real_if_close(ref[k]).reshape((-1, )))
+                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         elif isinstance(res, results.op_solution):
             for k in res.keys():
                 assert k in ref
