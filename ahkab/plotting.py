@@ -25,6 +25,7 @@ from __future__ import print_function, division, unicode_literals
 
 import re
 import pylab
+import numpy
 
 from . import printing
 from . import options
@@ -117,6 +118,18 @@ def save_figure(filename, fig=None):
     pylab.savefig(filename, dpi=100, bbox_inches='tight',
                   format=options.plotting_outtype)
 
+def _data_abs_arg_pass(res, label):
+    # extract abs / phase if needed or pass the data
+    if label[0] == label[-1] == '|':
+        data = numpy.absolute(res[label[1:-1]])
+        units = res.units[label[1:-1]]
+    elif label[0:4] == 'arg(' and label[-1] == ')':
+        data = numpy.angle(res[label[4:-1]], deg=options.ac_phase_in_deg)
+        units = res.units[label[4:-1]]
+    else:
+        data = res[label]
+        units = res.units[label]
+    return data, units
 
 def plot_results(title, y2y1_list, results, outfilename):
     """Plot the results.
@@ -133,13 +146,13 @@ def plot_results(title, y2y1_list, results, outfilename):
 
     for y2label, y1label in y2y1_list:
         if y1label is not None and y1label != '':
-            data1 = results[y1label]
+            data1, _ = _data_abs_arg_pass(results, y1label)
             line_label = y2label + "-" + y1label
         else:
             line_label = y2label
             data1 = 0
-        data2 = results[y2label]
-        yvu += [(line_label, results.units[y2label])]
+        data2, units = _data_abs_arg_pass(results, y2label)
+        yvu += [(line_label, units)]
         gdata.append((data2 - data1, line_label))
 
     if xlabel == 'w':
