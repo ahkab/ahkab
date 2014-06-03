@@ -31,7 +31,7 @@ The results are saved to disk, plotted or printed to stdout and can be read/proc
 ##Install##
 
 The program requires:
-* the **Python 2 interpreter** (at least v.2.6, also see `[0]`),
+* the **Python 2 interpreter** (at least v.2.6, and Python3 is in the works),
 * numpy, matplotlib and sympy.
 
 If you need more information about the dependencies, check the [Install notes](https://github.com/ahkab/ahkab/wiki/Install:-Notes).
@@ -51,7 +51,7 @@ from ahkab.plotting import plot_results # calls matplotlib for you
 import numpy as np
 
 # Define the circuit
-cir = ahkab.circuit.Circuit('Butterworth 1kHz band-pass filter')
+cir = Circuit('Butterworth 1kHz band-pass filter')
 cir.add_vsource('V1', 'n1', cir.gnd, dc_value=0., ac_value=1.)
 cir.add_resistor('R1', 'n1', 'n2', 50.)
 cir.add_inductor('L1', 'n2', 'n3', 0.245894)
@@ -73,7 +73,7 @@ ac1 = new_ac(2.*np.pi*.97e3, 2.*np.pi*1.03e3, 1e2, x0=None)
 res = run(cir, ac1)
 
 # plot the results
-plot_results('5th order 1kHz Butterworth filter', [('|Vn8|',"")], res['ac']
+plot_results('5th order 1kHz Butterworth filter', [('|Vn8|',"")], res['ac'],
              outfilename='bpf_transfer_fn.png')
 ```
 
