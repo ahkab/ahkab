@@ -108,7 +108,7 @@ class solution:
         """Get a specific variable, as from a dictionary."""
         data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], 
                                                   nsamples=None, skip=0L, verbose=0)
-        return data
+        return data.reshape((-1,))
 
     def get(self, name, default=None, verbose=3):
         """Get a solution by variable name."""
@@ -118,7 +118,7 @@ class solution:
                                                       nsamples=None, skip=0L, verbose=verbose)
         except KeyError:
             return default
-        return data.T
+        return data.reshape((-1,))
 
     def has_key(self, name):
         """Determine whether the result set contains a variable."""
@@ -139,7 +139,7 @@ class solution:
                                                   nsamples=None, skip=0L, verbose=verbose)
         values = []
         for i in range(data.shape[1]):
-            values.append(data[:, i].T)
+            values.append(data[:, i])
         return values
 
     def items(self, verbose=3):
@@ -154,10 +154,7 @@ class solution:
     # iterator methods
     def __iter__(self):
         self.iter_index = 0
-        self.iter_data, self.iter_headers, pos, EOF = csvlib.load_csv(self.filename, 
-                                                                      load_headers=[], 
-                                                                      nsamples=None, 
-                                                                      skip=0L)
+        self.iter_data, self.iter_headers, _, _ = csvlib.load_csv(self.filename)
         return self
 
     def __next__(self):
