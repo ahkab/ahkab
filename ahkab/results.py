@@ -18,7 +18,8 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This is the results module of the simulator.
+This module provides classes for easy, dictionary-like access to simulation
+results.
 """
 
 import sys
@@ -49,11 +50,19 @@ class _mutable_data:
 
 
 class solution:
+    """Base class storing a set of generic simulation results.
+
+    This class is not meant to be accessed directly, rather it is
+    subclassed by the classes for the specific simulation solutions.
+
+    **Parameters:**
+
+    circ : circuit instance
+        the circuit instance of the simulated circuit.
+    outfile : string
+        the filename of the save file
+    """
     def __init__(self, circ, outfile):
-        """Base class storing a set of generic simulation results.
-            circ: the circuit instance of the simulated circuit
-            outfile: the filename of the save file
-        """
         self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
         self.netlist_file = circ.filename
         self.netlist_title = circ.title
@@ -67,21 +76,28 @@ class solution:
         self.filename = outfile
         self._init_file_done = False
 
-        nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         self.skip_nodes_list = []   # nodi da saltare, solo interni
         self.variables = []
         self.units = case_insensitive_dict()
         self.iter_index = 0
 
     def get_type(self):
-        """Please redefine this function in the subclasses."""
+        """Returns the type of the simulation performed.
+
+        Please redefine this function in the subclasses."""
         raise Exception, "Undefined"
 
     def asmatrix(self, verbose=3):
-        """Return all data as a (possibly huge) python matrix."""
-        data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[], 
-                                                  nsamples=None, skip=0L, verbose=verbose)
-        return data.T
+        """Return all data.
+
+        .. warn:: 
+
+            This method loads to memory a possibly huge data matrix.
+
+        """
+        data, _, _, _ = csvlib.load_csv(self.filename, load_headers=[], 
+                                        verbose=verbose)
+        return data
 
     # Access as a dictionary BY VARIABLE NAME:
     def __len__(self):
@@ -92,7 +108,7 @@ class solution:
         """Get a specific variable, as from a dictionary."""
         data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], 
                                                   nsamples=None, skip=0L, verbose=0)
-        return data.T
+        return data
 
     def get(self, name, default=None, verbose=3):
         """Get a solution by variable name."""
@@ -407,10 +423,11 @@ class ac_solution(solution, _mutable_data):
         self.stype = stype
         self.ostart, self.ostop, self.opoints = ostart, ostop, opoints
     
-        nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         self.variables += ["w"]
         self.units.update({"w": "rad/s"})
+        self.csv_headers = [self.variables[0]]
     
+        nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         for index in range(nv_1):
             varname = "V%s" % str(circ.nodes_dict[index + 1])
             self.variables += [varname]
@@ -424,7 +441,6 @@ class ac_solution(solution, _mutable_data):
                 self.variables += [varname]
                 self.units.update({varname: "A"})
 
-        self.csv_headers = [self.variables[0]]
         for i in range(1, len(self.variables)):
             self.csv_headers.append("|%s|" % self.variables[i])
             self.csv_headers.append("arg(%s)" % self.variables[i])
@@ -944,4 +960,3 @@ class case_insensitive_dict():
     def __iter__(self):
         """Iterator"""
         return self._dict.__iter__()
-
