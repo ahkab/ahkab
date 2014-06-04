@@ -97,7 +97,7 @@ def _setup_plot(fig, title, xvu, yvu, log=False, xlog=False, ylog=False):
     yinitials = []
     for yv, yu in yvu:
         yv = yv[:].replace('|', "")
-        if not yu in yunits:
+        if yu not in yunits:
             yunits.append(yu)
             yinitials.append(yv[0])
     ylabel = ""

@@ -782,7 +782,7 @@ class symbolic_solution():
             if tf:
                 expr = expr['gain']
             for symb in expr.atoms():
-                if symb.is_Symbol and not symb in self._symbols:
+                if symb.is_Symbol and symb not in self._symbols:
                     self._symbols.append(symb)
         self.filename = outfile if outfile != 'stdout' else None
         if self.filename is not None:

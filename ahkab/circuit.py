@@ -418,7 +418,7 @@ class Circuit(list):
 
         """
 
-        if not 'name' in model_parameters:
+        if 'name' not in model_parameters:
             model_parameters.update({'name':model_label})
         if model_type == "ekv":
             model_iter = ekv.ekv_mos_model(**model_parameters)
@@ -889,20 +889,20 @@ class Circuit(list):
 
         Returns: True if the element was found and removed, False otherwise
         """
-        if not elem in self:
+        if elem not in self:
             return False
 
         self.remove(elem)
         nodes = []
         if hasattr(elem, n1) and elem.n1 != 0:
             nodes = nodes + [n1]
-        if hasattr(elem, n2) and elem.n2 != 0 and not elem.n2 in nodes:
+        if hasattr(elem, n2) and elem.n2 != 0 and elem.n2 not in nodes:
             nodes = nodes + [n2]
         if elem.is_nonlinear:
             for n1, n2 in elem.ports:
-                if n1 != 0 and not n1 in nodes:
+                if n1 != 0 and n1 not in nodes:
                     nodes = nodes + [n1]
-                if n2 != 0 and not n2 in nodes:
+                if n2 != 0 and n2 in not nodes:
                     nodes = nodes + [n2]
 
         remove_list = copy.copy(nodes)
