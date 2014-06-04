@@ -32,14 +32,16 @@ This module contains a diode element and its model class.
 
 from __future__ import print_function, division
 
-import math
 import numpy
+
+from math import exp
 
 from . import constants
 from . import printing
 from . import utilities
 from . import options
 
+damping_factor = 4.
 
 class diode:
     """A diode element.
@@ -83,6 +85,8 @@ class diode:
         self.device.AREA = AREA if AREA is not None else 1.0
         self.device.T = T
         self.device.last_vd = .425
+        self.device._gm_db = {} # hold the latest gm, just in case
+        self.device._i_db = {} # hold the latest i, just in case
         self.n1 = n1
         self.n2 = n2
         self.ports = ((self.n1, self.n2),)
@@ -129,13 +133,23 @@ class diode:
 
     def i(self, op_index, ports_v, time=0):  # with gmin added
         v = ports_v[0]
-        i = self.model.get_i(op_index, ports_v, self.device)
+        if v in self.device._i_db:
+            i = self.device._i_db[v]
+        else:
+            i = self.model.get_i(v, self.device)
+            self.device._i_db = {v:i}
         return i
 
     def g(self, op_index, ports_v, port_index, time=0):
         if not port_index == 0:
             raise Exception("Attepted to evaluate a diode's gm on an unknown port.")
-        return self.model.get_gm(op_index, ports_v, port_index, self.device)
+        v = ports_v[0]
+        if v in self.device._gm_db:
+            gm = self.device._gm_db[v]
+        else:
+            gm = self.model.get_gm(op_index, ports_v, port_index, self.device)
+            self.device._gm_db = {v:gm}
+        return gm
 
     def get_op_info(self, ports_v_v):
         vn1n2 = float(ports_v_v[0][0])
@@ -255,36 +269,36 @@ class diode_model:
         self.last_vd = None
         self.VT = constants.Vth(self.T)
 
-    def get_i(self, op_index, ports_v, dev):
+    def get_i(self, vext, dev):
         if dev.T != self.T:
             self.set_temperature(dev.T)
         if not self.RS:
-            i = self._get_i(
-                ports_v[0]) * dev.AREA if self.RS == 0 else self._get_irs(ports_v, dev)
-            dev.last_vd = ports_v[0]
+            i = self._get_i(vext) * dev.AREA
+            dev.last_vd = vext
         else:
-            i = self._get_irs(ports_v, dev)
+            i = self._get_irs(vext, dev)
         return i
 
-    def _get_irs(self, ports_v, dev):
+    def _get_irs(self, vext, dev):
         vth = self.VT
-        vd = dev.last_vd if dev.last_vd is not None else vth
-        RS = self.RS / dev.AREA
+        vd = dev.last_vd if dev.last_vd is not None else 10*vth
         idiode = self._get_i(vd) * dev.AREA
+        i = 0
         while True:
             gm = self.get_gm(0, [vd], 0, dev, rs=False)
-            dvd = (ports_v[0] - idiode * self.RS - vd) / (1.0 + gm * RS)
-            vd = vd + min(self.VT, abs(dvd)) * numpy.sign([dvd])[0]
+            dvd = (vext - idiode * self.RS - vd) / (1.0 + gm * self.RS)
+            vd = vd + min(damping_factor*self.VT, abs(dvd)) * numpy.sign(dvd)
             idiode_old = idiode
             idiode = self._get_i(vd) * dev.AREA
             di = idiode - idiode_old
-            if utilities.convergence_check(x=(idiode, vd), dx=(di, dvd), residuum=((vd - ports_v[0]) / RS + idiode, ports_v[0] - vd - idiode * self.RS), nv_minus_one=1)[0]:
+            if utilities.convergence_check(x=(idiode, vd), dx=(di, dvd), residuum=((vd - vext) / self.RS + idiode, vext - vd - idiode * self.RS), nv_minus_one=1)[0]:
                 break
+            i += 1
         dev.last_vd = vd
         return idiode
 
     def _safe_exp(self, x):
-        return math.exp(x) if x < 70 else math.exp(70) + 10 * x
+        return exp(x) if x < 70 else exp(70) + 10 * x
 
     def _get_i(self, v):
         i = self.IS * (self._safe_exp(v / (self.N * self.VT)) - 1) \
@@ -299,7 +313,7 @@ class diode_model:
             self.ISR / (self.NR * self.VT) *\
             self._safe_exp(ports_v[0] / (self.NR * self.VT))
         if rs and self.RS != 0.0:
-            gm = 1. / (self.RS + 1. / (gm + options.gmin * 1e-1))
+            gm = 1. / (self.RS + 1. / (gm + 1e-3*options.gmin))
         return dev.AREA * gm
 
     def __str__(self):

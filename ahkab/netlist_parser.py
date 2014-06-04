@@ -1102,7 +1102,7 @@ def parse_postproc(circ, postproc_direc):
                 plot_postproc["type"] = "plot"
                 plot_postproc["analysis"] = line_elements[1]
                 if not (plot_postproc["analysis"] == "tran" or
-                        plot_postproc["analysis"] == "shooting" or
+                        plot_postproc["analysis"] == "pss" or
                         plot_postproc["analysis"] == "ac" or
                         plot_postproc["analysis"] == "dc"
                         ):
@@ -1115,7 +1115,7 @@ def parse_postproc(circ, postproc_direc):
                 for glabel in line_elements[2:]:
                     graph_labels = graph_labels + " " + glabel
 
-                l2l1 = plotting.split_netlist_label(graph_labels)
+                l2l1 = plotting._split_netlist_label(graph_labels)
 
                 if plot_postproc["analysis"] == "ac":
                     l2l1ac = []

@@ -373,6 +373,7 @@ from nose.plugins.skip import SkipTest
 
 from . import csvlib
 from . import results
+from . import options
 from .ahkab import main, run
 
 
@@ -397,13 +398,28 @@ class NetlistTest(unittest.TestCase):
         Allowed absolute error (applies to numeric results only).
     """
 
-    def __init__(self, test_id, er=1e-6, ea=1e-9):
+    def __init__(self, test_id, er=1e-6, ea=1e-9, sim_opts={}):
         unittest.TestCase.__init__(self, methodName='test')
         self.test_id = test_id
         self.er = er
         self.ea = ea
         self.test.__func__.__doc__ = "%s simulation" % (test_id, )
         self.ref_data = {} # the reference results will be loaded here
+        self._sim_opts = sim_opts
+        self._reset_opts = {}
+        self._set_sim_opts(sim_opts)
+
+    def _set_sim_opts(self, sim_opts):
+        for opt in sim_opts.keys():
+            if hasattr(options, opt):
+                self._reset_opts.update({opt:getattr(options, opt)})
+                setattr(options, opt, sim_opts[opt])
+            else:
+                raise ValueError("Option %s is not a valid option." % opt)
+
+    def _reset_sim_opts(self):
+        for opt in self._reset_opts:
+            setattr(options, opt, self._reset_opts[opt])
 
     def setUp(self):
         """Set up the testbench"""
@@ -477,10 +493,12 @@ class NetlistTest(unittest.TestCase):
     def _run_test(self):
         # no reference runs with nose
         if sys.argv[0].endswith('nosetests') and self.ref_run:
+            self._reset_sim_opts()
             raise SkipTest
         # check whether we are on travis or not and skip if needed.
         if 'TRAVIS' in os.environ and self.skip:
-                raise SkipTest
+            self._reset_sim_opts()
+            raise SkipTest
         print("Running test... ", end=' ')
         start = time.time()
         res = main(filename=self.netlist,
@@ -547,6 +565,7 @@ class NetlistTest(unittest.TestCase):
         else:
             for f in self.rmfiles:
                 os.remove(f)
+        self._reset_sim_opts()
 
 
 @nottest
@@ -574,7 +593,7 @@ class APITest(unittest.TestCase):
         Should we skip the test on Travis? Set to ``True`` for long tests
     """
 
-    def __init__(self, test_id, circ, an_list, er=1e-6, ea=1e-9, skip_on_travis=False):
+    def __init__(self, test_id, circ, an_list, er=1e-6, ea=1e-9, sim_opts={}, skip_on_travis=False):
         unittest.TestCase.__init__(self, methodName='test')
         self.test_id = test_id
         self.er = er
@@ -584,6 +603,21 @@ class APITest(unittest.TestCase):
         self.skip = skip_on_travis
         self.circ = circ
         self.an_list = an_list
+        self._sim_opts = sim_opts
+        self._reset_opts = {}
+        self._set_sim_opts(sim_opts)
+
+    def _set_sim_opts(self, sim_opts):
+        for opt in sim_opts.keys():
+            if hasattr(options, opt):
+                self._reset_opts.update({opt:getattr(options, opt)})
+                setattr(options, opt, sim_opts[opt])
+            else:
+                raise ValueError("Option %s is not a valid option." % opt)
+
+    def _reset_sim_opts(self):
+        for opt in self._reset_opts:
+            setattr(options, opt, self._reset_opts[opt])
 
     def setUp(self):
         """Set up the testbench"""
@@ -654,7 +688,8 @@ class APITest(unittest.TestCase):
 
     def _run_test(self):
         if 'TRAVIS' in os.environ and self.skip:
-                raise SkipTest
+            self._reset_sim_opts()
+            raise SkipTest
         print("Running test... ", end=' ')
         start = time.time()
         res = run(self.circ, self.an_list)
@@ -719,3 +754,4 @@ class APITest(unittest.TestCase):
         else:
             for f in self.rmfiles:
                 os.remove(f)
+        self._reset_sim_opts()

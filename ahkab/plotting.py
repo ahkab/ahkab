@@ -21,55 +21,15 @@
 This module offers the functions needed to plot the results
 of a simulation
 """
+from __future__ import print_function, division, unicode_literals
 
 import re
-import numpy
 import pylab
 
 from . import printing
 from . import options
 
-
-def read_data_header(filename):
-    fp = open(filename, "r")
-    line = fp.readline()
-    if line[0] == '#':
-        labels = line[1:].upper().split()
-    else:
-        printing.print_general_error("Unrecognized file: " + filename)
-        labels = None
-    fp.close()
-    return labels
-
-
-def get_data_label_index(label, filename, labels=None):
-    if labels is None:
-        labels = read_data_header(filename)
-    return labels.index(label.upper())
-
-
-def read_data(filename, label, labels=None):
-    label = label.upper()
-    if labels == None:
-        labels = read_data_header(filename)
-    else:
-        labels = list(map(str.upper, labels))
-    try:
-        index = labels.index(label)
-        fp = open(filename, "r")
-        data = []
-        for line in fp:
-            if line.strip()[0] != '#':
-                data.append(float(line.split()[index]))
-        fp.close()
-        data = numpy.array(data)
-    except ValueError:
-        printing.print_general_error("Unrecognized data set: " + label)
-        data = None
-    return data
-
-
-def split_netlist_label(labels_string):
+def _split_netlist_label(labels_string):
     labels_string = labels_string.strip().upper()
     ret_labels = []
     p = re.compile(r'V\s*\(\s*(\w*)\s*,\s*(\w*)\s*\)', re.IGNORECASE)
@@ -95,13 +55,27 @@ def split_netlist_label(labels_string):
     return ret_labels
 
 
-def setup_plot(fig, title, xvu, yvu, log=False, xlog=False, ylog=False):
-    """ fig: the figure
-    title: plot title:
-    xvu: tuple defined as xvu = (xvar, xunit)
-    yvu: list of tuples defined as yvu += [(yvarN, yunitN)]
+def _setup_plot(fig, title, xvu, yvu, log=False, xlog=False, ylog=False):
+    """Setup the figure for plotting. 
 
-    returns: fig
+    fig : figure
+        A matplotlib figure
+    title : string
+        The plot title:
+    xvu : tuple
+        A tuple defined as ``xvu = (xvar, xunit)``, where ``xvar`` is the
+        x-axis variable label (str) and ``xunit`` is its unit (str too).
+    yvu : list of tuples
+        defined as yvu += [
+        Each tuple defined as ``(yvar, yunit)``, where ``yvarN`` is the
+        y-axis variable label (str) and ``yunit`` is its unit (str too).
+    log : bool, optional
+        Whether to set all scales to ``log``.
+    xlog : bool, optional
+        Whether to set the x-axis scale to ``log``.
+    ylog : bool, optional
+        Whether to set the y-axis scale to ``log``.
+
     """
     # xvar, xunit = xvu
     pylab.title(title.upper())
@@ -133,14 +107,15 @@ def setup_plot(fig, title, xvu, yvu, log=False, xlog=False, ylog=False):
     if log or ylog:
         ax.set_yscale('log')
     # fig.tight_layout()
-    return fig
 
 
-def save_figure(filename, fig):
+def save_figure(filename, fig=None):
+    """Save the supplied figure to ``filename``."""
+    if fig is None:
+        fig = pylab.gcf()
     fig.set_size_inches(20, 10)
     pylab.savefig(filename, dpi=100, bbox_inches='tight',
                   format=options.plotting_outtype)
-    return
 
 
 def plot_results(title, y2y1_list, results, outfilename):
@@ -171,7 +146,7 @@ def plot_results(title, y2y1_list, results, outfilename):
         xlog = True
     else:
         xlog = False
-    setup_plot(fig, title, (xlabel, xunit), yvu, xlog=xlog)
+    _setup_plot(fig, title, (xlabel, xunit), yvu, xlog=xlog)
 
     pylab.hold(True)
     ymax, ymin = None, None
