@@ -83,7 +83,7 @@ shooting_default_points = 100
 shooting_max_nr_iter = 10000
 
 # symbolic
-symb_internal_solver = False
+# solve the circuit equations one at a time as you might do "manually"
 symb_sympy_manual_solver = False
 
 # ac
