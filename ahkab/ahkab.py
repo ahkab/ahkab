@@ -650,7 +650,7 @@ def main(filename, outfile="stdout", verbose=3):
             an.update(
                 {'outfile': outfile + ("." + an['type']) * (outfile != 'stdout')})
         if 'verbose' in an.keys() and (an['verbose'] is None or an['verbose'] < verbose) \
-           or not 'verbose' in an.keys():
+           or 'verbose' not in an.keys():
             an.update({'verbose': verbose})
         _handle_netlist_ics(circ, [an], ic_list=[])
         if verbose >= 4:

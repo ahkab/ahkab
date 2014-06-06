@@ -973,7 +973,7 @@ def parse_time_function(ftype, line_elements, stype):
 
     Returns: a time-<function instance
     """
-    if not ftype in time_fun_specs:
+    if ftype not in time_fun_specs:
         raise NetlistParseError, "Unknown time function: %s" % an_type
     prot_params = list(copy.deepcopy(time_fun_specs[ftype]['tokens']))
 
@@ -1197,7 +1197,7 @@ def parse_single_analysis(line, line_elements=None):
         line_elements = line.split()
 
     an_type = line_elements[0].replace(".", "").lower()
-    if not an_type in specs:
+    if an_type not in specs:
         raise NetlistParseError, "Unknown directive: %s" % an_type
     params = list(copy.deepcopy(specs[an_type]['tokens']))
 

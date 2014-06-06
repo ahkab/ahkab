@@ -20,6 +20,76 @@
 """
 This module provides classes for easy, dictionary-like access to simulation
 results.
+
+Simulation results are typically returned upon successful simulation of a
+circuit and the user is not expected to use their constructor, but rather
+touse the methods they provide to access their data set.
+
+Overview of the data interface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The solution classes define special methods according to their simulation
+type but they all subclass :class:`solution`, which provides the shared
+data interface.
+
+The interface allows for accessing the values as::
+
+
+    >>> ac_sol.keys()
+    ['w', 'Vn1', 'Vn2', 'I(V1)', 'I(L1)', 'I(L2)']
+
+Where ``ac_sol`` is a generic example instance of :class:`ac_solution`.
+
+Checking with the ``in`` construct::
+
+    >>> 'Vn1' in ac_sol
+    True
+
+Access any variable in the solution object::
+
+    >>> ac_sol['w']
+    array([ 6098.38572827,  6102.08394991,  6105.78441425,  6109.48712265,
+            6113.19207648,  6116.89927708,  6120.60872583,  6124.32042408,
+
+            [... omissis ...]
+
+            6463.83880528,  6467.75864729,  6471.68086639])
+
+Iterate over the results::
+
+    >>> for var in ac_sol:
+    ...     # do something with ac_sol[var]
+    ...     pass 
+
+Convenience methods are available to identify and access the independent,
+swept variable, when it is available::
+
+
+    >>> ac_sol.get_xlabel()
+    'w'
+    >>> ac_sol.get_x()
+    array([ 6098.38572827,  6102.08394991,  6105.78441425,  6109.48712265,
+            6113.19207648,  6116.89927708,  6120.60872583,  6124.32042408,
+
+            [... omissis ...]
+
+            6463.83880528,  6467.75864729,  6471.68086639])
+
+Index of the solution classes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+
+    dc_solution
+    ac_solution
+    op_solution
+    pss_solution
+    symbolic_solution
+    tran_solution
+
+All classes in alphabetical order
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 """
 
 import sys
@@ -90,7 +160,7 @@ class solution:
     def asmatrix(self, verbose=3):
         """Return all data.
 
-        .. warn:: 
+        .. note:: 
 
             This method loads to memory a possibly huge data matrix.
 
@@ -165,20 +235,33 @@ class solution:
             self.iter_index = 0
             raise StopIteration
         else:
-            next = self.iter_headers[self.iter_index], \
-                   self.iter_data[self.iter_index,:].T
+            next_i = self.iter_headers[self.iter_index]
+            if hasattr(self.iter_data, 'shape'):
+                next_d = self.iter_data[self.iter_index,:]
+            else:
+                next_d = self.iter_data[self.iter_index]
+            next = next_i, next_d
             self.iter_index += 1
         return next
 
 class op_solution(solution, _mutable_data):
+    """OP results
+
+    **Parameters:**
+
+    x : ndarray
+        the result set
+    error : ndarray
+        the residual error after solution,
+    circ : circuit instance
+        the circuit instance of the simulated circuit
+    outfile: str
+        the file to write the results to. 
+        Use "stdout" to write to std output.
+    iterations, int, optional
+        The number of iterations needed for convergence, if known.
+    """
     def __init__(self, x, error, circ, outfile, iterations=0):
-        """Holds a set of Operating Point results.
-            x: the result set
-            error: the residual error after solution,
-            circ: the circuit instance of the simulated circuit
-            print_int_nodes: a boolean to be set True if you wish to see voltage values 
-            of the internal nodes added automatically by the simulator.
-        """
         solution.__init__(self, circ, outfile)
         self.iterations = iterations
 
@@ -240,9 +323,11 @@ class op_solution(solution, _mutable_data):
         return data
 
     def get_type(self):
+        """This method returns ``"OP"``."""
         return "OP"
 
     def asmatrix(self):
+        """Get all data as a numpy matrix."""
         return self.x
 
     def get_table_array(self):
@@ -355,15 +440,19 @@ class op_solution(solution, _mutable_data):
     @staticmethod
     def gmin_check(op2, op1):
         """Checks the differences between two sets of OP results.
-        (It is assumed that one set of results is calculated with Gmin, the other without.)
-        op1, op2: the results vectors, interchangeable
-        
-        THIS METHOD IS UNBOUNDED.
 
-        Returns:
-        The list of the variables that did not pass the test. They are extracted from 
-        the op_solution objects. 
-        An empty list, if the check was passed.
+        It is assumed that one set of results is calculated with Gmin, the other without.
+
+        **Parameters:**
+
+        op1, op2: op_solution instances
+            the results vectors, interchangeable
+        
+        **Returns:**
+
+        test_fail_variables : list
+            The list of the variables that did not pass the test. They are extracted from 
+            the op_solution objects. If the check was passed, this is an empty list.
         """
     
         check_failed_vars = []
@@ -407,18 +496,31 @@ class op_solution(solution, _mutable_data):
         return next
 
 class ac_solution(solution, _mutable_data):
-    def __init__(self, circ, ostart, ostop, opoints, stype, op, outfile):
-        """Holds a set of AC results.
-            circ: the circuit instance of the simulated circuit
-            ostart: the sweep starting angular frequency
-            ostop: the sweep stopping frequency
-            stype: the sweep type
-            op: the linearization op used to compute the results
-        """
+    """AC results
+
+    **Parameters:**
+
+    circ : circuit instance
+        the circuit instance of the simulated circuit
+    start : float
+       the AC sweep start value.
+    stop : float
+       the AC sweep stop value.
+    points : int
+       the AC sweep total points.
+    stype : str
+       the type of sweep, ``"LOG"``, ``"LIN"`` or arb. ``"POINTS"``.
+    op : op_solution
+       the linearization op used to compute the results
+    outfile: str
+        the file to write the results to.
+        Use "stdout" to write to std output.
+    """
+    def __init__(self, circ, start, stop, points, stype, op, outfile):
         solution.__init__(self, circ, outfile)
         self.linearization_op = op
         self.stype = stype
-        self.ostart, self.ostop, self.opoints = ostart, ostop, opoints
+        self.ostart, self.ostop, self.opoints = start, stop, points
     
         self.variables += ["w"]
         self.units.update({"w": "rad/s"})
@@ -527,53 +629,41 @@ class ac_solution(solution, _mutable_data):
         """Get all of the results set's variables values."""
         data = self.asmatrix()
         values = []
-        for i in data.shape[0]:
+        for i in range(data.shape[0]):
             values.append(data[i, :])
         return values
 
     def items(self, verbose=3):
         values = self.values()
-        return zip(self.csv_headers, values)
+        return zip(self.variables, values)
 
     # iterator methods
     def __iter__(self):
         self.iter_index = 0
         self.iter_data = self.values()
+        self.iter_headers = self.variables
         return self
 
-    def __next__(self):
-        return next()
-
-    def next(self):
-        if self.iter_index == len(self.csv_headers):
-            self.iter_index = 0
-            raise StopIteration
-        else:
-            next = self.csv_headers[self.iter_index], \
-                   self.iter_data[self.iter_index]
-            self.iter_index += 1
-        return next
-
 class dc_solution(solution, _mutable_data):
+    """DC results
+
+       **Parameters:**
+
+       circ : circuit instance
+           the simulated circuit.
+       start : float
+           the DC sweep start value.
+       stop : float
+           the DC sweep stop value.
+       sweepvar : str
+           the swept variable ``part_id``.
+       stype : str
+           the type of sweep, ``"LOG"``, ``"LIN"`` or arb. ``"POINTS"``.
+       outfile : str
+           the filename of the file where the results will be written.
+           Use ``"stdout"`` to write to std output.
+    """
     def __init__(self, circ, start, stop, sweepvar, stype, outfile):
-        """A set of DC results.
-
-           **Parameters:**
-
-           circ : circuit instance
-               the simulated circuit.
-           start : float
-               the DC sweep start value.
-           stop : float
-               the DC sweep stop value.
-           sweepvar : str
-               the swept variable ``part_id``.
-           stype : str
-               the type of sweep, ``LOG``, ``LIN`` or arb. ``POINTS``.
-           outfile : str
-               the filename of the file where the results will be written.
-               Use "stdout" to write to std output.
-        """
         solution.__init__(self, circ, outfile)
         self.start, self.stop = start, stop
         self.stype = stype
@@ -629,15 +719,25 @@ class dc_solution(solution, _mutable_data):
         return self.variables[0]
 
 class tran_solution(solution, _mutable_data):
+    """Transient results
+
+    **Parameters: **
+
+    circ : circuit instance
+        the circuit instance of the simulated circuit.
+    tstart : float
+        the transient simulation start time.
+    tstop : float
+        the transient simulation stop time.
+    op : op_solution instance
+        the op used to start the transient analysis.
+    method : str
+        the differentiation method employed.
+    outfile : str
+        the filename of the save file.
+        Use "stdout" to write to the std output.
+    """
     def __init__(self, circ, tstart, tstop, op, method, outfile):
-        """A set of TRANSIENT results.
-            circ: the circuit instance of the simulated circuit
-            tstart: the sweep starting angular frequency
-            tstop: the sweep stopping frequency
-            op: the op used to start the tran analysis
-            outfile: the file to write the results to. 
-                     (Use "stdout" to write to std output)
-        """
         solution.__init__(self, circ, outfile)
         self.start_op = op
         self.tstart, self.tstop = tstart, tstop
@@ -696,15 +796,26 @@ method %s. Run on %s, data filename %s.>" % \
 
 
 class pss_solution(solution, _mutable_data):
+    """PSS results
+
+    **Parameters:**
+
+    circ : circuit instance
+        the circuit instance of the simulated circuit.
+    method : str
+        the PSS algorithm employed.
+    period : float
+        the solution period.
+    outfile : str
+        the filename of the save file.
+        Use "stdout" to write to the std output.
+    t_array, x_array : ndarray, optional
+        If available, initialize the data set with ``t_array``, ``x_array``.
+        Otherwise, the data can be initialized at a later stage calling
+        :func:`pss_solution.set_results`.
+
+    """
     def __init__(self, circ, method, period, outfile, t_array=None, x_array=None):
-        """Holds a set of TRANSIENT results.
-            circ: the circuit instance of the simulated circuit
-            tstart: the sweep starting angular frequency
-            tstop: the sweep stopping frequency
-            op: the op used to start the tran analysis
-            outfile: the file to write the results to. 
-                     (Use "stdout" to write to std output)
-        """
         solution.__init__(self, circ, outfile)
         self.period = period
         self.method = method
@@ -758,13 +869,23 @@ Run on %s, data filename %s.>" % \
         return self.variables[0]
 
 class symbolic_solution():
+    """Symbolic results
+
+    **Parameters:**
+
+    results_dict : dict
+        the results dict returned by sympy.solve(),
+    substitutions : dict
+        the substitutions (dict) employed before solving,
+    circ : circuit instance
+        the circuit instance of the simulated circuit.
+    outfile : str, optional
+        the filename of the save file.
+        Use ``"stdout"`` to write to the std output.
+    tf : bool, optional
+        Set this to ``True`` if this set of results corrsponds to a transfer function.
+    """
     def __init__(self, results_dict, substitutions, circ, outfile=None, tf=False):
-        """Holds a set of Symbolic results.
-            results_dict: the results dict returned by sympy.solve(),
-            substitutions: the substitutions (dict) employed before solving,
-            circ: the circuit instance of the simulated circuit.
-            tf: is this set of results a set of transfer functions?
-        """
         self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
         self.netlist_file = circ.filename
         self.netlist_title = circ.title
@@ -782,7 +903,7 @@ class symbolic_solution():
             if tf:
                 expr = expr['gain']
             for symb in expr.atoms():
-                if symb.is_Symbol and not symb in self._symbols:
+                if symb.is_Symbol and symb not in self._symbols:
                     self._symbols.append(symb)
         self.filename = outfile if outfile != 'stdout' else None
         if self.filename is not None:
@@ -893,7 +1014,7 @@ class symbolic_solution():
 
 
 class case_insensitive_dict():
-    """A dictionary that returns the same values for __str__.lower(key) and __str__.upper(key)
+    """A dictionary that uses case-insensitive strings as keys.
     """
     def __init__(self):
         self._dict = {}
@@ -920,7 +1041,9 @@ class case_insensitive_dict():
         return self._dict[keys[i]]
 
     def get(self, name, default=None):
-        """Given the key 'name', return its corresp. value. If not found, return 'default'
+        """Given the case-insensitive string key ``name``, return its corresponding value.
+
+        If not found, return ``default``.
         """
         try:
             keys = self._dict.keys()
@@ -930,7 +1053,7 @@ class case_insensitive_dict():
         return self._dict[keys[i]]
 
     def has_key(self, name):
-        """Determine whether the result set contains a variable."""
+        """Determine whether the result set contains the variable ``name``."""
         return name.upper() in map(str.upper, self._dict.keys())
 
     def __contains__(self, name):
@@ -950,7 +1073,8 @@ class case_insensitive_dict():
         return self._dict.items()
         
     def update(self, adict):
-        """Update the dictionary contents with the dictionary 'adict'"""
+        """Update the dictionary contents with the mapping in the dictionary ``adict``.
+        """
         return self._dict.update(adict)
 
     # iterator methods
