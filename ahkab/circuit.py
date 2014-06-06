@@ -902,7 +902,7 @@ class Circuit(list):
             for n1, n2 in elem.ports:
                 if n1 != 0 and n1 not in nodes:
                     nodes = nodes + [n1]
-                if n2 != 0 and n2 in not nodes:
+                if n2 != 0 and n2 not in nodes:
                     nodes = nodes + [n2]
 
         remove_list = copy.copy(nodes)
