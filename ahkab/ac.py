@@ -205,8 +205,9 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
     printing.print_info_line(("Nac (reduced):", 5), verbose)
     printing.print_info_line((str(Nac), 5), verbose)
 
-    sol = results.ac_solution(circ, ostart=start, ostop=stop,
-                              opoints=nsteps, stype=sweep_type, op=x0, outfile=outfile)
+    sol = results.ac_solution(circ, start=start, stop=stop,
+                              points=nsteps+1, stype=sweep_type, op=x0, 
+                              outfile=outfile)
 
     # setup the initial values to start the iteration:
     nv = len(circ.nodes_dict)
