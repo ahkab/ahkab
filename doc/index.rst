@@ -37,6 +37,7 @@ Reference
    csvlib
    devices
    diode
+   results
    symbolic
    testing 
 
@@ -71,9 +72,6 @@ Documentation in progress
    :members:
 
 .. automodule:: ahkab.netlist_parser
-   :members:
-
-.. automodule:: ahkab.results
    :members:
 
 .. automodule:: ahkab.transient
