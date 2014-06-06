@@ -18,13 +18,15 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This is the results module of the simulator.
+This module provides classes for easy, dictionary-like access to simulation
+results.
 """
 
 import sys
 import time
 import copy
 import pickle
+import re
 
 import numpy
 
@@ -48,11 +50,19 @@ class _mutable_data:
 
 
 class solution:
+    """Base class storing a set of generic simulation results.
+
+    This class is not meant to be accessed directly, rather it is
+    subclassed by the classes for the specific simulation solutions.
+
+    **Parameters:**
+
+    circ : circuit instance
+        the circuit instance of the simulated circuit.
+    outfile : string
+        the filename of the save file
+    """
     def __init__(self, circ, outfile):
-        """Base class storing a set of generic simulation results.
-            circ: the circuit instance of the simulated circuit
-            outfile: the filename of the save file
-        """
         self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
         self.netlist_file = circ.filename
         self.netlist_title = circ.title
@@ -66,21 +76,28 @@ class solution:
         self.filename = outfile
         self._init_file_done = False
 
-        nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         self.skip_nodes_list = []   # nodi da saltare, solo interni
         self.variables = []
         self.units = case_insensitive_dict()
         self.iter_index = 0
 
     def get_type(self):
-        """Please redefine this function in the subclasses."""
+        """Returns the type of the simulation performed.
+
+        Please redefine this function in the subclasses."""
         raise Exception("Undefined")
 
     def asmatrix(self, verbose=3):
-        """Return all data as a (possibly huge) python matrix."""
-        data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[], 
-                                                  nsamples=None, skip=0, verbose=verbose)
-        return data.T
+        """Return all data.
+
+        .. warn:: 
+
+            This method loads to memory a possibly huge data matrix.
+
+        """
+        data, _, _, _ = csvlib.load_csv(self.filename, load_headers=[], 
+                                        verbose=verbose)
+        return data
 
     # Access as a dictionary BY VARIABLE NAME:
     def __len__(self):
@@ -91,7 +108,7 @@ class solution:
         """Get a specific variable, as from a dictionary."""
         data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], 
                                                   nsamples=None, skip=0, verbose=0)
-        return data.T
+        return data.reshape((-1,))
 
     def get(self, name, default=None, verbose=3):
         """Get a solution by variable name."""
@@ -101,7 +118,7 @@ class solution:
                                                       nsamples=None, skip=0, verbose=verbose)
         except KeyError:
             return default
-        return data.T
+        return data.reshape((-1,))
 
     def has_key(self, name):
         """Determine whether the result set contains a variable."""
@@ -120,7 +137,10 @@ class solution:
         data, headers, pos, EOF = csvlib.load_csv(self.filename, 
                                                   load_headers=self.variables, 
                                                   nsamples=None, skip=0, verbose=verbose)
-        return data.T
+        values = []
+        for i in range(data.shape[1]):
+            values.append(data[:, i])
+        return values
 
     def items(self, verbose=3):
         data, headers, pos, EOF = csvlib.load_csv(self.filename, 
@@ -134,13 +154,13 @@ class solution:
     # iterator methods
     def __iter__(self):
         self.iter_index = 0
-        self.iter_data, self.iter_headers, pos, EOF = csvlib.load_csv(self.filename, 
-                                                                      load_headers=[], 
-                                                                      nsamples=None, 
-                                                                      skip=0)
+        self.iter_data, self.iter_headers, _, _ = csvlib.load_csv(self.filename)
         return self
 
     def __next__(self):
+        return next()
+
+    def next(self):
         if self.iter_index == len(self.iter_headers):
             self.iter_index = 0
             raise StopIteration
@@ -400,28 +420,32 @@ class ac_solution(solution, _mutable_data):
         self.stype = stype
         self.ostart, self.ostop, self.opoints = ostart, ostop, opoints
     
-        nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         self.variables += ["w"]
         self.units.update({"w": "rad/s"})
+        self.csv_headers = [self.variables[0]]
     
+        nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         for index in range(nv_1):
-            varname_abs = "|V%s|" % (str(circ.nodes_dict[index + 1]),)
-            varname_arg = "arg(V%s)" % (str(circ.nodes_dict[index + 1]),)
-            self.variables += [varname_abs]
-            self.variables += [varname_arg]
-            self.units.update({varname_abs: "V"})
-            self.units.update({varname_arg: ""})
+            varname = "V%s" % str(circ.nodes_dict[index + 1])
+            self.variables += [varname]
+            self.units.update({varname: "V"})
             if circ.is_int_node_internal_only(index+1):
                 self.skip_nodes_list.append(index)
 
         for elem in circ: 
             if circuit.is_elem_voltage_defined(elem):
-                varname_abs = "|I(%s)|" % (elem.part_id.upper(),)
-                varname_arg = "arg(I(%s))" % (elem.part_id.upper(),)
-                self.variables += [varname_abs]
-                self.variables += [varname_arg]
-                self.units.update({varname_abs: "A"})
-                self.units.update({varname_arg: ""})
+                varname = "I(%s)" % elem.part_id.upper()
+                self.variables += [varname]
+                self.units.update({varname: "A"})
+
+        for i in range(1, len(self.variables)):
+            self.csv_headers.append("|%s|" % self.variables[i])
+            self.csv_headers.append("arg(%s)" % self.variables[i])
+
+    def _add_data(self, data):
+        """Remember to call this method with REAL data - already split in ABS and PHASE."""
+        csvlib.write_csv(self.filename, data, self.csv_headers, append=self._init_file_done)
+        self._init_file_done = True
 
     def __str__(self):
         return "<AC simulation results for %s (netlist %s). %s sweep, from %g Hz to %g Hz, \
@@ -443,21 +467,112 @@ class ac_solution(solution, _mutable_data):
         return "AC"
         
     def get_x(self):
-        return self.get(self.variables[0])
+        return self[self.variables[0]]
 
     def get_xlabel(self):
         return self.variables[0]
+    ##
+    def asmatrix(self, verbose=3):
+        """Return all data as a (possibly huge) python matrix."""
+        data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[],
+                                                  nsamples=None, skip=0, verbose=verbose)
+        cplx_data = None
+        cplx_headers = []
+        re1 = '\\|(.*?)\\|'
+        rg = re.compile(re1, re.IGNORECASE|re.DOTALL)
+
+        for i in range(len(headers)):
+            if headers[i].upper() == self.variables[0].upper():
+                if cplx_data is None:
+                    cplx_data = numpy.array(data[i, :].reshape((1, -1)), dtype=numpy.complex_)
+                else:
+                    cplx_data = numpy.vstack((cplx_data, data[i, :].reshape((1, -1))))
+            else:
+                m = rg.search(headers[i])
+                if m: # we got a |VAR|
+                    var = m.group(1)
+                    cplx_headers.append(var)
+                    match_phase = ('arg(%s)' % var).upper()
+                    ip = [h.upper() for h in headers].index(match_phase)
+                    if cplx_data is None:
+                        cplx_data = numpy.array(data[i, :]*numpy.exp(1j*data[ip, :]).reshape((1, -1)), dtype=numpy.complex_)
+                    else:
+                        cplx_data = numpy.vstack((cplx_data, (data[i, :]*numpy.exp(1j*data[ip, :])).reshape((1, -1))))
+        return cplx_data
+
+    # Access as a dictionary BY VARIABLE NAME:
+    def __getitem__(self, name):
+        """Get a specific variable, as from a dictionary."""
+        if name.upper() != 'W':
+            headers = ['|%s|' % name, 'arg(%s)' % name]
+        else:
+           headers = [name]
+        data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=headers,
+                                                  nsamples=None, skip=0, verbose=0)
+        if len(headers) == 2:
+            data = data[0, :] * numpy.exp(1j*data[1, :])
+        else:
+            data = data.reshape((-1,))
+        return data
+
+    def get(self, name, default=None, verbose=3):
+        """Get a solution by variable name."""
+        try:
+            data = self.__getitem__(name)
+        except KeyError:
+            return default
+        return data
+
+    def values(self, verbose=3):
+        """Get all of the results set's variables values."""
+        data = self.asmatrix()
+        values = []
+        for i in data.shape[0]:
+            values.append(data[i, :])
+        return values
+
+    def items(self, verbose=3):
+        values = self.values()
+        return zip(self.csv_headers, values)
+
+    # iterator methods
+    def __iter__(self):
+        self.iter_index = 0
+        self.iter_data = self.values()
+        return self
+
+    def __next__(self):
+        return next()
+
+    def next(self):
+        if self.iter_index == len(self.csv_headers):
+            self.iter_index = 0
+            raise StopIteration
+        else:
+            next = self.csv_headers[self.iter_index], \
+                   self.iter_data[self.iter_index]
+            self.iter_index += 1
+        return next
 
 class dc_solution(solution, _mutable_data):
     def __init__(self, circ, start, stop, sweepvar, stype, outfile):
-        """Holds a set of DC results.
-            circ: the circuit instance of the simulated circuit
-            start: the sweep start value
-            stop: the sweep stop value
-            sweepvar: the swept variable
-            stype: type of sweep
-            outfile: the file to write the results to. 
-                     (Use "stdout" to write to std output)
+        """A set of DC results.
+
+           **Parameters:**
+
+           circ : circuit instance
+               the simulated circuit.
+           start : float
+               the DC sweep start value.
+           stop : float
+               the DC sweep stop value.
+           sweepvar : str
+               the swept variable ``part_id``.
+           stype : str
+               the type of sweep, ``LOG``, ``LIN`` or arb. ``POINTS``.
+           outfile : str
+               the filename of the file where the results will be written.
+               Use "stdout" to write to std output.
         """
         solution.__init__(self, circ, outfile)
         self.start, self.stop = start, stop
@@ -494,7 +609,9 @@ class dc_solution(solution, _mutable_data):
         )
 
     def add_op(self, sweepvalue, op):
-        """A DC sweep is made of a set of OP points. This method adds an OP solution and 
+        """A DC sweep is made of a set of OP points.
+
+        This method adds an OP solution and 
         its corresponding sweep value to the results set.
         """
         sweepvalue = numpy.mat(numpy.array([sweepvalue]))
@@ -513,7 +630,7 @@ class dc_solution(solution, _mutable_data):
 
 class tran_solution(solution, _mutable_data):
     def __init__(self, circ, tstart, tstop, op, method, outfile):
-        """Holds a set of TRANSIENT results.
+        """A set of TRANSIENT results.
             circ: the circuit instance of the simulated circuit
             tstart: the sweep starting angular frequency
             tstop: the sweep stopping frequency
@@ -840,4 +957,3 @@ class case_insensitive_dict():
     def __iter__(self):
         """Iterator"""
         return self._dict.__iter__()
-

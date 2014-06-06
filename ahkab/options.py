@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 # options.py
 # Global options file
 # Copyright 2006 Giuseppe Venturini
@@ -23,6 +23,7 @@
 import os
 
 encoding = 'utf8'
+from matplotlib import rcParams as plotting_rcParams
 
 # global: command line execution or module import
 # when cli is False, no printing and no weird stdout stuff.
@@ -99,3 +100,10 @@ plotting_outtype = "png"
 plotting_wait_after_plot = True
 plotting_style = "-o"
 plotting_lw = 1.25
+plotting_display_figsize = (12.94, 8)
+plotting_save_figsize = (20, 10)
+# plotting_rcParams['font.family'] = 'Baskerville'
+plotting_rcParams['axes.labelsize'] = 11
+plotting_rcParams['xtick.labelsize'] = 11
+plotting_rcParams['ytick.labelsize'] = 11
+plotting_rcParams['legend.fontsize'] = 11
