@@ -35,7 +35,8 @@ from .ahkab import new_op, new_dc, new_tran, new_ac, new_pss
 from .ahkab import new_symbolic, queue, run, new_x0, icmodified_x0
 from .ahkab import get_op_x0, set_temperature, process_postproc, main
 from .__version__ import __version__
+from .circuit import Circuit
 
-__all__ = [new_op, new_dc, new_tran, new_ac, new_pss,
-           new_symbolic, queue, run, new_x0, icmodified_x0,
-           get_op_x0, set_temperature, process_postproc, main]
+__all__ = ['new_op', 'new_dc', 'new_tran', 'new_ac', 'new_pss',
+           'new_symbolic', 'queue', 'run', 'new_x0', 
+           'get_op_x0', 'set_temperature', 'main', 'Circuit']
