@@ -652,7 +652,7 @@ def parse_elem_diode(line, circ, line_elements=None, models=None):
     if not models.has_key(model_label):
         raise NetlistParseError, "Unknown model id: " + model_label
     elem = diode.diode(part_id=line_elements[0], n1=n1, n2=n2, model=models[
-                       model_label], AREA=Area, value=value, ic=ic, off=off)
+                       model_label], AREA=Area, ic=ic, off=off)
     return [elem]
 
 
