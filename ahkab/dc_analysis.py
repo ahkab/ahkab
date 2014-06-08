@@ -33,7 +33,7 @@ import sys
 import re
 import copy
 
-import numpy
+import numpy as np
 import numpy.linalg
 import scipy.sparse
 import scipy.sparse.linalg
@@ -158,7 +158,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 
     # time variable component: Tt this is always the same in each iter. So we
     # build it once for all.
-    Tt = numpy.mat(numpy.zeros((mna_size, 1)))
+    Tt = np.mat(np.zeros((mna_size, 1)))
     v_eq = 0
     if not skip_Tt:
         for elem in circ:
@@ -182,7 +182,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
         else:
             x = x0
     else:
-        x = numpy.mat(numpy.zeros((mna_size, 1)))
+        x = np.mat(np.zeros((mna_size, 1)))
                       # has n-1 rows because of discard of ^^^
 
     converged = False
@@ -214,7 +214,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
             (x, error, converged, n_iter, convergence_by_node) = mdn_solver(x, mna_to_pass, circ, T=N_to_pass,
                                                                             nv=nv, print_steps=(verbose > 0), locked_nodes=locked_nodes, time=time, MAXIT=MAXIT, debug=(verbose == 6))
             tot_iterations += n_iter
-        except numpy.linalg.linalg.LinAlgError:
+        except np.linalg.linalg.LinAlgError:
             n_iter = 0
             converged = False
             print "failed."
@@ -260,7 +260,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 
 def build_gmin_matrix(circ, gmin, mna_size, verbose):
     printing.print_info_line(("Building Gmin matrix...", 5), verbose)
-    Gmin_matrix = numpy.mat(numpy.zeros((mna_size, mna_size)))
+    Gmin_matrix = np.mat(np.zeros((mna_size, mna_size)))
     for index in xrange(len(circ.nodes_dict) - 1):
         Gmin_matrix[index, index] = gmin
         # the three missing terms of the stample matrix go on [index,0] [0,0] [0, index] but since
@@ -306,7 +306,7 @@ def more_solve_methods_available(standard_solving, gmin_stepping, source_steppin
 
 def get_solve_methods():
     standard_solving = {"enabled": False, "failed": False}
-    g_indices = range(int(numpy.log(options.gmin)), 0)
+    g_indices = range(int(np.log(options.gmin)), 0)
     g_indices.reverse()
     gmin_stepping = {"enabled": False, "failed":
                      False, "factors": g_indices, "index": 0}
@@ -634,7 +634,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
     tick = ticker.ticker(increments_for_step=1)
     tick.display(print_steps)
     if x is None:
-        x = numpy.mat(numpy.zeros((mna_size, 1)))
+        x = np.mat(np.zeros((mna_size, 1)))
                       # if no guess was specified, its all zeros
     else:
         if not x.shape[0] == mna_size:
@@ -643,7 +643,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
     if T is None:
         printing.print_warning(
             "dc_analysis.mdn_solver called with T==None, setting T=0. BUG or no sources in circuit?")
-        T = numpy.mat(numpy.zeros((mna_size, 1)))
+        T = np.mat(np.zeros((mna_size, 1)))
 
     sparse = mna_size > options.dense_matrix_limit
     if sparse:
@@ -666,7 +666,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
             lu = scipy.sparse.linalg.splu(J)
             dx = lu.solve(-residuo)
         else:
-            dx = numpy.linalg.solve(J, -residuo)
+            dx = np.linalg.solve(J, -residuo)
         x = x + get_td(dx, locked_nodes, n=iteration) * dx
         if not nonlinear_circuit:
             converged = True
@@ -674,7 +674,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
         elif convergence_check(x, dx, residuo, nv - 1)[0]:
             converged = True
             break
-        # if vector_norm(dx) == numpy.nan: #Overflow
+        # if vector_norm(dx) == np.nan: #Overflow
         #   raise OverflowError
     tick.hide(print_steps)
     if debug and not converged:
@@ -691,8 +691,8 @@ def build_J_and_Tx(x, mna_size, element_list, time, sparse=False):
     if sparse:
         J = scipy.sparse.coo_matrix((mna_size, mna_size))
     else:
-        J = numpy.zeros((mna_size, mna_size))
-    Tx = numpy.zeros((mna_size, 1))
+        J = np.zeros((mna_size, mna_size))
+    Tx = np.zeros((mna_size, 1))
     for elem in element_list:
         if elem.is_nonlinear:
             update_J_and_Tx(J, Tx, x, elem, time)
@@ -804,8 +804,8 @@ def generate_mna_and_N(circ, verbose=3):
     Restituisce: (MNA, N)
     """
     n_of_nodes = len(circ.nodes_dict)
-    mna = numpy.mat(numpy.zeros((n_of_nodes, n_of_nodes)))
-    N = numpy.mat(numpy.zeros((n_of_nodes, 1)))
+    mna = np.mat(np.zeros((n_of_nodes, n_of_nodes)))
+    N = np.mat(np.zeros((n_of_nodes, 1)))
     for elem in circ:
         if elem.is_nonlinear:
             continue
@@ -946,7 +946,7 @@ def check_ground_paths(mna, circ, reduced_mna=True, verbose=3):
 
 
 def build_x0_from_user_supplied_ic(circ, icdict):
-    """Builds a numpy.matrix of appropriate size (reduced!) from the values supplied
+    """Builds a np.matrix of appropriate size (reduced!) from the values supplied
     in voltages_dict and currents_dict.
 
     Supplying a custom x0 can be useful:
@@ -977,7 +977,7 @@ def build_x0_from_user_supplied_ic(circ, icdict):
             elem)]
     voltage_defined_elem_names = map(str.lower, voltage_defined_elem_names)
     ni = len(voltage_defined_elem_names)  # number of current variables
-    x0 = numpy.mat(numpy.zeros((nv + ni, 1)))
+    x0 = np.mat(np.zeros((nv + ni, 1)))
     for label, value in icdict.iteritems():
         if Vregex.search(label):
             ext_node = Vregex.findall(label)[0]
@@ -1019,7 +1019,7 @@ def modify_x0_for_ic(circ, x0):
 
     if return_obj:
         xnew = results.op_solution(x=x0, \
-            error=numpy.mat(numpy.zeros(x0.shape)), circ=circ, outfile=None)
+            error=np.mat(np.zeros(x0.shape)), circ=circ, outfile=None)
         xnew.netlist_file = None
         xnew.netlist_title = "Self-generated OP to be used as tran IC"
     else:

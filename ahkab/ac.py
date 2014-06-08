@@ -39,7 +39,7 @@ matrix is not singular (and possibly well conditioned).
 """
 
 import sys
-import numpy
+import numpy as np
 
 from . import dc_analysis
 from . import options
@@ -211,7 +211,7 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
 
     # setup the initial values to start the iteration:
     nv = len(circ.nodes_dict)
-    j = numpy.complex('j')
+    j = np.complex('j')
 
     Gmin_matrix = dc_analysis.build_gmin_matrix(
         circ, options.gmin, mna.shape[0], verbose)
@@ -222,7 +222,7 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
     x = x0
     for omega in omega_iter:
         (x, error, solved, n_iter) = dc_analysis.dc_solve(
-            mna=(mna + numpy.multiply(j * omega, AC) + J),
+            mna=(mna + np.multiply(j * omega, AC) + J),
             Ndc = Nac,
             Ntran = 0,
             circ = circuit.Circuit(
@@ -293,7 +293,7 @@ def generate_AC(circ, shape):
         the *unreduced* AC matrix
 
     """
-    AC = numpy.matrix(numpy.zeros((shape[0] + 1, shape[1] + 1)))
+    AC = np.matrix(np.zeros((shape[0] + 1, shape[1] + 1)))
     nv = len(circ.nodes_dict)  # - 1
     i_eq = 0  # each time we find a vsource or vcvs or ccvs, we'll add one to this.
     for elem in circ:
@@ -323,7 +323,7 @@ def generate_AC(circ, shape):
             i_eq = i_eq + 1
 
     if options.cmin > 0:
-        cmin_mat = numpy.matrix(numpy.eye(shape[0] + 1 - i_eq))
+        cmin_mat = np.matrix(np.eye(shape[0] + 1 - i_eq))
         cmin_mat[0, 1:] = 1
         cmin_mat[1:, 0] = 1
         cmin_mat[0, 0] = cmin_mat.shape[0] - 1
@@ -336,16 +336,16 @@ def generate_Nac(circ):
     """Generate the vector holding the contribution of AC sources.
     """
     n_of_nodes = len(circ.nodes_dict)
-    Nac = numpy.mat(numpy.zeros((n_of_nodes, 1)), dtype=complex)
-    j = numpy.complex('j')
+    Nac = np.mat(np.zeros((n_of_nodes, 1)), dtype=complex)
+    j = np.complex('j')
     # process `ISource`s
     for elem in circ:
         if isinstance(elem, devices.ISource) and elem.abs_ac is not None:
             # convenzione normale!
             Nac[elem.n1, 0] = Nac[elem.n1, 0] + \
-                elem.abs_ac * numpy.exp(j * elem.arg_ac)
+                elem.abs_ac * np.exp(j * elem.arg_ac)
             Nac[elem.n2, 0] = Nac[elem.n2, 0] - \
-                elem.abs_ac * numpy.exp(j * elem.arg_ac)
+                elem.abs_ac * np.exp(j * elem.arg_ac)
     # process vsources
     # for each vsource, introduce a new variable: the current flowing through it.
     # then we introduce a KVL equation to be able to solve the circuit
@@ -354,7 +354,7 @@ def generate_Nac(circ):
             index = Nac.shape[0]
             Nac = utilities.expand_matrix(Nac, add_a_row=True, add_a_col=False)
             if isinstance(elem, devices.VSource) and elem.abs_ac is not None:
-                Nac[index, 0] = -1.0 * elem.abs_ac * numpy.exp(j * elem.arg_ac)
+                Nac[index, 0] = -1.0 * elem.abs_ac * np.exp(j * elem.arg_ac)
     return Nac
 
 
@@ -362,8 +362,8 @@ def generate_J(xop, circ, mna, Nac, data_filename, verbose=0):
     """Build the linearized matrix :math:`J`.
     """
     # setup J
-    J = numpy.mat(numpy.zeros(mna.shape))
-    Tlin = numpy.mat(numpy.zeros(Nac.shape))
+    J = np.mat(np.zeros(mna.shape))
+    Tlin = np.mat(np.zeros(Nac.shape))
     for elem in circ:
         if elem.is_nonlinear:
             dc_analysis.update_J_and_Tx(J, Tlin, xop, elem, time=None)

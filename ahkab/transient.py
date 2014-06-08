@@ -32,7 +32,7 @@ We need:
 import sys
 import imp
 
-import numpy
+import numpy as np
 
 from . import dc_analysis
 from . import implicit_euler
@@ -177,14 +177,14 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
     # setup x0
     if x0 is None:
         printing.print_info_line(("Generating x(t=%g) = 0" % (tstart,), 5), verbose)
-        x0 = numpy.matrix(numpy.zeros((mna.shape[0], 1)))
+        x0 = np.matrix(np.zeros((mna.shape[0], 1)))
         opsol =  results.op_solution(x=x0, error=x0, circ=circ, outfile=None)
     else:
         if isinstance(x0, results.op_solution):
             opsol = x0
             x0 = x0.asmatrix()
         else:
-            opsol =  results.op_solution(x=x0, error=numpy.matrix(numpy.zeros((mna.shape[0], 1))), circ=circ, outfile=None)
+            opsol =  results.op_solution(x=x0, error=np.matrix(np.zeros((mna.shape[0], 1))), circ=circ, outfile=None)
         printing.print_info_line(("Using the supplied op as x(t=%g)." % (tstart,), 5), verbose)
         
     if verbose > 4:
@@ -284,10 +284,10 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
         pmax_dx_plus_1 = pmax_dx +1
     
     # setup error vectors
-    aerror = numpy.mat(numpy.zeros((x0.shape[0], 1)))
+    aerror = np.mat(np.zeros((x0.shape[0], 1)))
     aerror[:nv-1, 0] = options.vea
     aerror[nv-1:, 0] = options.vea
-    rerror = numpy.mat(numpy.zeros((x0.shape[0], 1)))
+    rerror = np.mat(np.zeros((x0.shape[0], 1)))
     rerror[:nv-1, 0] = options.ver
     rerror[nv-1:, 0] = options.ier
     
@@ -313,7 +313,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
             x0 = x
         
         (x1, error, solved, n_iter) = dc_analysis.dc_solve(
-                                                     mna=(mna + numpy.multiply(x_coeff, D)), 
+                                                     mna=(mna + np.multiply(x_coeff, D)), 
                                                      Ndc=N,  Ntran=D*const, circ=circ, 
                                                      Gmin=Gmin_matrix, x0=x0, 
                                                      time=(time + tstep), 
@@ -360,7 +360,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
             iter_n = iter_n + 1
             sol.add_line(time, x)
             
-            dxdt = numpy.multiply(x_coeff, x) + const
+            dxdt = np.multiply(x_coeff, x) + const
             thebuffer.add((time, x, dxdt))
             if output_buffer is not None:
                 output_buffer.add((x, ))
@@ -438,7 +438,7 @@ def generate_D(circ, shape):
     
     Returns: the UNREDUCED D matrix
     """
-    D = numpy.matrix(numpy.zeros((shape[0]+1, shape[1]+1)))
+    D = np.matrix(np.zeros((shape[0]+1, shape[1]+1)))
     nv = len(circ.nodes_dict)# - 1
     i_eq = 0 #each time we find a vsource or vcvs or ccvs, we'll add one to this.
     for elem in circ:
@@ -469,7 +469,7 @@ def generate_D(circ, shape):
             i_eq = i_eq + 1
         
     if options.cmin > 0:
-        cmin_mat = numpy.matrix(numpy.eye(shape[0]+1-i_eq))
+        cmin_mat = np.matrix(np.eye(shape[0]+1-i_eq))
         cmin_mat[0, 1:] = 1
         cmin_mat[1:, 0] = 1
         cmin_mat[0, 0] = cmin_mat.shape[0]-1
@@ -523,11 +523,11 @@ class dfbuffer:
                 if index == 0:
                     single_matrix = self._the_real_buffer[index][vindex]
                 else:
-                    single_matrix = numpy.concatenate((self._the_real_buffer[index][vindex], single_matrix), axis=0)
+                    single_matrix = np.concatenate((self._the_real_buffer[index][vindex], single_matrix), axis=0)
             if vindex == 0:
                 complete_matrix = single_matrix
             else:
-                complete_matrix = numpy.concatenate((complete_matrix, single_matrix), axis=1)
+                complete_matrix = np.concatenate((complete_matrix, single_matrix), axis=1)
         return complete_matrix
 
 def import_custom_df_module(method, print_out):

@@ -98,7 +98,7 @@ import copy
 import pickle
 import re
 
-import numpy
+import numpy as np
 
 from . import circuit
 from . import devices
@@ -327,7 +327,7 @@ class op_solution(solution, _mutable_data):
         return "OP"
 
     def asmatrix(self):
-        """Get all data as a numpy matrix."""
+        """Get all data as a np matrix."""
         return self.x
 
     def get_table_array(self):
@@ -555,14 +555,14 @@ class ac_solution(solution, _mutable_data):
         (self.netlist_title, self.netlist_file, self.stype, self.ostart, self.ostop, self.opoints, self.timestamp, self.filename)
 
     def add_line(self, omega, x):
-        omega = numpy.mat(numpy.array([omega]))
+        omega = np.mat(np.array([omega]))
 
-        xsplit = numpy.mat(numpy.zeros((x.shape[0]*2, 1)))
+        xsplit = np.mat(np.zeros((x.shape[0]*2, 1)))
         for i in range(x.shape[0]):
-            xsplit[2*i, 0] = numpy.abs(x[i, 0])
-            xsplit[2*i+1, 0] = numpy.angle(x[i, 0], deg=options.ac_phase_in_deg)
+            xsplit[2*i, 0] = np.abs(x[i, 0])
+            xsplit[2*i+1, 0] = np.angle(x[i, 0], deg=options.ac_phase_in_deg)
              
-        data = numpy.concatenate((omega, xsplit), axis=0)
+        data = np.concatenate((omega, xsplit), axis=0)
         self._add_data(data)
 
     def get_type(self):
@@ -586,9 +586,9 @@ class ac_solution(solution, _mutable_data):
         for i in range(len(headers)):
             if headers[i].upper() == self.variables[0].upper():
                 if cplx_data is None:
-                    cplx_data = numpy.array(data[i, :].reshape((1, -1)), dtype=numpy.complex_)
+                    cplx_data = np.array(data[i, :].reshape((1, -1)), dtype=np.complex_)
                 else:
-                    cplx_data = numpy.vstack((cplx_data, data[i, :].reshape((1, -1))))
+                    cplx_data = np.vstack((cplx_data, data[i, :].reshape((1, -1))))
             else:
                 m = rg.search(headers[i])
                 if m: # we got a |VAR|
@@ -597,9 +597,9 @@ class ac_solution(solution, _mutable_data):
                     match_phase = ('arg(%s)' % var).upper()
                     ip = [h.upper() for h in headers].index(match_phase)
                     if cplx_data is None:
-                        cplx_data = numpy.array(data[i, :]*numpy.exp(1j*data[ip, :]).reshape((1, -1)), dtype=numpy.complex_)
+                        cplx_data = np.array(data[i, :]*np.exp(1j*data[ip, :]).reshape((1, -1)), dtype=np.complex_)
                     else:
-                        cplx_data = numpy.vstack((cplx_data, (data[i, :]*numpy.exp(1j*data[ip, :])).reshape((1, -1))))
+                        cplx_data = np.vstack((cplx_data, (data[i, :]*np.exp(1j*data[ip, :])).reshape((1, -1))))
         return cplx_data
 
     # Access as a dictionary BY VARIABLE NAME:
@@ -612,7 +612,7 @@ class ac_solution(solution, _mutable_data):
         data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=headers,
                                                   nsamples=None, skip=0L, verbose=0)
         if len(headers) == 2:
-            data = data[0, :] * numpy.exp(1j*data[1, :])
+            data = data[0, :] * np.exp(1j*data[1, :])
         else:
             data = data.reshape((-1,))
         return data
@@ -704,9 +704,9 @@ class dc_solution(solution, _mutable_data):
         This method adds an OP solution and 
         its corresponding sweep value to the results set.
         """
-        sweepvalue = numpy.mat(numpy.array([sweepvalue]))
+        sweepvalue = np.mat(np.array([sweepvalue]))
         x = op.asmatrix()
-        data = numpy.concatenate((sweepvalue, x), axis=0)
+        data = np.concatenate((sweepvalue, x), axis=0)
         self._add_data(data)
 
     def get_type(self):
@@ -774,8 +774,8 @@ method %s. Run on %s, data filename %s.>" % \
         """This method adds a solution and its corresponding time value to the results set.
         """
         if not self._lock:
-            time = numpy.mat(numpy.array([time]))
-            data = numpy.concatenate((time, x), axis=0)
+            time = np.mat(np.array([time]))
+            data = np.concatenate((time, x), axis=0)
             self._add_data(data)
         else:
             printing.print_general_error(
@@ -851,8 +851,8 @@ Run on %s, data filename %s.>" % \
 
     def set_results(self, t, x):
         """All the results are set at the same time for a PSS"""
-        time = numpy.mat(numpy.array(t))
-        data = numpy.concatenate((time, x), axis=0)
+        time = np.mat(np.array(t))
+        data = np.concatenate((time, x), axis=0)
         self._add_data(data)
 
     def asmatrix(self, verbose=3):

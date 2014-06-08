@@ -21,7 +21,7 @@
 This file implements the TRAP DF and a second order prediction formula.
 """
 
-import numpy
+import numpy as np
 from numpy.linalg import inv
 
 order = 2
@@ -59,17 +59,17 @@ def get_df(pv_array, suggested_step, predict=True):
     """The array must be built in this way:
     It must be an array of these array:
 
-    [time, numpy_matrix, numpy_matrix]
+    [time, np_matrix, np_matrix]
 
     Hence the pv_array[k] element is made of:
     _ time is the time in which the solution is valid: t(n-k)
-    _ The first numpy_matrix is x(n-k)
+    _ The first np_matrix is x(n-k)
     _ The second is d(x(n-k))/dt
     Values that are not needed may be None, they will be disregarded
     Returns None if the incorrect values were given.
     Otherwise returns an array:
-    _ the [0] element is the numpy matrix of coeffiecients (Nx1) of x(n+1)
-    _ the [1] element is the numpy matrix of constant terms (Nx1) of x(n+1)
+    _ the [0] element is the np matrix of coeffiecients (Nx1) of x(n+1)
+    _ the [1] element is the np matrix of constant terms (Nx1) of x(n+1)
     The derivative may be written as:
     d(x(n+1))/dt = ret[0]*x(n+1) + ret[1]"""
 
@@ -85,7 +85,7 @@ def get_df(pv_array, suggested_step, predict=True):
 
     if predict and len(pv_array) > 2 and pv_array[0][1] is not None and pv_array[1][1] is not None and \
             pv_array[2][1] is not None:
-        A = numpy.mat(numpy.zeros((len(pv_array[0]), len(pv_array[0]))))
+        A = np.mat(np.zeros((len(pv_array[0]), len(pv_array[0]))))
         A[0, :] = 0
         A[:, 0] = 1
         for row in range(1, A.shape[0]):
@@ -93,8 +93,8 @@ def get_df(pv_array, suggested_step, predict=True):
                 A[row, col] = (pv_array[row][0] - pv_array[0][0]) ** (col)
         Ainv = inv(A)
 
-        predict_x = numpy.mat(numpy.zeros(pv_array[0][1].shape))
-        z = numpy.mat(numpy.zeros((3, 1)))
+        predict_x = np.mat(np.zeros(pv_array[0][1].shape))
+        z = np.mat(np.zeros((3, 1)))
         for var in range(pv_array[0][1].shape[0]):
 
             for index in range(z.shape[0]):
