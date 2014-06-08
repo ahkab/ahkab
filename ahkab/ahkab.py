@@ -26,7 +26,7 @@ import tempfile
 import copy
 from optparse import OptionParser
 
-import numpy
+import numpy as np
 import sympy
 import matplotlib
 
@@ -73,7 +73,7 @@ def new_op(guess=True, x0=None, outfile=None, verbose=0):
     x0 : matrix, optional
         In alternative to the ``guess`` option above, one can provide
         an explicit starting point to the OP algorithm, setting x0 to an opportunely sized
-        numpy matrix. FIXME help method here
+        np matrix. FIXME help method here
         If both x0 and guess are set, x0 takes the precedence.
 
     outfile : string, optional
@@ -132,10 +132,10 @@ def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None
         if set to ``True``, the analysis will start from an initial guess,
         hopefully speeding up the convergence of particularly stiff circuits.
 
-    x0 : numpy matrix, optional
+    x0 : np matrix, optional
         if the ``guess`` option above is not used, one can provide
         a starting point directly, setting ``x0`` to an opportunely sized
-        numpy matrix.
+        np matrix.
         If both ``x0`` and ``guess`` are set, x0 takes the precedence.
 
     outfile : string, optional
@@ -187,7 +187,7 @@ def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP,
         the time step. If the step control is active, this is the
         minimum time step value that will be allowed during simulation.
 
-    x0 : numpy matrix, optional
+    x0 : np matrix, optional
         the optional initial conditions point, :math:`x0 = x(t=0)`.
 
     method : string , optional
@@ -295,7 +295,7 @@ def new_pss(period, x0=None, points=None, method='brute-force', autonomous=False
         the time period of the solution, in seconds. This value is required,
         autonomous circuits are currently unsupported.
 
-    x0 : numpy matrix, optional
+    x0 : np matrix, optional
         the starting point solution, used at :math:`t=0`.
 
     points : int, optional
@@ -310,7 +310,7 @@ def new_pss(period, x0=None, points=None, method='brute-force', autonomous=False
         Whether the circuit is autonomous or not.
         Non-autonomous circuits are currently unsupported!
 
-    mna, Tf, D : numpy matrices, optional
+    mna, Tf, D : np matrices, optional
         The matrices to be used to solve the circuit.
         They are optional, if they have already been computed, reusing them saves time.
 
@@ -511,7 +511,7 @@ of appropriate (reduce) size (reduced) from the values supplied
 
     **Returns:**
 
-    x0 : numpy matrix
+    x0 : np matrix
         The assembled x0
     """
 
@@ -527,7 +527,7 @@ def icmodified_x0(circ, x0):
         The circuit instance from which the initial conditions are to be
         extracted
 
-    x0 : numpy matrix
+    x0 : np matrix
         The vector to which the initial conditions are to be applied.
     """
     return dc_analysis.modify_x0_for_ic(circ, x0)
@@ -623,7 +623,7 @@ def main(filename, outfile="stdout", verbose=3):
         ("This is ahkab %s running with:" % (__version__), 6), verbose)
     printing.print_info_line(
         ("  Python %s" % (sys.version.split('\n')[0],), 6), verbose)
-    printing.print_info_line(("  Numpy %s" % (numpy.__version__), 6), verbose)
+    printing.print_info_line(("  Numpy %s" % (np.__version__), 6), verbose)
     printing.print_info_line(("  Sympy %s" % (sympy.__version__), 6), verbose)
     printing.print_info_line(
         ("  Matplotlib %s" % (matplotlib.__version__), 6), verbose)

@@ -79,7 +79,7 @@
     Anyway, from a theorical point of view, the above applies.
       """
 
-import numpy
+import numpy as np
 import sys
 
 from . import utilities
@@ -119,11 +119,11 @@ def get_df(pv_array, suggested_step, predict=False):
     """The array must be built in this way:
     It has to be an array of arrays. Each of them has the following structure:
 
-    [time, numpy_matrix, numpy_matrix]
+    [time, np_matrix, np_matrix]
 
     Hence the pv_array[k] element is made of:
     _ time is the time in which the solution is valid: t(n-k)
-    _ The first numpy_matrix is x(n-k)
+    _ The first np_matrix is x(n-k)
     _ The second is d(x(n-k))/dt
     Values that are not needed may be set to None and they will be disregarded.
 
@@ -132,8 +132,8 @@ def get_df(pv_array, suggested_step, predict=False):
 
     Returns: None if the incorrect values were given, or quits.
     Otherwise returns an array:
-    _ the [0] element is the numpy matrix of coeffiecients (Nx1) of x(n+1)
-    _ the [1] element is the numpy matrix of constant terms (Nx1) of x(n+1)
+    _ the [0] element is the np matrix of coeffiecients (Nx1) of x(n+1)
+    _ the [1] element is the np matrix of constant terms (Nx1) of x(n+1)
     The derivative may be written as:
     d(x(n+1))/dt = ret[0]*x(n+1) + ret[1]"""
 
@@ -148,7 +148,7 @@ def get_df(pv_array, suggested_step, predict=False):
         s.append(suggested_step + pv_array[0][0] - pv_array[index - 1][0])
 
     # build e[k, i]
-    e = numpy.mat(numpy.zeros((order + 2, order + 2)))
+    e = np.mat(np.zeros((order + 2, order + 2)))
     for k_index in range(1, order + 2):
         for i_index in range(1, order + 2):
             if i_index == k_index:
@@ -156,14 +156,14 @@ def get_df(pv_array, suggested_step, predict=False):
             else:
                 e[k_index, i_index] = s[i_index] / (s[i_index] - s[k_index])
 
-    alpha = numpy.mat(numpy.zeros((1, order + 2)))
+    alpha = np.mat(np.zeros((1, order + 2)))
     for k_index in range(1, order + 2):
         alpha[0, k_index] = 1.0
         for j_index in range(order + 1):
             alpha[0, k_index] = alpha[0, k_index] * e[k_index, j_index + 1]
 
     # build gamma
-    gamma = numpy.mat(numpy.zeros((1, order + 1)))
+    gamma = np.mat(np.zeros((1, order + 1)))
     for k_index in range(1, order + 1):
         gamma[0, k_index] = alpha[0, k_index] * \
             ((1.0 / s[order + 1]) - (1.0 / s[k_index]))
@@ -175,7 +175,7 @@ def get_df(pv_array, suggested_step, predict=False):
     # values to be returned
     C1 = gamma[0, 0]
 
-    C0 = numpy.mat(numpy.zeros(pv_array[0][1].shape))
+    C0 = np.mat(np.zeros(pv_array[0][1].shape))
     for index in range(order):
         C0 = C0 + gamma[0, index + 1] * pv_array[index][1]
 
@@ -188,7 +188,7 @@ def get_df(pv_array, suggested_step, predict=False):
         (1.0 / utilities.fact(order + 1)) * x_lte_coeff
 
     if predict:
-        predict_x = numpy.mat(numpy.zeros(pv_array[0][1].shape))
+        predict_x = np.mat(np.zeros(pv_array[0][1].shape))
         for index in range(1, order + 2):  # order
             predict_x = predict_x + alpha[0, index] * pv_array[index - 1][1]
 

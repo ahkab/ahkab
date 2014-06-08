@@ -25,7 +25,7 @@ from __future__ import print_function, division, unicode_literals
 
 import re
 import pylab
-import numpy
+import numpy as np
 
 from . import printing
 from . import options
@@ -123,10 +123,10 @@ def save_figure(filename, fig=None):
 def _data_abs_arg_pass(res, label):
     # extract abs / phase if needed or pass the data
     if label[0] == label[-1] == '|':
-        data = numpy.absolute(res[label[1:-1]])
+        data = np.absolute(res[label[1:-1]])
         units = res.units[label[1:-1]]
     elif label[0:4] == 'arg(' and label[-1] == ')':
-        data = numpy.angle(res[label[4:-1]], deg=options.ac_phase_in_deg)
+        data = np.angle(res[label[4:-1]], deg=options.ac_phase_in_deg)
         units = res.units[label[4:-1]]
     else:
         data = res[label]

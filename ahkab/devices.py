@@ -99,7 +99,7 @@ allowing the element to print a netlist entry that parses to itself.
 
 """
 
-import numpy
+import numpy as np
 import math
 
 from . import constants
@@ -473,8 +473,8 @@ class ISource(Component):
     def __init__(self, part_id='I', n1=None, n2=None, dc_value=None, ac_value=0):
         self.part_id = part_id
         self.dc_value = dc_value
-        self.abs_ac = numpy.abs(ac_value) if ac_value else None
-        self.arg_ac = numpy.angle(ac_value) if ac_value else None
+        self.abs_ac = np.abs(ac_value) if ac_value else None
+        self.arg_ac = np.angle(ac_value) if ac_value else None
         self.n1 = n1
         self.n2 = n2
         self.is_nonlinear = False
@@ -544,8 +544,8 @@ class VSource(Component):
         self.dc_value = dc_value
         self.n1 = n1
         self.n2 = n2
-        self.abs_ac = numpy.abs(ac_value) if ac_value else None
-        self.arg_ac = numpy.angle(ac_value) if ac_value else None
+        self.abs_ac = np.abs(ac_value) if ac_value else None
+        self.arg_ac = np.angle(ac_value) if ac_value else None
         self.is_nonlinear = False
         self.is_symbolic = True
         self.is_timedependent = False

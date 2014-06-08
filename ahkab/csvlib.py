@@ -50,7 +50,7 @@ The separator can be selected setting:
 
 import sys
 import copy
-import numpy
+import numpy as np
 
 SEPARATOR = "\t"
 
@@ -89,7 +89,7 @@ def write_csv(filename, data, headers, append=False):
         print "DATA: " + str(data.shape) + " headers length: " + str(len(headers))
 
     headers = SEPARATOR.join(headers) if not append else ""
-    numpy.savetxt(fp, data.T, delimiter=SEPARATOR, header=headers, comments='#')
+    np.savetxt(fp, data.T, delimiter=SEPARATOR, header=headers, comments='#')
 
     _close_fp(fp, filename)
 
@@ -256,7 +256,7 @@ def load_csv(filename, load_headers=None, nsamples=None, skip=0L, verbose=3):
         raise ValueError("Specified header not found")
 
     fp = _get_fp(filename, mode="r")
-    data = numpy.loadtxt(fp, delimiter=SEPARATOR, usecols=his, unpack=True, skiprows=skip, ndmin=2)
+    data = np.loadtxt(fp, delimiter=SEPARATOR, usecols=his, unpack=True, skiprows=skip, ndmin=2)
     _close_fp(fp, filename)
 
     # prepare return values

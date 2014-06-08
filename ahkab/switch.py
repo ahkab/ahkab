@@ -331,12 +331,12 @@ class vswitch_model:
 if __name__ == '__main__':
     # This is a small test to check all is OK
     import pylab
-    import numpy
-    import numpy.random
-    VT = 10 * numpy.random.randn()
-    VH = abs(2 * numpy.random.randn())
-    RON = abs(1e3 * numpy.random.randn())
-    ROFF = abs(1e4 * numpy.random.randn())
+    import numpy as np
+    import np.random
+    VT = 10 * np.random.randn()
+    VH = abs(2 * np.random.randn())
+    RON = abs(1e3 * np.random.randn())
+    ROFF = abs(1e4 * np.random.randn())
     # VT = 0.; VH=1.; RON=100;
     print "Testing a switch with:"
     print "VT: %g\tVH: %g\tRON:%g\tROFF:%g" % (VT, VH, RON, ROFF)
@@ -350,8 +350,8 @@ if __name__ == '__main__':
         pass
     device = dev_class()
     # TEST 1, VO
-    vsweep = (2 * VMAX * numpy.arange(POINTS) / float(POINTS) - VMAX)
-    vsweep = numpy.concatenate((vsweep, vsweep[::-1]))
+    vsweep = (2 * VMAX * np.arange(POINTS) / float(POINTS) - VMAX)
+    vsweep = np.concatenate((vsweep, vsweep[::-1]))
     vsweep = vsweep.tolist()
     device.is_on = False
     pylab.hold(True)

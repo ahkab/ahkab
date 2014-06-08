@@ -19,7 +19,7 @@
 
 """ This module implements IE (aka Backward Euler) and a first order prediction formula"""
 
-import numpy
+import numpy as np
 
 order = 1
 
@@ -58,21 +58,21 @@ def get_df(pv_array, suggested_step, predict=True):
     """The array must be built in this way:
     It must be an array of these array:
 
-    [time, numpy_matrix, numpy_matrix]
+    [time, np_matrix, np_matrix]
 
     Hence the pv_array[k] element is made of:
     _ time is the time in which the solution is valid: t(n-k)
-    _ The first numpy_matrix is x(n-k)
+    _ The first np_matrix is x(n-k)
     _ The second is d(x(n-k))/dt
     Values that are not needed may be None, they will be disregarded
     Returns None if the incorrect values were given.
     Otherwise returns an array:
     _ the [0] element is the coeffiecient of x(n+1) (scalar)
-    _ the [1] element is the numpy matrix of constant terms (Nx1) of x(n+1)
+    _ the [1] element is the np matrix of constant terms (Nx1) of x(n+1)
     _ the [2] element is the coefficient of the lte of x(n+1) (scalar)
-    _ the [2] element is the predicted value of x(n+1) (numpy matrix), if predicted == True
+    _ the [2] element is the predicted value of x(n+1) (np matrix), if predicted == True
       otherwise it's None
-    _ the [3] element is the coefficient of the lte of the prediction (numpy matrix), if predict,
+    _ the [3] element is the coefficient of the lte of the prediction (np matrix), if predict,
       otherwise None
     The derivative may be written as:
     d(x(n+1))/dt = ret[0]*x(n+1) + ret[1]"""
@@ -85,11 +85,11 @@ def get_df(pv_array, suggested_step, predict=True):
     if pv_array[0][1] is None:
         return None
 
-    # xold = numpy.mat(pv_array[0][1].copy())
+    # xold = np.mat(pv_array[0][1].copy())
     x_lte_coeff = 0.5 * suggested_step
 
     if predict and len(pv_array) > 1 and pv_array[1][1] is not None:
-        predict = numpy.mat(numpy.zeros(pv_array[0][1].shape))
+        predict = np.mat(np.zeros(pv_array[0][1].shape))
         for index in xrange(predict.shape[0]):
             predict[index, 0] = (pv_array[0][1][index, 0] - pv_array[1][1][index, 0]) \
                 / (pv_array[0][0] - pv_array[1][0]) * suggested_step + pv_array[0][1][index, 0]

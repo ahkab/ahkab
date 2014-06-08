@@ -562,14 +562,14 @@ class mosq_mos_model:
 if __name__ == '__main__':
     # Tests
     import matplotlib.pyplot as plt
-    import numpy
+    import numpy as np
 
     m = mosq_mos_model(TYPE='p', KP=50e-6, VTO=.4)
     ma = mosq_device(1, 2, 3, 4, W=10e-6, L=1e-6, model=m)
     ma.part_id = "M1"
 
     # OP test
-    vds = numpy.arange(0, 100) / 100.0 * 5 - 2.5
+    vds = np.arange(0, 100) / 100.0 * 5 - 2.5
     vgs = -.55
     vbs = 2
     # ma.print_op_info(((vds, vgs, vbs),))
@@ -583,6 +583,6 @@ if __name__ == '__main__':
     plt.plot(vds, i)
     plt.hold(True)
     plt.plot(vds, g)
-    gart = (numpy.array(i[1:]) - numpy.array(i[:-1])) / (vds[1] - vds[0])
+    gart = (np.array(i[1:]) - np.array(i[:-1])) / (vds[1] - vds[0])
     plt.plot(vds[1:], gart)
     plt.show()

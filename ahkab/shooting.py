@@ -21,7 +21,7 @@
 
 
 import sys
-import numpy
+import numpy as np
 import numpy.linalg
 
 from . import transient
@@ -183,7 +183,7 @@ def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
                 break
             else:
                 conv_counter = conv_counter + 1
-        elif vector_norm(dx[points - 1]) is numpy.nan:  # needs work fixme
+        elif vector_norm(dx[points - 1]) is np.nan:  # needs work fixme
             raise OverflowError
             # break
         else:
@@ -201,11 +201,11 @@ def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
     tick.hide(verbose > 2)
     if converged:
         printing.print_info_line(("done.", 3), verbose)
-        t = numpy.mat(numpy.arange(points) * step)
+        t = np.mat(np.arange(points) * step)
         t = t.reshape((1, points))
         xmat = x[0]
         for index in xrange(1, points):
-            xmat = numpy.concatenate((xmat, x[index]), axis=1)
+            xmat = np.concatenate((xmat, x[index]), axis=1)
         sol = results.pss_solution(
             circ=circ, method="shooting", period=period, outfile=outfile, t_array=t, x_array=xmat)
         # print_results(circ, x, fdata, points, step)
@@ -265,7 +265,7 @@ def build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3):
     tick.reset()
     tick.display(verbose > 2)
     for index in xrange(0, points):
-            Tt = numpy.zeros((n_of_var, 1))
+            Tt = np.zeros((n_of_var, 1))
             v_eq = 0
             time = index * step
             for elem in circ:
@@ -290,8 +290,8 @@ def build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3):
 
 
 def get_variable_MAass_and_Tass(circ, xi, xi_minus_1, M, D, step, n_of_var):
-    Tass = numpy.zeros((n_of_var, 1))
-    J = numpy.zeros((n_of_var, n_of_var))
+    Tass = np.zeros((n_of_var, 1))
+    J = np.zeros((n_of_var, n_of_var))
     (C1, C0) = implicit_euler.get_df_coeff(step)
 
     for elem in circ:
@@ -339,25 +339,25 @@ def get_variable_MAass_and_Tass(circ, xi, xi_minus_1, M, D, step, n_of_var):
 
 
 def compute_dxN(circ, MAass_vector, MBass, Tass_vector, n_of_var, points, verbose=3):
-    temp_mat1 = numpy.mat(numpy.eye(n_of_var))
+    temp_mat1 = np.mat(np.eye(n_of_var))
     for index in range(points):
         temp_mat1 = -1 * \
-            numpy.linalg.inv(MAass_vector[index]) * MBass * temp_mat1
-    temp_mat2 = numpy.mat(numpy.zeros((n_of_var, 1)))
+            np.linalg.inv(MAass_vector[index]) * MBass * temp_mat1
+    temp_mat2 = np.mat(np.zeros((n_of_var, 1)))
     for index in range(points):
         temp_mat3 = -1 * \
-            numpy.linalg.inv(MAass_vector[index]) * Tass_vector[index]
+            np.linalg.inv(MAass_vector[index]) * Tass_vector[index]
         for index2 in range(index + 1, points):
             temp_mat3 = -1 * \
-                numpy.linalg.inv(MAass_vector[index2]) * MBass * temp_mat3
+                np.linalg.inv(MAass_vector[index2]) * MBass * temp_mat3
         temp_mat2 = temp_mat2 + temp_mat3
 
-    dxN = numpy.linalg.inv(
-        numpy.mat(numpy.eye(n_of_var)) - temp_mat1) * temp_mat2
+    dxN = np.linalg.inv(
+        np.mat(np.eye(n_of_var)) - temp_mat1) * temp_mat2
 
     return dxN
 
 
 def compute_dx(MAass, MBass, Tass, dxi_minus_1):
-    dxi = -1 * numpy.linalg.inv(MAass) * (MBass * dxi_minus_1 + Tass)
+    dxi = -1 * np.linalg.inv(MAass) * (MBass * dxi_minus_1 + Tass)
     return dxi
