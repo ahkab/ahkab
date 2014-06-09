@@ -1013,6 +1013,48 @@ class symbolic_solution():
         return self.results.keys()[self.iter_index], \
                self.results[self._symbols[self.iter_index]]
 
+class pz_solution(solution, _mutable_data):
+    """PZ results.
+
+    **Parameters:**
+
+    circ : circuit instance
+        the circuit instance of the simulated circuit.
+    poles : sequence
+        the circuit zeros
+    zeros : sequence
+        the circuit poles
+    outfile : str
+        the filename of the save file.
+    """
+    def __init__(self, circ, poles, zeros, outfile):
+        solution.__init__(self, circ, outfile)
+        nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
+        self.poles = np.array(poles).reshape((-1,))
+        self.zeros = np.array(zeros).reshape((-1,))
+        data = np.hstack((self.poles.reshape((1, -1)),
+                          self.zeros.reshape((1, -1))))
+        self._add_data(np.mat(data))
+        for i in range(self.poles.shape[0]):
+            self.variables += 'p%d' % i
+        for i in range(self.zeros.shape[0]):
+            self.variables += 'z%d' % i
+        for v in self.variables:
+            self.units.update({v: "rad/s"})
+
+    def __repr__(self):
+        return "<PZ simulation results for %s (netlist %s). Input %s, output %s, " + \
+               "Run on %s, data filename %s.>" % \
+        (self.netlist_title, self.netlist_file, self.timestamp, self.filename)
+
+    def __str__(self):
+        return "PZ simulation results for %s (netlist %s).\nInput %s, output %s." + \
+               "Poles: %s\nZeros: %s" % \
+               (self.netlist_title, self.netlist_file, list(self.poles), 
+                list(self.zeros))
+
+    def get_type(self):
+        return "PZ"
 
 class case_insensitive_dict():
     """A dictionary that uses case-insensitive strings as keys.
