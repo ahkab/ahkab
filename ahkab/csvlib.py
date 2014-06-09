@@ -259,7 +259,7 @@ def load_csv(filename, load_headers=None, nsamples=None, skip=0, verbose=3):
         raise ValueError("Specified header not found")
 
     fp = _get_fp(filename)
-    data = numpy.loadtxt(fp, delimiter=SEPARATOR, usecols=his, unpack=True, skiprows=skip, ndmin=2)
+    data = np.loadtxt(fp, delimiter=SEPARATOR, usecols=his, unpack=True, skiprows=skip, ndmin=2)
     _close_fp(fp, filename)
 
     # prepare return values
