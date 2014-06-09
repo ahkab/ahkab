@@ -924,7 +924,7 @@ class symbolic_solution():
             raise Exception, "Writing the results to file requires setting the \
                               'filename' attribute"
         with open(self.filename, 'wb') as fp:
-            pickle.dump(self, fp)
+            pickle.dump(self, fp, protocol=2)
     
     @staticmethod
     def load(filename):
@@ -940,8 +940,8 @@ class symbolic_solution():
         str_repr = "Symbolic %s results for %s (netlist %s).\nRun on %s.\n" % \
                    ('simulation'*(not self.tf) + 'transfer function'*self.tf, 
                     self.netlist_title, self.netlist_file, self.timestamp)
-        keys = self.results.keys()
-        keys.sort(lambda x, y: cmp(str(x), str(y))) 
+        keys = list(self.results.keys())
+        keys.sort()
         if not self.tf:
             for key in keys:
                 str_repr +=  str(key) + "\t = " + str(self.results[key]) + "\n"
@@ -1001,6 +1001,7 @@ class symbolic_solution():
 
     # iterator methods
     def __iter__(self):
+        self.iter_index = 0
         return self
 
     def next(self):
@@ -1036,8 +1037,8 @@ class case_insensitive_dict():
 
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
-        keys = self._dict.keys()
-        i = map(str.upper, keys).index(name.upper())
+        keys = list(self._dict.keys())
+        i = list(map(str.upper, keys)).index(str(name).upper())
         return self._dict[keys[i]]
 
     def get(self, name, default=None):
