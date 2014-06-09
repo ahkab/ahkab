@@ -368,6 +368,7 @@ import os
 import sys
 import pickle
 import unittest
+from warnings import warn
 
 try:
     from configparser import ConfigParser
@@ -644,6 +645,11 @@ class APITest(unittest.TestCase):
         self._sim_opts = sim_opts
         self._reset_opts = {}
         self._set_sim_opts(sim_opts)
+        self.res = None
+        for an in an_list:
+            if 'outfile' in an and self.test_id not in an['outfile']:
+                warn("W: Analysis %s has outfile set to %s" %
+                      (an['type'], an['outfile']))
 
     def _set_sim_opts(self, sim_opts):
         for opt in sim_opts.keys():
@@ -774,11 +780,10 @@ class APITest(unittest.TestCase):
                 ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         else:
             if isinstance(res, list) or isinstance(res, tuple):
-                for i, j in zip(res, ref):
-                    self._check(i, j)
+                self._check(res[0], ref)
             elif res is not None:
                 for k in list(res.keys()):
-                    assert k in ref
+                    assert k in list(ref.keys())
                     if isinstance(res[k], dict): # hence ref[k] will be a dict too
                         self._check(res[k], ref[k])
                     elif isinstance(ref[k], sympy.Basic) and isinstance(ref[k], sympy.Basic):

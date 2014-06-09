@@ -1,3 +1,4 @@
+import numpy as np
 import ahkab
 from ahkab import ahkab, circuit, printing, devices, testing
 
@@ -51,12 +52,12 @@ def test():
 
         fig = plt.figure()
         plt.subplot(211)
-        plt.semilogx(r['ac']['w'], r['ac']['|Vn4|'], 'o-')
+        plt.semilogx(r['ac']['w'], np.abs(r['ac']['Vn4']), 'o-')
         plt.ylabel('abs(V(n4)) [V]')
         plt.title(mycircuit.title + " - AC Simulation")
         plt.subplot(212)
         plt.grid(True)
-        plt.semilogx(r['ac']['w'], r['ac']['arg(Vn4)'], 'o-')
+        plt.semilogx(r['ac']['w'], np.angle(r['ac']['Vn4']), 'o-')
         plt.xlabel('Angular frequency [rad/s]')
         plt.ylabel('arg(V(n4)) [rad]')
         fig.savefig('ac_plot.png')
