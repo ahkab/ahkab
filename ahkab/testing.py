@@ -583,7 +583,7 @@ class NetlistTest(unittest.TestCase):
             for t, ref_file in self.refs.items():
                 if '.pickle' in ref_file:
                     with open(ref_file, 'w') as fp:
-                        pickle.dump(res[t], fp)
+                        pickle.dump(res[t], fp, protocol=2)
                 else:
                     res_file = os.path.join(self.reference_path, 
                                             '%s.%s' % (self.test_id, t))
