@@ -32,7 +32,7 @@ This module contains a diode element and its model class.
 
 from __future__ import print_function, division
 
-import numpy
+import numpy as np
 
 from math import exp
 
@@ -287,7 +287,7 @@ class diode_model:
         while True:
             gm = self.get_gm(0, [vd], 0, dev, rs=False)
             dvd = (vext - idiode * self.RS - vd) / (1.0 + gm * self.RS)
-            vd = vd + min(damping_factor*self.VT, abs(dvd)) * numpy.sign(dvd)
+            vd = vd + min(damping_factor*self.VT, abs(dvd)) * np.sign(dvd)
             idiode_old = idiode
             idiode = self._get_i(vd) * dev.AREA
             di = idiode - idiode_old

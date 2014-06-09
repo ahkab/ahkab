@@ -25,7 +25,7 @@ import os
 import os.path
 import operator
 
-import numpy
+import numpy as np
 
 from . import printing
 from . import options
@@ -45,13 +45,13 @@ def expand_matrix(matrix, add_a_row, add_a_col):
     Returns the new matrix"""
     (n_row, n_col) = matrix.shape
     if add_a_col:
-        col = numpy.mat(numpy.zeros((n_row, 1)))
-        matrix = numpy.concatenate((matrix, col), axis=1)
+        col = np.mat(np.zeros((n_row, 1)))
+        matrix = np.concatenate((matrix, col), axis=1)
     if add_a_row:
         if add_a_col:
             n_col = n_col + 1
-        row = numpy.mat(numpy.zeros((1, n_col)))
-        matrix = numpy.concatenate((matrix, row), axis=0)
+        row = np.mat(np.zeros((1, n_col)))
+        matrix = np.concatenate((matrix, row), axis=0)
     return matrix
 
 
@@ -67,8 +67,8 @@ def remove_row_and_col(matrix, rrow=0, rcol=0):
     if rrow < 0 or rcol < 0:
         return_matrix = None
     else:
-        return_matrix = numpy.vstack(
-            (numpy.hstack((matrix[0:rrow, 0:rcol], matrix[0:rrow, rcol + 1:])), numpy.hstack((matrix[rrow + 1:, 0:rcol], matrix[rrow + 1:, rcol + 1:]))))
+        return_matrix = np.vstack(
+            (np.hstack((matrix[0:rrow, 0:rcol], matrix[0:rrow, rcol + 1:])), np.hstack((matrix[rrow + 1:, 0:rcol], matrix[rrow + 1:, rcol + 1:]))))
     return return_matrix
 
 
@@ -80,7 +80,7 @@ def remove_row(matrix, rrow=0):
     if rrow < 0 or rrow > matrix.shape[0] - 1:
         return_matrix = None
     else:
-        return_matrix = numpy.vstack((matrix[:rrow, :], matrix[rrow + 1:, :]))
+        return_matrix = np.vstack((matrix[:rrow, :], matrix[rrow + 1:, :]))
     return return_matrix
 
 
@@ -184,7 +184,7 @@ class log_axis_iterator:
     """
 
     def __init__(self, max, min, nsteps):
-        self.inc = 10 ** ((numpy.log10(max) - numpy.log10(min)) / nsteps)
+        self.inc = 10 ** ((np.log10(max) - np.log10(min)) / nsteps)
         self.max = max
         self.min = min
         self.index = 0
@@ -275,9 +275,9 @@ def Kelvin2Celsius(kel):
 
 def convergence_check(x, dx, residuum, nv_minus_one, debug=False):
     if not hasattr(x, 'shape'):
-        x = numpy.mat(numpy.array(x))
-        dx = numpy.mat(numpy.array(dx))
-        residuum = numpy.mat(numpy.array(residuum))
+        x = np.mat(np.array(x))
+        dx = np.mat(np.array(dx))
+        residuum = np.mat(np.array(residuum))
     vcheck, vresults = voltage_convergence_check(
         x[:nv_minus_one, 0], dx[:nv_minus_one, 0], residuum[:nv_minus_one, 0])
     icheck, iresults = current_convergence_check(
@@ -296,13 +296,13 @@ def current_convergence_check(x, dx, residuum, debug=False):
 def custom_convergence_check(x, dx, residuum, er, ea, eresiduum, vector_norm=lambda v: abs(v), debug=False):
     all_check_results = []
     if not hasattr(x, 'shape'):
-        x = numpy.mat(numpy.array(x))
-        dx = numpy.mat(numpy.array(dx))
-        residuum = numpy.mat(numpy.array(residuum))
+        x = np.mat(np.array(x))
+        dx = np.mat(np.array(dx))
+        residuum = np.mat(np.array(residuum))
     if x.shape[0]:
         if not debug:
-            ret = numpy.allclose(x, x + dx, rtol=er, atol=ea) and \
-                numpy.allclose(residuum, numpy.zeros(
+            ret = np.allclose(x, x + dx, rtol=er, atol=ea) and \
+                np.allclose(residuum, np.zeros(
                                residuum.shape), atol=eresiduum, rtol=0)
         else:
             for i in range(x.shape[0]):

@@ -51,7 +51,7 @@ from __future__ import print_function, division, unicode_literals
 import io
 import sys
 import copy
-import numpy
+import numpy as np
 
 from . import options
 
@@ -92,7 +92,7 @@ def write_csv(filename, data, headers, append=False):
         print("DATA: " + str(data.shape) + " headers length: " + str(len(headers)))
 
     headers = SEPARATOR.join(headers) if not append else ""
-    numpy.savetxt(fp, data.T, delimiter=SEPARATOR, header=headers, comments='#')
+    np.savetxt(fp, data.T, delimiter=SEPARATOR, header=headers, comments='#')
 
     _close_fp(fp, filename)
 

@@ -20,7 +20,7 @@
 """Brute-force periodic steady state analysis module"""
 
 import sys
-import numpy
+import numpy as np
 
 from . import circuit
 from . import dc_analysis
@@ -106,20 +106,20 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
     nv_1 = len(circ.nodes_dict) - 1
     ni = n_of_var - nv_1
     for i in range(points):
-        nv_indices += (i * mna.shape[0] * numpy.ones(nv_1) + \
-                      numpy.arange(nv_1)).tolist()
-        ni_indices += (i * mna.shape[0] * numpy.ones(ni) + \
-                      numpy.arange(nv_1, n_of_var)).tolist()
+        nv_indices += (i * mna.shape[0] * np.ones(nv_1) + \
+                      np.arange(nv_1)).tolist()
+        ni_indices += (i * mna.shape[0] * np.ones(ni) + \
+                      np.arange(nv_1, n_of_var)).tolist()
 
     converged = False
 
     printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
     tick.reset()
     tick.display(verbose > 2)
-    J = numpy.mat(numpy.zeros(CMAT.shape))
-    T = numpy.mat(numpy.zeros((CMAT.shape[0], 1)))
-    # td is a numpy matrix that will hold the damping factors
-    td = numpy.mat(numpy.zeros((points, 1)))
+    J = np.mat(np.zeros(CMAT.shape))
+    T = np.mat(np.zeros((CMAT.shape[0], 1)))
+    # td is a np matrix that will hold the damping factors
+    td = np.mat(np.zeros((points, 1)))
     iteration = 0  # newton iteration counter
 
     while True:
@@ -174,7 +174,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
 
         J = J + CMAT
         residuo = CMAT * x + T + Tf + Tt
-        dx = -1 * (numpy.linalg.inv(J) * residuo)
+        dx = -1 * (np.linalg.inv(J) * residuo)
         # td
         for index in range(points):
             td[index, 0] = dc_analysis.get_td(
@@ -198,7 +198,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
     tick.hide(verbose > 2)
     if converged:
         printing.print_info_line(("done.", 3), verbose)
-        t = numpy.mat(numpy.arange(points) * step)
+        t = np.mat(np.arange(points) * step)
         t = t.reshape((1, points))
         x = x.reshape((points, n_of_var))
         sol = results.pss_solution(
@@ -210,10 +210,10 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
 
 
 def convergence_check(dx, x, nv_indices, ni_indices, vector_norm):
-    if vector_norm(dx) is numpy.nan:  # sometimes something diverges... look out
+    if vector_norm(dx) is np.nan:  # sometimes something diverges... look out
         raise OverflowError
-    dxc = numpy.array(dx)
-    xc = numpy.array(x)
+    dxc = np.array(dx)
+    xc = np.array(x)
     ret = (vector_norm(dxc[nv_indices]) < options.ver * vector_norm(xc[nv_indices]) + options.vea) and \
           (not len(ni_indices) or \
            vector_norm(dxc[ni_indices]) < options.ier * vector_norm(xc[ni_indices]) + options.iea)
@@ -241,7 +241,7 @@ def get_e(index, length):
 
     Returns: e(index)
     """
-    e = numpy.mat(numpy.zeros((length, 1)))
+    e = np.mat(np.zeros((length, 1)))
     e[index, 0] = 1
     return e
 
@@ -281,7 +281,7 @@ def build_CMAT(mna, D, step, points, tick, n_of_var=None, verbose=3):
     tick.reset()
     tick.display(verbose > 2)
     (C1, C0) = implicit_euler.get_df_coeff(step)
-    I = numpy.mat(numpy.eye(n_of_var))
+    I = np.mat(np.eye(n_of_var))
     M = mna + C1 * D
     N = C0 * D
     # Z = numpy.mat(numpy.zeros((n_of_var, n_of_var)))
@@ -317,7 +317,7 @@ def build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
     printing.print_info_line(("Building x...", 5), verbose, print_nl=False)
     tick.reset()
     tick.display(verbose > 2)
-    x = numpy.mat(numpy.zeros((points * n_of_var, 1)))
+    x = np.mat(np.zeros((points * n_of_var, 1)))
     if x0 is not None:
         if isinstance(x0, results.op_solution):
             x0 = x0.asmatrix()
@@ -339,7 +339,7 @@ def build_Tf(sTf, points, tick, n_of_var, verbose=3):
     printing.print_info_line(("Building Tf...", 5), verbose, print_nl=False)
     tick.reset()
     tick.display(verbose > 2)
-    Tf = numpy.mat(numpy.zeros((points * n_of_var, 1)))
+    Tf = np.mat(np.zeros((points * n_of_var, 1)))
 
     for index in range(1, points):
         Tf = set_submatrix(

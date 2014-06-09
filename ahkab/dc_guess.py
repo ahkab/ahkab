@@ -22,7 +22,7 @@
 
 import sys
 
-import numpy
+import numpy as np
 import numpy.linalg
 
 from . import circuit
@@ -52,8 +52,8 @@ def get_dc_guess(circ, verbose=3):
         print("")
 
     nv = len(circ.nodes_dict)
-    M = numpy.mat(numpy.zeros((1, nv)))
-    T = numpy.mat(numpy.zeros((1, 1)))
+    M = np.mat(np.zeros((1, nv)))
+    T = np.mat(np.zeros((1, 1)))
     index = 0
     v_eq = 0  # number of current equations
     one_element_with_dc_guess_found = False
@@ -164,13 +164,13 @@ def get_dc_guess(circ, verbose=3):
     #    I'm not sure about this though.
 
     if M.shape[0] != M.shape[1]:
-        Rp = numpy.mat(numpy.linalg.pinv(M)) * T
+        Rp = np.mat(np.linalg.pinv(M)) * T
     else:  # case M.shape[0] == M.shape[1], use normal
-        if numpy.linalg.det(M) != 0:
+        if np.linalg.det(M) != 0:
             try:
-                Rp = numpy.linalg.inv(M) * T
-            except numpy.linalg.linalg.LinAlgError:
-                eig = numpy.linalg.eig(M)[0]
+                Rp = np.linalg.inv(M) * T
+            except np.linalg.linalg.LinAlgError:
+                eig = np.linalg.eig(M)[0]
                 cond = abs(eig).max() / abs(eig).min()
                 if verbose:
                     print("cond=" + str(cond) + ". No guess.")
@@ -186,14 +186,14 @@ def get_dc_guess(circ, verbose=3):
     #    voltage defined elem.
     # Both them are set to 0
     for index in removed_index:
-        Rp = numpy.concatenate((
-                               numpy.concatenate((Rp[:index, 0],
-                                                  numpy.mat(numpy.zeros((1, 1)))), axis=0),
+        Rp = np.concatenate((
+                               np.concatenate((Rp[:index, 0],
+                                                  np.mat(np.zeros((1, 1)))), axis=0),
                                Rp[index:, 0]), axis=0)
     # add the 0s for the currents due to the voltage defined
     # elements (we have no guess for those...)
     if v_eq > 0:
-        Rp = numpy.concatenate((Rp, numpy.mat(numpy.zeros((v_eq, 1)))), axis=0)
+        Rp = np.concatenate((Rp, np.mat(np.zeros((v_eq, 1)))), axis=0)
 
     if verbose == 5:
         print(circ.nodes_dict)

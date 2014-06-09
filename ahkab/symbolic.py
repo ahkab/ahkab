@@ -134,38 +134,15 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
         eq.append(sympy.Eq(i, 0))
 
     x = _to_real_list(x)
-    if verbose > 4:
+
+    if verbose > 3:
         printing.print_symbolic_equations(eq)
-        print("To be solved for:")
-        print(x)
-        # print "Matrix is singular: ", (mna.det() == 0)
-    # print -1.0*mna.inv()*N #too heavy
-    # print sympy.solve_linear_system(mna.row_join(-N), x)
-    printing.print_info_line(
-        ("Performing auxiliary simplification...", 3), verbose)
-    eq, x, sol_h = help_the_solver(eq, x)
+    printing.print_info_line(("To be solved for:", 3), verbose)
+    printing.print_info_line((str(x), 3), verbose)
+    printing.print_info_line(("Solving...", 1), verbose)
 
-    if len(eq):
-        printing.print_info_line(("Symplified sytem:", 3), verbose)
-        if verbose > 3:
-            printing.print_symbolic_equations(eq)
-        printing.print_info_line(("To be solved for:", 3), verbose)
-        printing.print_info_line((str(x), 3), verbose)
-        printing.print_info_line(("Solving...", 1), verbose)
-
-        if options.symb_internal_solver:
-            sol = local_solve(eq, x)
-        else:
-            sol = sympy.solve(
-                eq, x, manual=options.symb_sympy_manual_solver, simplify=True)
-        if sol is not None:
-            sol.update(sol_h)
-        else:
-            sol = sol_h
-    else:
-        printing.print_info_line(
-            ("Auxiliary simplification solved the problem.", 3), verbose)
-        sol = sol_h
+    sol = sympy.solve(
+            eq, x, manual=options.symb_sympy_manual_solver, simplify=True)
 
     for ks in list(sol.keys()):
         sol.update({ks: sol[ks].subs(subs_g)})
@@ -475,78 +452,3 @@ def parse_substitutions(slist):
         subs.update({s1:s2})
     return subs
 
-# TODO: THESE  WILL BE REMOVED - AS SOON AS SOME SYMPY BUGS ARE FIXED ####
-
-
-def help_the_solver(eqs, xs, debug=False):
-    iter_flag = True
-    sol = {}
-    while iter_flag:
-        iter_flag, eqs, subs = help_the_solver_iter(eqs, xs)
-        if iter_flag:
-            xs.remove(list(subs.keys())[0])
-            sol.update(subs)
-        if debug:
-            for key, value in subs.items():
-                print(key, "=", value)
-    return eqs, xs, sol
-
-
-def help_the_solver_iter(eqs, xs):
-    success = False
-    for eq in eqs:
-        success, subs = help_the_solver_1eq(eq, xs)
-        if success:
-            break
-    if success:
-        new_eqs = []
-        eqs.remove(eq)
-        for eq in eqs:
-            new_eqs.append(eq.subs(subs))
-    else:
-        new_eqs = eqs
-        subs = {}
-    return success, new_eqs, subs
-
-
-def help_the_solver_1eq(eq, xs, debug=True):
-    one_x = None
-    for x in xs:
-        if eq.has(x) and one_x is None:
-            one_x = x
-        elif eq.has(x) and one_x is not None:
-            one_x = None
-            break
-    if one_x is not None:
-        sol = {one_x: sympy.solve(eq, one_x)[0]}
-    else:
-        sol = {}
-    return not one_x is None, sol
-
-
-def local_solve(eqs, xs):
-    sol = {}
-    while len(eqs):
-        eqs, single_sol = local_solve_iter(eqs, xs)
-        new_sol = {}
-        for key, value in sol.items():
-            new_sol.update({key: value.subs(single_sol)})
-        new_sol.update(single_sol)
-        sol = new_sol
-        new_eqs = []
-        for eq in eqs:
-            new_eqs.append(eq.subs(single_sol))
-        eqs = new_eqs
-    return sol
-
-
-def local_solve_iter(eqs, xs):
-    for eq in eqs:
-        for x in xs:
-            if eq.has(x):
-                print("Solving for", x)
-                single_sol = {x: sympy.solve(eq, x)[0]}
-                eqs.remove(eq)
-                print(single_sol)
-                return eqs, single_sol
-    return eqs, {}

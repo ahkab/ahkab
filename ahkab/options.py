@@ -42,6 +42,7 @@ gmin = 1e-12
 print_int_nodes = True
 
 # global: solving
+dense_matrix_limit = 40 # if the dimensions of the square MNA matrix are bigger, use sparse matrices
 nr_damp_first_iters = False     # the first iterations will be damped see dc_analysis.get_td()
 nl_voltages_lock = True     # Apply damping - slows down solution.
 nl_voltages_lock_factor = 4     # if we allow the voltage on controlling ports to change too much,
@@ -84,7 +85,7 @@ shooting_default_points = 100
 shooting_max_nr_iter = 10000
 
 # symbolic
-symb_internal_solver = False
+# solve the circuit equations one at a time as you might do "manually"
 symb_sympy_manual_solver = False
 
 # ac

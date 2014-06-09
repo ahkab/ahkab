@@ -33,8 +33,10 @@ import sys
 import re
 import copy
 
-import numpy
+import numpy as np
 import numpy.linalg
+import scipy.sparse
+import scipy.sparse.linalg
 
 from . import devices
 from . import diode
@@ -156,7 +158,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 
     # time variable component: Tt this is always the same in each iter. So we
     # build it once for all.
-    Tt = numpy.mat(numpy.zeros((mna_size, 1)))
+    Tt = np.mat(np.zeros((mna_size, 1)))
     v_eq = 0
     if not skip_Tt:
         for elem in circ:
@@ -180,7 +182,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
         else:
             x = x0
     else:
-        x = numpy.mat(numpy.zeros((mna_size, 1)))
+        x = np.mat(np.zeros((mna_size, 1)))
                       # has n-1 rows because of discard of ^^^
 
     converged = False
@@ -212,7 +214,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
             (x, error, converged, n_iter, convergence_by_node) = mdn_solver(x, mna_to_pass, circ, T=N_to_pass,
                                                                             nv=nv, print_steps=(verbose > 0), locked_nodes=locked_nodes, time=time, MAXIT=MAXIT, debug=(verbose == 6))
             tot_iterations += n_iter
-        except numpy.linalg.linalg.LinAlgError:
+        except np.linalg.linalg.LinAlgError:
             n_iter = 0
             converged = False
             print("failed.")
@@ -632,7 +634,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
     tick = ticker.ticker(increments_for_step=1)
     tick.display(print_steps)
     if x is None:
-        x = numpy.mat(numpy.zeros((mna_size, 1)))
+        x = np.mat(np.zeros((mna_size, 1)))
                       # if no guess was specified, its all zeros
     else:
         if not x.shape[0] == mna_size:
@@ -641,8 +643,11 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
     if T is None:
         printing.print_warning(
             "dc_analysis.mdn_solver called with T==None, setting T=0. BUG or no sources in circuit?")
-        T = numpy.mat(numpy.zeros((mna_size, 1)))
+        T = np.mat(np.zeros((mna_size, 1)))
 
+    sparse = mna_size > options.dense_matrix_limit
+    if sparse:
+        mna = scipy.sparse.coo_matrix(mna)
     converged = False
     iteration = 0
     while iteration < MAXIT:  # newton iteration counter
@@ -650,13 +655,18 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
         tick.step()
         if nonlinear_circuit:
             # build dT(x)/dx (stored in J) and Tx(x)
-            J, Tx = build_J_and_Tx(x, mna_size, circ, time)
+            J, Tx = build_J_and_Tx(x, mna_size, circ, time, sparse)
             J = J + mna
+            residuo = mna.dot(x) + T + Tx
         else:
             J = mna
-            Tx = 0
-        residuo = mna * x + T + Tx
-        dx = numpy.linalg.inv(J) * (-1 * residuo)
+            residuo = mna.dot(x) + T
+        if sparse:
+            J = scipy.sparse.csc_matrix(J)
+            lu = scipy.sparse.linalg.splu(J)
+            dx = lu.solve(-residuo)
+        else:
+            dx = np.linalg.solve(J, -residuo)
         x = x + get_td(dx, locked_nodes, n=iteration) * dx
         if not nonlinear_circuit:
             converged = True
@@ -664,7 +674,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
         elif convergence_check(x, dx, residuo, nv - 1)[0]:
             converged = True
             break
-        # if vector_norm(dx) == numpy.nan: #Overflow
+        # if vector_norm(dx) == np.nan: #Overflow
         #   raise OverflowError
     tick.hide(print_steps)
     if debug and not converged:
@@ -677,9 +687,12 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
     return (x, residuo, converged, iteration, convergence_by_node)
 
 
-def build_J_and_Tx(x, mna_size, element_list, time):
-    J = numpy.mat(numpy.zeros((mna_size, mna_size)))
-    Tx = numpy.mat(numpy.zeros((mna_size, 1)))
+def build_J_and_Tx(x, mna_size, element_list, time, sparse=False):
+    if sparse:
+        J = scipy.sparse.coo_matrix((mna_size, mna_size))
+    else:
+        J = np.zeros((mna_size, mna_size))
+    Tx = np.zeros((mna_size, 1))
     for elem in element_list:
         if elem.is_nonlinear:
             update_J_and_Tx(J, Tx, x, elem, time)
@@ -690,10 +703,11 @@ def update_J_and_Tx(J, Tx, x, elem, time):
     out_ports = elem.get_output_ports()
     for index in range(len(out_ports)):
         n1, n2 = out_ports[index]
+        n1m1, n2m1 = n1 - 1, n2 - 1
         dports = elem.get_drive_ports(index)
         v_dports = []
         for port in dports:
-            v = 0  # build v: remember we removed the 0 row and 0 col of mna -> -1
+            v = 0.  # build v: remember we removed the 0 row and 0 col of mna -> -1
             if port[0]:
                 v = v + x[port[0] - 1, 0]
             if port[1]:
@@ -702,22 +716,22 @@ def update_J_and_Tx(J, Tx, x, elem, time):
         if n1 or n2:
             iel = elem.i(index, v_dports, time)
         if n1:
-            Tx[n1 - 1, 0] = Tx[n1 - 1, 0] + iel
+            Tx[n1m1, 0] = Tx[n1m1, 0] + iel
         if n2:
-            Tx[n2 - 1, 0] = Tx[n2 - 1, 0] - iel
+            Tx[n2m1, 0] = Tx[n2m1, 0] - iel
         for iindex in range(len(dports)):
             if n1 or n2:
                 g = elem.g(index, v_dports, iindex, time)
             if n1:
                 if dports[iindex][0]:
-                    J[n1 - 1, dports[iindex][0] - 1] += g
+                    J[n1m1, dports[iindex][0] - 1] += g
                 if dports[iindex][1]:
-                    J[n1 - 1, dports[iindex][1] - 1] -= g
+                    J[n1m1, dports[iindex][1] - 1] -= g
             if n2:
                 if dports[iindex][0]:
-                    J[n2 - 1, dports[iindex][0] - 1] -= g
+                    J[n2m1, dports[iindex][0] - 1] -= g
                 if dports[iindex][1]:
-                    J[n2 - 1, dports[iindex][1] - 1] += g
+                    J[n2m1, dports[iindex][1] - 1] += g
 
 
 def get_td(dx, locked_nodes, n=-1):
@@ -790,8 +804,8 @@ def generate_mna_and_N(circ, verbose=3):
     Restituisce: (MNA, N)
     """
     n_of_nodes = len(circ.nodes_dict)
-    mna = numpy.mat(numpy.zeros((n_of_nodes, n_of_nodes)))
-    N = numpy.mat(numpy.zeros((n_of_nodes, 1)))
+    mna = np.mat(np.zeros((n_of_nodes, n_of_nodes)))
+    N = np.mat(np.zeros((n_of_nodes, 1)))
     for elem in circ:
         if elem.is_nonlinear:
             continue
@@ -932,7 +946,7 @@ def check_ground_paths(mna, circ, reduced_mna=True, verbose=3):
 
 
 def build_x0_from_user_supplied_ic(circ, icdict):
-    """Builds a numpy.matrix of appropriate size (reduced!) from the values supplied
+    """Builds a np.matrix of appropriate size (reduced!) from the values supplied
     in voltages_dict and currents_dict.
 
     Supplying a custom x0 can be useful:
@@ -1005,7 +1019,7 @@ def modify_x0_for_ic(circ, x0):
 
     if return_obj:
         xnew = results.op_solution(x=x0, \
-            error=numpy.mat(numpy.zeros(x0.shape)), circ=circ, outfile=None)
+            error=np.mat(np.zeros(x0.shape)), circ=circ, outfile=None)
         xnew.netlist_file = None
         xnew.netlist_title = "Self-generated OP to be used as tran IC"
     else:
