@@ -1,8 +1,9 @@
 Series resonance test circuit
-v1 1 0 type=vdc vdc=0 type=vac vac=1
+va1 1 0 type=vdc vdc=0 type=vac vac=1
 l1 1 2 1
 c1 2 3 15u
 rl 3 0 0.1
 .op
 .ac start=1 stop=10k nsteps=100 
+.symbolic
 .plot ac v(2) v(3)
