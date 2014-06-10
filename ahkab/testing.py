@@ -551,17 +551,17 @@ class NetlistTest(unittest.TestCase):
                     d1 = InterpolatedUnivariateSpline(x, np.real_if_close(res[k]).reshape((-1, )))
                     d2 = InterpolatedUnivariateSpline(refx, np.real_if_close(ref[k]).reshape((-1, )))
                     ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
-        elif isinstance(res, results.op_solution):
-            for k in res.keys():
-                assert k in ref
+        elif isinstance(res, results.op_solution) or isinstance(res, results.pz_solution):
+            for k in ref.keys():
+                assert k in res
                 ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         else:
             if isinstance(res, list) or isinstance(res, tuple):
                 for i, j in zip(res, ref):
                     self._check(i, j)
             elif res is not None:
-                for k in res.keys():
-                    assert k in ref
+                for k in ref.keys():
+                    assert k in res
                     if isinstance(res[k], dict): # hence ref[k] will be a dict too
                         self._check(res[k], ref[k])
                     elif isinstance(ref[k], sympy.Basic) and isinstance(ref[k], sympy.Basic):
