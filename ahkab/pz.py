@@ -18,26 +18,54 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This module offers the functions needed to perform a pole-zero evaluation.
+This module offers the functions needed to perform a numeric
+pole-zero extraction.
 
-Ref.
+Currently, this module implements the MD algorithm, more may be
+added in the future.
 
-The Generalized Eigenproblem: Pole-Zero Computation
+A description of the algorithm is found in the following references:
 
-IMPLEMENTATION OF POLE-ZERO ANALYSIS IN SPICE BASED
-ON THE MD METHOD
+
+    Haley, S.B., "The generalized eigenproblem: pole-zero computation,"
+    *Proceedings of the IEEE*, vol.76, no.2, pp.103,120, Feb 1988
+
+and:
+
+    Raghuram, R.; Divekar, D.; Wang, P., "Implementation of pole-zero
+    analysis in SPICE based on the MD method," Circuits and Systems, 1991.,
+    *Proceedings of the 34th Midwest Symposium on*, pp.380,
+    383 vol.1, 14-17 May 1991
+
+Frequency sweeping -- or shifting -- is performed with a random frequency
+kick, currently, hoping not to kick so hard that we end up on the negative side.
+A bisection method would be better and hopefully will be implemented soon.
+
+Overview
+~~~~~~~~
+
+Two main methods are available in this module:
+
+ * :func:`calculate_singularities`, which computes both zeros and poles,
+ * :func:`calculate_poles`, which only computes zeros.
+
+Currently this module uses dense matrices.
+
+Reference
+~~~~~~~~~
 
 """
 from __future__ import unicode_literals
 
 import numpy as np
-import circuit
-import dc_analysis 
-import devices
-import transient
-import plotting
-import options
-import results
+
+from . import circuit
+from . import dc_analysis 
+from . import devices
+from . import transient
+from . import plotting
+from . import options
+from . import results
 
 specs = {'pz': {'tokens': ({
                            'label': 'output',
@@ -74,38 +102,66 @@ specs = {'pz': {'tokens': ({
                }
         }
 
-def enlarge_matrix(M):
+def _enlarge_matrix(M):
     if M is None:
-        return np.mat(np.zeros((1, 1)))
+        return np.zeros((1, 1))
     else:
-        return np.mat(np.vstack((np.hstack((M, np.zeros((M.shape[0], 1)))),
-                          np.zeros((1, M.shape[1] + 1)))))
+        return np.vstack((np.hstack((M, np.zeros((M.shape[0], 1)))),
+                         np.zeros((1, M.shape[1] + 1))))
 def calculate_poles(mc):
+    """Calculate the circuit poles.
+
+    **Parameters:**
+
+    mc : circuit instance
+        The circuit to be analyzed.
+
+    **Returns:**
+
+    pz_sol : pz_solution instance
+        The PZ solution, with no zeros
+    """
     return calculate_singularities(mc, input_source=None, output_port=None, 
                                    calc_zeros=False, MNA=None, shift=0)[0]
 
 def calculate_singularities(mc, input_source=None, output_port=None, 
                             calc_zeros=False, MNA=None, shift=0, outfile=None,
-                            verbose=3):
+                            verbose=0):
     """Calculate poles and zeros.
 
-    *Parameters:*
+    By default, only poles are calculated, as they need no information
+    other than the circuit description.
+
+    To activate zeros calculation, it is necessary:
+
+    * To specify an input source (``input_source``),
+    * To specify an output port (``output_port``),
+    * To set ``calc_zeros`` to ``True`` to enable the zeros routine.
+
+    **Parameters:**
 
     mc : circuit instance
-    input_source : string or element
+        The circuit to be analyzed.
+    input_source : string or element, optional
         Ignored if zeros are not being calculated.
-    output_port : external node (ref. to gnd) or tuple of external nodes
+    output_port : external node (ref. to gnd) or tuple of external nodes, opt
         Ignored if zeros are not being calculated.
-    calc_zeros : bool
+    calc_zeros : bool, optional
         Calculate zeros.
     MNA : ndarray, optional
-    shift : float
+        The Modified Nodal Analysis matrix, if available.
+    shift : float, optional
         Shift frequency at which the algorithm should be run.
+    outfile : str or None, optional
+        The data filename.
+    verbose : int, optional
+        Verbosity level, from 0 (silent, default) to 6 (debug).
 
-    *Returns:*
+    **Returns:**
 
-    (poles, zeros) : tuple of array-like
-    
+    pz_sol : pz_solution instance
+        The PZ solution
+
     """
     if calc_zeros:
         if type(input_source) != str:
@@ -168,7 +224,7 @@ def calculate_singularities(mc, input_source=None, output_port=None,
                 RIIN += [v]
             else:
                 if not dei_source:
-                    TCM = enlarge_matrix(TCM)
+                    TCM = _enlarge_matrix(TCM)
                 TCM[dei_victim, dei_source] = v*e1.value
                 dei_victim += 1
         if calc_zeros and e1.part_id == input_source:
@@ -188,7 +244,7 @@ def calculate_singularities(mc, input_source=None, output_port=None,
         else:
             return calculate_singularities(mc, input_source, output_port, 
                                            calc_zeros, MNA=MNA, outfile=outfile, 
-                                           shift=np.abs(np.random.uniform())*1e3)
+                                           shift=shift+np.abs(np.random.uniform())*1e3)
     else:
         poles = []
     if calc_zeros and TCM is not None:
@@ -224,11 +280,14 @@ def calculate_singularities(mc, input_source=None, output_port=None,
             try:
                 ZTCM = TCM - np.dot(RIIN, ROUT)/ROUTIN
                 ##if np.linalg.det(ZTCM):
+                if not (np.isfinite(ZTCM).all()):
+                    raise ValueError("Array contains infs, NaNs or both")
+                    # immediate catch
                 zeros = 1./(2.*np.pi)*(1./np.linalg.eigvals(ZTCM) + shift)
             except ValueError:
                 return calculate_singularities(mc, input_source, output_port, 
                                            calc_zeros, MNA=MNA, outfile=outfile,
-                                           shift=shift*np.abs(np.random.uniform()+1)*10)
+                                           shift=shift+np.abs(np.random.uniform()+1)*1e3)
         elif shift < 1e12:
             return calculate_singularities(mc, input_source, output_port, 
                                        calc_zeros, MNA=MNA, outfile=outfile,
@@ -237,9 +296,9 @@ def calculate_singularities(mc, input_source=None, output_port=None,
             zeros = []
     else:
         zeros = []
-    poles = np.array(filter(lambda a: np.abs(a) < options.pz_max, poles))
-    zeros = np.array(filter(lambda a: np.abs(a) < options.pz_max, zeros))
+    poles = np.array(filter(lambda a: np.abs(a) < options.pz_max, poles), dtype=np.complex_)
+    zeros = np.array(filter(lambda a: np.abs(a) < options.pz_max, zeros), dtype=np.complex_)
+    poles.sort()
+    zeros.sort()
     res = results.pz_solution(mc, poles, zeros, outfile)
-    print poles
-    print zeros
     return res

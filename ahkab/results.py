@@ -1014,7 +1014,7 @@ class symbolic_solution():
                self.results[self._symbols[self.iter_index]]
 
 class pz_solution(solution, _mutable_data):
-    """PZ results.
+    """PZ results
 
     **Parameters:**
 
@@ -1032,29 +1032,99 @@ class pz_solution(solution, _mutable_data):
         nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         self.poles = np.array(poles).reshape((-1,))
         self.zeros = np.array(zeros).reshape((-1,))
-        data = np.hstack((self.poles.reshape((1, -1)),
-                          self.zeros.reshape((1, -1))))
-        self._add_data(np.mat(data))
-        for i in range(self.poles.shape[0]):
-            self.variables += 'p%d' % i
-        for i in range(self.zeros.shape[0]):
-            self.variables += 'z%d' % i
+        data = np.vstack((self.poles.reshape((-1, 1)),
+                          self.zeros.reshape((-1, 1))))
+	if np.prod(self.poles.shape):
+            for i in range(self.poles.shape[0]):
+                self.variables += ['p%d' % i]
+	if np.prod(self.zeros.shape):
+            for i in range(self.zeros.shape[0]):
+                self.variables += ['z%d' % i]
         for v in self.variables:
             self.units.update({v: "rad/s"})
+        self.csv_headers = []
+        for i in range(len(self.variables)):
+            self.csv_headers.append("Re(%s)" % self.variables[i])
+            self.csv_headers.append("Im(%s)" % self.variables[i])
+
+        # save in Re/Im form
+        sdata = data.reshape(-1).view(np.float_).reshape((-1, 1))
+        self._add_data(sdata)
+
+        # store local data too:
+        self.data = case_insensitive_dict()
+        for i in range(len(self.variables)):
+            self.data.update({self.variables[i]: data[i, 0]})
+
+    def _add_data(self, data):
+        """Remember to call this method with REAL data - already split in ABS and PHASE."""
+        csvlib.write_csv(self.filename, data, self.csv_headers, append=self._init_file_done)
+        self._init_file_done = True
 
     def __repr__(self):
-        return "<PZ simulation results for %s (netlist %s). Input %s, output %s, " + \
-               "Run on %s, data filename %s.>" % \
-        (self.netlist_title, self.netlist_file, self.timestamp, self.filename)
+        return ("%s PZ solution, poles: %s, zeros: %s") % \
+               (self.netlist_file, list(self.poles), 
+                list(self.zeros))
 
     def __str__(self):
-        return "PZ simulation results for %s (netlist %s).\nInput %s, output %s." + \
-               "Poles: %s\nZeros: %s" % \
+        return ("PZ simulation results for %s (netlist %s).\n" + \
+               "Poles: %s\nZeros: %s") % \
                (self.netlist_title, self.netlist_file, list(self.poles), 
                 list(self.zeros))
 
     def get_type(self):
         return "PZ"
+
+    # Access as a dictionary BY VARIABLE NAME:
+    def __getitem__(self, name):
+        """Get a specific variable, as from a dictionary."""
+        if name in self.data:
+            return self.data[name]
+        elif len(name) > 4 and name[3:-1] in self.data:
+            if name[:2].upper() == 'RE':
+                return np.real(self.data[name[3:-1]])
+            if name[:2].upper() == 'IM':
+                return np.imag(self.data[name[3:-1]])
+        raise KeyError
+
+    def get(self, name, default=None):
+        try:
+            return self.data[name]
+        except KeyError:
+            return default
+
+    def has_key(self, name):
+        """Determine whether the result set contains a variable."""
+        return name in self.data
+
+    def __contains__(self, name):
+        """Determine whether the result set contains a variable."""
+        return name in self.data or (len(name) > 4 and name[3:-1] in self.data)
+
+    def keys(self):
+        """Get all of the results set's variable's names."""
+        return self.data.keys()
+
+    def values(self):
+        """Get all of the results set's variable's values."""
+        return self.data.values()
+
+    def items(self):
+        return self.data.items()
+
+    # iterator methods
+    def __iter__(self):
+        self.iter_index = 0
+        return self
+
+    def next(self):
+        if self.iter_index == len(self.variables)-1:
+            self.iter_index = 0
+            raise StopIteration
+        else:
+            self.iter_index += 1
+        return self.variables[self.iter_index], \
+               self.data[self.variables[self.iter_index]]
 
 class case_insensitive_dict():
     """A dictionary that uses case-insensitive strings as keys.
