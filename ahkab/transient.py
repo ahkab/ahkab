@@ -473,8 +473,10 @@ def generate_D(circ, shape):
         cmin_mat[0, 1:] = 1
         cmin_mat[1:, 0] = 1
         cmin_mat[0, 0] = cmin_mat.shape[0]-1
-        D[:-i_eq, :-i_eq] += options.cmin*cmin_mat
-
+        if i_eq:
+            D[:-i_eq, :-i_eq] += options.cmin*cmin_mat
+        else:
+            D += options.cmin*cmin_mat
     return D
 
 class dfbuffer:
