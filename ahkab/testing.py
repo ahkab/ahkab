@@ -558,17 +558,15 @@ class NetlistTest(unittest.TestCase):
                 assert k in res
                 ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         elif isinstance(res, results.pz_solution):
-            poles = [res[k] for k in res.keys() if k[0] == 'p']
-            zeros = [res[k] for k in res.keys() if k[0] == 'z']
             ref_sing_keys = ref.keys()[:]
             ref_sing_keys.sort()
             ref_sing = [ref[ref_sing_keys[len(ref_sing_keys)/2 + k]] + ref[ref_sing_keys[k]]*1j for k in range(len(ref_sing_keys)/2)]
             ref_poles_num = len([k for k in ref.keys() if k[:4] == 'Re(p'])
             poles_ref, zeros_ref = ref_sing[:ref_poles_num], ref_sing[ref_poles_num:]
-            assert len(poles_ref) == len(poles)
-            pz._check_singularities(poles, poles_ref)
-            assert len(zeros_ref) == len(zeros)
-            pz._check_singularities(zeros, zeros_ref)
+            assert len(poles_ref) == len(res.poles)
+            pz._check_singularities(res.poles, poles_ref)
+            assert len(zeros_ref) == len(res.zeros)
+            pz._check_singularities(res.zeros, zeros_ref)
         else:
             if isinstance(res, list) or isinstance(res, tuple):
                 for i, j in zip(res, ref):
