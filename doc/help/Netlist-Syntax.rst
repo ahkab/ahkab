@@ -650,7 +650,7 @@ be executed
 Periodic Steady State (PSS)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``.PSS period=n [points=n step=n method=<string> autonomous=bool]``
+``.PSS period=<float> [points=<int> step=<float> method=<string> autonomous=<bool>]``
 
 This analysis tries to find the periodic steady state (PSS) solution of
 the circuit.
@@ -667,6 +667,36 @@ Parameters:
   (default) and ``brute-force``.
 - ``autonomous``: self-explanatory boolean. If set to ``True``, currently the
   simulator halts, because autonomous circuits are not supported, yet.
+
+Pole-Zero analysis (PZ)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The PZ analysis computes the poles (and optionally the zeros) of a circuit.
+
+It can be specified with any of the following equivalent syntaxes:
+
+```.PZ [OUTPUT=<V(node1,node2)> SOURCE=<string> ZEROS=<bool> SHIFT=<float>]```
+
+or
+
+```.PZ [V(<node1>,<node2>) <SOURCE> <ZEROS=1> <SHIFT=0>]```
+
+Internally, it is implemented through the modification-decomposition
+(MD) method, which is based on finding the eigenvalues of the 
+Time Constant Matrix (TCM).
+
+All the following parameters are optional and only needed for zero calculation.
+
+Parameters:
+
+- ``output``: the circuit output voltage, in the form of ``<V(node1,node2)>``.
+  Notice the lack of space in between nodes and comma.
+- ``source``: the ``part_id`` of the input source.
+- ``zeros``: boolean, calculate the zeros as well. If ``output`` and ``source``
+  are set, then this is automatically set to 1 (true).
+- ``shift`` initial frequency shift for calculation of the singularities. Optional.
+  In a network that has zeros in the origin, this may be set to some non-zero
+  value since the beginning.
 
 Symbolic small-signal and transfer function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
