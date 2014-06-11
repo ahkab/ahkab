@@ -344,7 +344,7 @@ def new_pss(period, x0=None, points=None, method='brute-force', autonomous=False
         'autonomous': autonomous, 'x0': x0, 'outfile': outfile, 'verbose': verbose}
 
 
-def new_pz(input_source, output_port, shift=0.0, MNA=None, outfile=None, 
+def new_pz(input_source=None, output_port=None, shift=0.0, MNA=None, outfile=None,
            verbose=0):
     """Assembles a Pole-Zero analysis and returns the analysis object.
 
@@ -389,9 +389,9 @@ def new_pz(input_source, output_port, shift=0.0, MNA=None, outfile=None,
             _of.append(ofi)  # keep the file open until quitting
     else:
         outfile += '.pz'
-    return {
-        'type': "pz", 'input_source':input_source, 'output_port':output_port, 
-         'shift': shift, 'MNA':MNA, 'outfile': outfile, 'verbose': verbose}
+    return {'type': "pz", 'input_source':input_source,
+            'output_port':output_port, 'calc_zeros':(input_source is not None),
+            'shift': shift, 'MNA':MNA, 'outfile': outfile, 'verbose': verbose}
 
 
 def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=0):
