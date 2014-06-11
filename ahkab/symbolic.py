@@ -137,8 +137,8 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
 
     if verbose > 3:
         printing.print_symbolic_equations(eq)
-    printing.print_info_line(("To be solved for:", 3), verbose)
-    printing.print_info_line((str(x), 3), verbose)
+    printing.print_info_line(("To be solved for:", 4), verbose)
+    printing.print_info_line((str(x), 4), verbose)
     printing.print_info_line(("Solving...", 1), verbose)
 
     sol = sympy.solve(
