@@ -177,6 +177,13 @@ def calculate_singularities(mc, input_source=None, output_port=None,
         if (type(output_port) == tuple or type(output_port) == list) \
            and (type(output_port[0]) == str or type(output_port[0]) == unicode):
             output_port = [mc.ext_node_to_int(o) for o in output_port]
+        we_got_source = False
+        for e in mc:
+            if e.part_id == input_source:
+                we_got_source = True
+                break
+        if not we_got_source:
+            raise ValueError('Source %s not found in circuit.' % input_source)
         RIIN = []
         ROUT = []
     if MNA is None:
