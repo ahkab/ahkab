@@ -381,6 +381,7 @@ from nose.plugins.skip import SkipTest
 from . import csvlib
 from . import results
 from . import options
+from . import pz
 from .ahkab import main, run
 
 
@@ -551,10 +552,23 @@ class NetlistTest(unittest.TestCase):
                     d1 = InterpolatedUnivariateSpline(x, np.real_if_close(res[k]).reshape((-1, )))
                     d2 = InterpolatedUnivariateSpline(refx, np.real_if_close(ref[k]).reshape((-1, )))
                     ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
-        elif isinstance(res, results.op_solution) or isinstance(res, results.pz_solution):
+        elif isinstance(res, results.op_solution):
             for k in ref.keys():
+                print k, res[k], ref[k]
                 assert k in res
                 ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
+        elif isinstance(res, results.pz_solution):
+            poles = [res[k] for k in res.keys() if k[0] == 'p']
+            zeros = [res[k] for k in res.keys() if k[0] == 'z']
+            ref_sing_keys = ref.keys()[:]
+            ref_sing_keys.sort()
+            ref_sing = [ref[ref_sing_keys[len(ref_sing_keys)/2 + k]] + ref[ref_sing_keys[k]]*1j for k in range(len(ref_sing_keys)/2)]
+            ref_poles_num = len([k for k in ref.keys() if k[:4] == 'Re(p'])
+            poles_ref, zeros_ref = ref_sing[:ref_poles_num], ref_sing[ref_poles_num:]
+            assert len(poles_ref) == len(poles)
+            pz._check_singularities(poles, poles_ref)
+            assert len(zeros_ref) == len(zeros)
+            pz._check_singularities(zeros, zeros_ref)
         else:
             if isinstance(res, list) or isinstance(res, tuple):
                 for i, j in zip(res, ref):
