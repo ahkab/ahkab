@@ -244,7 +244,7 @@ def calculate_singularities(mc, input_source=None, output_port=None,
         else:
             return calculate_singularities(mc, input_source, output_port, 
                                            calc_zeros, MNA=MNA, outfile=outfile, 
-                                           shift=shift+np.abs(np.random.uniform())*1e3)
+                                           shift=shift+np.abs(1+np.random.uniform())*1e3)
     else:
         poles = []
     if calc_zeros and TCM is not None:
@@ -278,11 +278,17 @@ def calculate_singularities(mc, input_source=None, output_port=None,
         ROUT = np.diag(np.atleast_1d(np.array(ROUT)))
         if ROUT.any():
             try:
+                if not np.all(ROUTIN) or not np.isfinite(ROUTIN):
+                    # immediate catch
+                    raise ValueError("ROUT-IN is either Inf, NaN or null")
                 ZTCM = TCM - np.dot(RIIN, ROUT)/ROUTIN
-                ##if np.linalg.det(ZTCM):
                 if not (np.isfinite(ZTCM).all()):
                     raise ValueError("Array contains infs, NaNs or both")
                     # immediate catch
+                eigvals = np.linalg.eigvals(ZTCM)
+                if not np.all(eigvals) or not np.isfinite(eigvals).all():
+                    # immediate catch
+                    raise ValueError("ZTCM eigenvalues contain either Inf, NaN or null values")
                 zeros = 1./(2.*np.pi)*(1./np.linalg.eigvals(ZTCM) + shift)
             except ValueError:
                 return calculate_singularities(mc, input_source, output_port, 
@@ -298,7 +304,20 @@ def calculate_singularities(mc, input_source=None, output_port=None,
         zeros = []
     poles = np.array(filter(lambda a: np.abs(a) < options.pz_max, poles), dtype=np.complex_)
     zeros = np.array(filter(lambda a: np.abs(a) < options.pz_max, zeros), dtype=np.complex_)
-    poles.sort()
-    zeros.sort()
+    poles = np.sort_complex(poles)
+    zeros = np.sort_complex(zeros)
     res = results.pz_solution(mc, poles, zeros, outfile)
     return res
+
+def _check_singularities(res, ref, atol=1e-4, rtol=1e-3):
+    ref = copy.copy(ref)
+    for i in res:
+        success = False
+        for si, s in enumerate(ref):
+            if np.allclose(i, s, atol=atol, rtol=rtol):
+                success = True
+                break
+            assert si != len(ref) - 1
+        ref.pop(si)
+    assert not len(ref)
+
