@@ -1229,7 +1229,7 @@ def parse_single_analysis(line, line_elements=None):
             missing.append(t['label'])
     if len(missing):
         raise NetlistParseError, \
-            "Required parameters are missing: %s" % ("".join(line_elements))
+            "Required parameters are missing: %s" % (" ".join(line_elements))
     # load defaults for unsupplied parameters
     for t in params:
         an.update({t['dest']: t['default']})
