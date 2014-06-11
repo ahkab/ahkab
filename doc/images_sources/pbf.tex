@@ -1,0 +1,46 @@
+\documentclass{standalone}
+	
+\usepackage[siunitx]{circuitikz}
+
+\begin{document}
+
+\begin{circuitikz}[scale=1., transform shape]
+%\draw (0,0) node[anchor=south] {$n1$};
+\draw (0,0) to [V=V1, -*] (0,3) 
+           to[R=R1, -*] (3, 3)
+           to[L=L1, -*] (6, 3)
+           to[C=C1] (9, 3)
+           -- (11, 3)
+           to[L=L3, -*] (14, 3)
+           to[C=C3] (17, 3)
+           -- (19, 3)
+           to[L=L5, -*] (22, 3)
+           to[C=C5, -*] (25, 3)
+           to[R=R2] (25, 0)
+           node[ground] {};
+\draw (25,3) -o (26, 3) to[open, o-] (26, 0);
+\draw (26,3) node[anchor=west] {$V_{OUT}$};
+\draw[color=blue] (0,3) node[anchor=south] {$n_1$};
+\draw[color=blue] (3,3) node[anchor=south] {$n_2$};
+\draw[color=blue] (6,3) node[anchor=south] {$n_3$};
+\draw[color=blue] (10,3) node[anchor=south] {$n_4$};
+\draw[color=blue] (14,3) node[anchor=south] {$n_5$};
+\draw[color=blue] (18,3) node[anchor=south] {$n_6$};
+\draw[color=blue] (22,3) node[anchor=south] {$n_7$};
+\draw[color=blue] (25,3) node[anchor=south] {$n_8$};
+
+\draw  (9, 3) to[L=L2, *-] (9, 0)
+           node[ground] {};
+\draw  (11, 3) to[C=C2, *-] (11, 0)
+           node[ground] {};
+           
+\draw  (17, 3) to[L=L4, *-] (17, 0)
+           node[ground] {};
+\draw  (19, 3) to[C=C4, *-] (19, 0)
+           node[ground] {};
+
+\draw (0,0) node[ground] {};
+%\draw (3,0) node[anchor=south] {$n2$};
+\end{circuitikz} 
+
+\end{document}
