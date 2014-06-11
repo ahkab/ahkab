@@ -57,6 +57,8 @@ Reference
 """
 from __future__ import unicode_literals
 
+import copy
+
 import numpy as np
 
 from . import circuit
