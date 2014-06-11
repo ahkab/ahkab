@@ -8,10 +8,9 @@ C1   1  2  0.93
 L1   1  2  0.65
 C2   2  3  3.80
 L2   2  3  1.00
-R2   3  4  1.00
-VT   4  0  type=vdc vdc=0
-.PZ  V(4,0) IN
-*.AC  DEC  100  .001HZ  10HZ
-*.PLOT AC  IDB(R2)  IP(R2)
+R2   3  0  1.00
+.PZ  V(3,0) IN
+.AC nsteps=100 start=.1 stop=10
+.plot ac |v(3)|
 .END
  
