@@ -391,7 +391,7 @@ def new_pz(input_source, output_port, shift=0.0, MNA=None, outfile=None,
         outfile += '.pz'
     return {
         'type': "pz", 'input_source':input_source, 'output_port':output_port, 
-         shift: 'shift', MNA:'MNA', 'outfile': outfile, 'verbose': verbose}
+         'shift': shift, 'MNA':MNA, 'outfile': outfile, 'verbose': verbose}
 
 
 def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=0):
