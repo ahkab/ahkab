@@ -37,6 +37,7 @@ Reference
    csvlib
    devices
    diode
+   pz
    results
    symbolic
    testing 
