@@ -22,6 +22,7 @@ The code should be easy to read and modify, the main language is Python 2.x and 
     * **DC sweep**
     * **Transient analysis**, available differentiation formulas: implicit Euler, trapezoidal, gear orders from 2 to 5. See for example the [simulation of a Colpitts Oscillator](https://github.com/ahkab/ahkab/wiki/Example:-Transient-simulation-1).
     * **AC analysis**
+    * **PZ** analysis (git-tree only)
     * **Periodic steady state analysis** of non-autonomous circuits, _time_ _domain_ shooting and brute-force algorithms.
   * Symbolic: 
     * **Small signal analysis**, AC or DC, with extraction of transfer functions, DC gain, poles and zeros. Various [symbolic analysis examples on this page](https://github.com/ahkab/ahkab/wiki/Example:-Symbolic-simulation).
