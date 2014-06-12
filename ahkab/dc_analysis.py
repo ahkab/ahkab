@@ -647,7 +647,6 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
 
     sparse = mna_size > options.dense_matrix_limit
     if sparse:
-        printing.print_info_line(("Using sparse matrices and SuperLU. ", 5), verbose)
         mna = scipy.sparse.coo_matrix(mna)
     converged = False
     iteration = 0L
