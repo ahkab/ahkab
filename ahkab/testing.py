@@ -554,7 +554,6 @@ class NetlistTest(unittest.TestCase):
                     ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         elif isinstance(res, results.op_solution):
             for k in ref.keys():
-                print k, res[k], ref[k]
                 assert k in res
                 ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         elif isinstance(res, results.pz_solution):
