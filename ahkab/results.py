@@ -1034,10 +1034,10 @@ class pz_solution(solution, _mutable_data):
         self.zeros = np.sort_complex(np.array(zeros).reshape((-1,)))
         data = np.vstack((self.poles.reshape((-1, 1)),
                           self.zeros.reshape((-1, 1))))
-	if np.prod(self.poles.shape):
+        if np.prod(self.poles.shape):
             for i in range(self.poles.shape[0]):
                 self.variables += ['p%d' % i]
-	if np.prod(self.zeros.shape):
+        if np.prod(self.zeros.shape):
             for i in range(self.zeros.shape[0]):
                 self.variables += ['z%d' % i]
         for v in self.variables:
