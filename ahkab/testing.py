@@ -386,6 +386,7 @@ from nose.plugins.skip import SkipTest
 from . import csvlib
 from . import results
 from . import options
+from . import pz
 from .ahkab import main, run
 
 
@@ -557,16 +558,26 @@ class NetlistTest(unittest.TestCase):
                     d2 = InterpolatedUnivariateSpline(refx, np.real_if_close(ref[k]).reshape((-1, )))
                     ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         elif isinstance(res, results.op_solution):
-            for k in list(res.keys()):
-                assert k in ref
+            for k in ref.keys():
+                assert k in res
                 ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
+        elif isinstance(res, results.pz_solution):
+            ref_sing_keys = ref.keys()[:]
+            ref_sing_keys.sort()
+            ref_sing = [ref[ref_sing_keys[len(ref_sing_keys)/2 + k]] + ref[ref_sing_keys[k]]*1j for k in range(len(ref_sing_keys)/2)]
+            ref_poles_num = len([k for k in ref.keys() if k[:4] == 'Re(p'])
+            poles_ref, zeros_ref = ref_sing[:ref_poles_num], ref_sing[ref_poles_num:]
+            assert len(poles_ref) == len(res.poles)
+            pz._check_singularities(res.poles, poles_ref)
+            assert len(zeros_ref) == len(res.zeros)
+            pz._check_singularities(res.zeros, zeros_ref)
         else:
             if isinstance(res, list) or isinstance(res, tuple):
                 for i, j in zip(res, ref):
                     self._check(i, j)
             elif res is not None:
-                for k in list(res.keys()):
-                    assert k in ref
+                for k in ref.keys():
+                    assert k in res
                     if isinstance(res[k], dict): # hence ref[k] will be a dict too
                         self._check(res[k], ref[k])
                     elif isinstance(ref[k], sympy.Basic) and isinstance(ref[k], sympy.Basic):
@@ -587,8 +598,8 @@ class NetlistTest(unittest.TestCase):
         else:
             for t, ref_file in list(self.refs.items()):
                 if '.pickle' in ref_file:
-                    with open(ref_file, 'wb') as fp:
-                        pickle.dump(res[t], fp)
+                    with open(ref_file, 'w') as fp:
+                        pickle.dump(res[t], fp, protocol=2)
                 else:
                     res_file = os.path.join(self.reference_path, 
                                             '%s.%s' % (self.test_id, t))

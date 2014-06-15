@@ -64,6 +64,7 @@ specs = {'symbolic': {'tokens': ({
 }
 }
 
+enabled_assumptions = {'real':False, 'positive':False, 'complex':False}
 
 def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=3):
     """Attempt a symbolic solution of the circuit.
@@ -84,7 +85,7 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
         take transistors' output impedance into consideration (default: False)
 
     subs: dict, optional
-        a dictionary of sympy Symbols to be substituted. It makes solving the circuit
+        a dictionary of ``sympy.Symbol`` to be substituted. It makes solving the circuit
         easier. Eg. ``subs={R1:R2}`` - replace R1 with R2. It can be generated with
         :func:`parse_substitutions()`
 
@@ -137,8 +138,8 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
 
     if verbose > 3:
         printing.print_symbolic_equations(eq)
-    printing.print_info_line(("To be solved for:", 3), verbose)
-    printing.print_info_line((str(x), 3), verbose)
+    printing.print_info_line(("To be solved for:", 4), verbose)
+    printing.print_info_line((str(x), 4), verbose)
     printing.print_info_line(("Solving...", 1), verbose)
 
     sol = sympy.solve(
@@ -158,7 +159,7 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
             printing.print_symbolic_results(sol)
 
     if source is not None:
-        src = sympy.Symbol(source.upper())
+        src = _symbol_factory(source.upper())
         printing.print_info_line(("Calculating small-signal symbolic transfer functions (%s))..." %
                                  (str(src),), 2), verbose, print_nl=False)
         tfs = calculate_gains(sol, src)
@@ -186,7 +187,7 @@ def calculate_gains(sol, xin, optimize=True):
         gain = sympy.together(value.diff(xin)) if optimize else value.diff(xin)
         (ps, zs) = get_roots(gain)
         tf.update({'gain': gain})
-        tf.update({'gain0': gain.subs(sympy.Symbol('s', complex=True), 0)})
+        tf.update({'gain0': gain.subs(_symbol_factory('s', complex=True), 0)})
         tf.update({'poles': ps})
         tf.update({'zeros': zs})
         gains.update({"%s/%s" % (str(key), str(xin)): tf})
@@ -222,9 +223,9 @@ def get_variables(circ):
 
     for i in range(mna_size):
         if i < nv_1:
-            x[i, 0] = sympy.Symbol("V" + str(circ.nodes_dict[i + 1]))
+            x[i, 0] = _symbol_factory("V" + str(circ.nodes_dict[i + 1]))
         else:
-            x[i, 0] = sympy.Symbol("I[" + idescr[i - nv_1] + "]")
+            x[i, 0] = _symbol_factory("I[" + idescr[i - nv_1] + "]")
     return x
 
 
@@ -253,7 +254,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
     n_of_nodes = len(circ.nodes_dict)
     mna = smzeros(n_of_nodes)
     N = smzeros((n_of_nodes, 1))
-    s = sympy.Symbol('s', complex=True)
+    s = _symbol_factory('s', complex=True)
     subs_g = {}
 
     for elem in circ:
@@ -261,9 +262,9 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             # we use conductances instead of 1/R because there is a significant
             # overhead handling many 1/R terms in sympy.
             if elem.is_symbolic:
-                R = sympy.Symbol(
+                R = _symbol_factory(
                     elem.part_id.upper(), real=True, positive=True)
-                G = sympy.Symbol('G' + elem.part_id[1:], real=True, positive=True)
+                G = _symbol_factory('G' + elem.part_id[1:], real=True, positive=True)
                 # but we keep track of which is which and substitute back after
                 # solving.
                 subs_g.update({G: 1 / R})
@@ -277,7 +278,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
         elif isinstance(elem, devices.Capacitor):
             if ac:
                 if elem.is_symbolic:
-                    capa = sympy.Symbol(
+                    capa = _symbol_factory(
                         elem.part_id.upper(), real=True, positive=True)
                 else:
                     capa = elem.value
@@ -291,7 +292,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             pass
         elif isinstance(elem, devices.GISource):
             if elem.is_symbolic:
-                alpha = sympy.Symbol(elem.part_id.upper(), real=True)
+                alpha = _symbol_factory(elem.part_id.upper(), real=True)
             else:
                 alpha = elem.value
             mna[elem.n1, elem.sn1] = mna[elem.n1, elem.sn1] + alpha
@@ -300,26 +301,26 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             mna[elem.n2, elem.sn2] = mna[elem.n2, elem.sn2] + alpha
         elif isinstance(elem, devices.ISource):
             if elem.is_symbolic:
-                IDC = sympy.Symbol(elem.part_id.upper())
+                IDC = _symbol_factory(elem.part_id.upper())
             else:
                 IDC = elem.dc_value
             N[elem.n1, 0] = N[elem.n1, 0] + IDC
             N[elem.n2, 0] = N[elem.n2, 0] - IDC
         elif isinstance(elem, mosq.mosq_device) or isinstance(elem, ekv.ekv_device):
-            gm = sympy.Symbol('gm_' + elem.part_id, real=True, positive=True)
+            gm = _symbol_factory('gm_' + elem.part_id, real=True, positive=True)
             mna[elem.n1, elem.ng] = mna[elem.n1, elem.ng] + gm
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gm
             mna[elem.n2, elem.ng] = mna[elem.n2, elem.ng] - gm
             mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + gm
             if opts['r0s']:
-                r0 = sympy.Symbol(
+                r0 = _symbol_factory(
                     'r0_' + elem.part_id, real=True, positive=True)
                 mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1 / r0
                 mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1 / r0
                 mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1 / r0
                 mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1 / r0
         elif isinstance(elem, diode.diode):
-            gd = sympy.Symbol("g" + elem.part_id, positive=True)
+            gd = _symbol_factory("g" + elem.part_id, positive=True)
             mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + gd
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gd
             mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - gd
@@ -348,13 +349,13 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             mna[index, elem.n2] = -1
             if isinstance(elem, devices.VSource):
                 if elem.is_symbolic:
-                    VDC = sympy.Symbol(elem.part_id.upper())
+                    VDC = _symbol_factory(elem.part_id.upper())
                 else:
                     VDC = elem.dc_value
                 N[index, 0] = -VDC
             elif isinstance(elem, devices.EVSource):
                 if elem.is_symbolic:
-                    alpha = sympy.Symbol(elem.part_id.upper(), real=True)
+                    alpha = _symbol_factory(elem.part_id.upper(), real=True)
                 else:
                     alpha = elem.alpha
                 mna[index, elem.sn1] = -alpha
@@ -362,7 +363,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             elif isinstance(elem, devices.Inductor):
                 if ac:
                     if elem.is_symbolic:
-                        L = sympy.Symbol(
+                        L = _symbol_factory(
                             elem.part_id.upper(), real=True, positive=True)
                     else:
                         L = elem.L
@@ -385,7 +386,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
                     this_index = circ.find_vde_index(elem.part_id, verbose=0)
                     for cd in elem.coupling_devices:
                         if cd.is_symbolic:
-                            M = sympy.Symbol(
+                            M = _symbol_factory(
                                 cd.part_id, real=True, positive=True)
                         else:
                             M = cd.K
@@ -417,7 +418,7 @@ def expand_matrix(mat, add_a_row=False, add_a_col=False):
 
 def get_roots(expr):
     num, den = sympy.fraction(expr)
-    s = sympy.Symbol('s', complex=True)
+    s = _symbol_factory('s', complex=True)
     return sympy.solve(den, s), sympy.solve(num, s)
 
 
@@ -442,13 +443,21 @@ def parse_substitutions(slist):
         letter_id1 = v1[0].upper() if v1[0].upper() != 'R' else 'G'
         letter_id2 = v2[0].upper() if v2[0].upper() != 'R' else 'G'
         if letter_id1[0] in ('R', 'G', 'L', 'C', 'M'):
-            s1 = sympy.Symbol(letter_id1 + v1[1:], real=True, positive=True)
+            s1 = _symbol_factory(letter_id1 + v1[1:], real=True, positive=True)
         else:
-            s1 = sympy.Symbol(letter_id1 + v1[1:], real=True)
+            s1 = _symbol_factory(letter_id1 + v1[1:], real=True)
         if letter_id2[0] in ('R', 'G', 'L', 'C', 'M'):
-            s2 = sympy.Symbol(letter_id2 + v2[1:], real=True, positive=True)
+            s2 = _symbol_factory(letter_id2 + v2[1:], real=True, positive=True)
         else:
-            s2 = sympy.Symbol(letter_id2 + v2[1:], real=True)
+            s2 = _symbol_factory(letter_id2 + v2[1:], real=True)
         subs.update({s1:s2})
     return subs
 
+def _symbol_factory(name, **options):
+    filtered_options = {}
+    for i in options:
+        if options[i] and enabled_assumptions[i]:
+            filtered_options.update({i:options[i]})
+        else:
+            pass # discarded
+    return sympy.Symbol(name, **filtered_options)
