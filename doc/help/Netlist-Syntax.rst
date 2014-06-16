@@ -739,15 +739,23 @@ Closes a subcircuit block.
 Ic
 ^^
 
+Set an Initial Condition for circuit analysis.
+
 ``.ic name=<ic_label> [v(<node>)=<value> i(<element_name>)=<value> ... ]``
 
 This allows the specification of a state of a circuit. Every node
 voltage or current (through appropriate elements) may be specified. If
-not set, it will be set to ``0``. Notice that setting a inappropriate or
-inconsistent ic will create convergence problems.
+not set, it will be set to ``0``. Notice that setting an inappropriate or
+inconsistent IC will create convergence problems.
 
-To use a ic in a transient analysis, set '``UIC=3``\ ' and
-'``IC_LABEL=<ic_label>``\ '.
+**Example:**
+
+::
+
+    .ic name=oscillate1 V(1)=10 V(nOUT)=2 I(VTEST)=5m
+
+To use an IC directive in a transient analysis, set '``UIC=3``' and
+'``IC_LABEL=<ic_label>``'.
 
 Include
 ^^^^^^^
