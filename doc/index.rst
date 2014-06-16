@@ -37,6 +37,7 @@ Reference
    csvlib
    devices
    diode
+   printing
    pz
    results
    symbolic
@@ -49,9 +50,6 @@ Documentation in progress
    :members:
 
 .. automodule:: ahkab.__main__
-   :members:
-
-.. automodule:: ahkab.printing
    :members:
 
 .. automodule:: ahkab.ekv
