@@ -1250,6 +1250,9 @@ def parse_single_analysis(line, line_elements=None):
             pass  # already set by ic_label
         else:
             raise NetlistParseError("Unknown UIC value: %d" % uic)
+    # ... and pz :(
+    if an['type'] == 'pz':
+        an.update({'x0':'op'})
 
     return an
 

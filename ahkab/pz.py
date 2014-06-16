@@ -66,6 +66,7 @@ from . import dc_analysis
 from . import devices
 from . import transient
 from . import plotting
+from . import printing
 from . import options
 from . import results
 
@@ -73,7 +74,7 @@ specs = {'pz': {'tokens': ({
                            'label': 'output',
                            'pos': 0,
                            'type': str,
-                           'needed': True,
+                           'needed': False,
                            'dest': 'output_port',
                            'default': None
                            },
@@ -81,7 +82,7 @@ specs = {'pz': {'tokens': ({
                            'label': 'input',
                            'pos': 1,
                            'type': str,
-                           'needed': True,
+                           'needed': False,
                            'dest': 'input_source',
                            'default': None
                            },
@@ -91,7 +92,7 @@ specs = {'pz': {'tokens': ({
                            'type': bool,
                            'needed': False,
                            'dest': 'calc_zeros',
-                           'default': True
+                           'default': False
                            },
                            {
                            'label': 'shift',
@@ -128,7 +129,7 @@ def calculate_poles(mc):
 
 def calculate_singularities(mc, input_source=None, output_port=None, 
                             calc_zeros=False, MNA=None, shift=0, outfile=None,
-                            verbose=0):
+                            x0=None, verbose=0):
     """Calculate poles and zeros.
 
     By default, only poles are calculated, as they need no information
@@ -156,6 +157,8 @@ def calculate_singularities(mc, input_source=None, output_port=None,
         Shift frequency at which the algorithm should be run.
     outfile : str or None, optional
         The data filename.
+    x0 : ndarray or op_solution, optional
+         The linearization point. Only needed for non-linear circuits.
     verbose : int, optional
         Verbosity level, from 0 (silent, default) to 6 (debug).
 
@@ -188,6 +191,20 @@ def calculate_singularities(mc, input_source=None, output_port=None,
         ROUT = []
     if MNA is None:
         MNA, N = dc_analysis.generate_mna_and_N(mc)
+    if mc.is_nonlinear():
+        # setup x0
+        if x0 is None:
+            printing.print_warning("PZ: No linearization point provided. Using x0 = 0.")
+            x0 = np.zeros((MNA.shape[0] - 1, 1))
+        else:
+            if isinstance(x0, results.op_solution):
+                x0 = x0.asmatrix()
+            # else
+                # hopefully x0 is an ndarray!
+            printing.print_info_line(("Using the supplied op as " +
+                                      "linearization point.", 5), verbose)
+        J, _ = dc_analysis.build_J_and_Tx(x0, MNA.shape[0]-1, mc, time=0., sparse=False)
+        MNA[1:, 1:] += J
     D = transient.generate_D(mc, MNA[1:, 1:].shape)
     MNAinv = np.linalg.inv(MNA[1:, 1:] + shift*D[1:, 1:])
     nodes_m1 = len(mc.nodes_dict) - 1

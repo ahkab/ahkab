@@ -347,7 +347,7 @@ def new_pss(period, x0=None, points=None, method='brute-force', autonomous=False
 
 
 def new_pz(input_source=None, output_port=None, shift=0.0, MNA=None, outfile=None,
-           verbose=0):
+           x0='op', verbose=0):
     """Assembles a Pole-Zero analysis and returns the analysis object.
 
     The analysis itself can be run with: ``ahkab.run(...)`` or queued with
@@ -376,6 +376,9 @@ def new_pz(input_source=None, output_port=None, shift=0.0, MNA=None, outfile=Non
         analyses from overwriting each-other's results.
         If unset defaults to ``stdout``.
 
+    x0 : np matrix, optional
+        the optional linearization point.
+
     verbose : int, optional
         The verbosity level, from 0 (silent, default) to 6 (debug).
 
@@ -393,7 +396,7 @@ def new_pz(input_source=None, output_port=None, shift=0.0, MNA=None, outfile=Non
         outfile += '.pz'
     return {'type': "pz", 'input_source':input_source,
             'output_port':output_port, 'calc_zeros':(input_source is not None),
-            'shift': shift, 'MNA':MNA, 'outfile': outfile, 'verbose': verbose}
+            'shift': shift, 'MNA':MNA, 'outfile': outfile, 'x0':x0, 'verbose': verbose}
 
 
 def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=0):
