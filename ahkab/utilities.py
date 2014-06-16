@@ -20,6 +20,7 @@
 """
 This file holds miscellaneous utility functions needed by the simulator.
 """
+from __future__ import unicode_literals, absolute_import
 
 import os
 import os.path
