@@ -1,0 +1,16 @@
+A SIMPLE AMPLIFIER.
+* T = V(3) / VIN
+* T = 1.0D6*(S - 4.0D9) / (S**2 + 1.43D8*S + 2.0D14)
+* POLES =  (-0.14e7, 0.0), (-14.16e7, 0.0)
+* ZEROS =  (+4.00e9, 0.0)
+
+RS   1  2  1K
+RPI  2  0  1K
+RL   3  0  1K
+GMU  3  0  2  0  0.04
+CPI  2  0  1N
+CMU  2  3  10P
+VIN  1  0  type=vdc vdc=1
+
+.PZ   V(3,0)   VIN
+.END
