@@ -557,9 +557,12 @@ class NetlistTest(unittest.TestCase):
                 assert k in res
                 ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         elif isinstance(res, results.pz_solution):
+            # recover the reference signularities from Re/Im data
             ref_sing_keys = ref.keys()[:]
             ref_sing_keys.sort()
-            ref_sing = [ref[ref_sing_keys[len(ref_sing_keys)/2 + k]] + ref[ref_sing_keys[k]]*1j for k in range(len(ref_sing_keys)/2)]
+            assert len(ref_sing_keys) % 2 == 0
+            ref_sing = [ref[ref_sing_keys[int(len(ref_sing_keys)/2) + k]] + ref[ref_sing_keys[k]]*1j \
+                        for k in range(int(len(ref_sing_keys)/2))]
             ref_poles_num = len([k for k in ref.keys() if k[:4] == 'Re(p'])
             poles_ref, zeros_ref = ref_sing[:ref_poles_num], ref_sing[ref_poles_num:]
             assert len(poles_ref) == len(res.poles)
