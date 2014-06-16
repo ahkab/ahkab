@@ -30,10 +30,10 @@ from . import options
 def print_circuit(circ):
     """Prints the whole circuit to stdout, in netlist format.
 
-    Parameters:
-    circ: the circuit instance to be printed.
+    **Parameters:**
 
-    Returns: None
+    circ : circuit instance
+        the circuit instance to be printed.
     """
     if circ.title:
         print circ.title
@@ -47,10 +47,11 @@ def print_circuit(circ):
 def print_analysis(an):
     """Prints a analysis to stdout, with the netlist syntax
 
-    Parameters:
-    an: an analisys, a element of the list returned from netlist_parser.parse_analysis
+    **Parameters:**
 
-    Returns: None
+    an : dict
+        an analysis description.
+
     """
     if an["type"] == "op":
         print ".op"
@@ -76,11 +77,14 @@ def print_analysis(an):
 def print_general_error(description, print_to_stdout=False):
     """Prints a error message to stderr.
 
-    Parameters:
-    description: the error's description
-    print_to_stdout:
+    **Parameters:**
 
-    Returns: None
+    description : str
+        the error's description
+
+    print_to_stdout : bool
+        force printing to ``stdout`` instead.
+
     """
     the_error_message = "E: " + description
     if print_to_stdout:
@@ -93,11 +97,14 @@ def print_general_error(description, print_to_stdout=False):
 def print_warning(description, print_to_stdout=False):
     """Prints a warning message to stderr.
 
-    Parameters:
-    description: the warning's description
-    print_to_stdout:
+    **Parameters:**
 
-    Returns: None
+    description: str
+        the warning's description
+
+    print_to_stdout : bool
+        force printing to ``stdout`` instead.
+
     """
     the_warning_message = "W: " + description
     if print_to_stdout:
