@@ -969,8 +969,8 @@ def build_x0_from_user_supplied_ic(circ, icdict):
     Returns:
     The x0 matrix assembled according to icdict
     """
-    Vregex = re.compile("V\s*\(\s*(\w?)\s*\)", re.IGNORECASE | re.DOTALL)
-    Iregex = re.compile("I\s*\(\s*(\w?)\s*\)", re.IGNORECASE | re.DOTALL)
+    Vregex = re.compile("V\s*\(\s*([a-z0-9]+)\s*\)", re.IGNORECASE | re.DOTALL)
+    Iregex = re.compile("I\s*\(\s*([a-z0-9]+)\s*\)", re.IGNORECASE | re.DOTALL)
     nv = len(circ.nodes_dict)  # number of voltage variables
     voltage_defined_elem_names = \
         [elem.part_id for elem in circ if circuit.is_elem_voltage_defined(
