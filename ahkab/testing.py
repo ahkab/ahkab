@@ -587,11 +587,9 @@ class NetlistTest(unittest.TestCase):
         """Run the test."""
         res = self._run_test()
         if not self.ref_run:
-            ok_(set(list(res.keys())) == set(list(self.ref_data.keys())),
-                "Reference and test data have a different number of nodes")
-            for t in res.keys():
-                ok_(t in self.ref_data, 'simulation %s not in the reference data')
-                print "Checking results for %s analysis..." % t
+            for t in list(res.keys()):
+                ok_(t in self.ref_data, 'simulation %s not in the reference data' % t)
+                print("Checking results for %s analysis..." % t)
                 self._check(res[t], self.ref_data[t])
         else:
             for t, ref_file in self.refs.items():
@@ -804,11 +802,9 @@ class APITest(unittest.TestCase):
         """Run the test."""
         res = self._run_test()
         if not self.ref_run:
-            ok_(set(list(res.keys())) == set(list(self.ref_data.keys())),
-                "Reference and test data have a different number of nodes")
-            for t in res.keys():
-                ok_(t in self.ref_data, 'simulation %s not in the reference data')
-                print "Checking results for %s analysis..." % t
+            for t in list(res.keys()):
+                ok_(t in self.ref_data, 'simulation %s not in the reference data' % t)
+                print("Checking results for %s analysis..." % t)
                 self._check(res[t], self.ref_data[t])
         else:
             # move ref files into place
