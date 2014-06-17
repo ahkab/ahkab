@@ -578,7 +578,7 @@ class NetlistTest(unittest.TestCase):
                     assert k in res
                     if isinstance(res[k], dict): # hence ref[k] will be a dict too
                         self._check(res[k], ref[k])
-                    elif isinstance(ref[k], sympy.Basic) and isinstance(ref[k], sympy.Basic):
+                    elif isinstance(ref[k], sympy.Basic) and isinstance(res[k], sympy.Basic):
                         assert (res[k] == ref[k]) or (sympy.simplify(ref[k]/res[k]) == 1)
                     else:
                         assert res[k] == ref[k]
@@ -793,7 +793,7 @@ class APITest(unittest.TestCase):
                     assert k in list(ref.keys())
                     if isinstance(res[k], dict): # hence ref[k] will be a dict too
                         self._check(res[k], ref[k])
-                    elif isinstance(ref[k], sympy.Basic) and isinstance(ref[k], sympy.Basic):
+                    elif isinstance(ref[k], sympy.Basic) and isinstance(res[k], sympy.Basic):
                         assert (res[k] == ref[k]) or (sympy.simplify(ref[k]/res[k]) == 1)
                     else:
                         assert res[k] == ref[k]

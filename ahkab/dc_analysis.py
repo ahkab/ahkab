@@ -158,7 +158,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 
     # time variable component: Tt this is always the same in each iter. So we
     # build it once for all.
-    Tt = np.mat(np.zeros((mna_size, 1)))
+    Tt = np.zeros((mna_size, 1))
     v_eq = 0
     if not skip_Tt:
         for elem in circ:
@@ -182,7 +182,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
         else:
             x = x0
     else:
-        x = np.mat(np.zeros((mna_size, 1)))
+        x = np.zeros((mna_size, 1))
                       # has n-1 rows because of discard of ^^^
 
     converged = False
@@ -260,7 +260,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
 
 def build_gmin_matrix(circ, gmin, mna_size, verbose):
     printing.print_info_line(("Building Gmin matrix...", 5), verbose)
-    Gmin_matrix = np.mat(np.zeros((mna_size, mna_size)))
+    Gmin_matrix = np.zeros((mna_size, mna_size))
     for index in xrange(len(circ.nodes_dict) - 1):
         Gmin_matrix[index, index] = gmin
         # the three missing terms of the stample matrix go on [index,0] [0,0] [0, index] but since
@@ -634,7 +634,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
     tick = ticker.ticker(increments_for_step=1)
     tick.display(print_steps)
     if x is None:
-        x = np.mat(np.zeros((mna_size, 1)))
+        x = np.zeros((mna_size, 1))
                       # if no guess was specified, its all zeros
     else:
         if not x.shape[0] == mna_size:
@@ -643,7 +643,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
     if T is None:
         printing.print_warning(
             "dc_analysis.mdn_solver called with T==None, setting T=0. BUG or no sources in circuit?")
-        T = np.mat(np.zeros((mna_size, 1)))
+        T = np.zeros((mna_size, 1))
 
     sparse = mna_size > options.dense_matrix_limit
     if sparse:
@@ -804,8 +804,8 @@ def generate_mna_and_N(circ, verbose=3):
     Restituisce: (MNA, N)
     """
     n_of_nodes = len(circ.nodes_dict)
-    mna = np.mat(np.zeros((n_of_nodes, n_of_nodes)))
-    N = np.mat(np.zeros((n_of_nodes, 1)))
+    mna = np.zeros((n_of_nodes, n_of_nodes))
+    N = np.zeros((n_of_nodes, 1))
     for elem in circ:
         if elem.is_nonlinear:
             continue
@@ -977,7 +977,7 @@ def build_x0_from_user_supplied_ic(circ, icdict):
             elem)]
     voltage_defined_elem_names = map(str.lower, voltage_defined_elem_names)
     ni = len(voltage_defined_elem_names)  # number of current variables
-    x0 = np.mat(np.zeros((nv + ni, 1)))
+    x0 = np.zeros((nv + ni, 1))
     for label, value in icdict.iteritems():
         if Vregex.search(label):
             ext_node = Vregex.findall(label)[0]
@@ -1019,7 +1019,7 @@ def modify_x0_for_ic(circ, x0):
 
     if return_obj:
         xnew = results.op_solution(x=x0, \
-            error=np.mat(np.zeros(x0.shape)), circ=circ, outfile=None)
+            error=np.zeros(x0.shape), circ=circ, outfile=None)
         xnew.netlist_file = None
         xnew.netlist_title = "Self-generated OP to be used as tran IC"
     else:
