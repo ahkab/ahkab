@@ -87,16 +87,8 @@ specs = {'pz': {'tokens': ({
                            'default': None
                            },
                            {
-                           'label': 'zeros',
-                           'pos': 2,
-                           'type': bool,
-                           'needed': False,
-                           'dest': 'calc_zeros',
-                           'default': False
-                           },
-                           {
                            'label': 'shift',
-                           'pos': 3,
+                           'pos': 2,
                            'type': float,
                            'needed': False,
                            'dest': 'shift',
@@ -125,11 +117,10 @@ def calculate_poles(mc):
         The PZ solution, with no zeros
     """
     return calculate_singularities(mc, input_source=None, output_port=None, 
-                                   calc_zeros=False, MNA=None, shift=0)[0]
+                                   MNA=None, shift=0)[0]
 
-def calculate_singularities(mc, input_source=None, output_port=None, 
-                            calc_zeros=False, MNA=None, shift=0, outfile=None,
-                            x0=None, verbose=0):
+def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
+                            shift=0, outfile=None, x0=None, verbose=0):
     """Calculate poles and zeros.
 
     By default, only poles are calculated, as they need no information
@@ -137,22 +128,21 @@ def calculate_singularities(mc, input_source=None, output_port=None,
 
     To activate zeros calculation, it is necessary:
 
-    * To specify an input source (``input_source``),
-    * To specify an output port (``output_port``),
-    * To set ``calc_zeros`` to ``True`` to enable the zeros routine.
+    * to specify an input source (``input_source``),
+    * to specify an output port (``output_port``).
 
     **Parameters:**
 
     mc : circuit instance
         The circuit to be analyzed.
     input_source : string or element, optional
-        Ignored if zeros are not being calculated.
+        If zeros are to be calculated, set this to the input surce.
     output_port : external node (ref. to gnd) or tuple of external nodes, opt
-        Ignored if zeros are not being calculated.
-    calc_zeros : bool, optional
-        Calculate zeros.
+        If zeros are to be calculated, set this to the output nodes.
     MNA : ndarray, optional
         The Modified Nodal Analysis matrix, if available.
+        In case the circuit is non-linear, MNA should include the contributes
+        of the non-linear elements (ie the Jacobian :math:`J`). 
     shift : float, optional
         Shift frequency at which the algorithm should be run.
     outfile : str or None, optional
@@ -168,6 +158,7 @@ def calculate_singularities(mc, input_source=None, output_port=None,
         The PZ solution
 
     """
+    calc_zeros = (input_source is not None) and (output_port is not None)
     if calc_zeros:
         if type(input_source) != str:
             input_source = input_source.part_id
@@ -191,20 +182,20 @@ def calculate_singularities(mc, input_source=None, output_port=None,
         ROUT = []
     if MNA is None:
         MNA, N = dc_analysis.generate_mna_and_N(mc)
-    if mc.is_nonlinear():
-        # setup x0
-        if x0 is None:
-            printing.print_warning("PZ: No linearization point provided. Using x0 = 0.")
-            x0 = np.zeros((MNA.shape[0] - 1, 1))
-        else:
-            if isinstance(x0, results.op_solution):
-                x0 = x0.asmatrix()
-            # else
-                # hopefully x0 is an ndarray!
-            printing.print_info_line(("Using the supplied op as " +
+        if mc.is_nonlinear():
+            # setup x0
+            if x0 is None:
+                printing.print_warning("PZ: No linearization point provided. Using x0 = 0.")
+                x0 = np.zeros((MNA.shape[0] - 1, 1))
+            else:
+                if isinstance(x0, results.op_solution):
+                    x0 = x0.asmatrix()
+                # else
+                    # hopefully x0 is an ndarray!
+                printing.print_info_line(("Using the supplied op as " +
                                       "linearization point.", 5), verbose)
-        J, _ = dc_analysis.build_J_and_Tx(x0, MNA.shape[0]-1, mc, time=0., sparse=False)
-        MNA[1:, 1:] += J
+            J, _ = dc_analysis.build_J_and_Tx(x0, MNA.shape[0]-1, mc, time=0., sparse=False)
+            MNA[1:, 1:] += J
     D = transient.generate_D(mc, MNA[1:, 1:].shape)
     MNAinv = np.linalg.inv(MNA[1:, 1:] + shift*D[1:, 1:])
     nodes_m1 = len(mc.nodes_dict) - 1
@@ -268,8 +259,8 @@ def calculate_singularities(mc, input_source=None, output_port=None,
         if np.linalg.det(TCM):
             poles = 1./(2.*np.pi)*(1./np.linalg.eigvals(TCM) + shift)
         else:
-            return calculate_singularities(mc, input_source, output_port, 
-                                           calc_zeros, MNA=MNA, outfile=outfile, 
+            return calculate_singularities(mc, input_source, output_port, MNA=MNA,
+                                           outfile=outfile, 
                                            shift=shift+np.abs(1+np.random.uniform())*1e3)
     else:
         poles = []
@@ -318,11 +309,11 @@ def calculate_singularities(mc, input_source=None, output_port=None,
                 zeros = 1./(2.*np.pi)*(1./np.linalg.eigvals(ZTCM) + shift)
             except ValueError:
                 return calculate_singularities(mc, input_source, output_port, 
-                                           calc_zeros, MNA=MNA, outfile=outfile,
+                                           MNA=MNA, outfile=outfile,
                                            shift=shift+np.abs(np.random.uniform()+1)*1e3)
         elif shift < 1e12:
             return calculate_singularities(mc, input_source, output_port, 
-                                       calc_zeros, MNA=MNA, outfile=outfile,
+                                       MNA=MNA, outfile=outfile,
                                        shift=shift*np.abs(np.random.uniform()+1)*10)
         else:
             zeros = []
