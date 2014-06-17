@@ -37,34 +37,37 @@ from . import results
 from . import options
 
 specs = {'symbolic': {'tokens': ({
-                                 'label': 'tf',
-                                 'pos': None,
-                                 'type': str,
-                                 'needed': False,
-                                 'dest': 'source',
-                                 'default': None
+                                  'label': 'tf',
+                                  'pos': None,
+                                  'type': str,
+                                  'needed': False,
+                                  'dest': 'source',
+                                  'default': None
                                  },
-        {
-                                 'label': 'ac',
-                                 'pos': None,
-                                 'type': bool,
-                                 'needed': False,
-                                 'dest': 'ac_enable',
-                                 'default': True
+                                 {
+                                  'label': 'ac',
+                                  'pos': None,
+                                  'type': bool,
+                                  'needed': False,
+                                  'dest': 'ac_enable',
+                                  'default': True
                                  },
-                      {
-                          'label': 'r0s',
-                          'pos': None,
-                          'type': bool,
-                          'needed': False,
-                          'dest': 'r0s',
-                          'default': False
-                      }
-)
-}
-}
+                                 {
+                                  'label': 'r0s',
+                                  'pos': None,
+                                  'type': bool,
+                                  'needed': False,
+                                  'dest': 'r0s',
+                                  'default': False
+                                 }
+                                )
+                     }
+        }
 
-enabled_assumptions = {'real':False, 'positive':False, 'complex':False}
+# the s variable
+s = sympy.Symbol('s', complex=True)
+
+enabled_assumptions = {'real':False, 'positive':False, 'complex':True}
 
 def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=3):
     """Attempt a symbolic solution of the circuit.
@@ -187,7 +190,7 @@ def calculate_gains(sol, xin, optimize=True):
         gain = sympy.together(value.diff(xin)) if optimize else value.diff(xin)
         (ps, zs) = get_roots(gain)
         tf.update({'gain': gain})
-        tf.update({'gain0': gain.subs(_symbol_factory('s', complex=True), 0)})
+        tf.update({'gain0': gain.subs(s, 0)})
         tf.update({'poles': ps})
         tf.update({'zeros': zs})
         gains.update({"%s/%s" % (str(key), str(xin)): tf})
@@ -254,7 +257,6 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
     n_of_nodes = len(circ.nodes_dict)
     mna = smzeros(n_of_nodes)
     N = smzeros((n_of_nodes, 1))
-    s = _symbol_factory('s', complex=True)
     subs_g = {}
 
     for elem in circ:
@@ -418,7 +420,6 @@ def expand_matrix(mat, add_a_row=False, add_a_col=False):
 
 def get_roots(expr):
     num, den = sympy.fraction(expr)
-    s = _symbol_factory('s', complex=True)
     return sympy.solve(den, s), sympy.solve(num, s)
 
 
