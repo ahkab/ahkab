@@ -12,5 +12,6 @@ CPI  2  0  1N
 CMU  2  3  10P
 VIN  1  0  type=vdc vdc=1
 
+.OP
 .PZ   V(3,0)   VIN
 .END
