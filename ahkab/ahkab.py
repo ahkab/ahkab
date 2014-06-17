@@ -376,8 +376,10 @@ def new_pz(input_source=None, output_port=None, shift=0.0, MNA=None, outfile=Non
         analyses from overwriting each-other's results.
         If unset defaults to ``stdout``.
 
-    x0 : np matrix, optional
-        the optional linearization point.
+    x0 : np matrix or str, optional
+        the optional linearization point. If set to a string, it must be
+        the result of an .OP analysis (use ``'op'``) or an .IC condition
+        defined in the netlist. It has no effect on linear circuits.
 
     verbose : int, optional
         The verbosity level, from 0 (silent, default) to 6 (debug).
@@ -394,9 +396,9 @@ def new_pz(input_source=None, output_port=None, shift=0.0, MNA=None, outfile=Non
             _of.append(ofi)  # keep the file open until quitting
     else:
         outfile += '.pz'
-    return {'type': "pz", 'input_source':input_source,
-            'output_port':output_port, 'calc_zeros':(input_source is not None),
-            'shift': shift, 'MNA':MNA, 'outfile': outfile, 'x0':x0, 'verbose': verbose}
+    return {'type': "pz", 'input_source':input_source, 'x0':x0,
+            'output_port':output_port, 'shift':shift, 'MNA':MNA,
+            'outfile':outfile, 'verbose':verbose}
 
 
 def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=0):
@@ -731,5 +733,5 @@ def _handle_netlist_ics(circ, an_list, ic_list):
             if an['x0'] in list(_x0s.keys()):
                 an['x0'] = _x0s[an['x0']]
             elif an_list.index(an) == 0:
-                printing.print_general_error("Unknown x0 %s" % an["x0"])
-                sys.exit(54)
+                raise ValueError(("The x0 '%s' is not available." % an["x0"]) +\
+                                (an['x0'] == 'op')*" Perhaps you forgot to define an .OP?")
