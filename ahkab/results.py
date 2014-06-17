@@ -109,6 +109,8 @@ from . import printing
 from . import options
 from . import constants
 from . import csvlib
+
+from .py3compat import text_type
 from .__version__ import __version__
 
 csvlib.SEPARATOR = "\t"
@@ -195,11 +197,11 @@ class solution:
 
     def has_key(self, name):
         """Determine whether the result set contains a variable."""
-        return name.upper() in list(map(str.upper, self.variables))
+        return name.upper() in [v.upper() for v in self.variables]
 
     def __contains__(self, name):
         """Determine whether the result set contains a variable."""
-        return name.upper() in list(map(str.upper, self.variables))
+        return name.upper() in [v.upper() for v in self.variables]
 
     def keys(self):
         """Get all of the results set's variables names."""
@@ -312,7 +314,7 @@ class op_solution(solution, _mutable_data):
 
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
-        if not name.lower() in list(map(str.lower, self.variables)):
+        if not name.upper() in [v.upper() for v in self.variables]:
             raise KeyError
         his = csvlib.get_headers_index(self.variables, [name], verbose=0)
         return self.x[his]
@@ -1153,7 +1155,7 @@ class case_insensitive_dict():
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
         keys = list(self._dict.keys())
-        i = list(map(str.upper, keys)).index(str(name).upper())
+        i = [k.upper() for k in keys].index(text_type(name).upper())
         return self._dict[keys[i]]
 
     def get(self, name, default=None):
@@ -1163,18 +1165,18 @@ class case_insensitive_dict():
         """
         try:
             keys = list(self._dict.keys())
-            i = map(str.upper, keys).index(name.upper())
+            i = [k.upper() for k in keys].index(name.upper())
         except KeyError:
             return default
         return self._dict[keys[i]]
 
     def has_key(self, name):
         """Determine whether the result set contains a variable."""
-        return name.upper() in list(map(str.upper, list(self._dict.keys())))
+        return name.upper() in [k.upper() for k in list(self._dict.keys())]
 
     def __contains__(self, name):
         """Determine whether the result set contains a variable."""
-        return name.upper() in list(map(str.upper, list(self._dict.keys())))
+        return name.upper() in [k.upper() for k in list(self._dict.keys())]
 
     def keys(self):
         """Get all keys"""

@@ -976,9 +976,8 @@ def build_x0_from_user_supplied_ic(circ, icdict):
     Iregex = re.compile("I\s*\(\s*([a-z0-9]+)\s*\)", re.IGNORECASE | re.DOTALL)
     nv = len(circ.nodes_dict)  # number of voltage variables
     voltage_defined_elem_names = \
-        [elem.part_id for elem in circ if circuit.is_elem_voltage_defined(
-            elem)]
-    voltage_defined_elem_names = list(map(str.lower, voltage_defined_elem_names))
+        [elem.part_id.lower() for elem in circ
+         if circuit.is_elem_voltage_defined(elem)]
     ni = len(voltage_defined_elem_names)  # number of current variables
     x0 = numpy.mat(numpy.zeros((nv + ni, 1)))
     for label, value in icdict.items():
@@ -988,7 +987,7 @@ def build_x0_from_user_supplied_ic(circ, icdict):
             x0[int_node, 0] = value
         elif Iregex.search(label):
             element_name = Iregex.findall(label)[0]
-            index = voltage_defined_elem_names.index(element_name)
+            index = voltage_defined_elem_names.index(element_name.lower())
             x0[nv + index, 0] = value
         else:
             raise ValueError("Unrecognized label " + label)
