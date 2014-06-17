@@ -564,7 +564,7 @@ class NetlistTest(unittest.TestCase):
                 ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
         elif isinstance(res, results.pz_solution):
             # recover the reference signularities from Re/Im data
-            ref_sing_keys = ref.keys()[:]
+            ref_sing_keys = list(ref.keys())[:]
             ref_sing_keys.sort()
             assert len(ref_sing_keys) % 2 == 0
             ref_sing = [ref[ref_sing_keys[int(len(ref_sing_keys)/2) + k]] + ref[ref_sing_keys[k]]*1j \
