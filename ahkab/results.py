@@ -1171,7 +1171,7 @@ class case_insensitive_dict():
         return self._dict[keys[i]]
 
     def has_key(self, name):
-        """Determine whether the result set contains a variable."""
+        """Determine whether the result set contains the variable ``name``."""
         return name.upper() in [k.upper() for k in list(self._dict.keys())]
 
     def __contains__(self, name):
