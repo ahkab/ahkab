@@ -47,7 +47,9 @@ The separator can be selected setting:
 #    _get_fp(filename, mode='rb')
 #    _close_fp(fp, filename)
 
-from __future__ import print_function, division, unicode_literals
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import io
 import sys
 import copy

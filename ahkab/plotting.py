@@ -21,7 +21,9 @@
 This module offers the functions needed to plot the results
 of a simulation
 """
-from __future__ import print_function, division, unicode_literals
+
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
 
 import re
 import pylab

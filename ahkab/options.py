@@ -20,6 +20,9 @@
 """This module contains options and configuration switches
 """
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import os
 
 encoding = 'utf8'

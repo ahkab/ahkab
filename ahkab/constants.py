@@ -20,6 +20,9 @@
 """Holds some constants useful for equations
 """
 
+
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
 import math
 
 e = 1.60217646e-19

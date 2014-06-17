@@ -38,6 +38,9 @@ for the frequency values specified by the user, providing the resulting
 matrix is not singular (and possibly well conditioned). 
 """
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import sys
 import numpy as np
 

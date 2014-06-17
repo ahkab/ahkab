@@ -22,7 +22,9 @@ This is the printing module of the simulator. Using its functions, the output wi
 be somewhat uniform.
 """
 
-from __future__ import print_function, division
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import sys
 
 from . import options

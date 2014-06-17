@@ -99,6 +99,9 @@ allowing the element to print a netlist entry that parses to itself.
 
 """
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import numpy as np
 import math
 

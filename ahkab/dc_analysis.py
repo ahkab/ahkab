@@ -29,6 +29,9 @@ The actual solution is done by mdn_solver, that uses a modified
 version of the Newton Rhapson method.
 """
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import sys
 import re
 import copy

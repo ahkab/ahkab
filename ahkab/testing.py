@@ -361,7 +361,8 @@ Module reference
 
 """
 
-from __future__ import print_function, division
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
 
 import time
 import os

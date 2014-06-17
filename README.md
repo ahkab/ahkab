@@ -98,8 +98,12 @@ This project was born when I was an enthusistic undergrad, apparently with plent
 
 I am grateful to prof. Brambilla for teaching one of the most interesting courses of my university years. -GV
 
-### Contributors ###
-[Giuseppe Venturini](https://github.com/ggventurini), [Ian Daniher](https://github.com/itdaniher), [Rob Crowther](https://github.com/weilawei).
+### Credits ###
+**Contributors:** [Giuseppe Venturini](https://github.com/ggventurini), [Ian Daniher](https://github.com/itdaniher), [Rob Crowther](https://github.com/weilawei).
+
+**Code:** the module `py3compat.py` is (c) 2013 - the Jinja team.
+
+**Deps:** many thanks to the authors of `numpy`, `scipy` and `sympy`!
 
 ### Bugs and patches ###
 

@@ -24,6 +24,9 @@ AC or DC.
 The principal method is solve(), which carries out the symbolic circuit solution.
 """
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import sympy
 from sympy.matrices import zeros as smzeros
 

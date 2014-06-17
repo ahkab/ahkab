@@ -23,6 +23,9 @@ The syntax is explained in the docs and it's based on [1] whenever possible.
 Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
 """
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import sys
 import imp
 import math

@@ -79,6 +79,9 @@
     Anyway, from a theorical point of view, the above applies.
       """
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import numpy as np
 import sys
 
