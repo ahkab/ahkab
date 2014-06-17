@@ -53,6 +53,9 @@ from . import utilities
 from . import plotting
 from . import printing
 
+#py3 compat
+from .py3compat import text_type
+
 from .__version__ import __version__
 
 global _queue, _x0s, _print, _of
@@ -519,7 +522,7 @@ def run(circ, an_list=None):
     while len(an_list):
         an_item = an_list.pop(0)
         an_type = an_item.pop('type')
-        if 'x0' in an_item and isinstance(an_item['x0'], str):
+        if 'x0' in an_item and isinstance(an_item['x0'], text_type):
             printing.print_warning("%s has x0 set to %s, unavailable. Using 'None'." %
                                    (an_type.upper(), an_item['x0']))
             an_item['x0'] = None
@@ -730,7 +733,7 @@ def _handle_netlist_ics(circ, an_list, ic_list):
         icdict = ic[ic_label]
         _x0s.update({ic_label: new_x0(circ, icdict)})
     for an in an_list:
-        if 'x0' in an and isinstance(an['x0'], str):
+        if 'x0' in an and isinstance(an['x0'], text_type):
             if an['x0'] in list(_x0s.keys()):
                 an['x0'] = _x0s[an['x0']]
             elif an_list.index(an) == 0:
