@@ -1,0 +1,10 @@
+RC time delay circuit
+v1 1 0 type=vdc vdc=0 type=pulse v1=0 v2=1 td=0 tr=1n tf=1n pw=1n per=1000
+c1 2 0 550p ic=0
+l1 1 2 22n ic=0
+r1 2 1 .3k
+.op
+.tran tstep=10n tstop=1u uic=2
+.plot tran v(2) v(1)
+.end 
+
