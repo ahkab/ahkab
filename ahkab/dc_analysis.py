@@ -692,7 +692,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
 
 def build_J_and_Tx(x, mna_size, element_list, time, sparse=False):
     if sparse:
-        J = scipy.sparse.coo_matrix((mna_size, mna_size))
+        J = scipy.sparse.lil_matrix((mna_size, mna_size))
     else:
         J = np.zeros((mna_size, mna_size))
     Tx = np.zeros((mna_size, 1))
