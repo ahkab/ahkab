@@ -103,24 +103,35 @@ def _enlarge_matrix(M):
     else:
         return np.vstack((np.hstack((M, np.zeros((M.shape[0], 1)))),
                          np.zeros((1, M.shape[1] + 1))))
-def calculate_poles(mc):
+
+def calculate_poles(mc, MNA=None, x0=None, outfile=None, verbose=0):
     """Calculate the circuit poles.
 
     **Parameters:**
 
     mc : circuit instance
         The circuit to be analyzed.
+    MNA : ndarray, optional
+        The Modified Nodal Analysis matrix, if available.
+        In case the circuit is non-linear, MNA should include the contributes
+        of the non-linear elements (ie the Jacobian :math:`J`). 
+    x0 : ndarray or op_solution, optional
+         The linearization point. Only needed for non-linear circuits.
+    outfile : str or None, optional
+        The data filename.
+    verbose : int, optional
+        Verbosity level, from 0 (silent, default) to 6 (debug).
 
     **Returns:**
 
     pz_sol : pz_solution instance
-        The PZ solution, with no zeros
+        The PZ solution, with no zeros.
     """
     return calculate_singularities(mc, input_source=None, output_port=None, 
                                    MNA=None, shift=0)[0]
 
 def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
-                            shift=0, outfile=None, x0=None, verbose=0):
+                            x0=None, shift=0, outfile=None, verbose=0):
     """Calculate poles and zeros.
 
     By default, only poles are calculated, as they need no information
@@ -143,12 +154,12 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
         The Modified Nodal Analysis matrix, if available.
         In case the circuit is non-linear, MNA should include the contributes
         of the non-linear elements (ie the Jacobian :math:`J`). 
+    x0 : ndarray or op_solution, optional
+         The linearization point. Only needed for non-linear circuits.
     shift : float, optional
         Shift frequency at which the algorithm should be run.
     outfile : str or None, optional
         The data filename.
-    x0 : ndarray or op_solution, optional
-         The linearization point. Only needed for non-linear circuits.
     verbose : int, optional
         Verbosity level, from 0 (silent, default) to 6 (debug).
 
