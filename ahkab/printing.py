@@ -18,8 +18,9 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This is the printing module of the simulator. Using its functions, the output will
-be somewhat uniform.
+This is the printing module of the simulator.
+
+Using its functions, the output will be somewhat uniform.
 """
 
 from __future__ import (unicode_literals, absolute_import,
@@ -85,7 +86,7 @@ def print_general_error(description, print_to_stdout=False):
     description : str
         the error's description
 
-    print_to_stdout : bool
+    print_to_stdout : bool, optional
         force printing to ``stdout`` instead.
 
     """
@@ -105,7 +106,7 @@ def print_warning(description, print_to_stdout=False):
     description: str
         the warning's description
 
-    print_to_stdout : bool
+    print_to_stdout : bool, optional
         force printing to ``stdout`` instead.
 
     """
@@ -128,14 +129,18 @@ def print_info_line(xxx_todo_changeme, verbose, print_nl=True):
 
 
 def print_parse_error(nline, line, print_to_stdout=False):
-    """Prints a parsing error in the netlist to stderr.
+    """Prints a parsing error to stderr.
 
-    Parameters:
-    nline: number of the line on which the error was found
-    line: the line of the file
-    print_to_stdout:
+    **Parameters:**
 
-    Returns: None
+    nline : int,
+        number of the line on which the error was found
+
+    line : str
+        the line of the file
+
+    print_to_stdout : bool, optional
+        print to stdout instead.
     """
     print_general_error(
         "Parse error on line " + str(nline) + ":", print_to_stdout)
