@@ -713,6 +713,12 @@ def update_J_and_Tx(J, Tx, x, elem, time):
             if port[1]:
                 v = v - x[port[1] - 1, 0]
             v_dports.append(v)
+        if hasattr(elem, 'gstamp') and hasattr(elem, 'istamp'):
+            iis, gs = elem.gstamp(v_dports, time)
+            J[iis] += gs.reshape(-1)
+            iis, i = elem.istamp(v_dports, time)
+            Tx[iis] += i.reshape(-1)
+            continue
         if n1 or n2:
             iel = elem.i(index, v_dports, time)
         if n1:
