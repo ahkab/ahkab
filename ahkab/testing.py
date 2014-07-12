@@ -455,7 +455,7 @@ class NetlistTest(unittest.TestCase):
         cp = ConfigParser()
         cp.read(os.path.join(self.reference_path, '%s.ini' % self.test_id))
         self.skip = bool(int(cp.get('test', 'skip-on-travis')))
-        #assert self.test_id == cp.get('test', 'name')
+        assert self.test_id == cp.get('test', 'name')
 
         netlist = cp.get('test', 'netlist')
         self.netlist = os.path.join(self.reference_path, netlist)
