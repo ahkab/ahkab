@@ -26,7 +26,7 @@ Two classes for describing tests are defined in this module:
 - :class:`NetlistTest`, used to run a netlist-based test,
 - :class:`APITest`, used to run an API-based test.
 
-Every test, no matter which class is referenced internally, is 
+Every test, no matter which class is referenced internally, is
 univocally identified by a alphanumeric id, which will
 be referred to as ``<test_id>`` in the following.
 
@@ -35,7 +35,7 @@ Directory structure
 \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"
 
 The tests are placed in ``tests/``, under a directory with the same
-id as the test, ie: 
+id as the test, ie:
 
 ::
 
@@ -136,13 +136,13 @@ They are as follows:
   - ``name``, set to the ``<test_id>``, for error-checking,
 
   - ``netlist``, set to the netlist filename, ``<test_id>.ckt``, prepended
-    with the the netlist path relative to ``tests/<test_id>/`` (most of 
+    with the the netlist path relative to ``tests/<test_id>/`` (most of
     the time that means just ``<test_id>.ckt``)
 
   - ``type``, a comma-separated list of analyses that will be executed during
     the test. Values may be ``op``, ``dc``, ``tran``, ``symbolic``... and so on.
 
-  - One entry ``<analysis>_ref`` for each of the analyses listed in the 
+  - One entry ``<analysis>_ref`` for each of the analyses listed in the
     ``type`` entry above.
     The value is recommended to be set to ``<test_id>-ref.<analysis>`` or
     ``<test_id>-ref.<analysis>.pickle``, if you prefer to save data in
@@ -176,7 +176,7 @@ Script file
 '''''''''''
 
 The test script file is where most of the action takes place and where
-the highest amount of flexibility is available. 
+the highest amount of flexibility is available.
 
 That said, the ahkab testing framework was designed to make for extremely
 simple and straight-forward test scripts.
@@ -296,7 +296,7 @@ Below is a typical test script file:
         # ...
 
         ## create a testbench
-        testbench = testing.APITest('<test_id>', mycircuit, 
+        testbench = testing.APITest('<test_id>', mycircuit,
                                     [op_analysis, ac_analysis],
                                     skip_on_travis=True)
 
@@ -452,11 +452,16 @@ class NetlistTest(unittest.TestCase):
         else:
             self.reference_path = "."
 
+        if not os.path.isfile(os.path.join(self.reference_path,
+                                           '%s.ini' % self.test_id)):
+            raise IOError("Config file %s not found." %
+                           os.path.join(self.reference_path,
+                                        '%s.ini' % self.test_id))
         # read the test config from <test_id>.ini
         cp = ConfigParser()
         cp.read(os.path.join(self.reference_path, '%s.ini' % self.test_id))
         self.skip = bool(int(cp.get('test', 'skip-on-travis')))
-        assert self.test_id == cp.get('test', 'name')
+        #assert self.test_id == cp.get('test', 'name')
 
         netlist = cp.get('test', 'netlist')
         self.netlist = os.path.join(self.reference_path, netlist)
@@ -477,11 +482,11 @@ class NetlistTest(unittest.TestCase):
         self.rmfiles = []
         for i in self.types:
             if i == 'op':
-                self.rmfiles.append(os.path.join(self.reference_path, 
-                                                 '%s.opinfo' % 
+                self.rmfiles.append(os.path.join(self.reference_path,
+                                                 '%s.opinfo' %
                                                  self.test_id))
-            self.rmfiles.append(os.path.join(self.reference_path, 
-                                                 '%s.%s' % 
+            self.rmfiles.append(os.path.join(self.reference_path,
+                                                 '%s.%s' %
                                                  (self.test_id, i)))
 
         # Are we in a reference run?
@@ -603,7 +608,7 @@ class NetlistTest(unittest.TestCase):
                     with open(ref_file, 'w') as fp:
                         pickle.dump(res[t], fp, protocol=2)
                 else:
-                    res_file = os.path.join(self.reference_path, 
+                    res_file = os.path.join(self.reference_path,
                                             '%s.%s' % (self.test_id, t))
                     os.rename(res_file, ref_file)
 
@@ -625,7 +630,7 @@ class APITest(unittest.TestCase):
     **Parameters:**
 
     test_id : string
-        The test id. 
+        The test id.
 
     circ : circuit instance
         The circuit to be tested
@@ -704,9 +709,9 @@ class APITest(unittest.TestCase):
                self.an_list[i]['outfile'] is not None and \
                not self.an_list[i]['outfile'] == 'stdout' and \
                not (len(self.an_list[i]['outfile']) > 5 and \
-                    self.an_list[i]['outfile'][:4] == '/tmp/'): 
+                    self.an_list[i]['outfile'][:4] == '/tmp/'):
                 if not os.path.isabs(self.an_list[i]['outfile']):
-                    self.an_list[i]['outfile'] = os.path.join(self.reference_path, 
+                    self.an_list[i]['outfile'] = os.path.join(self.reference_path,
                                                        self.an_list[i]['outfile'])
 
         # files to be removed after the test is completed successfully
@@ -715,7 +720,7 @@ class APITest(unittest.TestCase):
             if 'outfile' in an and \
                an['outfile'] is not None and \
                not an['outfile'] == 'stdout' and \
-               not (len(an['outfile']) > 5 and an['outfile'][:4] == '/tmp/'): 
+               not (len(an['outfile']) > 5 and an['outfile'][:4] == '/tmp/'):
                 self.rmfiles.append(an['outfile'])
                 if an['type'] == 'op':
                     self.rmfiles.append(an['outfile'] + 'info')
