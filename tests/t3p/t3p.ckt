@@ -1,0 +1,13 @@
+RING OSCILLATOR with 3 inverters
+
+*r1 3 2 100k
+
+m1 3 0 0 0 nch w=1u l=1u
+m2 3 0 2 2 pch w=1u l=1u
+
+v2 2 0 type=vdc vdc=2.5
+
+.model mosq nch TYPE=n VTO=.4 KP=40e-6 LAMBDA=0.1
+.model mosq pch TYPE=p VTO=-.4 KP=40e-6 LAMBDA=0.1
+
+.op guess=1
