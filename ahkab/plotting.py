@@ -164,19 +164,22 @@ def plot_results(title, y2y1_list, results, outfilename):
     else:
         xlog = False
     _setup_plot(fig, title, (xlabel, xunit), yvu, xlog=xlog)
+    ms = 7./(1. + max(np.log(len(x)/100.), 0))
+    ms = ms if ms > 2 else 0.
 
     pylab.hold(True)
     ymax, ymin = None, None
     for y, label in gdata:
         [line] = pylab.plot(
             x, y, options.plotting_style, label=label +
-            " (" + analysis + ")",
+            " (" + analysis + ")", ms=ms,
             mfc='w', lw=options.plotting_lw, mew=options.plotting_lw)
         line.set_mec(line.get_color())  # nice empty circles
         ymax = y.max() if ymax is None or y.max() > ymax else ymax
         ymin = y.min() if ymin is None or y.min() < ymin else ymin
     pylab.xlim((x.min(), x.max()))
     pylab.ylim((ymin - (ymax - ymin) * .01, ymax + (ymax - ymin) * .01))
+    pylab.grid(True)
     pylab.hold(False)
     pylab.legend()
 
