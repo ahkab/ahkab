@@ -468,7 +468,7 @@ def parse_elem_vsource(line, circ, line_elements=None):
 
     index = 3
     while True:  # for index in range(3, len(line_elements)):
-        if index == len(line_elements):
+        if index >= len(line_elements):
             break
         if line_elements[index][0] == '*':
             break
