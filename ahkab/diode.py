@@ -131,6 +131,35 @@ class diode:
     def get_drive_ports(self, op):
         return self.ports
 
+    def istamp(self, ports_v, time=0, reduced=True):
+        """Get the current matrix
+
+        A matrix corresponding to the current flowing in the element
+        with the voltages applied as specified in the ``ports_v`` vector.
+
+        **Parameters:**
+
+        ports_v : list
+            A list in the form: [voltage_across_port0, voltage_across_port1, ...]
+        time: float
+            the simulation time at which the evaluation is performed.
+            It has no effect here. Set it to None during DC analysis.
+
+        """
+        v = ports_v[0]
+        if v in self.device._i_db:
+            i = self.device._i_db[v]
+        else:
+            i = self.model.get_i(v, self.device)
+            self.device._i_db = {v:i}
+        istamp = np.array((i, -i), dtype=np.float64)
+        indices = ((self.n1 - 1*reduced, self.n2 - 1*reduced), (0, 0))
+        if reduced:
+            delete_i = [pos for pos, i in enumerate(indices[0]) if i == -1]
+            istamp = np.delete(istamp, delete_i, axis=0)
+            indices = zip(*[(i, j) for i, j in zip(*indices) if i != -1])
+        return indices, istamp
+
     def i(self, op_index, ports_v, time=0):  # with gmin added
         v = ports_v[0]
         if v in self.device._i_db:
@@ -139,6 +168,47 @@ class diode:
             i = self.model.get_i(v, self.device)
             self.device._i_db = {v:i}
         return i
+
+    def gstamp(self, ports_v, time=0, reduced=True):
+        """Returns the differential (trans)conductance wrt the port specified by port_index
+        when the element has the voltages specified in ports_v across its ports,
+        at (simulation) time.
+
+        ports_v: a list in the form: [voltage_across_port0, voltage_across_port1, ...]
+        port_index: an integer, 0 <= port_index < len(self.get_ports())
+        time: the simulation time at which the evaluation is performed. Set it to
+        None during DC analysis.
+        """
+        indices = ([self.n1 - 1]*2 + [self.n2 - 1]*2,
+                   [self.n1 - 1, self.n2 - 1]*2)
+        v = ports_v[0]
+        if v in self.device._gm_db:
+            gm = self.device._gm_db[v]
+        else:
+            gm = self.model.get_gm(0, ports_v, 0, self.device)
+            self.device._gm_db = {v:gm}
+        if gm == 0:
+            gm = options.gmin*2
+        stamp = np.array(((gm, -gm),
+                          (-gm, gm)), dtype=np.float64)
+        if reduced:
+            zap_rc = [pos for pos, i in enumerate(indices[1][:2]) if i == -1]
+            stamp = np.delete(stamp, zap_rc, axis=0)
+            stamp = np.delete(stamp, zap_rc, axis=1)
+            indices = zip(*[(i, y) for i, y in zip(*indices) if (i != -1 and y != -1)])
+            stamp_flat = stamp.reshape(-1)
+            stamp_folded = []
+            indices_folded = []
+            for ix, it in enumerate([(i, y) for i, y in zip(*indices)]):
+                if not it in indices_folded:
+                    indices_folded.append(it)
+                    stamp_folded.append(stamp_flat[ix])
+                else:
+                    w = indices_folded.index(it)
+                    stamp_folded[w] += stamp_flat[ix]
+            indices = zip(*indices_folded)
+            stamp = np.array(stamp_folded)
+        return indices, stamp
 
     def g(self, op_index, ports_v, port_index, time=0):
         if not port_index == 0:
