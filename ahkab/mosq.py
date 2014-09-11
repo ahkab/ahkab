@@ -254,8 +254,8 @@ class mosq_device:
     def print_netlist_elem_line(self, nodes_dict):
         mos_type = self._get_mos_type()
         return "%s %s %s %s %s %s type=%s w=%g l=%g m=%g n=%g" % \
-              (self.part_id, nodes_dict[self.nd], nodes_dict[self.ng],
-              nodes_dict[self.ns], nodes_dict[self.nb], self.mosq_model.name,
+              (self.part_id, nodes_dict[self.n1], nodes_dict[self.ng],
+              nodes_dict[self.n2], nodes_dict[self.nb], self.mosq_model.name,
               mos_type, self.device.W, self.device.L, self.device.M,
               self.device.N)
 
