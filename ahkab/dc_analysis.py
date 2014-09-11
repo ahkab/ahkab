@@ -191,6 +191,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
         standard_solving, gmin_stepping,
         source_stepping, verbose)
 
+    convergence_by_node = None
     printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
 
     while(not converged):
@@ -226,7 +227,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None, MAXIT=No
             printing.print_general_error("Overflow")
 
         if not converged:
-            if verbose == 6:
+            if verbose == 6 and convergence_by_node is not None:
                 for ivalue in range(len(convergence_by_node)):
                     if not convergence_by_node[ivalue] and ivalue < nv - 1:
                         print "Convergence problem node %s" % (circ.int_node_to_ext(ivalue),)
