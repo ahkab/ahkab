@@ -87,9 +87,10 @@ ISMALL_GUESS_MIN = 1e-10
 class ekv_device:
     INIT_IFRN_GUESS = 1
 
-    def __init__(self, nd, ng, ns, nb, W, L, model, M=1, N=1, part_id='M'):
+    def __init__(self, part_id, nd, ng, ns, nb, W, L, model, M=1, N=1):
         """ EKV device
         Parameters:
+            part_id
             nd: drain node
             ng: gate node
             ns: source node
@@ -785,8 +786,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     ekv_m = ekv_mos_model(TYPE='n', KP=50e-6, VTO=.4)
-    ma = ekv_device(1, 2, 3, 4, W=10e-6, L=1e-6, model=ekv_m)
-    ma.part_id = 'M1'
+    ma = ekv_device('M1', 1, 2, 3, 4, W=10e-6, L=1e-6, model=ekv_m)
 
     # OP test
     vd = 0.0

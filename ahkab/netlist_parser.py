@@ -741,8 +741,8 @@ def parse_elem_mos(line, circ, line_elements, models):
     elem = None
 
     if isinstance(models[model_label], ekv.ekv_mos_model):
-        elem = ekv.ekv_device(nd, ng, ns, nb, w, l, models[
-                              model_label], m, n, part_id=line_elements[0])
+        elem = ekv.ekv_device(line_elements[0], nd, ng, ns, nb, w, l, models[
+                              model_label], m, n)
     elif isinstance(models[model_label], mosq.mosq_mos_model):
         elem = mosq.mosq_device(nd, ng, ns, nb, w, l, models[
                                 model_label], m, n, part_id=line_elements[0])
