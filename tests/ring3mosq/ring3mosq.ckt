@@ -1,0 +1,22 @@
+RING OSCILLATOR with 3 inverters
+
+X1 name=inv1 in=1 out=3 psupply=2 nsupply=0
+X2 name=inv1 in=3 out=4 psupply=2 nsupply=0
+X3 name=inv1 in=4 out=1 psupply=2 nsupply=0
+
+.subckt inv1 in out psupply nsupply
+        m1 out in psupply psupply pch w=3u l=1u
+        m2 out in nsupply nsupply nch w=1u l=1u
+        c1 out 0 10f
+.ends
+
+v2 2 0 type=vdc vdc=2.5
+
+.model mosq nch TYPE=n VTO=.4 KP=40e-6
+.model mosq pch TYPE=p VTO=-.4 KP=12e-6
+
+.op
+.ic name=tran_start v(1)=0 v(2)=2.5 v(3)=2.5 v(4)=0
+.tran tstop=10n tstep=1n uic=3 ic_label=tran_start 
++method=trap
+.plot tran v(1) v(3) v(4)
