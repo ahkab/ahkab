@@ -148,12 +148,20 @@ def plot_results(title, y2y1_list, results, outfilename):
 
     for y2label, y1label in y2y1_list:
         if y1label is not None and y1label != '':
-            data1, _ = _data_abs_arg_pass(results, y1label)
+            try:
+                data1, _ = _data_abs_arg_pass(results, y1label)
+            except ValueError as e:
+                printing.print_warning(str(e) + " " + y1label)
+                continue
             line_label = y2label + "-" + y1label
         else:
             line_label = y2label
             data1 = 0
-        data2, units = _data_abs_arg_pass(results, y2label)
+        try:
+            data2, units = _data_abs_arg_pass(results, y2label)
+        except ValueError as e:
+            printing.print_warning(str(e) + " " + y2label)
+            continue
         yvu += [(line_label, units)]
         gdata.append((data2 - data1, line_label))
 
