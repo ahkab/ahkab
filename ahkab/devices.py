@@ -94,7 +94,7 @@ Eg. ``Vgs`` is set to ``Vt0`` in mosfets.
 
 This is obviously useless for linear devices.
 
-2. Every element should have a ``print_netlist_elem_line(self, nodes_dict)``
+2. Every element should have a ``get_netlist_elem_line(self, nodes_dict)``
 allowing the element to print a netlist entry that parses to itself.
 
 """
@@ -278,7 +278,7 @@ class Component(object):
         self.is_nonlinear = is_nonlinear
         self.is_symbolic = is_symbolic
 
-    #   Used by `print_netlist_elem_line` for value
+    #   Used by `get_netlist_elem_line` for value
     def __str__(self):
         return str(self.value)
 
@@ -295,7 +295,7 @@ class Component(object):
     def i(self, v):
         return 0
 
-    def print_netlist_elem_line(self, nodes_dict):
+    def get_netlist_elem_line(self, nodes_dict):
         return "%s %s %s %g" % (self.part_id, nodes_dict[self.n1],
                                 nodes_dict[self.n2], self.value)
 
@@ -443,7 +443,7 @@ class InductorCoupling(Component):
             raise Exception("Mutual inductors bug.")
         return Lret
 
-    def print_netlist_elem_line(self, nodes_dict):
+    def get_netlist_elem_line(self, nodes_dict):
         return "%s %s %s %g" % (self.part_id, self.L1, self.L2, self.K)
 
 
@@ -508,7 +508,7 @@ class ISource(Component):
         else:
             return self._time_function.value(time)
 
-    def print_netlist_elem_line(self, nodes_dict):
+    def get_netlist_elem_line(self, nodes_dict):
         rep = ""
         rep += "%s %s %s " % (self.part_id, nodes_dict[self.n1],
                              nodes_dict[self.n2])
@@ -577,7 +577,7 @@ class VSource(Component):
         else:
             return self._time_function.value(time)
 
-    def print_netlist_elem_line(self, nodes_dict):
+    def get_netlist_elem_line(self, nodes_dict):
         rep = ""
         rep += "%s %s %s " % (self.part_id, nodes_dict[self.n1],
                              nodes_dict[self.n2])
@@ -621,7 +621,7 @@ class EVSource(Component):
     def __str__(self):
         return "alpha=%s" % self.alpha
 
-    def print_netlist_elem_line(self, nodes_dict):
+    def get_netlist_elem_line(self, nodes_dict):
         return "%s %s %s %s %s %g" % (self.part_id, nodes_dict[self.n1],
                                 nodes_dict[self.n2], nodes_dict[self.sn1],
                                 nodes_dict[self.sn2], self.alpha)
@@ -659,7 +659,7 @@ class GISource(Component):
     def __str__(self):
         return "value=%s" % self.alpha
 
-    def print_netlist_elem_line(self, nodes_dict):
+    def get_netlist_elem_line(self, nodes_dict):
         return "%s %s %s %s %s %g" % (self.part_id, nodes_dict[self.n1],
                                 nodes_dict[self.n2], nodes_dict[self.sn1],
                                 nodes_dict[self.sn2], self.alpha)

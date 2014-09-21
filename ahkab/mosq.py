@@ -314,7 +314,7 @@ class mosq_device:
         else:
             self.device.mckey = None
 
-    def print_netlist_elem_line(self, nodes_dict):
+    def get_netlist_elem_line(self, nodes_dict):
         mos_type = self._get_mos_type()
         return "%s %s %s %s %s %s type=%s w=%g l=%g m=%g n=%g" % \
               (self.part_id, nodes_dict[self.n1], nodes_dict[self.ng],

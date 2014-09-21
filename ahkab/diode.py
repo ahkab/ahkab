@@ -235,7 +235,7 @@ class diode:
     def print_op_info(self, ports_v):
         print(self.get_op_info(ports_v), end=' ')
 
-    def print_netlist_elem_line(self, nodes_dict):
+    def get_netlist_elem_line(self, nodes_dict):
         ret = "%s %s %s %s" % (self.part_id, self.n1, self.n2, self.model.name)
         # append the optional part:
         # [<AREA=float> <T=float> <IC=float> <OFF=boolean>]
