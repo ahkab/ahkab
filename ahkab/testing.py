@@ -288,7 +288,7 @@ Below is a typical test script file:
         # ...
 
         if cli:
-            printing.print_circuit(mycircuit)
+            print(mycircuit)
 
         ## define analyses
         op_analysis = ahkab.new_op(outfile='<test_id>')
