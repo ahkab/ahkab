@@ -699,12 +699,13 @@ def main(filename, outfile="stdout", verbose=3):
     check, reason = dc_analysis.check_circuit(circ)
     if not check:
         printing.print_general_error(reason)
-        printing.print_circuit(circ)
+        print(circ)
         sys.exit(3)
 
     if verbose > 3 or _print:
         print("Parsed circuit:")
-        printing.print_circuit(circ)
+        print(circ)
+        print("")
 
     ic_list = netlist_parser.parse_ics(directives)
     _handle_netlist_ics(circ, an_list=[], ic_list=ic_list)
