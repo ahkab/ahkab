@@ -40,7 +40,7 @@ def print_circuit(circ):
         print circ.title
 
     for elem in circ:
-        print elem.print_netlist_elem_line(circ.nodes_dict)
+        print elem.get_netlist_elem_line(circ.nodes_dict)
 
     return None
 
