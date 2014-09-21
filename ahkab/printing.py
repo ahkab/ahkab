@@ -28,23 +28,6 @@ import sys
 from . import options
 
 
-def print_circuit(circ):
-    """Prints the whole circuit to stdout, in netlist format.
-
-    **Parameters:**
-
-    circ : circuit instance
-        the circuit instance to be printed.
-    """
-    if circ.title:
-        print circ.title
-
-    for elem in circ:
-        print elem.get_netlist_elem_line(circ.nodes_dict)
-
-    return None
-
-
 def print_analysis(an):
     """Prints a analysis to stdout, with the netlist syntax
 
