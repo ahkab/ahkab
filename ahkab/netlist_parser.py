@@ -62,17 +62,14 @@ for i in  sin, pulse, exp:
     time_functions.update({i.__name__:i})
 
 def parse_circuit(filename, read_netlist_from_stdin=False):
-    """Parse a SPICE-like netlist and return a circuit instance
-    that includes all components, all nodes known
-    with that you can recreate mna and N at any time.
-    Note that solving the circuit requires accessing to the elements in
-    the circuit instance to evaluate non linear elements' currents.
+    """Parse a SPICE-like netlist
 
-    Directives are collected in a list and returned too, except for
+    Directives are collected in lists and returned too, except for
     subcircuits, those are added to circuit.subckts_dict.
 
-    Returns:
-    (circuit_instance, directives)
+    **Returns:**
+
+    (circuit_instance, analyses, plotting directives)
     """
     # Lots of differences with spice's syntax:
     # Support for alphanumeric node names, but the ref has to be 0. always
@@ -1160,23 +1157,26 @@ def parse_ics(directives):
 def parse_analysis(circ, directives):
     """Parses the analyses.
 
-    Parameters:
-    circ: a circuit class instance that descirbes the circuit.
-    directives: a list of tuples: (line, line_number). Those lines are taken
-    from the netlist and are the ones that hold the information about the
-    simulations to be performed.
+    **Parameters:**
 
-    Both of them are returned by parse_circuit()
+    circ: circuit class instance
+        The circuit description
+    directives: list of tuples
+        The list should be assembled as ``(line, line_number)``.
 
-    Returns:
-    a list of the analysis, see the code.
+    Both of them are returned by ``parse_circuit()``
+
+    **Returns:**
+
+    a list of the analyses
     """
+    an = []
     for line, line_n in directives:
         if line[0] != '.' or line[:3] == '.ic':
             continue
         line_elements = line.split()
-        yield parse_single_analysis(line, line_elements)
-    return
+        an += [parse_single_analysis(line, line_elements)]
+    return an
 
 
 def parse_temp_directive(line, line_elements=None):
