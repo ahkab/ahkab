@@ -699,6 +699,9 @@ def main(filename, outfile="stdout", verbose=3):
     if verbose > 3 or _print:
         print "Parsed circuit:"
         print(circ)
+        print("Models:")
+        for m in circ.models:
+            circ.models[m].print_model()
         print("")
 
     ic_list = netlist_parser.parse_ics(directives)
