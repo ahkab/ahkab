@@ -182,7 +182,7 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
                 subckt_obj.name + " has been redefined")
 
     circ += main_netlist_parser(circ, netlist_lines, subckts_dict, models)
-
+    circ.models = models
     return (circ, directives, postproc)
 
 
