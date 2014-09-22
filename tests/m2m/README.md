@@ -5,7 +5,7 @@ regression are present in the EKV implementation.
 
 A description of the M-2M ladder may be found in:
 
-K. Bult and J. G. M. Geelen, “An inherently linear and compact MOST-only
-current division technique,” *IEEE Journal of Solid-State Circuits*,
+K. Bult and J. G. M. Geelen, "An inherently linear and compact MOST-only
+current division technique," IEEE Journal of Solid-State Circuits,
 vol. SC-27, pp. 1730-1735, Dec. 1992.
 
