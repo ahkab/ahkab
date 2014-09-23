@@ -65,7 +65,7 @@ _print = False
 _x0s = {None: None}
 _of = []
 
-def new_op(guess=True, x0=None, outfile=None, verbose=0):
+def new_op(guess=None, x0=None, outfile=None, verbose=0):
     """Assembles an OP analysis and returns the analysis object.
 
     The analysis itself can then be run with: ``ahkab.run(...)``
@@ -99,6 +99,8 @@ def new_op(guess=True, x0=None, outfile=None, verbose=0):
 
     .. seealso:: :func:`run`, :func:`queue`
     """
+    if guess is None:
+        guess = options.dc_use_guess
     if outfile is None or outfile == 'stdout':
         if options.cli:
             outfile = 'stdout'
