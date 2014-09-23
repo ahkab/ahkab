@@ -58,7 +58,7 @@ specs = {'op': {
                'type': bool,
                'needed': False,
                'dest': 'guess',
-               'default': None
+               'default': options.dc_use_guess
                },
         {
                'label': 'ic_label',
