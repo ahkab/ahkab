@@ -38,7 +38,12 @@ def print_analysis(an):
 
     """
     if an["type"] == "op":
-        print ".op"
+        print ".op",
+        for x in an:
+            if x == 'type' or x == 'outfile' or x == 'verbose':
+                continue
+            print "%s=%s" % (x, an[x]),
+        print ""
     elif an["type"] == "dc":
         print ".dc", an["source_name"], "start =", an["start"], "stop =", an["stop"], "step =", an["step"], "type =", an["stype"]
     elif an["type"] == "tran":
