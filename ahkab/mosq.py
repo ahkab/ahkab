@@ -493,8 +493,6 @@ class mosq_mos_model:
                   % (device.part_id, 'n'*(self.NPMOS == 1) +
                   'p'*(self.NPMOS == -1), vds, vgs, vbs))
 
-        (vds, vgs, vbs), CS_FACTOR = self.get_voltages(vds, vgs, vbs)
-
         # monte carlo support
         svt, skp = self.get_svt_skp(device, debug=debug)
 
