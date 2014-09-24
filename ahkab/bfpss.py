@@ -280,10 +280,9 @@ def set_submatrix(row, col, dest_matrix, source_matrix):
 
     dest_matrix
     """
-    for li in xrange(source_matrix.shape[0]):
-        for ci in xrange(source_matrix.shape[1]):
-            if source_matrix[li, ci] != 0:
-                dest_matrix[row + li, col + ci] = source_matrix[li, ci]
+    ls = source_matrix.shape[0]
+    cs = source_matrix.shape[1]
+    dest_matrix[row:row+ls, col:col+cs] = source_matrix[:, :]
     return dest_matrix
 
 
