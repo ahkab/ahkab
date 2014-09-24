@@ -35,27 +35,69 @@ from . import utilities
 
 
 def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
-          mna=None, Tf=None, D=None, outfile='stdout', vector_norm=lambda v: max(abs(v)), verbose=3):
-    """Performs a PSS analysis.
+          mna=None, Tf=None, D=None, outfile='stdout',
+          vector_norm=lambda v: max(abs(v)), verbose=3):
+    """Performs a PSS analysis employing the 'brute-force' algorithm
 
-    Time step is constant, IE will be used as DF
+    The time step is constant and IE will be used as DF.
 
-    Parameters:
-    circ is the circuit description class
-    period is the period of the solution
-    mna, D, Tf are not compulsory they will be computed if they're set to None
-    step is the time step between consecutive points
-    points is the number of points to be used
-    step and points are mutually exclusive options:
-    - if step is specified, the number of points will be automatically determined
-    - if points is set, the step will be automatically determined
-    - if none of them is set, options.shooting_default_points will be used as points
-    autonomous has to be False, autonomous circuits are not supported
-    x0 is the initial guess to be used. Needs work.
-    outfile is the output filename. Defaults to stdout.
-    verbose is set to zero (print errors only) if datafilename == 'stdout'.
+    **Parameters:**
 
-    Returns: nothing
+    circ : Circuit instance
+        the circuit to be simulated
+
+    period : float
+        the period of the solution
+
+    step : float, optional
+        the time step between consecutive points, it will be calculated
+        if not provided
+
+    points : int, optional
+        the number of points to be used to sample one period, it will be
+        calculated if not provided
+
+    autonomous : bool, optional
+        Is the circuit clocked or autonomously oscillating?
+        With the current implementation, setting ``autonomous=True``
+        will result in an exception being raised, autonomous circuits are
+        not supported
+
+    x0 : ndarray, optional
+        The initial guess to be used. (Experimental, needs work.)
+
+    mna, D, Tf : ndarrays, optinal
+        The matrices describing the circuit may be supplied to speed up
+        the solution, if available. If not supplied, they will be
+        automatically calculated.
+
+    vector_norm : function, optional
+       The norm to be employed in the convergence checks.
+       Defaults to the Inf norm.
+
+    outfile : str, optional
+        the output filename. Defaults to ``'stdout'``.
+
+    verbose : int, optional
+        Verbosity level on a scale from 0 (silent) to 6 (very verbose).
+        The ``verbose`` flag is automatically set is to zero
+        if ``datafilename == 'stdout'``
+
+    .. note::
+
+        ``step`` and ``points`` are mutually exclusive options:
+
+        * if ``step`` is specified, the number of points will be
+        automatically determined.
+        * if ``points`` is set, the step will be automatically determined.
+        * if none of them is set, ``options.shooting_default_points`` will
+          be used as value for ``points`` and ``step`` computed accordingly.
+
+    **Returns:**
+
+    sol : results.pss_solution
+        The simulation results
+
     """
     if outfile == "stdout":
         verbose = 0
@@ -95,9 +137,11 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
 
     Tf = build_Tf(Tf, points, tick, n_of_var=n_of_var, verbose=verbose)
 
-    # time variable component: Tt this is always the same in each iter. So we build it once for all
-    # this holds all time-dependent sources (both V/I).
-    Tt = build_Tt(circ, points, step, tick, n_of_var=n_of_var, verbose=verbose)
+    # time variable component: Tt this is always the same in each iter.
+    # So we build it once for all
+    # It holds all time-dependent sources (both V/I).
+    Tt = build_Tt(circ, points, step, tick, n_of_var=n_of_var,
+                  verbose=verbose)
 
     # Indices to differentiate between currents and voltages in the
     # convergence check
@@ -137,7 +181,9 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
                         v_ports = []
                         for dpindex in range(len(dports)):
                             dn1, dn2 = dports[dpindex]
-                            v = 0  # build v: remember we trashed the 0 row and 0 col of mna -> -1
+                            # build v: remember we trashed the
+                            # 0 row and 0 col of mna -> -1
+                            v = 0
                             if dn1:
                                 v = v + x[index * n_of_var + dn1 - 1, 0]
                             if dn2:
@@ -210,21 +256,29 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
 
 
 def convergence_check(dx, x, nv_indices, ni_indices, vector_norm):
-    if vector_norm(dx) is np.nan:  # sometimes something diverges... look out
+    """Perform a convergence check using the specified vector norm"""
+    # sometimes something diverges... look out
+    if vector_norm(dx) is np.nan:
         raise OverflowError
     dxc = np.array(dx)
     xc = np.array(x)
-    ret = (vector_norm(dxc[nv_indices]) < options.ver * vector_norm(xc[nv_indices]) + options.vea) and \
+    ret = (vector_norm(dxc[nv_indices]) < options.ver * \
+           vector_norm(xc[nv_indices]) + options.vea) and \
           (not len(ni_indices) or \
-           vector_norm(dxc[ni_indices]) < options.ier * vector_norm(xc[ni_indices]) + options.iea)
+           vector_norm(dxc[ni_indices]) < options.ier * \
+           vector_norm(xc[ni_indices]) + options.iea)
     return ret
 
 
 def set_submatrix(row, col, dest_matrix, source_matrix):
     """Copies the source_matrix in dest_matrix,
-    the position of the upper left corner of source matrix is (row, col) within dest_matrix
 
-    Returns dest_matrix
+    The position of the upper left corner of source matrix is (row, col)
+    within dest_matrix.
+
+    **Returns:**
+
+    dest_matrix
     """
     for li in xrange(source_matrix.shape[0]):
         for ci in xrange(source_matrix.shape[1]):
@@ -234,21 +288,30 @@ def set_submatrix(row, col, dest_matrix, source_matrix):
 
 
 def get_e(index, length):
-    """Builds a e(j=index) col vector
-    e(j) is defined as:
+    """Builds a ``e(j=index)`` column vector
+
+    ``e(j)`` is defined as:
+
         e(i, 0) = 1 if i=j
         e(i, 0) = 0 otherwise
 
-    Returns: e(index)
+    **Returns:**
+
+    ``e(index)``
     """
     e = np.mat(np.zeros((length, 1)))
     e[index, 0] = 1
     return e
 
 
-def check_step_and_points(step, points, period):
-    """Sets consistently the step size and the number of points, according to the given period
-    Returns: (points, step)
+def check_step_and_points(step=None, points=None, period=None):
+    """Sets consistently the step size and the number of points
+
+    The calculation is done according to the given period.
+
+    **Returns:**
+
+    (points, step)
     """
     if step is None and points is None:
         print "Warning: shooting had no step nor n. of points setted. Using", options.shooting_default_points, "points."
