@@ -92,7 +92,7 @@ def new_op(guess=None, x0=None, outfile=None, verbose=0):
     verbose : int, optional
         the verbosity level, from 0 (silent, default) to 6 (debug).
 
-    **Returns:** 
+    **Returns:**
 
     an : dict
         the analysis description
@@ -112,7 +112,7 @@ def new_op(guess=None, x0=None, outfile=None, verbose=0):
     return {'type': 'op', 'guess': guess, 'x0': x0, 'outfile': outfile, 'verbose': verbose}
 
 
-def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None, 
+def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None,
         outfile=None, verbose=0):
     """Assembles a DC sweep analysis and returns the analysis object.
 
@@ -177,7 +177,7 @@ def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None
         'verbose': verbose}
 
 
-def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP, 
+def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP,
         use_step_control=True, outfile=None, verbose=0):
     """Assembles a TRAN analysis and returns the analysis object.
 
@@ -249,7 +249,7 @@ def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile=None, verbose
         the start angular frequency, :math:`\omega _{start}`.
 
     stop : float
-        the stop angular frequency, :math:`\omega _{stop}` (included in the 
+        the stop angular frequency, :math:`\omega _{stop}` (included in the
         sweep).
 
     points : float
@@ -270,7 +270,7 @@ def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile=None, verbose
     verbose : int, optional
         the verbosity level, from 0 (silent, default) to 6 (debug).
 
-    **Returns:** 
+    **Returns:**
 
     an : dict
         the analysis object (a dict)
@@ -286,12 +286,12 @@ def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile=None, verbose
     else:
         outfile += '.ac'
     return {
-        'type': 'ac', 'start': start, 'stop': stop, 'points': points, 
-        'sweep_type': sweep_type, 'x0': x0, 'outfile': outfile, 
+        'type': 'ac', 'start': start, 'stop': stop, 'points': points,
+        'sweep_type': sweep_type, 'x0': x0, 'outfile': outfile,
         'verbose': verbose}
 
 
-def new_pss(period, x0=None, points=None, method='brute-force', autonomous=False,
+def new_pss(period, x0=None, points=None, method=options.BFPSS, autonomous=False,
             outfile=None, verbose=0):
     """Assembles a Periodic Steady State (PSS) analysis and returns the analysis object.
 
@@ -424,7 +424,7 @@ def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None
         This computation should be avoided for large circuit, as indiscriminate
         transfer function, gain and singularities evaluation in large circuits
         can result in very long run times and needs a significant amount of
-        RAM, on top of an already resource intensive symbolic analysis. 
+        RAM, on top of an already resource intensive symbolic analysis.
         We suggest manually evaluating selected transfer functions of interest
         instead.
 
@@ -441,9 +441,9 @@ def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None
         otherwise they will be considered infinite (default).
         The finite output conductances generally introduce a significant
         additional complexity in large circuits, sometimes of interest to the
-        designer, sometimes simply introducing 2nd and 3rd order effects of 
+        designer, sometimes simply introducing 2nd and 3rd order effects of
         little-to-no interest, which would produce no significant contribution
-        in a numerical analysis, but come at a high computation price in a 
+        in a numerical analysis, but come at a high computation price in a
         symbolic analysis.
         A possible approach in those cases may be disabling this option and
         explicitly introducing additional conductances where deemed of interest.
@@ -466,7 +466,7 @@ def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None
         The verbosity level, from 0 (silent, default) to 6 (debug).
 
     **Returns:**
-    
+
     an : dict
         the analysis description
 
@@ -564,11 +564,11 @@ of appropriate (reduce) size (reduced) from the values supplied
 
     - to specify a branch current: ``'I(<element>)':<current value>}``
 
-    
+
     Examples:
 
     - ``{'V(n1)':2.3, 'V(n2)':0.45, ...}``
-    
+
     - ``{'I(L1)':1.03e-3, I(V4):2.3e-6, ...}``
 
     .. note:: this simulator uses the normal convention.
@@ -674,7 +674,7 @@ def main(filename, outfile="stdout", verbose=3):
     - Alternate Current (AC): ``.ac``
     - Direct Current (DC): ``.dc``
     - Operating Point (OP): ``.opinfo``
-    - Periodic Steady State (PSS): ``.bfpss`` or ``.shooting``
+    - Periodic Steady State (PSS): ``.pss``
     - TRANsient (TRAN): ``.tran``
     - Symbolic: ``.symbolic``
 

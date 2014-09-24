@@ -40,6 +40,7 @@ following, we have the following regions implemented:
    :math:`I_D = 1/2 k_n W/L (V_{GS}-V_T)^2 * [1 + \lambda*(V_{DS}-V_{GS}+V_T)]`
 
 """
+from __future__ import division
 
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
@@ -501,8 +502,6 @@ class mosq_mos_model:
 
         vsqrt1 = max(-vbs + 2*self.PHI, 0.)
         vsqrt2 = max(2*self.PHI, 0.)
-        if debug:
-            print("PHI:", self.PHI, "vbs:", vbs)
 
         VT = self.VTO + svt + self.GAMMA * \
             (math.sqrt(vsqrt1) - math.sqrt(vsqrt2))

@@ -273,7 +273,7 @@ def check_step_and_points(step, points, period):
         points = points + \
             1  # 0 - N where xN is in reality the first point of the second period!!
 
-    return (points, step)
+    return (int(points), step)
 
 
 def build_CMAT(mna, D, step, points, tick, n_of_var=None, verbose=3):

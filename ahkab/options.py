@@ -81,7 +81,7 @@ transient_aposteriori_step_threshold = 0.9
 cmin = 1e-18
 
 # pss
-BFPSS = 'bfpss'
+BFPSS = 'brute-force'
 SHOOTINGPSS = 'shooting'
 
 # shooting
