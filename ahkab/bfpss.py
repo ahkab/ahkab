@@ -368,8 +368,8 @@ def build_CMAT(mna, D, step, points, tick, n_of_var=None, sparse=False, verbose=
         CMAT = scipy.sparse.lil_matrix((n_of_var*points, n_of_var*points))
     else:
         CMAT = np.zeros((n_of_var*points, n_of_var*points))
-    for li in xrange(points):  # li = line index
-        for ci in xrange(points):
+    for li in range(points):  # li = line index
+        for ci in range(points):
             if li == 0:
                 if ci == 0:
                     temp = I
