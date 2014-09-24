@@ -21,5 +21,5 @@ V1a 1a 0 type=vdc vdc=0 type=SIN vo=0 va=2.5 freq=1k
 V1b 0 1b type=vdc vdc=0 type=SIN vo=0 va=2.5 freq=1k
 
 .model diode d
-.pss period=1e-3 points=100 method=brute-force
+.pss period=1e-3 points=100 method=shooting
 .plot pss v(1a) v(4g) v(3g) v(2g)
