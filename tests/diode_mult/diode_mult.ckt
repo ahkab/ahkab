@@ -1,0 +1,10 @@
+*SPICE 03255.eps
+C1 2 0 1000p
+D1 1 2 d
+C2 4 1 1000p
+D2 0 1 d
+V1 4 0 type=vdc vdc=0 type=SIN vo=0 va=5 freq=1k
+.model diode d
+.op
+.tran tstep=0.01m tstop=5m
+.plot tran v(2)

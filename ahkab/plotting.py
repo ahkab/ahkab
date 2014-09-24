@@ -148,12 +148,20 @@ def plot_results(title, y2y1_list, results, outfilename):
 
     for y2label, y1label in y2y1_list:
         if y1label is not None and y1label != '':
-            data1, _ = _data_abs_arg_pass(results, y1label)
+            try:
+                data1, _ = _data_abs_arg_pass(results, y1label)
+            except ValueError as e:
+                printing.print_warning(str(e) + " " + y1label)
+                continue
             line_label = y2label + "-" + y1label
         else:
             line_label = y2label
             data1 = 0
-        data2, units = _data_abs_arg_pass(results, y2label)
+        try:
+            data2, units = _data_abs_arg_pass(results, y2label)
+        except ValueError as e:
+            printing.print_warning(str(e) + " " + y2label)
+            continue
         yvu += [(line_label, units)]
         gdata.append((data2 - data1, line_label))
 
@@ -162,19 +170,22 @@ def plot_results(title, y2y1_list, results, outfilename):
     else:
         xlog = False
     _setup_plot(fig, title, (xlabel, xunit), yvu, xlog=xlog)
+    ms = 7./(1. + max(np.log(len(x)/100.), 0))
+    ms = ms if ms > 2 else 0.
 
     pylab.hold(True)
     ymax, ymin = None, None
     for y, label in gdata:
         [line] = pylab.plot(
             x, y, options.plotting_style, label=label +
-            " (" + analysis + ")",
+            " (" + analysis + ")", ms=ms,
             mfc='w', lw=options.plotting_lw, mew=options.plotting_lw)
         line.set_mec(line.get_color())  # nice empty circles
         ymax = y.max() if ymax is None or y.max() > ymax else ymax
         ymin = y.min() if ymin is None or y.min() < ymin else ymin
     pylab.xlim((x.min(), x.max()))
     pylab.ylim((ymin - (ymax - ymin) * .01, ymax + (ymax - ymin) * .01))
+    pylab.grid(True)
     pylab.hold(False)
     pylab.legend()
 

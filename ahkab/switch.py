@@ -200,7 +200,7 @@ class switch_device:
             return self.opdict[identifier]
         return get_value
 
-    def print_netlist_elem_line(self, nodes_dict):
+    def get_netlist_elem_line(self, nodes_dict):
         return "%s %s %s %s %s %s %s" % (self.part_id, nodes_dict[self.n1],
                                 nodes_dict[self.n2], nodes_dict[self.sn1],
                                 nodes_dict[self.sn2], self.model.name, \

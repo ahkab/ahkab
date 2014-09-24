@@ -18,30 +18,14 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This is the printing module of the simulator. Using its functions, the output will
-be somewhat uniform.
+This is the printing module of the simulator.
+
+Using its functions, the output will be somewhat uniform.
 """
 
 import sys
 
 from . import options
-
-
-def print_circuit(circ):
-    """Prints the whole circuit to stdout, in netlist format.
-
-    **Parameters:**
-
-    circ : circuit instance
-        the circuit instance to be printed.
-    """
-    if circ.title:
-        print circ.title
-
-    for elem in circ:
-        print elem.print_netlist_elem_line(circ.nodes_dict)
-
-    return None
 
 
 def print_analysis(an):
@@ -54,7 +38,12 @@ def print_analysis(an):
 
     """
     if an["type"] == "op":
-        print ".op"
+        print ".op",
+        for x in an:
+            if x == 'type' or x == 'outfile' or x == 'verbose':
+                continue
+            print "%s=%s" % (x, an[x]),
+        print ""
     elif an["type"] == "dc":
         print ".dc", an["source_name"], "start =", an["start"], "stop =", an["stop"], "step =", an["step"], "type =", an["stype"]
     elif an["type"] == "tran":
@@ -82,7 +71,7 @@ def print_general_error(description, print_to_stdout=False):
     description : str
         the error's description
 
-    print_to_stdout : bool
+    print_to_stdout : bool, optional
         force printing to ``stdout`` instead.
 
     """
@@ -102,7 +91,7 @@ def print_warning(description, print_to_stdout=False):
     description: str
         the warning's description
 
-    print_to_stdout : bool
+    print_to_stdout : bool, optional
         force printing to ``stdout`` instead.
 
     """
@@ -124,14 +113,18 @@ def print_info_line((msg, relevance), verbose, print_nl=True):
 
 
 def print_parse_error(nline, line, print_to_stdout=False):
-    """Prints a parsing error in the netlist to stderr.
+    """Prints a parsing error to stderr.
 
-    Parameters:
-    nline: number of the line on which the error was found
-    line: the line of the file
-    print_to_stdout:
+    **Parameters:**
 
-    Returns: None
+    nline : int,
+        number of the line on which the error was found
+
+    line : str
+        the line of the file
+
+    print_to_stdout : bool, optional
+        print to stdout instead.
     """
     print_general_error(
         "Parse error on line " + str(nline) + ":", print_to_stdout)

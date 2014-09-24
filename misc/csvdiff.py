@@ -11,7 +11,7 @@ if __name__ == '__main__':
     else:
         interpolate = False
     if len(sys.argv) < 3:
-        print("CSV subtractor. Usage:\n\tcsvdiff file1.csv file2.csv [ouput.csv]\n" +
+        print("CSV subtractor. Usage:\n\tcsvdiff [-i] file1.csv file2.csv [ouput.csv]\n" +
               "Saves to the optional output file, or to stdout, file1.csv - file2.csv.")
         sys.exit(1)
     a, h1, _, _ = csvlib.load_csv(sys.argv[1])

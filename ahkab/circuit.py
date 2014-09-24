@@ -157,6 +157,12 @@ class Circuit(list):
         self.models = {}
         self.gnd = '0'
 
+    def __str__(self):
+        s = "* " + self.title + "\n"
+        for elem in self:
+            s += elem.get_netlist_elem_line(self.nodes_dict) + "\n"
+        return s[:-1]
+
     def create_node(self, name):
         """Creates a new node, adds it to the circuit and returns it to the user
         (to be used for subsequent declaration of elements, for example).

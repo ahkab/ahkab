@@ -1,0 +1,7 @@
+* test diode
+v1 1 0 type=vdc vdc=1
+r1 1 2 1.
+d1 2 0 di
+.model diode di
+
+.op
