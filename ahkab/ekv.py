@@ -32,28 +32,36 @@
 The EKV model was developed by Matthias Bucher, Christophe Lallement,
 Christian Enz, Fabien Théodoloz, François Krummenacher at the Electronics
 Laboratories, Swiss Federal Institute of Technology (EPFL),
-Lausanne, Switzerland. The Tecnical Report upon which this implementation
+Lausanne, Switzerland.
+
+The Tecnical Report upon which this implementation
 is based is available here:
-<http://legwww.epfl.ch/ekv/pdf/ekv_v262.pdf>.
+
+`EKV Technical Report <http://legwww.epfl.ch/ekv/pdf/ekv_v262.pdf>`_.
 
 This module defines two classes:
- ekv_device
- ekv_mos_model
+
+    ekv_device
+
+    ekv_mos_model
 
 
 Features:
-- EKV model implementation, computation of charges, potentials,
+
+* EKV model implementation, computation of charges, potentials,
   reverse and forward currents, slope factor and normalization factors,
-- Calculation of trans-conductances based on the charge approach.
-- N/P MOS symmetry
-- Rudimentary temperature effects.
+* Calculation of trans-conductances based on the charge approach.
+* N/P MOS symmetry
+* Rudimentary temperature effects.
 
 The Missing Features:
-- Channel length modulation
-- Reverse Short Channel Effect (RSCE)
-- Complex mobility degradation is missing
-- Transcapacitances
-- Quasistatic implementation
+* Channel length modulation
+* Reverse Short Channel Effect (RSCE)
+* Complex mobility degradation is missing
+* Transcapacitances
+* Quasistatic implementation
+
+Patches to implement the above are welcome!
 """
 
 from __future__ import (unicode_literals, absolute_import,
@@ -85,21 +93,36 @@ ISMALL_GUESS_MIN = 1e-10
 
 
 class ekv_device:
+    """A EKV MOS transistor.
+    """
     INIT_IFRN_GUESS = 1
 
     def __init__(self, part_id, nd, ng, ns, nb, W, L, model, M=1, N=1):
         """ EKV device
-        Parameters:
-            part_id
-            nd: drain node
-            ng: gate node
-            ns: source node
-            nb: bulk node
-            L: element width [m]
-            W: element length [m]
-            M: multiplier (n. of shunt devices)
-            N: series mult. (n. of series devices)
-            model: pass an instance of ekv_mos_model
+
+        **Parameters:**
+
+        part_id : string
+            The element identifier, eg 'M1'
+
+        nd : int
+            drain node
+        ng : int
+            gate node
+        ns : int
+            source node
+        nb : int
+            bulk node
+        L : float
+            element width [m]
+        W : float
+            element length [m]
+        M : int
+            multiplier (n. of shunt devices)
+        N : int
+            series mult. (n. of series devices)
+        model : ekv_model instance
+            The corresponding instance of ekv_mos_model
 
         Selected methods:
         - get_output_ports() -> (nd, ns)
