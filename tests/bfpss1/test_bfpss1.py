@@ -3,7 +3,7 @@ from ahkab import options
 options.plotting_show_plots = False
 
 def test():
-    nt = NetlistTest('bfpss1')
+    nt = NetlistTest('bfpss1', er=1e-3, ea=1e-2)
     nt.setUp()
     nt.test()
     nt.tearDown()
