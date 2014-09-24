@@ -339,6 +339,17 @@ class diode_model:
         self.last_vd = None
         self.VT = constants.Vth(self.T)
 
+    def print_model(self):
+        strm = ".model diode %s IS=%g N=%g ISR=%g NR=%g RS=%g CJ0=%g M=%g " + \
+               "VJ=%g FC=%g CP=%g TT=%g BV=%g IBV=%g KF=%g AF=%g FFE=%g " + \
+               "TEMP=%g XTI=%g EG=%g TBV=%g TRS=%g TTT1=%g TTT2=%g TM1=%g " + \
+               "TM2=%g" 
+        print strm % (self.name, self.IS, self.N, self.ISR, self.NR, self.RS,
+                      self.CJ0, self.M, self.VJ, self.FC, self.CP, self.TT,
+                      self.BV, self.IBV, self.KF, self.AF, self.FFE, self.TEMP,
+                      self.XTI, self.EG, self.TBV, self.TRS, self.TTT1,
+                      self.TTT2, self. TM1, self. TM2)
+
     def get_i(self, vext, dev):
         if dev.T != self.T:
             self.set_temperature(dev.T)
