@@ -21,6 +21,7 @@
 
 import sys
 import numpy as np
+import numpy.linalg
 
 from . import circuit
 from . import dc_analysis
@@ -121,7 +122,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
     elif not mna.shape == D.shape:
         printing.print_general_error(
             "mna matrix and D matrix have different sizes.")
-        sys.exit(0)
+        raise ValueError
 
     (points, step) = check_step_and_points(step, points, period)
 
@@ -220,7 +221,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
 
         J = J + CMAT
         residuo = CMAT * x + T + Tf + Tt
-        dx = -1 * (np.linalg.inv(J) * residuo)
+        dx = np.linalg.solve(J, -residuo)
         # td
         for index in xrange(points):
             td[index, 0] = dc_analysis.get_td(
