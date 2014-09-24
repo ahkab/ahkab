@@ -22,6 +22,8 @@
 import sys
 import numpy as np
 import numpy.linalg
+import scipy
+import scipy.sparse
 
 from . import circuit
 from . import dc_analysis
@@ -129,9 +131,10 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
     n_of_var = mna.shape[0]
     locked_nodes = circ.get_locked_nodes()
     tick = ticker.ticker(increments_for_step=1)
+    sparse = n_of_var*points > options.dense_matrix_limit
 
     CMAT = build_CMAT(mna, D, step, points, tick, n_of_var=n_of_var,
-                      verbose=verbose)
+                      sparse=sparse, verbose=verbose)
 
     x = build_x(mna, step, points, tick, x0=x0, n_of_var=n_of_var,
                 verbose=verbose)
@@ -161,15 +164,21 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
     printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
     tick.reset()
     tick.display(verbose > 2)
-    J = np.mat(np.zeros(CMAT.shape))
-    T = np.mat(np.zeros((CMAT.shape[0], 1)))
+    if sparse:
+        J = scipy.sparse.lil_matrix(CMAT.shape)
+    else:
+        J = np.zeros(CMAT.shape)
+    T = np.zeros((CMAT.shape[0], 1))
     # td is a np matrix that will hold the damping factors
-    td = np.mat(np.zeros((points, 1)))
+    td = np.zeros((points, 1))
     iteration = 0  # newton iteration counter
 
     while True:
         if iteration:  # the first time are already all zeros
-            J[:, :] = 0
+            if sparse:
+                J = scipy.sparse.lil_matrix(CMAT.shape)
+            else:
+                J[:, :] = 0
             T[:, 0] = 0
             td[:, 0] = 0
         for index in xrange(1, points):
@@ -220,13 +229,18 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
                                             elem.g(opindex, v_ports, dpindex)
 
         J = J + CMAT
-        residuo = CMAT * x + T + Tf + Tt
-        dx = np.linalg.solve(J, -residuo)
+        residuo = CMAT*x + T + Tf + Tt
+        if sparse:
+            J = scipy.sparse.csc_matrix(J)
+            lu = scipy.sparse.linalg.splu(J)
+            dx = lu.solve(-residuo)
+        else:
+            dx = np.linalg.solve(J, -residuo)
         # td
         for index in xrange(points):
             td[index, 0] = dc_analysis.get_td(
-                dx[index * n_of_var:(index + 1) * n_of_var, 0], locked_nodes, n=-1)
-        x = x + min(abs(td))[0, 0] * dx
+                dx[index*n_of_var:(index + 1)*n_of_var, 0], locked_nodes, n=-1)
+        x = x + min(abs(td))[0] * dx
         # convergence check
         converged = convergence_check(
             dx, x, nv_indices, ni_indices, vector_norm)
@@ -336,26 +350,28 @@ def check_step_and_points(step=None, points=None, period=None):
     return (int(points), step)
 
 
-def build_CMAT(mna, D, step, points, tick, n_of_var=None, verbose=3):
+def build_CMAT(mna, D, step, points, tick, n_of_var=None, sparse=False, verbose=3):
     if n_of_var is None:
         n_of_var = mna.shape[0]
     printing.print_info_line(("Building CMAT (%dx%d)... " %
-                             (n_of_var * points, n_of_var * points), 5), verbose, print_nl=False)
+                             (n_of_var*points, n_of_var*points), 5), verbose, print_nl=False)
     tick.reset()
     tick.display(verbose > 2)
-    (C1, C0) = implicit_euler.get_df_coeff(step)
-    I = np.mat(np.eye(n_of_var))
-    M = mna + C1 * D
-    N = C0 * D
-    # Z = np.mat(np.zeros((n_of_var, n_of_var)))
-    CMAT = np.mat(np.zeros((n_of_var * points, n_of_var * points)))
+    C1, C0 = implicit_euler.get_df_coeff(step)
+    I = np.eye(n_of_var)
+    M = mna + C1*D
+    N = C0*D
+    if sparse:
+        CMAT = scipy.sparse.lil_matrix((n_of_var*points, n_of_var*points))
+    else:
+        CMAT = np.zeros((n_of_var*points, n_of_var*points))
     for li in xrange(points):  # li = line index
         for ci in xrange(points):
             if li == 0:
                 if ci == 0:
-                    temp = 1.0 * I
+                    temp = I
                 elif ci == points - 1:
-                    temp = -1.0 * I
+                    temp = -I
                 else:
                     continue  # temp = Z
             else:
@@ -365,10 +381,12 @@ def build_CMAT(mna, D, step, points, tick, n_of_var=None, verbose=3):
                     temp = N
                 else:
                     continue  # temp = Z
-            CMAT = set_submatrix(
-                row=li * n_of_var, col=ci * n_of_var, dest_matrix=CMAT, source_matrix=temp)
+            CMAT = set_submatrix(row=li*n_of_var, col=ci*n_of_var,
+                                 dest_matrix=CMAT, source_matrix=temp)
         tick.step()
     tick.hide(verbose > 2)
+    if sparse:
+        CMAT = scipy.sparse.coo_matrix(CMAT)
     printing.print_info_line(("done.", 5), verbose)
 
     return CMAT
