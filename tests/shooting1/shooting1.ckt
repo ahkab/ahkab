@@ -1,0 +1,25 @@
+* 3 stages CW
+.subckt cwstage nacp ngnd nacm oacp ognd oacm
+    d1 ngnd oacp d
+    d2 ngnd oacm d
+    c1 nacp oacp 1000p
+    c2 nacm oacm 1000p
+    d3 oacp ognd d
+    d4 oacm ognd d
+    c3 ngnd ognd 1000p
+.ends
+
+X1 name=cwstage nacp=1a ngnd=0 nacm=1b oacp=2a ognd=2g oacm=2b
+X2 name=cwstage nacp=2a ngnd=2g nacm=2b oacp=3a ognd=3g oacm=3b
+X3 name=cwstage nacp=3a ngnd=3g nacm=3b oacp=4a ognd=4g oacm=4b
+
+cout 4g 0 1m
+rout 4g 0 100Meg
+iout 4g 0 type=idc idc=1e-7
+
+V1a 1a 0 type=vdc vdc=0 type=SIN vo=0 va=2.5 freq=1k
+V1b 0 1b type=vdc vdc=0 type=SIN vo=0 va=2.5 freq=1k
+
+.model diode d
+.pss period=1e-3 points=100 method=shooting
+.plot pss v(1a) v(4g) v(3g) v(2g)
