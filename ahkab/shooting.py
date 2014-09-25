@@ -343,15 +343,12 @@ def get_variable_MAass_and_Tass(circ, xi, xi_minus_1, M, D, step, n_of_var):
 def compute_dxN(circ, MAass_vector, MBass, Tass_vector, n_of_var, points, verbose=3):
     temp_mat1 = np.mat(np.eye(n_of_var))
     for index in range(points):
-        temp_mat1 = -1 * \
-            np.linalg.inv(MAass_vector[index]) * MBass * temp_mat1
+        temp_mat1 = -np.linalg.solve(MAass_vector[index], MBass*temp_mat1)
     temp_mat2 = np.mat(np.zeros((n_of_var, 1)))
     for index in range(points):
-        temp_mat3 = -1 * \
-            np.linalg.inv(MAass_vector[index]) * Tass_vector[index]
+        temp_mat3 = -np.linalg.solve(MAass_vector[index], Tass_vector[index])
         for index2 in range(index + 1, points):
-            temp_mat3 = -1 * \
-                np.linalg.inv(MAass_vector[index2]) * MBass * temp_mat3
+            temp_mat3 = -np.linalg.solve(MAass_vector[index2], MBass*temp_mat3)
         temp_mat2 = temp_mat2 + temp_mat3
 
     dxN = np.linalg.inv(
@@ -361,5 +358,6 @@ def compute_dxN(circ, MAass_vector, MBass, Tass_vector, n_of_var, points, verbos
 
 
 def compute_dx(MAass, MBass, Tass, dxi_minus_1):
-    dxi = -1 * np.linalg.inv(MAass) * (MBass * dxi_minus_1 + Tass)
+    dxi = -np.linalg.solve(MAass, MBass*dxi_minus_1 + Tass)
+    # dxi = -1 * np.linalg.inv(MAass) * (MBass * dxi_minus_1 + Tass)
     return dxi
