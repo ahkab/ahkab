@@ -28,7 +28,7 @@ We need:
 
     1. the mna matrix :math:`MNA`,
     2. the :math:`AC` matrix, holding the frequency dependent parts,
-    3. :math:`J`, the Jacobian matrix from The linearized non-linear elements,
+    3. :math:`J`, the Jacobian matrix from the linearized non-linear elements,
     4. :math:`N_{ac}`, the AC sources contribution.
 
 An OP has to be computed first if there is any non-linear device in the circuit.
@@ -36,18 +36,23 @@ An OP has to be computed first if there is any non-linear device in the circuit.
 When all the matrices are available, it is possible to solve the system
 for the frequency values specified by the user, providing the resulting
 matrix is not singular (and possibly well conditioned). 
+
+
+Module contents
+---------------
+
+
+All functions in alphabetical order
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 """
 
 import sys
+
 import numpy as np
 
-from . import dc_analysis
-from . import options
-from . import circuit
-from . import devices
-from . import printing
-from . import utilities
-from . import results
+from . import (circuit, dc_analysis, devices, options, printing, results,
+               utilities)
 
 specs = {'ac': {'tokens': ({
                            'label': 'type',
@@ -85,25 +90,36 @@ specs = {'ac': {'tokens': ({
         }
 
 
-def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
-                mna=None, AC=None, Nac=None, J=None,
+def ac_analysis(circ, start, points, stop, sweep_type=None,
+                x0=None, mna=None, AC=None, Nac=None, J=None,
                 outfile="stdout", verbose=3):
     """Performs an AC analysis of the circuit described by circ.
 
     **Parameters:**
 
+    circ : Circuit instance
+        The circuit to be simulated.
+
     start : float
         the start angular frequency for the AC analysis
+
+    points : float,
+        the number of points to be use the discretize the
+        ``[start, stop]`` interval.
 
     stop : float
         stop angular frequency
 
-    points : float,
-        the number of points to be use the discretize the
-        [start, stop] interval.
-
     sweep_type : string,
-        Either 'LOG' or 'LINEAR', defaults to 'LOG'.
+        Either ``'LOG'`` or ``'LINEAR'``, defaults to ``'LOG'``.
+
+    x0 : op results instance
+        The linearization point. If not set, it will be computed
+        running an OP analysis.
+
+    mna, AC, Nax, J : ndarrays
+        The matrices to perform the analysis. They will be computed
+        if not supplied.
 
     outfile : string
         the filename of the output file where the results will be written.
@@ -134,7 +150,7 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
     if nsteps < 1:
         printing.print_general_error("AC analysis has number of steps <= 1")
         sys.exit(1)
-    if sweep_type == options.ac_log_step:
+    if sweep_type == options.ac_log_step or sweep_type is None:
         omega_iter = utilities.log_axis_iterator(stop, start, nsteps)
     elif sweep_type == options.ac_lin_step:
         omega_iter = utilities.lin_axis_iterator(stop, start, nsteps)
@@ -159,10 +175,10 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
         del N
         mna = utilities.remove_row_and_col(mna)
     if Nac is None:
-        Nac = generate_Nac(circ)
+        Nac = _generate_Nac(circ)
         Nac = utilities.remove_row(Nac, rrow=0)
     if AC is None:
-        AC = generate_AC(circ, [mna.shape[0], mna.shape[0]])
+        AC = _generate_AC(circ, [mna.shape[0], mna.shape[0]])
         AC = utilities.remove_row_and_col(AC)
 
     if circ.is_nonlinear():
@@ -188,7 +204,7 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
                 x0.print_short()
             printing.print_info_line(
                 ("Linearizing the circuit...", 5), verbose, print_nl=False)
-            J = generate_J(xop=x0.asmatrix(), circ=circ, mna=mna,
+            J = _generate_J(xop=x0.asmatrix(), circ=circ, mna=mna,
                            Nac=Nac, data_filename=outfile, verbose=verbose)
             printing.print_info_line((" done.", 5), verbose)
             # we have J, continue
@@ -251,7 +267,7 @@ def ac_analysis(circ, start, points, stop, sweep_type, x0=None,
     return ret_value
 
 
-def generate_AC(circ, shape):
+def _generate_AC(circ, shape):
     """Generates the AC coefficients matrix.
 
     The ``shape`` is the *reduced* MNA shape, the :math:`AC` matrix will
@@ -335,7 +351,7 @@ def generate_AC(circ, shape):
     return AC
 
 
-def generate_Nac(circ):
+def _generate_Nac(circ):
     """Generate the vector holding the contribution of AC sources.
     """
     n_of_nodes = len(circ.nodes_dict)
@@ -361,7 +377,7 @@ def generate_Nac(circ):
     return Nac
 
 
-def generate_J(xop, circ, mna, Nac, data_filename, verbose=0):
+def _generate_J(xop, circ, mna, Nac, data_filename, verbose=0):
     """Build the linearized matrix :math:`J`.
     """
     # setup J
