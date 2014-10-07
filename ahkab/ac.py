@@ -37,6 +37,36 @@ When all the matrices are available, it is possible to solve the system
 for the frequency values specified by the user, providing the resulting
 matrix is not singular (and possibly well conditioned). 
 
+**Building the :math:`AC` matrix:**
+
+It's easy to set up the voltage lines, since line 2 refers to
+node 2, etc...
+
+A capacitor between two example nodes ``n1`` and ``n2`` introduces the
+following elements:
+
+.. math::
+
+    \\mathrm{(KCL\\ node\\ n1)}\\qquad +j\\omega C\\ V(n1) - j\\omega C V(n2) + ... = ...
+
+    \\mathrm{(KCL\\ node\\ n2)}\\qquad -j\\omega C\\ V(n1) + j\\omega C V(n2) + ... = ...
+
+Inductors generate, together with voltage sources, ccvs, vcvs, a
+additional line in the :math:`MNA` matrix, and hence in :math:`AC` too.
+The current flowing through the device gets added to the unknowns vector,
+:math:`x`.
+
+For example, in the case of an inductors, we have:
+
+.. math::
+
+    \\mathrm{(KVL\\ over\\ n1\\ and\\ n2)}\\qquad V(n1) - V(n2) - j\\omega L\\ I(\\mathrm{inductor}) = 0
+
+To understand on which line is the KVL line for an inductor, we use the
+*order* of the elements in :mod:`ahkab.circuit`:
+First are assembled all the voltage rows, then the current ones in the same order in which
+the elements that introduce them are found in :mod:`ahkab.circuit`.
+
 
 Module contents
 ---------------
@@ -270,38 +300,13 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
 def _generate_AC(circ, shape):
     """Generates the AC coefficients matrix.
 
-    The ``shape`` is the *reduced* MNA shape, the :math:`AC` matrix will
-    be of the same shape.
+    **Parameters:**
 
-    **Implementation details:**
+    circ : Circuit instance
+        The circuit instance for which the matrix will be generated.
 
-    It's easy to set up the voltage lines, since line 2 refers to
-    node 2, etc...
-
-    A capacitor between two example nodes ``n1`` and ``n2`` introduces the
-    following elements:
-
-    .. math::
-
-        \\mathrm{(KCL\\ node\\ n1)}\\qquad +j\\omega C\\ V(n1) - j\\omega C V(n2) + ... = ...
-
-        \\mathrm{(KCL\\ node\\ n2)}\\qquad -j\\omega C\\ V(n1) + j\\omega C V(n2) + ... = ...
-
-    Inductors generate, together with voltage sources, ccvs, vcvs, a
-    additional line in the :math:`MNA` matrix, and hence in :math:`AC` too.
-    The current flowing through the device gets added to the unknowns vector,
-    :math:`x`.
-
-    For example, in the case of an inductors, we have:
-
-    .. math::
-
-        \\mathrm{(KVL\\ over\\ n1\\ and\\ n2)}\\qquad V(n1) - V(n2) - j\\omega L\\ I(\\mathrm{inductor}) = 0
-
-    To understand on which line is the KVL line for an inductor, we use the
-    *order* of the elements in :mod:`ahkab.circuit`:
-    First are assembled all the voltage rows, then the current ones in the same order in which
-    the elements that introduce them are found in :mod:`ahkab.circuit`.
+    shape : int
+        The reduced MNA size.
 
     **Returns:**
  
@@ -353,6 +358,11 @@ def _generate_AC(circ, shape):
 
 def _generate_Nac(circ):
     """Generate the vector holding the contribution of AC sources.
+
+    **Parameters:**
+
+    circ : Circuit instance
+        The circuit instance for which the matrix will be generated.
     """
     n_of_nodes = len(circ.nodes_dict)
     Nac = np.mat(np.zeros((n_of_nodes, 1)), dtype=complex)
