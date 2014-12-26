@@ -21,7 +21,7 @@ setup(
       'ahkab': ['test_data/*.dat']
     },
     install_requires=['numpy', 'scipy>0.7.2', 'sympy>=0.7.5'],
-    extras_require = {'PLOT':['matplotlib>=1.1.1'],
+    extras_require = {'PLOT':['matplotlib>=1.1.1']},
     zip_safe=False,
     include_package_data=True,
     author="Giuseppe Venturini and others",
