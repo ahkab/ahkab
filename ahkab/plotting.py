@@ -24,11 +24,16 @@ of a simulation
 from __future__ import print_function, division, unicode_literals
 
 import re
-import pylab
 import numpy as np
 
 from . import printing
 from . import options
+
+try:
+    import pylab
+except ImportError:
+    # no matplotlib
+    printing.print_warning('Matplotlib not found.')
 
 def _split_netlist_label(labels_string):
     labels_string = labels_string.strip().upper()
