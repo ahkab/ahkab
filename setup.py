@@ -20,7 +20,7 @@ setup(
     package_data={
       'ahkab': ['test_data/*.dat']
     },
-    install_requires=['numpy', 'sympy', 'matplotlib>=1.1.1'],
+    install_requires=['numpy', 'sympy>=0.7.5', 'matplotlib>=1.1.1'],
     zip_safe=False,
     include_package_data=True,
     author="Giuseppe Venturini and others",
