@@ -28,7 +28,8 @@ Title
 """""
 
 The title is a special type of comment and it is **always the first line
-in the file**. *Do not put any other directive here.*
+in the file**. *Do not put any other directive here, it will be silently
+ignored.*
 
 Elements
 """"""""
@@ -39,18 +40,18 @@ In general, an element is declared with the following general syntax:
 
 Where:
 
-* ``<K>`` is a character, a unique identifier for each type of
-  element (e.g. R for resistor)
-* ``<description_string>`` is a string without spaces (e.g ``1``)
-* ``<n1>``, a string, is the the node of the circuit
-  to which the anode of the element is connected.
-* ``<n2>``, a string, is the node of the circuit to which the cathode of
-  the element is connected.
-* ``[value]`` if supported, is the 'value' of the element, in mks
-  (e.g. R1 1 0 500k)
-* ``<option>=<value>`` are the parameters of the element
+* ``<K>`` is a character, a unique identifier for each type of element (e.g. R
+  for resistor).
+* ``<description_string>`` is a string without spaces (e.g ``1``).
+* ``<n1>``, a string, is the node of the circuit to which the anode of the
+  element is connected.
+* ``<n2>``, a string, is the node of the circuit to which the cathode of the
+  element is connected.
+* ``[value]`` if supported, is the 'value' of the element, in mks (e.g.
+  ``R1 1 0 500k``)
+* ``<option>=<value>`` are the parameters of the element.
 
-Nodes may have any label, without spaces, except the *reference* *node*
+Nodes may have any label, without spaces, except the *reference* *node* (GND)
 which has to be ``0``.
 
 Linear elements
@@ -157,14 +158,13 @@ Voltage-controlled switch
 
 ``S<string> n1 n2 ns1 ns2 <model_id>``
 
--  ``n1`` and ``n2`` are the nodes corresponding to the output port,
-   where the switch opens and closes the connection.
--  ``ns1`` and ``ns2`` are the nodes corresponding to the driving port,
-   where the voltage setting the switch status is read.
--  ``model_id`` is the model describing the switch operation. Notice
-   that even if an ideal switch is a (piece-wise) linear element, its
-   model implementation may not be, depending on the implementation
-   details of the transition region.
+-  ``n1`` and ``n2`` are the nodes corresponding to the output port, where the
+  switch opens and closes the connection.
+-  ``ns1`` and ``ns2`` are the nodes corresponding to the driving port, where
+  the voltage setting the switch status is read.
+-  ``model_id`` is the model describing the switch operation. Notice that even
+  if an ideal switch is a (piece-wise) linear element, its model implementation
+  may not be, depending on the implementation details of the transition region.
 
 Independent sources
 ^^^^^^^^^^^^^^^^^^^
@@ -178,7 +178,7 @@ Voltage source
 
 ``v<string> n1 n2 [type=vdc vdc=float] [type=vac vac=float] [type=....]``
 
-Where the third type (if added) is one of: 
+Where the third type (if added) is one of: ``sin``, ``pulse``, ``exp``.
 
 Current source
 ''''''''''''''
@@ -189,7 +189,7 @@ Current source
 
 ``i<string> n1 n2 [type=idc idc=float] [type=iac iac=float] [type=....]``
 
-The declaration of the time variant part is the same as stated above for
+The declaration of the time variant part is the same as for
 voltage sources, except that ``vo`` becomes ``io``, ``va`` becomes
 ``ia`` and so on.
 
@@ -205,10 +205,10 @@ Voltage-Controlled Voltage Source (VCVS)
 
 ``E<string> n+ n- ns+ ns- <value>``
 
--  ``n+`` and ``n-`` are the nodes corresponding to the output port,
-   where the voltage is forced.
--  ``ns+`` and ``ns-`` are the nodes corresponding to the driving port,
-   where the voltage is read.
+-  ``n+`` and ``n-`` are the nodes corresponding to the output port, where the
+  voltage is forced.
+-  ``ns+`` and ``ns-`` are the nodes corresponding to the driving port, where
+  the voltage is read.
 -  ``value`` is the proportionality factor, ie:
    ``V(n+) - V(n-) = value*[V(sn+) - V(sn-)]``.
 
@@ -221,10 +221,10 @@ Voltage-Controlled Current Source (VCCS)
 
 ``G<string> n+ n- ns+ ns- <value>``
 
--  ``n+`` and ``n-`` are the nodes corresponding to the output port,
-   where the current is forced.
--  ``ns+`` and ``ns-`` are the nodes corresponding to the driving port,
-   where the voltage is read.
+-  ``n+`` and ``n-`` are the nodes corresponding to the output port, where the
+  current is forced.
+-  ``ns+`` and ``ns-`` are the nodes corresponding to the driving port, where
+  the voltage is read.
 -  ``value`` is the proportionality factor, ie:
    ``I(n+,n-) = value*[V(sn+) - V(sn-)]``.
 
@@ -241,7 +241,18 @@ Diode
 
 **General syntax:**
 
-``D<string> N+ N- <model_id> [<AREA=float> <T=float> <IC=float> <OFF=boolean>]``
+``D<string> n1 n2 <model_id> [<AREA=float> <T=float> <IC=float> <OFF=boolean>]``
+
+**Parameters:**
+
+-  ``n1``: anode.
+-  ``n2``: cathode.
+-  ``<model_id>``: the ID of the diode model.
+-  ``AREA``: The area of the PN junction.
+-  ``T``: the temperature of operation, if different from the circuit
+  temperature.
+-  ``IC``: initial condition statement (voltage).
+-  ``OFF``: Consider the diode to be initially off in transient analyses.
 
 MOS Transistors
 '''''''''''''''
@@ -798,3 +809,5 @@ They may be:
     or ``V(<node2>, <node1>)``, to plot the difference of the node
     voltages. Eg ``V(in)`` or ``V(2,1)``. 
 - a current, syntax ``I(<source name>)``, eg. ``I(V2)`` or ``I(Vsupply)``
+
+Plotting is possible only if matplotlib is available.
