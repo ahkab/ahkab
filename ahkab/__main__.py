@@ -30,7 +30,7 @@ from . import transient
 from . import utilities
 from .__version__ import __version__
 
-def cli():
+def _cli():
     usage = "usage: \t%prog [options] <filename>\n\nThe filename is the " + \
             "netlist to be open. Use - (a dash) to read from stdin."
     parser = OptionParser(usage, version="%prog " + __version__ + \
@@ -106,10 +106,6 @@ def cli():
     parser.add_option(
         "", "--cmin", action="store", type="string", dest="cmin", default=None,
         help="The minimum capacitance to ground. Default: " + str(options.cmin))
-    parser.add_option(
-        "", "--eps", action="store_true", dest="eps", default=False,
-        help="Calculate the machine precision. " + \
-        "The machine precision defaults to " + str(utilities.EPS))
 
     (cli_options, remaning_args) = parser.parse_args()
 
@@ -141,9 +137,6 @@ def cli():
         options.gmin = float(cli_options.gmin)
     if cli_options.cmin is not None:
         options.cmin = float(cli_options.cmin)
-    if cli_options.eps:
-        utilities.EPS = utilities.calc_eps()
-        print "Detected machine precision: " + str(utilities.EPS)
 
     if not len(remaning_args) == 1:
         print "Usage: ./ahkab.py [options] <filename>\n./ahkab.py -h for help"
@@ -167,4 +160,4 @@ def cli():
     sys.exit(0)
 
 if __name__ == "__main__":
-    cli()
+    _cli()

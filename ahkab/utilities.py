@@ -31,8 +31,7 @@ import numpy as np
 from . import printing
 from . import options
 
-# this is the machine precision on my Intel x86
-EPS = 2.22044604925e-16
+EPS = np.finfo(float).eps
 
 
 def expand_matrix(matrix, add_a_row, add_a_col):
@@ -109,14 +108,6 @@ def fact(num):
     if num == 1:
         return 1
     return reduce(operator.mul, xrange(2, num + 1))
-
-
-def calc_eps():
-    """Returns the machine precision."""
-    _eps = 1.0
-    while(1 + _eps > 1):
-        _eps = _eps / 2
-    return _eps * 2
 
 
 class combinations:
