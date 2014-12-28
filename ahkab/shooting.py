@@ -38,11 +38,13 @@ from . import devices
 
 def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
              mna=None, Tf=None, D=None, outfile='stdout', vector_norm=lambda v: max(abs(v)), verbose=3):
-    """Performs a periodic steady state analysis based on the algorithm described in
+    """Performs a periodic steady state analysis based on the algorithm described in:
+
     Brambilla, A.; D'Amore, D., "Method for steady-state simulation of
     strongly nonlinear circuits in the time domain," Circuits and
     Systems I: Fundamental Theory and Applications, IEEE Transactions on,
     vol.48, no.7, pp.885-889, Jul 2001
+
     URL: http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=933329&isnumber=20194
 
     The results have been computed again by me, the formulas are not exactly the
