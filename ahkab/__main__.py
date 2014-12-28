@@ -18,9 +18,6 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-""" ahkab is a easy electronic circuit simulator.
-"""
-
 import sys
 from optparse import OptionParser
 
