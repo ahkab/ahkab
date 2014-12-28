@@ -38,6 +38,7 @@ Reference
    devices
    diode
    printing
+   pss
    pz
    results
    symbolic
@@ -56,9 +57,6 @@ Documentation in progress
    :members:
 
 .. automodule:: ahkab.mosq
-   :members:
-
-.. automodule:: ahkab.pss
    :members:
 
 .. automodule:: ahkab.ticker
