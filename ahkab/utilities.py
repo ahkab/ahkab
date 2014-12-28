@@ -53,6 +53,21 @@ def expand_matrix(matrix, add_a_row, add_a_col):
         matrix = np.concatenate((matrix, row), axis=0)
     return matrix
 
+def set_submatrix(row, col, dest_matrix, source_matrix):
+    """Copies the ``source_matrix`` in ``dest_matrix``
+
+    The coordinates of the upper left corner in the destination matrix where the
+    source matrix will be copied are ``(row, col)``.
+
+    **Returns:**
+
+    dest_matrix : ndarray
+        A reference to the modified destination matrix.
+    """
+    ls = source_matrix.shape[0]
+    cs = source_matrix.shape[1]
+    dest_matrix[row:row+ls, col:col+cs] = source_matrix[:, :]
+    return dest_matrix
 
 def remove_row_and_col(matrix, rrow=0, rcol=0):
     """Removes a row and a column from the matrix.
@@ -305,3 +320,49 @@ def custom_convergence_check(x, dx, residuum, er, ea, eresiduum, vector_norm=lam
         ret = True
 
     return ret, all_check_results
+
+def check_step_and_points(step=None, points=None, period=None,
+                          default_points=100):
+    """Sets consistently the step size and the number of points
+
+    The calculation is done according to the given period.
+
+    **Parameters:**
+
+    step : scalar, optional
+        The discretization step.
+    points : int, optional
+        The number of points to be used in the discretization.
+    period : scalar, optional
+        The length of the interval to be discretized. Not setting
+        this parameter will result in a ``ValueError``.
+    default_points : int, optional
+        The default number of points.
+
+    **Returns:**
+
+    (points, step) : tuple
+        The adjusted number of points and step value.
+    """
+
+    if step is None and points is None:
+        print "Warning: neither step nor n. of points setted. Using", default_points, "points."
+        points = default_points
+    elif step is not None and points is not None:
+        print "Warning: shooting had both step and n. of points setted. Using", step, "step. (NA)"
+        points = None
+
+    if points:
+        step = float(period)/(points - 1)
+    else:
+        points = float(period)/step
+        if points % 1 != 0:
+            step = step + (step * (points % 1)) / int(points)
+            points = int(float(period)/step)
+            printing.print_warning("adapted step is %g" % (step,))
+        else:
+            points = int(points)
+        # 0 - N where xN is in reality the first point of the second period!!
+        points = points + 1
+
+    return int(points), step

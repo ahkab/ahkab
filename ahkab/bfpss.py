@@ -69,7 +69,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
     x0 : ndarray, optional
         The initial guess to be used. (Experimental, needs work.)
 
-    mna, D, Tf : ndarrays, optinal
+    mna, D, Tf : ndarrays, optional
         The matrices describing the circuit may be supplied to speed up
         the solution, if available. If not supplied, they will be
         automatically calculated.
@@ -91,7 +91,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
         ``step`` and ``points`` are mutually exclusive options:
 
         * if ``step`` is specified, the number of points will be
-        automatically determined.
+          automatically determined.
         * if ``points`` is set, the step will be automatically determined.
         * if none of them is set, ``options.shooting_default_points`` will
           be used as value for ``points`` and ``step`` computed accordingly.
@@ -126,26 +126,27 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
             "mna matrix and D matrix have different sizes.")
         raise ValueError
 
-    (points, step) = check_step_and_points(step, points, period)
+    (points, step) = utilities.check_step_and_points(step, points, period,
+                                           options.shooting_default_points)
 
     n_of_var = mna.shape[0]
     locked_nodes = circ.get_locked_nodes()
     tick = ticker.ticker(increments_for_step=1)
     sparse = n_of_var*points > options.dense_matrix_limit
 
-    CMAT = build_CMAT(mna, D, step, points, tick, n_of_var=n_of_var,
+    CMAT = _build_CMAT(mna, D, step, points, tick, n_of_var=n_of_var,
                       sparse=sparse, verbose=verbose)
 
-    x = build_x(mna, step, points, tick, x0=x0, n_of_var=n_of_var,
-                verbose=verbose)
+    x = _build_x(mna, step, points, tick, x0=x0, n_of_var=n_of_var,
+                 verbose=verbose)
 
-    Tf = build_Tf(Tf, points, tick, n_of_var=n_of_var, verbose=verbose)
+    Tf = _build_Tf(Tf, points, tick, n_of_var=n_of_var, verbose=verbose)
 
     # time variable component: Tt this is always the same in each iter.
     # So we build it once for all
     # It holds all time-dependent sources (both V/I).
-    Tt = build_Tt(circ, points, step, tick, n_of_var=n_of_var,
-                  verbose=verbose)
+    Tt = _build_Tt(circ, points, step, tick, n_of_var=n_of_var,
+                   verbose=verbose)
 
     # Indices to differentiate between currents and voltages in the
     # convergence check
@@ -242,8 +243,8 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
                 dx[index*n_of_var:(index + 1)*n_of_var, 0], locked_nodes, n=-1)
         x = x + min(abs(td))[0] * dx
         # convergence check
-        converged = convergence_check(
-            dx, x, nv_indices, ni_indices, vector_norm)
+        converged = _convergence_check(dx, x, nv_indices, ni_indices,
+                                      vector_norm)
         if converged:
             break
         tick.step()
@@ -270,7 +271,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
     return sol
 
 
-def convergence_check(dx, x, nv_indices, ni_indices, vector_norm):
+def _convergence_check(dx, x, nv_indices, ni_indices, vector_norm):
     """Perform a convergence check using the specified vector norm"""
     # sometimes something diverges... look out
     if vector_norm(dx) is np.nan:
@@ -285,72 +286,7 @@ def convergence_check(dx, x, nv_indices, ni_indices, vector_norm):
     return ret
 
 
-def set_submatrix(row, col, dest_matrix, source_matrix):
-    """Copies the source_matrix in dest_matrix,
-
-    The position of the upper left corner of source matrix is (row, col)
-    within dest_matrix.
-
-    **Returns:**
-
-    dest_matrix
-    """
-    ls = source_matrix.shape[0]
-    cs = source_matrix.shape[1]
-    dest_matrix[row:row+ls, col:col+cs] = source_matrix[:, :]
-    return dest_matrix
-
-
-def get_e(index, length):
-    """Builds a ``e(j=index)`` column vector
-
-    ``e(j)`` is defined as:
-
-        e(i, 0) = 1 if i=j
-        e(i, 0) = 0 otherwise
-
-    **Returns:**
-
-    ``e(index)``
-    """
-    e = np.mat(np.zeros((length, 1)))
-    e[index, 0] = 1
-    return e
-
-
-def check_step_and_points(step=None, points=None, period=None):
-    """Sets consistently the step size and the number of points
-
-    The calculation is done according to the given period.
-
-    **Returns:**
-
-    (points, step)
-    """
-    if step is None and points is None:
-        print "Warning: shooting had no step nor n. of points setted. Using", options.shooting_default_points, "points."
-        points = options.shooting_default_points
-    elif step is not None and points is not None:
-        print "Warning: shooting had both step and n. of points setted. Using", step, "step. (NA)"
-        points = None
-
-    if points:
-        step = (1.0 * period) / (points - 1)
-    else:
-        points = (1.0 * period) / step
-        if points % 1 != 0:
-            step = step + (step * (points % 1)) / int(points)
-            points = int((1.0 * period) / step)
-            printing.print_warning("adapted step is %g" % (step,))
-        else:
-            points = int(points)
-        points = points + \
-            1  # 0 - N where xN is in reality the first point of the second period!!
-
-    return (int(points), step)
-
-
-def build_CMAT(mna, D, step, points, tick, n_of_var=None, sparse=False, verbose=3):
+def _build_CMAT(mna, D, step, points, tick, n_of_var=None, sparse=False, verbose=3):
     if n_of_var is None:
         n_of_var = mna.shape[0]
     printing.print_info_line(("Building CMAT (%dx%d)... " %
@@ -381,8 +317,8 @@ def build_CMAT(mna, D, step, points, tick, n_of_var=None, sparse=False, verbose=
                     temp = N
                 else:
                     continue  # temp = Z
-            CMAT = set_submatrix(row=li*n_of_var, col=ci*n_of_var,
-                                 dest_matrix=CMAT, source_matrix=temp)
+            CMAT = utilities.set_submatrix(row=li*n_of_var, col=ci*n_of_var,
+                                           dest_matrix=CMAT, source_matrix=temp)
         tick.step()
     tick.hide(verbose > 2)
     if sparse:
@@ -392,7 +328,7 @@ def build_CMAT(mna, D, step, points, tick, n_of_var=None, sparse=False, verbose=
     return CMAT
 
 
-def build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
+def _build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
     if n_of_var is None:
         n_of_var = mna.shape[0]
     printing.print_info_line(("Building x...", 5), verbose, print_nl=False)
@@ -406,8 +342,8 @@ def build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
             print "Warning x0 has the wrong dimensions. Using all 0s."
         else:
             for index in xrange(points):
-                x = set_submatrix(
-                    row=index * n_of_var, col=0, dest_matrix=x, source_matrix=x0)
+                x = utilities.set_submatrix(row=index*n_of_var, col=0,
+                                            dest_matrix=x, source_matrix=x0)
                 tick.step()
 
     tick.hide(verbose > 2)
@@ -416,15 +352,15 @@ def build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
     return x
 
 
-def build_Tf(sTf, points, tick, n_of_var, verbose=3):
+def _build_Tf(sTf, points, tick, n_of_var, verbose=3):
     printing.print_info_line(("Building Tf...", 5), verbose, print_nl=False)
     tick.reset()
     tick.display(verbose > 2)
     Tf = np.mat(np.zeros((points * n_of_var, 1)))
 
     for index in xrange(1, points):
-        Tf = set_submatrix(
-            row=index * n_of_var, col=0, dest_matrix=Tf, source_matrix=sTf)
+        Tf = utilities.set_submatrix(row=index*n_of_var, col=0, dest_matrix=Tf,
+                                     source_matrix=sTf)
         tick.step()
 
     tick.hide(verbose > 2)
@@ -433,7 +369,7 @@ def build_Tf(sTf, points, tick, n_of_var, verbose=3):
     return Tf
 
 
-def build_Tt(circ, points, step, tick, n_of_var, verbose=3):
+def _build_Tt(circ, points, step, tick, n_of_var, verbose=3):
     nv = len(circ.nodes_dict)
     printing.print_info_line(("Building Tt...", 5), verbose, print_nl=False)
     tick.reset()
