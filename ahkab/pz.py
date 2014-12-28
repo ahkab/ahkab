@@ -47,7 +47,7 @@ Overview
 Two main methods are available in this module:
 
  * :func:`calculate_singularities`, which computes both zeros and poles,
- * :func:`calculate_poles`, which only computes zeros.
+ * :func:`calculate_poles`, which only computes the poles.
 
 Currently this module uses dense matrices.
 
