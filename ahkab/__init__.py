@@ -27,10 +27,15 @@
 # because does Windows have the DISPLAY env variable defined?
 from __future__ import print_function
 import os
-import matplotlib
-if os.system('python -c "import matplotlib.pyplot as plt;plt.figure()" > ' + 
-             '/dev/null 2>&1'):
-    matplotlib.use('Agg')
+
+try:
+    import matplotlib
+    if os.system('python -c "import matplotlib.pyplot as plt;plt.figure()" > ' + 
+                 '/dev/null 2>&1'):
+        matplotlib.use('Agg')
+except ImportError:
+    # plotting will complain about this.
+    pass
 
 from .ahkab import new_op, new_dc, new_tran, new_ac, new_pss, new_pz
 from .ahkab import new_symbolic, queue, run, new_x0, icmodified_x0

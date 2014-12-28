@@ -30,8 +30,13 @@ import copy
 from optparse import OptionParser
 
 import numpy as np
+import scipy as sp
 import sympy
-import matplotlib
+try:
+    import matplotlib
+    plotting_available = True
+except ImportError:
+    plotting_available = False
 
 # analyses
 from . import dc_analysis
@@ -688,9 +693,15 @@ def main(filename, outfile="stdout", verbose=3):
     printing.print_info_line(
         ("  Python %s" % (sys.version.split('\n')[0],), 6), verbose)
     printing.print_info_line(("  Numpy %s" % (np.__version__), 6), verbose)
+    printing.print_info_line(("  Scipy %s" % (sp.__version__), 6), verbose)
     printing.print_info_line(("  Sympy %s" % (sympy.__version__), 6), verbose)
-    printing.print_info_line(
-        ("  Matplotlib %s" % (matplotlib.__version__), 6), verbose)
+    if plotting_available:
+        printing.print_info_line(
+            ("  Matplotlib %s" % (matplotlib.__version__), 6), verbose)
+    else:
+        printing.print_info_line(
+            ("  Matplotlib not found.", 6), verbose)
+
 
     read_netlist_from_stdin = (filename is None or filename == "-")
     (circ, directives, postproc_direct) = netlist_parser.parse_circuit(

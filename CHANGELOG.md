@@ -1,6 +1,40 @@
 <!-- Name: Changelog -->
 #Changelog
 
+## Changelog for v 0.11
+
+Version 0.11 represent the culmination of four months of efforts.
+
+### Features added:
+
+* Add Pole-Zero (.pz) analysis.
+* Add sparse matrix support and LU factorization with SuperLU.
+* AC solutions data is returned as complex floats.
+* The brute-force PSS algo is now known as 'brute-force'.
+
+Ahkab also got considerably faster in DC/OP/TRAN/PSS analyses.
+
+A PY3 version passing the whole test suite is available in the
+repository.
+
+### Changes from contributors and pull requests merged:
+
+*None.*
+
+### Bugs fixed, short list:
+
+* BUGFIX: AC sweeps consistently default to LOG.
+* BUGFIX: Convert print_netlist_elem_line to get_... 
+* BUGFIX: parse_analysis() is not a generator anymore`.
+* BUGFIX: Remove print_circuit(), use print(circuit).
+* BUGFIX: EKV devices now match the usual constructor.
+* BUGFIX: do not attempt to print conv. details if sing. MNA
+* BUGFIX: Use ndarrays (almost) everywhere, drop mats.
+* BUGFIX: Don't crash if a plot label is not found.
+* BUGFIX: CMIN-related crash.
+* BUGFIX: Remove hack for now closed bug in sympy.
+* BUGFIX: Reset sim options before skipping a test.
+
 ## Changelog for v 0.10
 
 ### Bugs fixed, short list:

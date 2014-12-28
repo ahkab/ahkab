@@ -1,5 +1,0 @@
-Ahkab
------
-
-.. automodule: ahkab
-   :members:

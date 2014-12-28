@@ -226,7 +226,7 @@ def get_variables(circ):
               for elem in circ if circuit.is_elem_voltage_defined(elem)]
 
     mna_size = nv_1 + len(idescr)
-    x = smzeros((mna_size, 1))
+    x = smzeros(mna_size, 1)
 
     for i in range(mna_size):
         if i < nv_1:
@@ -260,7 +260,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
     #   print options
     n_of_nodes = len(circ.nodes_dict)
     mna = smzeros(n_of_nodes)
-    N = smzeros((n_of_nodes, 1))
+    N = smzeros(n_of_nodes, 1)
     subs_g = {}
 
     for elem in circ:
@@ -414,10 +414,10 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
 
 def expand_matrix(mat, add_a_row=False, add_a_col=False):
     if add_a_row:
-        row = sympy.zeros((1, mat.shape[1]))
+        row = smzeros(1, mat.shape[1])
         mat = mat.row_insert(mat.shape[0], row)
     if add_a_col:
-        col = sympy.zeros((mat.shape[0], 1))
+        col = sympy.zeros(mat.shape[0], 1)
         mat = mat.col_insert(mat.shape[1], col)
     return mat
 

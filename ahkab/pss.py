@@ -24,7 +24,14 @@ from . import shooting
 from . import bfpss
 from . import options
 
-# .SHOOTING PERIOD=n [points=n step=n autonomous=bool]
+# Periodic Steady State (PSS) analysis module.
+
+# This module is an interface to a generic PSS analysis,
+# which will be set up automatically for you according to
+# the algorithm selected.
+
+# Netlist syntax
+# .PSS PERIOD=n [points=n step=n autonomous=bool method=str]
 
 specs = {'pss': {'tokens': ({
                             'label': 'period',
@@ -72,6 +79,27 @@ specs = {'pss': {'tokens': ({
 
 
 def pss_analysis(*largs, **args):
+    """Perform a PSS analysis.
+
+    The only required argument is ``method`` (string), which
+    selects the algorithm to be used.
+
+    Two algorithms are a shooting PSS, selected with the ``"shooting"`` switch
+    and brute-force PSS, selected by the ``"brute-force"`` switch. Any other
+    value for the ``method`` parameter will result in a ``ValueError`` exception
+    being raised.
+
+    The rest of the arguments will be passed to the algorithm implementing the
+    analysis.
+
+    For the shooting algorithm see :mod:`ahkab.shooting`, for the brute-force
+    algorithm see :mod:`ahkab.bfpss`.
+
+    **Returns:**
+    
+    sol : PSS solution object (:class:`results.pss_solution`)
+        The solution.
+    """
     m = args.pop('method').lower()
     if m == options.SHOOTINGPSS:
         r = shooting.shooting(*largs, **args)

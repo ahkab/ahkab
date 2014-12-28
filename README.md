@@ -6,13 +6,13 @@ The code should be easy to read and modify, the main language is Python 2.x and 
 
 ## News! ##
 
- * Ahkab v0.10 released, including several bugfixes and improvements. Check out [the release notes](https://github.com/ahkab/ahkab/releases/tag/v0.10) for more!
+ * Ahkab v0.11 was released on Oct 22 2014, including several bugfixes and improvements. It is recommended to upgrade. Check out [the release notes](https://github.com/ahkab/ahkab/releases/tag/v0.11) for more!
  * The whole codebase has been going through a (yet incomplete) refactoring and documenting effort. The [new documentation is available on RTD](http://ahkab.readthedocs.org/en/latest/).
  * Tests have been added to the code base, to weed out bugs and have a consistent way to check for regressions. If you have tests you would like to suggest, please send a PR my way.
  *  My resources are limited these days, so the much-needed work is proceeding slowly, albeit hopefully steadily. If you are interested and you would like to contribute to refactoring or documenting a particular feature, it would be very welcome.
 
 [![Build Status](https://travis-ci.org/ahkab/ahkab.png?branch=master)](https://travis-ci.org/ahkab/ahkab) [![Coverage Status](https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master)](https://coveralls.io/r/ahkab/ahkab?branch=master)
-[![PyPi version](http://img.shields.io/badge/version-0.10-brightgreen.png)](https://pypi.python.org/pypi/ahkab/) [![GPLv2 license](http://img.shields.io/badge/license-GPL%20v2-brightgreen.png)](https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE)
+[![PyPi version](http://img.shields.io/badge/version-0.11-brightgreen.png)](https://pypi.python.org/pypi/ahkab/) [![GPLv2 license](http://img.shields.io/badge/license-GPL%20v2-brightgreen.png)](https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE)
 <!--- [![PyPi downloads](https://pypip.in/download/ahkab/badge.png)](https://pypi.python.org/pypi/ahkab/) --->
 
 
@@ -22,7 +22,7 @@ The code should be easy to read and modify, the main language is Python 2.x and 
     * **DC sweep**
     * **Transient analysis**, available differentiation formulas: implicit Euler, trapezoidal, gear orders from 2 to 5. See for example the [simulation of a Colpitts Oscillator](https://github.com/ahkab/ahkab/wiki/Example:-Transient-simulation-1).
     * **AC analysis**
-    * **PZ** analysis (git-tree only)
+    * **PZ** analysis
     * **Periodic steady state analysis** of non-autonomous circuits, _time_ _domain_ shooting and brute-force algorithms.
   * Symbolic: 
     * **Small signal analysis**, AC or DC, with extraction of transfer functions, DC gain, poles and zeros. Various [symbolic analysis examples on this page](https://github.com/ahkab/ahkab/wiki/Example:-Symbolic-simulation).
@@ -33,7 +33,7 @@ The results are saved to disk, plotted or printed to stdout and can be read/proc
 
 The program requires:
 * the **Python 2 interpreter** (at least v.2.6, and Python3 is in the works),
-* numpy, matplotlib and sympy.
+* numpy>=1.7.0, matplotlib and sympy.
 
 If you need more information about the dependencies, check the [Install notes](https://github.com/ahkab/ahkab/wiki/Install:-Notes).
 

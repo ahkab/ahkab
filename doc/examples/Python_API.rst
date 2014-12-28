@@ -125,7 +125,7 @@ a netlist.
 
 .. code:: python
 
-    printing.print_circuit(mycircuit)
+    print mycircuit
 
 If you invoke python now, you should get an output like this:
 
@@ -139,7 +139,6 @@ If you invoke python now, you should get an output like this:
     C2 n4 0 1.5512e-07
     R2 n4 0 1200.0
     V1 n1 0 type=vdc vdc=5 vac=1 arg=0 type=pulse v1=0 v2=1 td=5e-07 per=2 tr=1e-12 tf=1e-12 pw=1
-    (analysis directives are omitted)
 
 Next, we need to define the analyses to be carried out:
 
@@ -207,6 +206,7 @@ The data can be plotted through matplotlib, for example:
 .. code:: python
 
         import pylab as plt
+        import numpy as np
         
         fig = plt.figure()
         plt.title(mycircuit.title + " - TRAN Simulation")
@@ -223,12 +223,12 @@ The data can be plotted through matplotlib, for example:
         
         fig = plt.figure()
         plt.subplot(211)
-        plt.semilogx(r['ac']['w'], r['ac']['|Vn4|'], 'o-')
+        plt.semilogx(r['ac']['w'], np.abs(r['ac']['Vn4']), 'o-')
         plt.ylabel('abs(V(n4)) [V]')
         plt.title(mycircuit.title + " - AC Simulation")
         plt.subplot(212)
         plt.grid(True)
-        plt.semilogx(r['ac']['w'], r['ac']['arg(Vn4)'], 'o-')
+        plt.semilogx(r['ac']['w'], np.angle(r['ac']['Vn4']), 'o-')
         plt.xlabel('Angular frequency [rad/s]')
         plt.ylabel('arg(V(n4)) [rad]')
         fig.savefig('ac_plot.png')
@@ -252,25 +252,23 @@ stop band in the example:
 
 .. code:: python
 
-        import scipy, numpy, scipy.interpolate 
-        
-        # Normalize the output to the low frequency value and convert to array
-        norm_out = numpy.asarray(r['ac']['|Vn4|'].T/r['ac']['|Vn4|'].max())
-        # Convert to dB
-        norm_out_db = 20*numpy.log10(norm_out)
-        # Reshape to be scipy-friendly
-        norm_out_db = norm_out_db.reshape((max(norm_out_db.shape), ))
-        # Convert angular frequencies to Hz and convert matrix to array
-        frequencies = numpy.asarray(r['ac']['w'].T/2/math.pi)
-        # Reshape to be scipy-friendly
-        frequencies = frequencies.reshape((max(frequencies.shape), ))
-        # call scipy to interpolate
-        norm_out_db_interpolated = scipy.interpolate.interp1d(frequencies, norm_out_db)
-        
-        print "Maximum attenuation in the pass band (0-%g Hz) is %g dB" % \
-        (2e3, -1.0*norm_out_db_interpolated(2e3))
-        print "Minimum attenuation in the stop band (%g Hz - Inf) is %g dB" % \
-        (6.5e3, -1.0*norm_out_db_interpolated(6.5e3))
+         import numpy as np
+         import scipy, scipy.interpolate
+
+         # Normalize the output to the low frequency value and convert to array
+         norm_out = np.abs(r['ac']['Vn4'])/np.abs(r['ac']['Vn4']).max()
+         # Convert to dB
+         norm_out_db = 20*np.log10(norm_out)
+         # Convert angular frequencies to Hz and convert matrix to array
+         frequencies = r['ac']['w']/2/np.pi
+         # call scipy to interpolate
+         norm_out_db_interpolated = scipy.interpolate.interp1d(frequencies, norm_out_db)
+
+         print "Maximum attenuation in the pass band (0-%g Hz) is %g dB" % \
+         (2e3, -1.0*norm_out_db_interpolated(2e3))
+         print "Minimum attenuation in the stop band (%g Hz - Inf) is %g dB" % \
+         (6.5e3, -1.0*norm_out_db_interpolated(6.5e3))
+
 
 You should see the following output:
 

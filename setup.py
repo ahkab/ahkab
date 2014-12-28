@@ -20,7 +20,8 @@ setup(
     package_data={
       'ahkab': ['test_data/*.dat']
     },
-    install_requires=['numpy', 'sympy', 'matplotlib>=1.1.1'],
+    install_requires=['numpy', 'scipy>0.7.2', 'sympy>=0.7.5'],
+    extras_require = {'PLOT':['matplotlib>=1.1.1']},
     zip_safe=False,
     include_package_data=True,
     author="Giuseppe Venturini and others",
@@ -28,7 +29,7 @@ setup(
     description="a SPICE-like electronic circuit simulator",
     long_description=''.join([read('pypi_description.rst'), '\n\n',
                               read('CHANGES.rst')]),
-    entry_points = {'console_scripts': ['ahkab = ahkab.__main__:cli', ], },
+    entry_points = {'console_scripts': ['ahkab = ahkab.__main__:_cli', ], },
     license="GPL",
     keywords="electronic circuit simulator numeric symbolic",
     url='http://ahkab.github.io/ahkab/',

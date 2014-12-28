@@ -113,7 +113,7 @@ html_theme = 'alabaster'
 html_theme_path = [alabaster.get_path()]
 html_theme_options = {
     'logo': 'logo.png',
-    'description':'an interactive circuit simulator',
+    'description':'An interactive circuit simulator',
     #'github_button': 'true',
     'github_banner': 'false',
     'travis_button': 'true',
