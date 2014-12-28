@@ -70,7 +70,7 @@ The following methods are available to do so:
     run
     queue
 
-The `func`:run function will return the results in dictionary form.
+The :func:`run` function will return the results in dictionary form.
 
 Extras
 ======
