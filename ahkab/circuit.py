@@ -21,47 +21,41 @@
 Introduction
 \"\"\"\"\"\"\"\"\"\"\"\"
 
-Every circuit is described in the ahkab simulator by an instance of the
-Circuit class.
-This class holds everything is needed to simulate the circuit (except
-the specification of the analyses to be performed).
+A circuit is described in the ahkab simulator by an instance of the
+:class:`Circuit` class.
 
-It is even possible to rewrite a netlist from a Circuit class: see the
-printing module.
+This class holds everything is needed to simulate the circuit, except
+the specification of the analyses to be performed.
+
+To rewrite a netlist from a Circuit instance see the
+:mod:`ahkab.printing` module.
 
 The Circuit
 \"\"\"\"\"\"\"\"\"\"\"
 
-A circuit is derived from a list. This list holds the elements.
+A circuit is derived from a list which contains all its elements.
 
-All the elements in the ``Circuit`` class must be appended to their
-``Circuit`` instance and connections should be ensure checking that
-the nodes the elements refer to are indeed circuit nodes..
+Conceptually, every time an element is to be inserted in the circuit,
+two operations have to be performed:
+
+* The element must be appended to the ``Circuit`` instance.
+* Its connections should be ensure checking that
+  the nodes the element refers to are indeed existing circuit nodes.
 
 To simplify the operation of adding a component to a ``Circuit``,
 the following convenience methods are provided to the user to add and
-remove elements to the circuit:
+remove most elements to the circuit:
 
 * :func:`Circuit.add_resistor`
-
 * :func:`Circuit.add_capacitor`
-
 * :func:`Circuit.add_inductor`
-
 * :func:`Circuit.add_vsource`
-
 * :func:`Circuit.add_isource`
-
 * :func:`Circuit.add_diode`
-
 * :func:`Circuit.add_mos`
-
 * :func:`Circuit.add_vcvs`
-
 * :func:`Circuit.add_vccs`
-
 * :func:`Circuit.add_user_defined`
-
 * :func:`Circuit.remove_elem`
 
 Example:
@@ -75,14 +69,14 @@ Example:
     # add a node named n1 and a 600 ohm resistor connected between n1 and gnd
     mycircuit.add_resistor(name="R1", n1="n1", n2=gnd, R=600)
 
-Refer to the methods help for addtional info.
+Refer to the methods help for additional information.
 
 Nodes
 \"\"\"\"\"
 
-The nodes are stored in this way: we assign to each node a internal
-name, whatever is its external one (which is used in the netlist).
-Those are integers.
+The nodes are internally stored in the following way: we assign to each node an
+internal ID, independetly from its external identifier used in the netlist.
+Those IDs are integers.
 
 The simulator uses always the internal names. When the results are
 presented to the user, the internal node is not showed, the external
@@ -110,15 +104,14 @@ Device models
 Non-linear elements have their operation described by specialized routines
 held in their module.
 
-They are stored in ``Circuit.models`` (type dict), the following methods
-are provided to add and remove device models.
+They are stored in ``Circuit.models`` (of type dict), the following methods
+are provided to add and remove device models to a Circuit instance.
 
 * :func:`Circuit.add_model`
-
 * :func:`Circuit.remove_model`
 
 Reference
-\"\"\"\"\"\"\"\"\"
+\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"
 
 """
 
@@ -212,7 +205,7 @@ class Circuit(list):
         Those internal names are integers, by definition, and are generated 
         starting from 1, then 2, 3, 4, 5...
         The integer ``0`` is reserved for the reference node (gnd), which is required
-        for the circuit to be non-patological and has ``ext_name=str(int_name)='0'``.
+        for the circuit to be non-pathological and has ``ext_name=str(int_name)='0'``.
 
         Notice that this method doesn't halt or print errors if the node is already been
         added previsiously. It simply returns the internal node name assigned to it.
@@ -317,8 +310,7 @@ class Circuit(list):
 
             This method is slow, because it has to look through ``Circuit.nodes_dict``.
 
-        Throws a NodeNotFoundError exception.
-
+        :raises NodeNotFoundError: when the node doesn't exist in the circuit.
 
         **Returns:**
 
@@ -367,10 +359,12 @@ class Circuit(list):
         return ret
 
     def has_duplicate_elem(self):
-        """Self check.
+        """Self-check for duplicate elements.
 
         No circuit should ever have duplicate elements
-        (ie elements with the same ``part_id``)."""
+        (ie elements with the same ``part_id``).
+        
+        """
         for index1 in range(len(self)):
             for index2 in range(index1 + 1, len(self)):
                 if self[index1].part_id == self[index2].part_id:
@@ -378,7 +372,7 @@ class Circuit(list):
         return False
 
     def get_ground_node(self):
-        """Returns the reference node, AKA gnd."""
+        """Returns the reference node, AKA GND."""
         return '0'
 
     def get_elem_by_name(self, name):
@@ -524,14 +518,15 @@ class Circuit(list):
             The initial condition, if any. See the simulation docs for
             how this affects the results.
 
-        Returns: True
+        **Returns:**
+        
+        True
 
         .. seealso:: 
-
-        :func:`add_resistor`,
-        :func:`add_inductor`, :func:`add_vsource`, :func:`add_isource`,
-        :func:`add_diode`, :func:`add_mos`, :func:`add_vcvs`, :func:`add_vccs`,
-        :func:`add_user_defined`, :func:`remove_elem`
+            :func:`add_resistor`,
+            :func:`add_inductor`, :func:`add_vsource`, :func:`add_isource`,
+            :func:`add_diode`, :func:`add_mos`, :func:`add_vcvs`, :func:`add_vccs`,
+            :func:`add_user_defined`, :func:`remove_elem`
 
         """
         if value == 0:
@@ -620,15 +615,23 @@ class Circuit(list):
         """Adds a voltage source to the circuit (also takes care that the nodes
         are added as well).
 
-        Parameters:
-        name (string): the voltage source name (eg "VA"). The first letter is always V.
-        n1, n2 (string): the nodes to which the element is connected.
-                    eg. "in" or "out_a"
-        dc_value (float): DC voltage
-        ac_value (float): AC voltage (optional)
-        function (function): optional time function. See devices.py for built-ins.
+        **Parameters:**
 
-        Returns: True
+        name : string
+            The voltage source name (eg "VA"). The first letter is always V.
+        n1, n2 : string
+            The nodes to which the element is connected. Eg. ``"in"`` or
+            ``"out_a"``.
+        dc_value : float
+            DC voltage value
+        ac_value : float, optional
+            AC voltage value, defaults to 0.
+        function : function, optional
+            Time function. See devices.py for built-in options.
+
+        **Returns:**
+        
+        True
         """
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
@@ -647,15 +650,23 @@ class Circuit(list):
         """Adds a current source to the circuit (also takes care that the nodes
         are added as well).
 
-        Parameters:
-        name (string): the current source name (eg "IA"). The first letter is always I.
-        n1, n2 (string): the nodes to which the element is connected.
-                    eg. "in" or "out_a"
-        dc_value (float): DC current
-        ac_value (float): AC current (optional)
-        function (function): optional time function. See devices.py for built-ins.
+        **Parameters:**
 
-        Returns: True
+        name : string
+            The current source ID (eg ``"IA"`` or ``"I3"``). The first letter
+            is always I.
+        n1, n2 : string
+            The nodes to which the element is connected, eg. ``"in"`` or ``"out1"``.
+        dc_value : float
+            DC current value.
+        ac_value :float, optional
+            AC current value, defaults to 0.
+        function : function, optional
+            Time function. See devices.py for built-in options.
+
+        **Returns:**
+        
+        True
         """
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
@@ -670,23 +681,36 @@ class Circuit(list):
         self.append(elem)
         return True
 
-    def add_diode(self, part_id, n1, n2, model_label, models=None, Area=None, T=None, ic=None, off=False):
+    def add_diode(self, part_id, n1, n2, model_label, models=None, Area=None,
+                  T=None, ic=None, off=False):
         """Adds a diode to the circuit (also takes care that the nodes
         are added as well).
 
-        Parameters:
-        name (string): the diode name (eg "D1"). The first letter is always D.
-        n1, n2 (string): the nodes to which the element is connected.
-                    eg. "in" or "out_a"
-        Area (float): Scaled device area (optional, defaults to 1.0)
-        T (float): operating temperature (no temperature dependence yet)
-        ic (float): initial condition (not really implemented yet)
-        model_label (string): the diode model identifier. The model needs to be added
-                              first, then the elements using it.
-        models (dict(identifier:instance), optional): list of available model
-            instances. If not set or None, the circuit models will be used (recommended).
+        **Parameters:**
 
-        Returns: True
+        name : string
+            The diode ID (eg "D1"). The first letter is always D.
+        n1, n2 : string
+            the nodes to which the element is connected. eg. ``"in"`` or
+            ``"out_a"``
+        model_label : string
+            The diode model identifier. The model needs to be added
+            first, then the elements using it.
+        models : dict, optional
+            List of available model instances. If not set or ``None``,
+            the circuit models will be used (recommended).
+        Area : float, optional
+            Scaled device area (optional, defaults to 1.0)
+        T : float, optional
+            Operating temperature (no temperature dependence yet)
+        ic : float, optional
+            Initial condition (not really implemented yet)
+        off : bool, optional
+            Consider the diode to be initially off.
+
+        **Returns:**
+        
+        True
         """
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
@@ -701,31 +725,40 @@ class Circuit(list):
 
         return True
 
-    def add_mos(self, part_id, nd, ng, ns, nb, w, l, model_label, models=None, m=None, n=None):
+    def add_mos(self, part_id, nd, ng, ns, nb, w, l, model_label, models=None,
+                m=1, n=1):
         """Adds a mosfet to the circuit (also takes care that the nodes
         are added as well).
 
-        Parameters:
+        **Parameters:**
 
-        name (string): the mos name (eg "M1"). The first letter is always M.
-        nd (string): drain node
-        ng (string): gate node
-        ns (string): source node
-        nb (string): bulk node
-        w (float): gate width
-        l (float): gate length
-        model_label (string): model identifier
-        models (circuit models): circuit models
-        m (int): shunt multiplier (optional)
-        n (int): series multiplier (unsupported)
+        name : string
+            The mos name (eg "M1"). The first letter is always M.
+        nd : string
+            The drain node.
+        ng : string
+            The gate node.
+        ns : string
+            The source node.
+        nb : string
+            The bulk node.
+        w : float
+            The gate width.
+        l : float
+            The gate length.
+        model_label : string
+            The model identifier.
+        models : dict, optional
+            The circuit models.
+        m : int, optional
+            Shunt multiplier value. Defaults to 1.
+        n : int, optional
+            Series multiplier value, not always supported. Defaults to 1.
 
-        Returns: True
+        **Returns:**
+        
+        True
         """
-        if m is None:
-            m = 1
-        if n is None:
-            n = 1
-
         nd = self.add_node(nd)
         ng = self.add_node(ng)
         ns = self.add_node(ns)
@@ -814,6 +847,7 @@ class Circuit(list):
         (also takes care that its nodes are added as well).
 
         Notice:
+
         - Current-controlled switches are not yet implemented. If you try to add one
           you'll trigger an error.
         - The switches name should begin with 'S' for voltage-controlled switches
@@ -823,10 +857,13 @@ class Circuit(list):
           current-controlled switch. Mixing them up will go undetected.
 
         Parameters:
-        name (string): the switch name (eg "S1" - voltage-controlled - or 'W1' -
-                       current-controlled). The first letter is always S or W.
-        n1, n2 (string): the output port nodes, where the switch is connected.
-                     Eg. "outp", "outm" or "out_a", "out_b".
+
+        name : string
+            the switch ID (eg ``"S1"`` - voltage-controlled - or ``"Wa"`` -
+            current-controlled). The first letter is always ``S`` or ``W``.
+        n1, n2 : string
+            the output port nodes, where the switch is connected. Eg. ``"out1"``,
+            ``"out2"`` or ``"n_a"``, ``"n_b"``.
         sn1, sn2 (string): the input port nodes, where the input voltage is
                        read. Eg. "inp", "inm" or "in_a", "in_b".
         ic (boolean): the initial conditions for transient simulation. Not currently
