@@ -32,6 +32,7 @@ Module reference
    pss
    pz
    results
+   switch
    symbolic
    testing 
 
