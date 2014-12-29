@@ -68,12 +68,8 @@ First are assembled all the voltage rows, then the current ones in the same orde
 the elements that introduce them are found in :mod:`ahkab.circuit`.
 
 
-Module contents
----------------
-
-
-All functions in alphabetical order
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Module reference
+----------------
 
 """
 
@@ -123,7 +119,7 @@ specs = {'ac': {'tokens': ({
 def ac_analysis(circ, start, points, stop, sweep_type=None,
                 x0=None, mna=None, AC=None, Nac=None, J=None,
                 outfile="stdout", verbose=3):
-    """Performs an AC analysis of the circuit described by circ.
+    """Performs an AC analysis.
 
     **Parameters:**
 
@@ -131,33 +127,34 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
         The circuit to be simulated.
 
     start : float
-        the start angular frequency for the AC analysis
+        The start angular frequency for the AC analysis
 
     points : float,
-        the number of points to be use the discretize the
+        The number of points to be use the discretize the
         ``[start, stop]`` interval.
 
     stop : float
-        stop angular frequency
+        The stop angular frequency.
 
-    sweep_type : string,
-        Either ``'LOG'`` or ``'LINEAR'``, defaults to ``'LOG'``.
+    sweep_type : string, optional
+        Either ``options.ac_log_step`` (``'LOG'``) or ``options.ac_lin_step``
+        (``'LIN'``), defaults to a logarithmic sweep.
 
-    x0 : op results instance
+    x0 : op results instance, optional
         The linearization point. If not set, it will be computed
         running an OP analysis.
 
-    mna, AC, Nax, J : ndarrays
+    mna, AC, Nax, J : ndarrays, optional
         The matrices to perform the analysis. They will be computed
         if not supplied.
 
-    outfile : string
+    outfile : string, optional
         the filename of the output file where the results will be written.
         '.ac' is automatically added at the end to prevent different
         analyses from overwriting each-other's results.
-        If unset or set to None, defaults to stdout.
+        If unset or set to ``None``, defaults to ``stdout``.
 
-    verbose : int,
+    verbose : int, optional
         the verbosity level, from 0 (silent) to 6 (debug).
 
     **Returns:**
