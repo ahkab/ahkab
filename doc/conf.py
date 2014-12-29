@@ -100,7 +100,7 @@ pygments_style = 'sphinx'
 
 # If true, keep warnings as "system message" paragraphs in the built documents.
 #keep_warnings = False
-
+autoclass_content = 'both'
 
 # -- Options for HTML output ----------------------------------------------
 
