@@ -37,7 +37,7 @@ When all the matrices are available, it is possible to solve the system
 for the frequency values specified by the user, providing the resulting
 matrix is not singular (and possibly well conditioned). 
 
-**Building the :math:`AC` matrix:**
+**Building the AC matrix:**
 
 It's easy to set up the voltage lines, since line 2 refers to
 node 2, etc...
