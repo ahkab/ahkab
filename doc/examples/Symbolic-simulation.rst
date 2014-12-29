@@ -172,7 +172,7 @@ After rearranging, we get:
 
 .. math::
 
-    -\frac{dV_2}{dI[V_2]} = \frac{g_{m,\,M_1}r_{0,\,M_1} + 1}{R_D + r_{0,\,M_1}}
+    -\frac{dV_2}{dI[V_2]} = \frac{R_D + r_{0,\,M_1}}{g_{m,\,M_1}r_{0,\,M_1} + 1}
 
 Just like it was expected.
 
