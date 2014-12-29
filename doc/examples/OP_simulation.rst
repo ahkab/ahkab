@@ -1,5 +1,5 @@
-OP example
-~~~~~~~~~~
+Operating point examples
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Introduction
 """"""""""""
