@@ -304,6 +304,10 @@ Full-Width Styles
   font-size: 42px;
   font-weight: 700;
   text-shadow: #111 0px 0px 10px;
+  background: url(https://github.com/ahkab/ahkab/wiki/images/logo.png) no-repeat 150px 0;
+  padding-left: 00px;
+  padding-top: 160px;
+  }
 }
 
 #project_tagline {
