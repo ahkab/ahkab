@@ -19,7 +19,9 @@
 
 """
 This module offers the functions needed to plot the results
-of a simulation
+of a simulation.
+
+It is only functional if matplotlib is installed.
 """
 from __future__ import print_function, division, unicode_literals
 
@@ -63,6 +65,8 @@ def _split_netlist_label(labels_string):
 
 def _setup_plot(fig, title, xvu, yvu, log=False, xlog=False, ylog=False):
     """Setup the figure for plotting. 
+
+    **Parameters:**
 
     fig : figure
         A matplotlib figure
@@ -117,7 +121,22 @@ def _setup_plot(fig, title, xvu, yvu, log=False, xlog=False, ylog=False):
 
 
 def save_figure(filename, fig=None):
-    """Save the supplied figure to ``filename``."""
+    """Apply the figure options for saving and then save the supplied
+    figure to ``filename``.
+    
+    The format of the output figure is set by ``options.plotting_outtype``.
+
+    **Parameters:**
+
+    filename : string
+        The output filename.
+    fig : figure object, optional
+        The figure to be saved.
+
+    **Returns:**
+    
+    ``None``.
+    """
     if fig is None:
         fig = pylab.gcf()
     fig.set_size_inches(*options.plotting_display_figsize)
@@ -140,6 +159,26 @@ def _data_abs_arg_pass(res, label):
 
 def plot_results(title, y2y1_list, results, outfilename):
     """Plot the results.
+
+    **Parameters:**
+
+    title : string
+        The plot title
+    y2y1_list : list
+        A list of tuples. Each tuple has to be in the format ``(y2, y1)``.
+        Each member of the tuple has to be a valid identifier. You can 
+        check the possible voltage and current identifiers in the 
+        result set calling ``res.keys()``, where ``res`` is a solution
+        object.
+    result : solution object or derivate
+        The results to be plotted.
+    outfilename : string
+        The filename of the output file. The format is set through
+        ``options.plotting_outtype``.
+
+    **Returns:**
+
+    ``None``.
     """
     if results is None:
         printing.print_warning("No results available for plotting. Skipping.")
@@ -200,4 +239,5 @@ def plot_results(title, y2y1_list, results, outfilename):
 
 
 def show_plots():
+    """See the fruit of your work!"""
     pylab.show()
