@@ -792,7 +792,7 @@ def main(filename, outfile="stdout", verbose=3):
     (circ, directives, postproc_direct) = netlist_parser.parse_circuit(
         filename, read_netlist_from_stdin)
 
-    check, reason = dc_analysis.check_circuit(circ)
+    check, reason = utilities.check_circuit(circ)
     if not check:
         printing.print_general_error(reason)
         print(circ)
