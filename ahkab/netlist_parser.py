@@ -29,7 +29,14 @@ import math
 import copy
 
 from . import circuit
-from . import dc_analysis
+
+try:
+    from . import dc_analysis
+except ImportError:
+    #will fail on pypy
+    # no numeric simulations there
+    pass
+
 from . import devices
 from . import diode
 from . import mosq
@@ -41,12 +48,16 @@ from . import plotting
 from . import options
 
 # analyses syntax
-from .dc_analysis import specs as dc_spec
-from .ac import specs as ac_spec
-from .transient import specs as tran_spec
-from .pss import specs as pss_spec
-from .pz import specs as pz_specs
+try:
+    from .dc_analysis import specs as dc_spec
+    from .ac import specs as ac_spec
+    from .transient import specs as tran_spec
+    from .pss import specs as pss_spec
+    from .pz import specs as pz_specs
+except ImportError:
+    dc_spec = ac_spec = tran_spec = pss_spec = pz_specs = {}
 from .symbolic import specs as symbolic_spec
+
 from .devices import time_fun_specs
 from .devices import sin, pulse, exp
 

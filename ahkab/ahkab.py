@@ -98,8 +98,17 @@ import copy
 from optparse import OptionParser
 
 import numpy as np
-import scipy as sp
+
+# There's no scipy on pypy
+try:
+    import scipy as sp
+    scipy_available = True
+except ImportError:
+    scipy_available = False
+
 import sympy
+
+# no matplotlib -> no plotting
 try:
     import matplotlib
     plotting_available = True
@@ -107,12 +116,14 @@ except ImportError:
     plotting_available = False
 
 # analyses
-from . import dc_analysis
-from . import transient
-from . import ac
-from . import pss
+if scipy_available:
+    from . import dc_analysis
+    from . import transient
+    from . import ac
+    from . import pss
+    from . import pz
+
 from . import symbolic
-from . import pz
 
 # parser
 from . import netlist_parser
@@ -247,7 +258,7 @@ def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None
         'verbose': verbose}
 
 
-def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP,
+def new_tran(tstart, tstop, tstep, x0='op', method='TRAP',
         use_step_control=True, outfile=None, verbose=0):
     """Assembles a TRAN analysis and returns the analysis object.
 
@@ -735,10 +746,17 @@ def process_postproc(postproc_list, title, results, outfilename):
         plotting.show_plots()
     return None
 
-analysis = {'op': dc_analysis.op_analysis, 'dc': dc_analysis.dc_analysis,
-            'tran': transient.transient_analysis, 'ac': ac.ac_analysis,
-            'pss': pss.pss_analysis, 'symbolic': symbolic.symbolic_analysis,
-            'temp': set_temperature, 'pz':pz.calculate_singularities}
+if scipy_available:
+    analysis = {'op': dc_analysis.op_analysis,
+                'dc': dc_analysis.dc_analysis,
+                'tran': transient.transient_analysis,
+                'ac': ac.ac_analysis,
+                'pss': pss.pss_analysis,
+                'symbolic': symbolic.symbolic_analysis,
+                'temp':set_temperature,
+                'pz':pz.calculate_singularities}
+else:
+    analysis = {'symbolic': symbolic.symbolic_analysis}
 
 
 def main(filename, outfile="stdout", verbose=3):
@@ -778,14 +796,18 @@ def main(filename, outfile="stdout", verbose=3):
     printing.print_info_line(
         ("  Python %s" % (sys.version.split('\n')[0],), 6), verbose)
     printing.print_info_line(("  Numpy %s" % (np.__version__), 6), verbose)
-    printing.print_info_line(("  Scipy %s" % (sp.__version__), 6), verbose)
+    if scipy_available:
+        printing.print_info_line(("  Scipy %s" % (sp.__version__), 6), verbose)
+    else:
+        printing.print_info_line(
+                ("  Scipy not found: functionality will be reduced.", 6), verbose)
     printing.print_info_line(("  Sympy %s" % (sympy.__version__), 6), verbose)
     if plotting_available:
         printing.print_info_line(
             ("  Matplotlib %s" % (matplotlib.__version__), 6), verbose)
     else:
         printing.print_info_line(
-            ("  Matplotlib not found.", 6), verbose)
+            ("  Matplotlib not found, plotting disabled.", 6), verbose)
 
 
     read_netlist_from_stdin = (filename is None or filename == "-")

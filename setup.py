@@ -1,7 +1,18 @@
 #!/usr/bin/env python
 import os
 import re
+import sys
 from setuptools import setup, find_packages
+
+###### SETUP DEPENDENCIES ######
+is_pypy = '__pypy__' in sys.builtin_module_names
+# Numpy
+install_requires_platform = ['numpy']
+# Scipy
+if not is_pypy:
+    install_requires_platform.append('scipy>0.7.2')
+# Sympy
+install_requires_platform.append('sympy>=0.7.5')
 
 with open('ahkab/__version__.py') as version_file:
     __version__ = re.findall("__version__ = '([^']*)'", version_file.read())[0]
@@ -20,7 +31,7 @@ setup(
     package_data={
       'ahkab': ['test_data/*.dat']
     },
-    install_requires=['numpy', 'scipy>0.7.2', 'sympy>=0.7.5'],
+    install_requires=install_requires_platform,
     extras_require = {'PLOT':['matplotlib>=1.1.1']},
     zip_safe=False,
     include_package_data=True,
