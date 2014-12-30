@@ -72,8 +72,9 @@ h1 {
 }
 
 h2 {
-  font-size: 20px;
-  color: #fff;
+  padding-bottom: 10px;
+  font-size: 32px;
+  background: url('../images/bg_hr.png') repeat-x bottom;
 }
 
 h3 {
@@ -200,12 +201,14 @@ ul, ol, dl {
 }
 
 ul {
-  list-style: inside;
+  list-style-position: inside;
+  list-style: disc;
   padding-left: 20px;
 }
 
 ol {
-  list-style: decimal inside;
+  list-style-position: inside;
+  list-style: decimal;
   padding-left: 20px;
 }
 
@@ -302,10 +305,6 @@ Full-Width Styles
   font-size: 42px;
   font-weight: 700;
   text-shadow: #111 0px 0px 10px;
-  background: url(https://github.com/ahkab/ahkab/wiki/images/logo.png) no-repeat 150px 0;
-  padding-left: 00px;
-  padding-top: 160px;
-  }
 }
 
 #project_tagline {

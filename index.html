@@ -2,9 +2,9 @@
 <html>
 
   <head>
-    <meta charset='utf-8' />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Ahkab : a SPICE-like electronic circuit simulator written in Python" />
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Ahkab : a SPICE-like electronic circuit simulator written in Python">
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
@@ -31,24 +31,19 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <p><img src="https://github.com/ahkab/ahkab/wiki/images/logo.png" alt="logo"></p>
-
-<p>a SPICE-like electronic circuit simulator written in Python</p>
-
-<p>The code should be easy to read and modify, the main language is Python 2.x and it is platform-independent.</p>
-
-<p><a href="https://travis-ci.org/ahkab/ahkab"><img src="https://travis-ci.org/ahkab/ahkab.png?branch=master" alt="Build Status"></a> <a href="https://coveralls.io/r/ahkab/ahkab?branch=master"><img src="https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master" alt="Coverage Status"></a>
+        <p><a href="https://travis-ci.org/ahkab/ahkab"><img src="https://travis-ci.org/ahkab/ahkab.png?branch=master" alt="Build Status"></a> <a href="https://coveralls.io/r/ahkab/ahkab?branch=master"><img src="https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master" alt="Coverage Status"></a>
 <a href="https://pypi.python.org/pypi/ahkab/"><img src="http://img.shields.io/badge/version-0.09-brightgreen.png" alt="PyPi version"></a> <a href="https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE"><img src="http://img.shields.io/badge/license-GPL%20v2-brightgreen.png" alt="GPLv2 license"></a></p>
 
 <h3>
-<a name="news" class="anchor" href="#news"><span class="octicon octicon-link"></span></a>News!</h3>
+<a id="news" class="anchor" href="#news" aria-hidden="true"><span class="octicon octicon-link"></span></a>News!</h3>
 
 <ul>
-<li>The whole codebase has been going through a (yet incomplete) refactoring and documenting thorough effort.</li>
-<li>
-<code>ahkab</code> can now be run stand-alone with a netlist file or <em>within Python scripts as a library</em>. This will likely become the preferred way in the future. See <strong><a href="https://github.com/ahkab/ahkab/wiki/Example:-Python-API">this butterworth filter simulation</a></strong> for an example/tentative tutorial.</li>
-</ul><h3>
-<a name="supported-simulations" class="anchor" href="#supported-simulations"><span class="octicon octicon-link"></span></a>Supported simulations:</h3>
+<li>The whole codebase has been going through a refactoring and documenting effort. It's not complete, yet, but it's improving. Take a look at <a href="http://ahkab.readthedocs.org/">the new documentation!</a>
+</li>
+</ul>
+
+<h3>
+<a id="supported-simulations" class="anchor" href="#supported-simulations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Supported simulations:</h3>
 
 <ul>
 <li>Numeric:
@@ -57,12 +52,16 @@
 <li>
 <strong>Operating point</strong>, with guess computation to speed up the solution. See example: <a href="https://github.com/ahkab/ahkab/wiki/Example:-OP-simulation">Downscaling current mirror</a>
 </li>
-<li><strong>DC sweep</strong></li>
+<li>
+<strong>DC sweep</strong>.</li>
 <li>
 <strong>Transient analysis</strong>, available differentiation formulas: implicit Euler, trapezoidal, gear orders from 2 to 5. See for example the <a href="https://github.com/ahkab/ahkab/wiki/Example:-Transient-simulation-1">simulation of a Colpitts Oscillator</a>.</li>
-<li><strong>AC analysis</strong></li>
+<li>
+<strong>AC analysis</strong>.</li>
 <li>
 <strong>Periodic steady state analysis</strong> of non-autonomous circuits, <em>time</em> <em>domain</em> shooting and brute-force algorithms.</li>
+<li>
+<strong>Pole-zero analysis</strong>.</li>
 </ul>
 </li>
 <li>Symbolic: 
@@ -72,15 +71,19 @@
 <strong>Small signal analysis</strong>, AC or DC, with extraction of transfer functions, DC gain, poles and zeros. Various <a href="https://github.com/ahkab/ahkab/wiki/Example:-Symbolic-simulation">symbolic analysis examples on this page</a>.</li>
 </ul>
 </li>
-</ul><p>The results are saved to disk, plotted or printed to stdout and can be read/processed by the most common tools (eg. <a href="http://www.gnu.org/software/octave/">Octave</a>, <a href="http://www.gnuplot.info/">gnuplot</a>, <a href="http://www.mathworks.com/products/matlab/">Matlab</a>, <a href="http://www.telltronics.org/software/gwave/">gwave</a> and others)</p>
+</ul>
+
+<p>An experimental <code>pypy</code> branch is available on Github for those who are mostly interested in the symbolic capabilities - be sure to install numpypy first!.</p>
+
+<p>The results are saved to disk, plotted or printed to stdout and can be read/processed by the most common tools (eg. <a href="http://www.gnu.org/software/octave/">Octave</a>, <a href="http://www.gnuplot.info/">gnuplot</a>, <a href="http://www.mathworks.com/products/matlab/">Matlab</a>, <a href="http://www.telltronics.org/software/gwave/">gwave</a> and others)</p>
 
 <h3>
-<a name="download-and-install" class="anchor" href="#download-and-install"><span class="octicon octicon-link"></span></a>Download and install</h3>
+<a id="download-and-install" class="anchor" href="#download-and-install" aria-hidden="true"><span class="octicon octicon-link"></span></a>Download and install</h3>
 
 <p>There are no packages for the time being (this program is at an early development stage). Go to <a href="https://github.com/ahkab/ahkab">ahkab on github</a> and follow the instructions to check out the code. You can find the list of the dependencies in the <a href="https://github.com/ahkab/ahkab/wiki/Install:-Notes">Install notes</a>.</p>
 
 <h3>
-<a name="run-standalone" class="anchor" href="#run-standalone"><span class="octicon octicon-link"></span></a>Run standalone</h3>
+<a id="run-standalone" class="anchor" href="#run-standalone" aria-hidden="true"><span class="octicon octicon-link"></span></a>Run standalone</h3>
 
 <pre><code>$ python ahkab -o graph.dat &lt;netlist file&gt;`
 </code></pre>
@@ -88,30 +91,30 @@
 <p>See <code>ahkab --help</code> for command line switches.</p>
 
 <h3>
-<a name="documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation</h3>
-
-<p><strong>Better documentation is coming your way!</strong></p>
+<a id="documentation" class="anchor" href="#documentation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Documentation</h3>
 
 <p>The simulator can either be run from the command line with a netlist file or included in a python script.</p>
 
-<p>For the time being, please refer to the wiki, in particular the <a href="https://github.com/ahkab/ahkab/wiki/Help:-Netlist-Syntax">netlist syntax page</a> for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.</p>
+<p>For the time being, please refer to the documentation, in particular the <a href="http://ahkab.readthedocs.org/en/latest/help/Netlist-Syntax.html">netlist syntax page</a> for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.</p>
 
-<p>The latter option is shown briefly in the <strong><a href="https://github.com/ahkab/ahkab/wiki/Example:-Python-API">Python API</a></strong> wiki page. The code comes with docstrings associated with <em>most</em> functions, type <code>help(ahkab.function_name)</code>.</p>
+<p>The latter option is shown briefly in the <strong><a href="http://ahkab.readthedocs.org/en/latest/examples/Python_API.html">Python API</a></strong> doc page. The code comes with docstrings associated with most functions, type <code>help(ahkab.function_name)</code>.</p>
+
+<p>Have fun! Don't forget to report back cool simulations or any bug may you run into!</p>
 
 <h3>
-<a name="how-this-project-was-born" class="anchor" href="#how-this-project-was-born"><span class="octicon octicon-link"></span></a>How this project was born</h3>
+<a id="how-this-project-was-born" class="anchor" href="#how-this-project-was-born" aria-hidden="true"><span class="octicon octicon-link"></span></a>How this project was born</h3>
 
 <p>This project was born when I was an enthusiastic undergrad, apparently with plenty of free time, attending "Simulazione Circuitale" (<em>Circuit Simulation</em>) taught by <a href="http://brambilla.dei.polimi.it/">Prof. A. Brambilla</a> back in Italy at the Polytechnic University of Milan.</p>
 
 <p>I am grateful to prof. Brambilla for teaching one of the most interesting courses of my university years. -GV</p>
 
 <h3>
-<a name="contributors" class="anchor" href="#contributors"><span class="octicon octicon-link"></span></a>Contributors</h3>
+<a id="contributors" class="anchor" href="#contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Contributors</h3>
 
 <p>Giuseppe Venturini (<a href="https://github.com/ggventurini" class="user-mention">@ggventurini</a> on GH) Ian Daniher (<a href="https://github.com/itdaniher" class="user-mention">@itdaniher</a>, also on GH)</p>
 
 <h3>
-<a name="bugs-and-patches" class="anchor" href="#bugs-and-patches"><span class="octicon octicon-link"></span></a>Bugs and patches</h3>
+<a id="bugs-and-patches" class="anchor" href="#bugs-and-patches" aria-hidden="true"><span class="octicon octicon-link"></span></a>Bugs and patches</h3>
 
 <p>Note that <em>I often add new functionality at the expense of breaking stuff</em>. Most likely I will introduce a new feature even if that means breaking a couple of others. It should get fixed soon, but if you have a bit of time to spare, you can send me a pull request or a patch. :)</p>
 
