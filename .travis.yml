@@ -1,4 +1,8 @@
 language: python
+
+branches:
+  except:
+      - pypy_symbolic
 python:
   - 2.7
 #  - "3.3" one day!
