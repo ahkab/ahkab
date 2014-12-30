@@ -139,7 +139,7 @@ def save_figure(filename, fig=None):
     """
     if fig is None:
         fig = pylab.gcf()
-    fig.set_size_inches(*options.plotting_display_figsize)
+    fig.set_size_inches(*options.plotting_save_figsize)
     pylab.savefig(filename, dpi=100, bbox_inches='tight',
                   format=options.plotting_outtype, pad=0.1)
     fig.set_size_inches(*options.plotting_display_figsize)
@@ -157,7 +157,7 @@ def _data_abs_arg_pass(res, label):
         units = res.units[label]
     return data, units
 
-def plot_results(title, y2y1_list, results, outfilename):
+def plot_results(title, y2y1_list, results, outfilename=None):
     """Plot the results.
 
     **Parameters:**
@@ -172,8 +172,9 @@ def plot_results(title, y2y1_list, results, outfilename):
         object.
     result : solution object or derivate
         The results to be plotted.
-    outfilename : string
-        The filename of the output file. The format is set through
+    outfilename : string, optional
+        The filename of the output file. If left unset, the plot will
+        not be written to disk. The format is set through
         ``options.plotting_outtype``.
 
     **Returns:**
