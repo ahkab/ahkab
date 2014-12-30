@@ -72,9 +72,8 @@ h1 {
 }
 
 h2 {
-  padding-bottom: 10px;
-  font-size: 32px;
-  background: url('../images/bg_hr.png') repeat-x bottom;
+  font-size: 20px;
+  color: #fff;
 }
 
 h3 {
