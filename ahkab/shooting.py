@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Periodic steady state analysis based on the shooting method"""
+"""Periodic steady state analysis based on the shooting method."""
 
 
 import sys
@@ -36,24 +36,24 @@ from . import results
 from . import devices
 
 
-def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
+def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=False,
              mna=None, Tf=None, D=None, outfile='stdout', vector_norm=lambda v: max(abs(v)), verbose=3):
     """Performs a periodic steady state analysis based on the algorithm described in:
 
-    Brambilla, A.; D'Amore, D., "Method for steady-state simulation of
-    strongly nonlinear circuits in the time domain," Circuits and
-    Systems I: Fundamental Theory and Applications, IEEE Transactions on,
-    vol.48, no.7, pp.885-889, Jul 2001
+        Brambilla, A.; D'Amore, D., "Method for steady-state simulation of
+        strongly nonlinear circuits in the time domain," *Circuits and
+        Systems I: Fundamental Theory and Applications, IEEE Transactions on*,
+        vol.48, no.7, pp.885-889, Jul 2001.
 
-    URL: http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=933329&isnumber=20194
+        http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=933329&isnumber=20194
 
-    The results have been computed again by me, the formulas are not exactly the
+    The results have been computed again by me, the formulation is not exactly the
     same, but the idea behind the shooting algorithm is.
 
     This method allows us to have a period with many points without having to
     invert a huge matrix (and being limited to the maximum matrix size).
 
-    A tran is performed to initialize the solver.
+    A transient analysis is performed to initialize the solver.
 
     We compute the change in the last point, calculating several matrices in
     the process.
@@ -61,25 +61,42 @@ def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
     starting from 0 (which is the same as the last one), then 1, ...
 
     Key points:
-    - Only not autonomous circuits are supported.
-    - The time step is constant
-    - Implicit euler is used as DF
 
-    Parameters:
-    circ is the circuit description class
-    period is the period of the solution
-    mna, D, Tf are not compulsory they will be computed if they're set to None
-    step is the time step between consecutive points
-    points is the number of points to be used
-    step and points are mutually exclusive options:
-    - if step is specified, the number of points will be automatically determined
-    - if points is set, the step will be automatically determined
-    - if none of them is set, options.shooting_default_points will be used as points
-    autonomous has to be False, autonomous circuits are not supported
-    outfile is the output filename. Defaults to stdout.
-    verbose is set to zero (print errors only) if datafilename == 'stdout'.
+    - Only non-autonomous circuits are supported.
+    - The time step is constant.
+    - Implicit Euler is used as DF.
 
-    Returns: nothing
+    **Parameters:**
+    
+    circ : Circuit instance
+        The circuit description class.
+    period : float
+        The period of the solution.
+    mna, D, Tf : ndarrays, optional
+        The MNA-formulation matrices. They are not compulsory, they will be
+        computed if they're set to ``None``.
+    step : float
+        The time step between consecutive points.
+    points : int
+        The number of points to be used.
+    autonomous : bool, optional
+        This parameter has to be False, autonomous circuits are not supported.
+    outfile : string, optional
+        The output filename. The default is to output to stdout.
+    verbose : boolean, optional
+        Verbosity switch (0-6). It is set to zero (print errors only)
+        if ``datafilename == 'stdout'``.
+    
+    Notice that ``step`` and ``points`` are mutually exclusive options:
+
+    - if ``step`` is specified, the number of points will be automatically determined.
+    - if ``points`` is set, the step will be automatically determined.
+    - if none of them is set, ``options.shooting_default_points`` will be used as points.
+
+    **Returns:**
+
+    sol : PSS solution object or ``None``
+        The solution. If the circuit can't be solve, ``None`` is returned instead.
     """
 
     if outfile == "stdout":
@@ -108,7 +125,7 @@ def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
             "mna matrix and D matrix have different sizes.")
         sys.exit(0)
 
-    (points, step) = check_step_and_points(step, points, period)
+    (points, step) = utilities.check_step_and_points(step, points, period)
 
     n_of_var = mna.shape[0]
     locked_nodes = circ.get_locked_nodes()
@@ -129,13 +146,13 @@ def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
 
     tick = ticker.ticker(increments_for_step=1)
 
-    MAass_static, MBass = build_static_MAass_and_MBass(mna, D, step)
+    MAass_static, MBass = _build_static_MAass_and_MBass(mna, D, step)
 
     # This contains
     # the time invariant part, Tf
     # time variable component: Tt this is always the same, since the time interval is the same
     # this holds all time-dependent sources (both V/I).
-    Tass_static_vector = build_Tass_static_vector(
+    Tass_static_vector = _build_Tass_static_vector(
         circ, Tf, points, step, tick, n_of_var, verbose)
 
     converged = False
@@ -155,13 +172,13 @@ def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
                 xn_minus_1 = x[points - 1]
             else:
                 xn_minus_1 = x[index - 1]
-            MAass_variable, Tass_variable = get_variable_MAass_and_Tass(
+            MAass_variable, Tass_variable = _get_variable_MAass_and_Tass(
                 circ, x[index], xn_minus_1, mna, D, step, n_of_var)
             MAass_variable_vector.append(MAass_variable + MAass_static)
             Tass_variable_vector.append(
                 Tass_variable + Tass_static_vector[index])
 
-        dxN = compute_dxN(circ, MAass_variable_vector, MBass,
+        dxN = _compute_dxN(circ, MAass_variable_vector, MBass,
                           Tass_variable_vector, n_of_var, points, verbose=verbose)
         td = dc_analysis.get_td(dxN, locked_nodes, n=-1)
         x[points - 1] = td * dxN + x[points - 1]
@@ -172,12 +189,12 @@ def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
             else:
                 dxi_minus_1 = dx[index - 1]
             dx.append(
-                compute_dx(MAass_variable_vector[index], MBass, Tass_variable_vector[index], dxi_minus_1))
+                _compute_dx(MAass_variable_vector[index], MBass, Tass_variable_vector[index], dxi_minus_1))
             td = dc_analysis.get_td(dx[index], locked_nodes, n=-1)
             x[index] = td * dx[index] + x[index]
         dx.append(dxN)
 
-        if (vector_norm_wrapper(dx, vector_norm) < min(options.ver, options.ier) * vector_norm_wrapper(x, vector_norm) + min(options.vea, options.iea)):  # \
+        if (_vector_norm_wrapper(dx, vector_norm) < min(options.ver, options.ier) * _vector_norm_wrapper(x, vector_norm) + min(options.vea, options.iea)):  # \
         # and (dc_analysis.vector_norm(residuo) <
         # options.er*dc_analysis.vector_norm(x) + options.ea):
             if conv_counter == 3:
@@ -217,49 +234,23 @@ def shooting(circ, period, step=None, x0=None, points=None, autonomous=False,
     return sol
 
 
-def vector_norm_wrapper(vector, norm_fun):
-    max = 0
+def _vector_norm_wrapper(vector, norm_fun):
+    _max = 0
     for elem in vector:
         new_max = norm_fun(elem)
-        if max < new_max:
-            max = new_max
-    return max
+        if _max < new_max:
+            _max = new_max
+    return _max
 
 
-def check_step_and_points(step, points, period):
-    """Sets consistently the step size and the number of points, according to the given period
-    Returns: (points, step)
-    """
-    if step is None and points is None:
-        print "Warning: shooting had no step nor n. of points setted. Using", options.shooting_default_points, "points."
-        points = options.shooting_default_points
-    elif step is not None and points is not None:
-        print "Warning: shooting had both step and n. of points setted. Using", step, "step. (NA)"
-        points = None
-
-    points = int(points)
-    if points:
-        step = (1.0 * period) / (points - 1)
-    else:
-        points = (1.0 * period) / step
-        if points % 1 != 0:
-            step = step + (step * (points % 1)) / int(points)
-            points = int((1.0 * period) / step)
-            print "Warning: adapted step is", step
-        else:
-            points = int(points)
-
-    return (points, step)
-
-
-def build_static_MAass_and_MBass(mna, D, step):
+def _build_static_MAass_and_MBass(mna, D, step):
     (C1, C0) = implicit_euler.get_df_coeff(step)
     MAass = mna + D * C1
     MBass = D * C0
     return (MAass, MBass)
 
 
-def build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3):
+def _build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3):
     Tass_vector = []
     nv = len(circ.nodes_dict)
     printing.print_info_line(("Building Tass...", 5), verbose, print_nl=False)
@@ -291,7 +282,7 @@ def build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3):
     return Tass_vector
 
 
-def get_variable_MAass_and_Tass(circ, xi, xi_minus_1, M, D, step, n_of_var):
+def _get_variable_MAass_and_Tass(circ, xi, xi_minus_1, M, D, step, n_of_var):
     Tass = np.zeros((n_of_var, 1))
     J = np.zeros((n_of_var, n_of_var))
     (C1, C0) = implicit_euler.get_df_coeff(step)
@@ -340,7 +331,7 @@ def get_variable_MAass_and_Tass(circ, xi, xi_minus_1, M, D, step, n_of_var):
     return (J, Tass)
 
 
-def compute_dxN(circ, MAass_vector, MBass, Tass_vector, n_of_var, points, verbose=3):
+def _compute_dxN(circ, MAass_vector, MBass, Tass_vector, n_of_var, points, verbose=3):
     temp_mat1 = np.mat(np.eye(n_of_var))
     for index in range(points):
         temp_mat1 = -np.linalg.solve(MAass_vector[index], MBass*temp_mat1)
@@ -357,7 +348,7 @@ def compute_dxN(circ, MAass_vector, MBass, Tass_vector, n_of_var, points, verbos
     return dxN
 
 
-def compute_dx(MAass, MBass, Tass, dxi_minus_1):
+def _compute_dx(MAass, MBass, Tass, dxi_minus_1):
     dxi = -np.linalg.solve(MAass, MBass*dxi_minus_1 + Tass)
     # dxi = -1 * np.linalg.inv(MAass) * (MBass * dxi_minus_1 + Tass)
     return dxi
