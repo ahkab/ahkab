@@ -722,7 +722,7 @@ class dc_solution(solution, _mutable_data):
 class tran_solution(solution, _mutable_data):
     """Transient results
 
-    **Parameters: **
+    **Parameters:**
 
     circ : circuit instance
         the circuit instance of the simulated circuit.
