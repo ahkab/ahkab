@@ -418,7 +418,6 @@ class NetlistTest(unittest.TestCase):
         self.ref_data = {} # the reference results will be loaded here
         self._sim_opts = sim_opts
         self._reset_opts = {}
-        self._set_sim_opts(sim_opts)
 
     def _set_sim_opts(self, sim_opts):
         for opt in sim_opts.keys():
@@ -524,6 +523,7 @@ class NetlistTest(unittest.TestCase):
         if 'TRAVIS' in os.environ and self.skip:
             self._reset_sim_opts()
             raise SkipTest
+        self._set_sim_opts(self._sim_opts)
         print "Running test... ",
         start = time.time()
         res = main(filename=self.netlist,
