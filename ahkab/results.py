@@ -23,7 +23,7 @@ results.
 
 Simulation results are typically returned upon successful simulation of a
 circuit and the user is not expected to use their constructor, but rather
-touse the methods they provide to access their data set.
+to use the methods they provide to access their data set.
 
 Overview of the data interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -84,11 +84,12 @@ Index of the solution classes
     ac_solution
     op_solution
     pss_solution
+    pz_solution
     symbolic_solution
     tran_solution
 
-All classes in alphabetical order
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Module reference
+~~~~~~~~~~~~~~~~
 
 """
 
