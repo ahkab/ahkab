@@ -4,7 +4,7 @@ from ahkab import options
 options.plotting_show_plots = False
 
 def test():
-    nt = NetlistTest('tran_gear5', er=1e-2, ea=1e-3)
+    nt = NetlistTest('tran_gear5', er=1e-2, ea=1e-2)
     nt.setUp()
     nt.test()
     nt.tearDown()
