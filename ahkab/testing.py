@@ -432,18 +432,18 @@ class NetlistTest(unittest.TestCase):
             setattr(options, opt, self._reset_opts[opt])
 
     def setUp(self):
-        """Set up the testbench"""
+        """Set up the testbench."""
         # find the needed files wrt the WD
-        # we may be called from ahkab/tests/<mytest>
-        # or from tests/<mytest>
-        # or from <mytest>
+        # we may be called from <checkout-dir>/tests/<mytest>
+        # or from <checkout-dir>/tests/
+        # or from <checkout-dir>/
         wd = os.getcwd()
-        if os.path.split(wd)[1] == 'ahkab':
-            self.reference_path = os.path.join(wd, 'tests', self.test_id)
+        if os.path.split(wd)[1] == self.test_id:
+            self.reference_path = "."
         elif os.path.split(wd)[1] == 'tests':
             self.reference_path = os.path.join(wd, self.test_id)
         else:
-            self.reference_path = "."
+            self.reference_path = os.path.join(wd, 'tests', self.test_id)
 
         if not os.path.isfile(os.path.join(self.reference_path,
                                            '%s.ini' % self.test_id)):
@@ -678,16 +678,16 @@ class APITest(unittest.TestCase):
     def setUp(self):
         """Set up the testbench"""
         # find the needed files wrt the WD
-        # we may be called from ahkab/tests/<mytest>
-        # or from tests/<mytest>
-        # or from <mytest>
+        # we may be called from <checkout-dir>/tests/<mytest>
+        # or from <checkout-dir>/tests/
+        # or from <checkout-dir>/
         wd = os.getcwd()
-        if os.path.split(wd)[1] == 'ahkab':
-            self.reference_path = os.path.join(wd, 'tests', self.test_id)
+        if os.path.split(wd)[1] == self.test_id:
+            self.reference_path = "."
         elif os.path.split(wd)[1] == 'tests':
             self.reference_path = os.path.join(wd, self.test_id)
         else:
-            self.reference_path = "."
+            self.reference_path = os.path.join(wd, 'tests', self.test_id)
 
         self.types = [a['type'] for a in self.an_list]
 
