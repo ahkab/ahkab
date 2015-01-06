@@ -189,7 +189,7 @@ def plot_results(title, y2y1_list, results, outfilename=None):
         printing.print_warning("No results available for plotting. Skipping.")
         return
     fig = pylab.figure(figsize=options.plotting_display_figsize)
-    analysis = results.get_type().upper()
+    analysis = results.sol_type.upper()
     gdata = []
     x, xlabel = results.get_x(), results.get_xlabel()
     xunit = results.units[xlabel]

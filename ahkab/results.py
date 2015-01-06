@@ -151,12 +151,8 @@ class solution:
         self.variables = []
         self.units = case_insensitive_dict()
         self.iter_index = 0
-
-    def get_type(self):
-        """Returns the type of the simulation performed.
-
-        Please redefine this function in the subclasses."""
-        raise Exception, "Undefined"
+        # Please redefine this sol_type in the subclasses
+        self.sol_type = None
 
     def asmatrix(self, verbose=3):
         """Return all data.
@@ -264,6 +260,7 @@ class op_solution(solution, _mutable_data):
     """
     def __init__(self, x, error, circ, outfile, iterations=0):
         solution.__init__(self, circ, outfile)
+        self.sol_type = "OP"
         self.iterations = iterations
 
         # We have mixed current and voltage results
@@ -322,10 +319,6 @@ class op_solution(solution, _mutable_data):
         except KeyError:
             return default
         return data
-
-    def get_type(self):
-        """This method returns ``"OP"``."""
-        return "OP"
 
     def asmatrix(self):
         """Get all data as a np matrix."""
@@ -519,6 +512,7 @@ class ac_solution(solution, _mutable_data):
     """
     def __init__(self, circ, start, stop, points, stype, op, outfile):
         solution.__init__(self, circ, outfile)
+        self.sol_type = "AC"
         self.linearization_op = op
         self.stype = stype
         self.ostart, self.ostop, self.opoints = start, stop, points
@@ -565,9 +559,6 @@ class ac_solution(solution, _mutable_data):
              
         data = np.concatenate((omega, xsplit), axis=0)
         self._add_data(data)
-
-    def get_type(self):
-        return "AC"
         
     def get_x(self):
         return self[self.variables[0]]
@@ -666,6 +657,7 @@ class dc_solution(solution, _mutable_data):
     """
     def __init__(self, circ, start, stop, sweepvar, stype, outfile):
         solution.__init__(self, circ, outfile)
+        self.sol_type = "DC"
         self.start, self.stop = start, stop
         self.stype = stype
     
@@ -710,9 +702,6 @@ class dc_solution(solution, _mutable_data):
         data = np.concatenate((sweepvalue, x), axis=0)
         self._add_data(data)
 
-    def get_type(self):
-        return "DC"
-        
     def get_x(self):
         return self.get(self.variables[0])
 
@@ -740,6 +729,7 @@ class tran_solution(solution, _mutable_data):
     """
     def __init__(self, circ, tstart, tstop, op, method, outfile):
         solution.__init__(self, circ, outfile)
+        self.sol_type = "TRAN"
         self.start_op = op
         self.tstart, self.tstop = tstart, tstop
         self.method = method
@@ -786,9 +776,6 @@ method %s. Run on %s, data filename %s.>" % \
     def lock(self):
         self._lock = True
 
-    def get_type(self):
-        return "TRAN"
-        
     def get_x(self):
         return self.get(self.variables[0])
 
@@ -818,6 +805,7 @@ class pss_solution(solution, _mutable_data):
     """
     def __init__(self, circ, method, period, outfile, t_array=None, x_array=None):
         solution.__init__(self, circ, outfile)
+        self.sol_type = "PSS"
         self.period = period
         self.method = method
 
@@ -860,9 +848,6 @@ Run on %s, data filename %s.>" % \
         allvalues = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0L, verbose=verbose)
         return allvalues[0,:], allvalues[1:,:]
 
-    def get_type(self):
-        return "PSS"
-        
     def get_x(self):
         return self.get(self.variables[0])
 
@@ -887,6 +872,7 @@ class symbolic_solution():
         Set this to ``True`` if this set of results corrsponds to a transfer function.
     """
     def __init__(self, results_dict, substitutions, circ, outfile=None, tf=False):
+        self.sol_type = "Symbolic"
         self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
         self.netlist_file = circ.filename
         self.netlist_title = circ.title
@@ -961,9 +947,6 @@ class symbolic_solution():
                     for p in self.results[key][sing]:
                         str_repr +=  "\t\t" + str(p) + "\n"
         return str_repr
-
-    def get_type(self):
-        return "Symbolic"
 
     # Access as a dictionary:
     def __len__(self):
