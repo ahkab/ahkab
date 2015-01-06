@@ -2,17 +2,17 @@
 
 ***a SPICE-like electronic circuit simulator written in Python***
 
-The code should be easy to read and modify, the main language is Python 2.x and it is platform-independent.[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/3f4b146d6a15f66802f1906e5cf4f68c "githalytics.com")](http://githalytics.com/ahkab/ahkab)
+The code should be easy to read and modify, the main language is Python -- 2 or 3 -- and it is platform-independent.[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/3f4b146d6a15f66802f1906e5cf4f68c "githalytics.com")](http://githalytics.com/ahkab/ahkab)
 
 ## News! ##
 
- * Ahkab v0.11 was released on Oct 22 2014, including several bugfixes and improvements. It is recommended to upgrade. Check out [the release notes](https://github.com/ahkab/ahkab/releases/tag/v0.11) for more!
+ * Happy new year! 2015 was kicked off with a brand new Ahkab release. Ahkab v0.12 was released on Jan 05 2015, including several bugfixes, improvements, a revised documentation and Python3 support. It is recommended to upgrade. Check out [the release notes](https://github.com/ahkab/ahkab/releases/tag/v0.12) for more!
  * The whole codebase has been going through a (yet incomplete) refactoring and documenting effort. The [new documentation is available on RTD](http://ahkab.readthedocs.org/en/latest/).
- * Tests have been added to the code base, to weed out bugs and have a consistent way to check for regressions. If you have tests you would like to suggest, please send a PR my way.
- *  My resources are limited these days, so the much-needed work is proceeding slowly, albeit hopefully steadily. If you are interested and you would like to contribute to refactoring or documenting a particular feature, it would be very welcome.
+
+My resources are limited these days, so the much-needed work is proceeding slowly, albeit hopefully steadily. If you are interested and you would like to contribute to refactoring or documenting a particular feature, it would be very welcome.
 
 [![Build Status](https://travis-ci.org/ahkab/ahkab.png?branch=master)](https://travis-ci.org/ahkab/ahkab) [![Coverage Status](https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master)](https://coveralls.io/r/ahkab/ahkab?branch=master)
-[![PyPi version](http://img.shields.io/badge/version-0.11-brightgreen.png)](https://pypi.python.org/pypi/ahkab/) [![GPLv2 license](http://img.shields.io/badge/license-GPL%20v2-brightgreen.png)](https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE)
+[![PyPi version](http://img.shields.io/badge/version-0.12-brightgreen.png)](https://pypi.python.org/pypi/ahkab/) [![GPLv2 license](http://img.shields.io/badge/license-GPL%20v2-brightgreen.png)](https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE)
 <!--- [![PyPi downloads](https://pypip.in/download/ahkab/badge.png)](https://pypi.python.org/pypi/ahkab/) --->
 
 
@@ -32,8 +32,8 @@ The results are saved to disk, plotted or printed to stdout and can be read/proc
 ##Install##
 
 The program requires:
-* the **Python 2 interpreter** (at least v.2.6, and Python3 is in the works),
-* numpy>=1.7.0, matplotlib and sympy.
+* the Python interpreter version 2 or 3 (at least v.2.6 for Python2, v.3.3 for Python3),
+* numpy>=1.7.0, scipy>0.11.1, matplotlib and sympy.
 
 If you need more information about the dependencies, check the [Install notes](https://github.com/ahkab/ahkab/wiki/Install:-Notes).
 
@@ -88,9 +88,13 @@ See `ahkab --help` for command line switches.
 
 ###Documentation###
 
-Refer to the [netlist syntax page](https://github.com/ahkab/ahkab/wiki/Help:-Netlist-Syntax) for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.
+The [new documentation is available on RTD](http://ahkab.readthedocs.org/en/latest/).
 
-The latter option is shown briefly in the **[Python API](https://github.com/ahkab/ahkab/wiki/Example:-Python-API)** wiki page. The code comes with docstrings associated with _most_ functions, type `help(ahkab.function_name)`.
+There, you can find a [documentation](http://ahkab.readthedocs.org/en/latest/ahkab.html) and [examples](http://ahkab.readthedocs.org/en/latest/examples/Python_API.html) regarding how to simulate from a Python script.
+
+Refer to the [netlist syntax page](http://ahkab.readthedocs.org/en/latest/help/Netlist-Syntax.html) if you prefer  to write netlist files that describe the circuit.
+
+Experience with running SPICE or other commercial simulators can be very useful: this is not for the faint of heart.
 
 ### How this project was born ###
 
