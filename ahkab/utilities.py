@@ -423,7 +423,7 @@ def check_ground_paths(mna, circ, reduced_mna=True, verbose=3):
     else:
         r_c = 0
     to_be_checked_for_nonlinear_paths = []
-    for node in circ.nodes_dict.iterkeys():
+    for node in iter(circ.nodes_dict.keys()):
         if node == 0:
             continue
             # ground
