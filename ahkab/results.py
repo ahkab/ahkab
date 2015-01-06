@@ -23,7 +23,7 @@ results.
 
 Simulation results are typically returned upon successful simulation of a
 circuit and the user is not expected to use their constructor, but rather
-touse the methods they provide to access their data set.
+to use the methods they provide to access their data set.
 
 Overview of the data interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -84,11 +84,12 @@ Index of the solution classes
     ac_solution
     op_solution
     pss_solution
+    pz_solution
     symbolic_solution
     tran_solution
 
-All classes in alphabetical order
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Module reference
+~~~~~~~~~~~~~~~~
 
 """
 
@@ -155,12 +156,8 @@ class solution:
         self.variables = []
         self.units = case_insensitive_dict()
         self.iter_index = 0
-
-    def get_type(self):
-        """Returns the type of the simulation performed.
-
-        Please redefine this function in the subclasses."""
-        raise Exception("Undefined")
+        # Please redefine this sol_type in the subclasses
+        self.sol_type = None
 
     def asmatrix(self, verbose=3):
         """Return all data.
@@ -268,6 +265,7 @@ class op_solution(solution, _mutable_data):
     """
     def __init__(self, x, error, circ, outfile, iterations=0):
         solution.__init__(self, circ, outfile)
+        self.sol_type = "OP"
         self.iterations = iterations
 
         # We have mixed current and voltage results
@@ -326,10 +324,6 @@ class op_solution(solution, _mutable_data):
         except KeyError:
             return default
         return data
-
-    def get_type(self):
-        """This method returns ``"OP"``."""
-        return "OP"
 
     def asmatrix(self):
         """Get all data as a np matrix."""
@@ -523,6 +517,7 @@ class ac_solution(solution, _mutable_data):
     """
     def __init__(self, circ, start, stop, points, stype, op, outfile):
         solution.__init__(self, circ, outfile)
+        self.sol_type = "AC"
         self.linearization_op = op
         self.stype = stype
         self.ostart, self.ostop, self.opoints = start, stop, points
@@ -569,9 +564,6 @@ class ac_solution(solution, _mutable_data):
              
         data = np.concatenate((omega, xsplit), axis=0)
         self._add_data(data)
-
-    def get_type(self):
-        return "AC"
         
     def get_x(self):
         return self[self.variables[0]]
@@ -670,6 +662,7 @@ class dc_solution(solution, _mutable_data):
     """
     def __init__(self, circ, start, stop, sweepvar, stype, outfile):
         solution.__init__(self, circ, outfile)
+        self.sol_type = "DC"
         self.start, self.stop = start, stop
         self.stype = stype
     
@@ -714,9 +707,6 @@ class dc_solution(solution, _mutable_data):
         data = np.concatenate((sweepvalue, x), axis=0)
         self._add_data(data)
 
-    def get_type(self):
-        return "DC"
-        
     def get_x(self):
         return self.get(self.variables[0])
 
@@ -726,7 +716,7 @@ class dc_solution(solution, _mutable_data):
 class tran_solution(solution, _mutable_data):
     """Transient results
 
-    **Parameters: **
+    **Parameters:**
 
     circ : circuit instance
         the circuit instance of the simulated circuit.
@@ -744,6 +734,7 @@ class tran_solution(solution, _mutable_data):
     """
     def __init__(self, circ, tstart, tstop, op, method, outfile):
         solution.__init__(self, circ, outfile)
+        self.sol_type = "TRAN"
         self.start_op = op
         self.tstart, self.tstop = tstart, tstop
         self.method = method
@@ -790,9 +781,6 @@ method %s. Run on %s, data filename %s.>" % \
     def lock(self):
         self._lock = True
 
-    def get_type(self):
-        return "TRAN"
-        
     def get_x(self):
         return self.get(self.variables[0])
 
@@ -822,6 +810,7 @@ class pss_solution(solution, _mutable_data):
     """
     def __init__(self, circ, method, period, outfile, t_array=None, x_array=None):
         solution.__init__(self, circ, outfile)
+        self.sol_type = "PSS"
         self.period = period
         self.method = method
 
@@ -864,9 +853,6 @@ Run on %s, data filename %s.>" % \
         allvalues = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0, verbose=verbose)
         return allvalues[0,:], allvalues[1:,:]
 
-    def get_type(self):
-        return "PSS"
-        
     def get_x(self):
         return self.get(self.variables[0])
 
@@ -891,6 +877,7 @@ class symbolic_solution():
         Set this to ``True`` if this set of results corrsponds to a transfer function.
     """
     def __init__(self, results_dict, substitutions, circ, outfile=None, tf=False):
+        self.sol_type = "Symbolic"
         self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
         self.netlist_file = circ.filename
         self.netlist_title = circ.title
@@ -915,6 +902,30 @@ class symbolic_solution():
             self.save()
 
     def as_symbol(self, variable):
+        """Converts a string to a symbolic variable.
+
+        This symbol may then be used by the user as an atom to construct
+        new expressions, modify the results expressions or it can be passed
+        to Sympy's functions.
+
+        **Parameters:**
+
+        variable : string
+            The string that identifies the variable. Eg. ``'R1'`` for the variable
+            corresponding to the resistance of the resistor ``R1``. Note that the
+            case is disregarded.
+
+        **Returns:**
+
+        symbol : Sympy symbol
+            The corresponding symbol, if found.
+
+        **Raises:**
+
+        ValueError : exception
+            In case no corresponding symbol is found.
+        """
+
         symbs = [x for x in self._symbols if x.name.lower() == variable.lower()]
         if len(symbs) == 0:
             raise ValueError("No symbol %s in the results set."%(variable,))
@@ -922,17 +933,64 @@ class symbolic_solution():
             return symbs[0]
             
     def as_symbols(self, spacedstr):
+        """Convenience function to call :func:`as_symbol` multiple times.
+
+        **Parameters:**
+
+        spacedstr : string,
+            A string containing several symbol identifiers separated by spaces.
+            Eg. ``'R1 C2 L3'``.
+
+        **Returns:**
+
+        (s1, s2, ...) : tuple of Sympy symbol instances
+            The symbols corresponding to the identifiers in the string supplied,
+            ordered as the identifiers in the string.
+
+        **Raises:**
+
+        ValueError : exception
+            In case any corresponding symbol is not found.
+        """
         return list(map(self.as_symbol, spacedstr.split()))
         
     def save(self):
+        """Write the results to disk.
+        
+        It is necessary first to set the ``filename`` attribute, indicating
+        which file to write to.
+
+        **Raises:**
+        
+        RuntimeError : exception
+            If the `filename` attribute is not set.
+        """
         if not self.filename:
-            raise Exception("Writing the results to file requires setting the \
+            raise RuntimeError("Writing the results to file requires setting the \
                               'filename' attribute")
         with open(self.filename, 'wb') as fp:
             pickle.dump(self, fp, protocol=2)
     
     @staticmethod
     def load(filename):
+        """Static method to load a symbolic solution from disk.
+
+        **Parameters:**
+
+        filename : str
+            The filename corresponding to the file to load from.
+
+        **Returns:**
+
+        sol : symbolic solution instance
+            The solution instance loaded from disk.
+
+        .. warning::
+
+            This method employs ``pickle.load``, which is to be used exclusively
+            on trusted data. **Only load trusted simulation files!**
+
+        """
         with open(filename, 'rb') as fp:
             asolution = pickle.load(fp)
         return asolution
@@ -966,9 +1024,6 @@ class symbolic_solution():
                         str_repr +=  "\t\t" + str(p) + "\n"
         return str_repr
 
-    def get_type(self):
-        return "Symbolic"
-
     # Access as a dictionary:
     def __len__(self):
         """Get the number of variables in the results set."""
@@ -979,6 +1034,7 @@ class symbolic_solution():
         return self.results[str(name).upper()]
 
     def get(self, name, default=None):
+        """Get the solution corresponding to a variable."""
         name = str(name).upper()
         try:
             return self.results[name]
@@ -1002,6 +1058,7 @@ class symbolic_solution():
         return list(self.results.values())
 
     def items(self):
+        """Get all solutions."""
         return list(self.results.items())
 
     # iterator methods
@@ -1010,6 +1067,7 @@ class symbolic_solution():
         return self
 
     def __next__(self):
+        """Iterator method."""
         if self.iter_index == len(list(self.results.keys()))-1:
             self.iter_index = 0
             raise StopIteration
@@ -1034,6 +1092,7 @@ class pz_solution(solution, _mutable_data):
     """
     def __init__(self, circ, poles, zeros, outfile):
         solution.__init__(self, circ, outfile)
+        self.sol_type = "PZ"
         nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         self.poles = np.sort_complex(np.array(poles).reshape((-1,)))
         self.zeros = np.sort_complex(np.array(zeros).reshape((-1,)))
@@ -1076,9 +1135,6 @@ class pz_solution(solution, _mutable_data):
                "Poles: %s\nZeros: %s") % \
                (self.netlist_title, self.netlist_file, list(self.poles), 
                 list(self.zeros))
-
-    def get_type(self):
-        return "PZ"
 
     # Access as a dictionary BY VARIABLE NAME:
     def __getitem__(self, name):

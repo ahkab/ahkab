@@ -103,14 +103,14 @@ specs = {'tran':{'tokens':({
                           'type':str,
                           'needed':False,
                           'dest':'method',
-                          'default':TRAP
+                          'default':None
                          }
                         )
                }
            }
 
 
-def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control=True, x0=None, 
+def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_method, use_step_control=True, x0=None, 
                        mna=None, N=None, D=None, outfile="stdout", return_req_dict=None, verbose=3):
     """Performs a transient analysis of the circuit described by circ.
     
@@ -138,7 +138,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=TRAP, use_step_control
     else:
         print_step_and_lte = False
     
-    method = method.upper()
+    method = method.upper() if method is not None else options.default_tran_method
     HMAX = tstep
     
     #check parameters

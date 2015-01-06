@@ -30,6 +30,7 @@ import sys
 import imp
 import math
 import copy
+import os
 
 from . import circuit
 from . import dc_analysis
@@ -84,6 +85,7 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
         ffile = sys.stdin
 
     file_list = [(ffile, "unknown", not read_netlist_from_stdin)]
+    netlist_wd = os.path.split(filename)[0]
     file_index = 0
     directives = []
     model_directives = []
@@ -131,7 +133,7 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
                         current_subckt_temp = []
                     elif line_elements[0] == '.include':
                         file_list.append(
-                            parse_include_directive(line, line_elements=None))
+                            parse_include_directive(line, netlist_wd, line_elements=None))
                     elif line_elements[0] == ".end":
                         break
                     elif line_elements[0] == ".plot":
@@ -1465,7 +1467,7 @@ def parse_sub_instance(line, circ, subckts_dict, line_elements=None, models=None
     return elements_list
 
 
-def parse_include_directive(line, line_elements=None):
+def parse_include_directive(line, netlist_wd, line_elements=None):
     """.include <filename> [*comments]
     """
     if line_elements is None:
@@ -1476,6 +1478,10 @@ def parse_include_directive(line, line_elements=None):
         raise NetlistParseError("")
 
     path = line_elements[1]
+    if not os.path.isabs(path):
+        # the user did not specify the full path. 
+        # the path is then assumed to be relative to the netlist location
+        path = os.path.join(netlist_wd, path)
     if not utilities.check_file(path):
         raise RuntimeError("")
 

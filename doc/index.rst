@@ -6,26 +6,17 @@ Ahkab |release| Docs
 
 Ahkab (pronounced "uh, cab") is an open-source SPICE-like interactive circuit simulator.
 
-Help
-----
+Command line interface and netlist syntax
+-----------------------------------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    help/Netlist-Syntax
 
-Examples
---------
 
-.. toctree::
-   :maxdepth: 2
-
-   examples/Python_API
-   examples/OP_simulation
-
-
-Reference
----------
+Module reference
+----------------
 
 .. toctree::
    :maxdepth: 1
@@ -34,36 +25,38 @@ Reference
    ac
    bfpss
    circuit
+   constants
    csvlib
+   dc_analysis
    devices
    diode
+   ekv
+   mosq
+   plotting
    printing
    pss
    pz
    results
+   shooting
+   switch
    symbolic
    testing 
+   ticker
+   trap
+   utilities
+
+Example simulations
+-------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   examples/Python_API
+   examples/OP_simulation
+   examples/Symbolic-simulation
 
 Documentation in progress
 -------------------------
-
-.. automodule: ahkab.__init__
-   :members:
-
-.. automodule:: ahkab.__main__
-   :members:
-
-.. automodule:: ahkab.ekv
-   :members:
-
-.. automodule:: ahkab.mosq
-   :members:
-
-.. automodule:: ahkab.ticker
-   :members:
-
-.. automodule:: ahkab.dc_analysis
-   :members:
 
 .. automodule:: ahkab.gear
    :members:
@@ -83,17 +76,6 @@ Documentation in progress
 .. automodule:: ahkab.options
    :members:
 
-.. automodule:: ahkab.shooting
-
-.. automodule:: ahkab.trap
-
-.. automodule:: ahkab.constants
-
-.. automodule:: ahkab.plotting
-
-.. automodule:: ahkab.switch
-
-.. automodule:: ahkab.utilities
 
 
 Indices and tables

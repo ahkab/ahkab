@@ -18,20 +18,19 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This module defines two classes:
- switch_device
- switch_model
+Implementation of a voltage controlled switch.
 
-sn1 o--+         +--o n1
-       |         |
-      +-+      \ o
-      |R|       \
-      +-+        +
-       |         |
-sn2 o--+         +--o n2
-
+This module defines two classes: switch_device, switch_model
 
 """
+
+# sn1 o--+         +--o n1
+#        |         |
+#       +-+      \ o
+#       |R|       \
+#       +-+        +
+#        |         |
+# sn2 o--+         +--o n2
 
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
@@ -48,40 +47,58 @@ class switch_device:
 
     It has the following structure:
 
-    sn1 o--+         +--o n1
-           |         |
-          +-+      \ o
-          |R|       \
-          +-+        +
-           |         |
-    sn2 o--+         +--o n2
+    .. image:: images/elem/switch1.svg
+
+    |    
+
+    In ASCII for those who are consulting the documentation from the
+    Python command line:
+
+    ::
+
+        sn1 o--+         +--o n1
+               |         |
+              +-+      \ o
+              |R|       \\
+              +-+        +
+               |         |
+        sn2 o--+         +--o n2
 
     The behavior is set by the model supplied.
 
     The device instance calls the following methods in the model:
-    get_i(ports_v, device) - output current
-    get_go(ports_v, device) - ouput conductance
-    get_gm(ports_v, device) - output transconductance
-    get_dc_guess(self, is_on) - guesses for OP
+
+    * ``get_i(ports_v, device)`` - output current
+    * ``get_go(ports_v, device)`` - ouput conductance
+    * ``get_gm(ports_v, device)`` - output transconductance
+    * ``get_dc_guess(self, is_on)`` - guesses for OP
 
     The device instance accesses the following attributes:
-    name, string, the device label
+    ``part_id`` (a string), the device label.
+
     """
 
     def __init__(self, n1, n2, sn1, sn2, model, ic=None, part_id='S'):
-        """Voltage controlled switch device
-        Parameters:
-            n1: output node (+)
-            n2: output node (-)
-            sn1: input node (+)
-            sn2: input node (-)
-            model: pass an instance of (v)switch_model
-            ic (optional): the initial conditions: True->on, False->off.
+        """
+        **Parameters:**
+
+        n1 : str
+            Positive output node (+)
+        n2 : str
+            Negative output node (-)
+        sn1 : str
+            Positive input node (+)
+        sn2 : str
+            Negative input node (-)
+        model : model obj
+            An instance of (v)switch_model
+        ic : bool, optional
+            The initial conditions: ``True`` stands for on, ``False`` for off.
 
         Selected methods:
-        - get_output_ports() -> (n1, n2)
-        - get_drive_ports() -> (n1, n2), (ns1, ns2)
 
+        - :func:`get_output_ports` -> (n1, n2)
+        - :func:`get_drive_ports` -> (n1, n2), (ns1, ns2)
 
         """
         class dev_class:
@@ -104,19 +121,29 @@ class switch_device:
     def get_drive_ports(self, op):
         """Get the ports that drive the output ports.
 
-        Returns a tuple of tuples of ports nodes, as:
-        (port0, port1, port2...)
-        Where each port is in the form:
-        port0 = (nplus, nminus)
+        **Parameters:**
+
+        op : op solution
+            The OP where the drive ports are used.
+
+        **Returns:**
+        
+        pts : tuple of tuples of ports nodes, as: ``(port0, port1, port2 ... )``
+
+        Where each port is in the form: ``port0 = (nplus, nminus)``
         """
         return self.ports
 
     def get_output_ports(self):
-        """Get the output port, which is (n1,n2) in this case.
-        Returns a tuple of tuples of ports nodes, as:
-        (port0, port1, port2...)
-        Where each port is in the form:
-        port0 = (nplus, nminus)
+        """Get the output port.
+        
+        The output port is ``(n1, n2)`` for the voltage-controlled switch case.
+
+        **Returns:**
+        
+        pts : tuple of tuples of ports nodes
+            Such as: ``(port0, port1, port2 ... )``.
+            Where each port is in the form: ``port0 = (nplus, nminus)``
         """
         return ((self.n1, self.n2),)
 
@@ -125,13 +152,26 @@ class switch_device:
         return rep
 
     def i(self, op_index, ports_v, time=0):
-        """Returns the current flowing in the element with the voltages
-        applied as specified in the ports_v vector.
+        """Returns the current flowing in the element.
+        
+        The element is assumed to be biased with the voltages
+        applied as specified in the ``ports_v`` vector.
 
-        ports_v: [voltage_across_port0, voltage_across_port1, ...]
-        time: the simulation time at which the evaluation is performed.
-              It has no effect here. Set it to None during DC analysis.
+        **Parameters:**
 
+        op_index : int
+            The index of the output port for which the current is evaluated.
+        ports_v : tuple
+            A tuple constructed such as ``(voltage_across_port0, voltage_across_port1, ... )``
+        time : float, optional
+            The simulation time at which the evaluation is performed. It is
+            needed by time-variant elements, and it has no effect here. Set it
+            to ``None`` during DC analysis.
+
+        **Returns:**
+
+        i : int
+            The output current.
         """
         ret = self.model.get_i(ports_v, self.device)
         # This may be used for debugging
@@ -145,8 +185,12 @@ class switch_device:
 
         Normally, one would call either:
 
-        get_op_info(ports_v)
-        print_op_info(ports_v)
+        * :func:`get_op_info`
+        * :func:`print_op_info`
+
+        **Returns:**
+
+        ``None``.
         """
         if self.opdict is None:
             self.opdict = {}
@@ -178,14 +222,27 @@ class switch_device:
         return printing.table_setup(arr)
 
     def g(self, op_index, ports_v, port_index, time=0):
-        """Returns the differential (trans)conductance rs the port specified by port_index
-        when the element has the voltages specified in ports_v across its ports,
-        at (simulation) time.
+        """Returns the differential (trans)conductance.
+        
+        The transconductance is computed wrt the port specified by
+        ``port_index`` when the element has the voltages specified in
+        ``ports_v`` across its ports, at (simulation) ``time``.
 
-        ports_v: a list in the form: [voltage_across_port0, voltage_across_port1, ...]
-        port_index: an integer, 0 <= port_index < len(self.get_ports())
-        time: the simulation time at which the evaluation is performed. Set it to
-        None during DC analysis.
+        **Parameters:**
+
+        ports_v : list
+            Voltages applied to the switch. The list should be in the form:
+            ``[voltage_across_port0, voltage_across_port1, ... ]``
+        port_index : int
+            The index of the output port.
+        time : float
+            The simulation time at which the evaluation is performed. Set it to
+            ``None`` during DC analysis.
+
+        **Returns:**
+
+        g : float
+            The transconductance.
         """
 
         assert op_index == 0
@@ -204,6 +261,7 @@ class switch_device:
         return get_value
 
     def get_netlist_elem_line(self, nodes_dict):
+        """Return a netlist line corresponding to the switch."""
         return "%s %s %s %s %s %s %s" % (self.part_id, nodes_dict[self.n1],
                                 nodes_dict[self.n2], nodes_dict[self.sn1],
                                 nodes_dict[self.sn2], self.model.name, \
@@ -217,30 +275,35 @@ ROFF_DEFAULT = 1. / options.gmin
 
 
 class vswitch_model:
-
     """Voltage-controlled switch model.
 
-    sn1 o--+         +--o n1
-           |         |
-          +-+      \ o
-          |R|       \
-          +-+        +
-           |         |
-    sn2 o--+         +--o n2
+    ::
 
+        sn1 o--+         +--o n1
+               |         |
+              +-+      \ o
+              |R|       \\
+              +-+        +
+               |         |
+        sn2 o--+         +--o n2
+
+
+    Note that:
 
     * R is infinite.
-    * The voltage needed to close the switch is: V(sn1)-V(sn2) > VT+VH
-    * To re-open it, one needs: V(sn1)-V(sn2) < VT-VH
+    * The voltage needed to close the switch is:
+      :math:`V(s_{n1})-V(s_{n2}) > V_T+V_H`.
+    * To re-open it, one needs to satisfy the relationship:
+      :math:`V(s_{n1})-V(s_{n2}) < V_T-V_H`.
 
     The switch commutes between two statuses:
 
-    * ROUT = ROFF
-    * ROUT = RON
+    * :math:`R_{OUT} = R_{OFF}`
+    * :math:`R_{OUT} = R_{ON}`
 
     None of which can be set to zero or infinite.
 
-    The switching characteristics are modeled with tanh(x).
+    The switching characteristics are modeled with :math:`tanh(x)`.
     """
 
     def __init__(self, name, VT=None, VH=None, VON=None, VOFF=None, RON=None, ROFF=None):

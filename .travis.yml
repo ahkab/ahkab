@@ -1,4 +1,8 @@
 language: python
+
+branches:
+  except:
+      - pypy_symbolic
 python:
   - 2.7
   - 3.4
@@ -18,9 +22,8 @@ before_install:
 install:
   - conda create --quiet --yes -n buildenv python=$TRAVIS_PYTHON_VERSION
   - source activate buildenv
-  - conda install --yes numpy scipy matplotlib sympy nose setuptools
+  - conda install --yes numpy scipy matplotlib sympy nose setuptools coverage
   - conda install --yes -c dan_blanchard python-coveralls
-  - pip install nose-cov
   - python setup.py install
  
 # Run the tests

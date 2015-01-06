@@ -102,7 +102,7 @@ def pss_analysis(*largs, **args):
     """
     m = args.pop('method').lower()
     if m == options.SHOOTINGPSS:
-        r = shooting.shooting(*largs, **args)
+        r = shooting.shooting_analysis(*largs, **args)
     elif m == options.BFPSS:
         r = bfpss.bfpss(*largs, **args)
     else:

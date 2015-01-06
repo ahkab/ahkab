@@ -4,7 +4,7 @@ c1 2 0 550p ic=0
 l1 1 2 22n ic=0
 r1 2 1 .3k
 .op
-.tran tstep=10n tstop=1u uic=2
+.tran tstep=10n tstop=1u uic=2 method=gear3
 .plot tran v(2) v(1)
 .end 
 

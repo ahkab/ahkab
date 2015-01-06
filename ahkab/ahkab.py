@@ -18,7 +18,78 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-""" ahkab is an easy electronic circuit simulator.
+"""
+
+Introduction
+============
+
+This is the core module of the simulator. It provides helper functions to save
+you the need to call directly the functions in most submodules.
+
+Do you have a circuit?
+======================
+
+To run a simulation, you'll need a circuit first: a circuit can be described with a
+simulation deck or with a circuit object.
+
+In case you have a netlist (simulation deck) available, you may call
+:func:`main` directly. The netlist should be described according to the rules in
+:doc:`help/Netlist-Syntax`. Running the simulation through the :func:`main`
+method allows to process the result in Python.
+
+In a Python script, describing the circuit through the
+:class:`ahkab.circuit.Circuit` interface is arguably more versatile a choice.
+
+Create a simulation object
+==========================
+
+Next, you need to have a simulation object you would like to run.
+
+The following methods are available to quickly create a simulation object:
+
+.. autosummary::
+    new_ac
+    new_dc
+    new_op
+    new_pss
+    new_pz
+    new_symbolic
+    new_tran
+
+Click on one of the above hyperlinks to be taken to the corresponding
+documentation section.
+
+Run it!
+=======
+
+Once you have a circuit and one or more simulations, it's time to run them!
+
+The following methods are available to do so:
+
+.. autosummary::
+    run
+    queue
+
+The :func:`run` function will return the results in dictionary form.
+
+Extras
+======
+
+The core module also contains a few extra methods which were deemed important
+enough to be inserted here.
+
+In particular, the :func:`get_op_x0` method allows the user to quickly compute
+an operating point to be used to specify the linearization point for a more
+complex analysis and :func:`icmodified_x0` allows the user to modify said
+operating point to take into account the user-specified initial conditions in
+the circuit description.
+
+Lastly, :func:`set_temperature` can be used to quickly set the simulation
+temperature.
+
+All methods in alphabetical order
+==================================
+
 """
 
 from __future__ import (unicode_literals, absolute_import,
@@ -421,17 +492,17 @@ def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None
     **Parameters:**
 
     source : string, optional
-        if source is set, the transfer function between the current or voltage
-        source ``source`` and each circuit unknown will be evaluated, with
-        symbolic evaluation of DC gain, poles and zeros. ``source`` is to be
-        set to the ``part_id`` of an independent current or voltage source in
-        the circuit, eg. ``'V1'`` or ``'Iin'`.
-        This computation should be avoided for large circuit, as indiscriminate
-        transfer function, gain and singularities evaluation in large circuits
-        can result in very long run times and needs a significant amount of
-        RAM, on top of an already resource intensive symbolic analysis.
-        We suggest manually evaluating selected transfer functions of interest
-        instead.
+        if ``source`` is set, the transfer function between the current or
+        voltage source ``source`` and each circuit unknown will be
+        evaluated, with symbolic evaluation of DC gain, poles and zeros.
+        ``source`` is to be set to the ``part_id`` of an independent current
+        or voltage source in the circuit, eg. ``'V1'`` or ``'Iin'``. This
+        computation should be avoided for large circuit, as indiscriminate
+        transfer function, gain and singularities evaluation in large
+        circuits can result in very long run times and needs a significant
+        amount of RAM, on top of an already resource intensive symbolic
+        analysis.  We suggest manually evaluating selected transfer
+        functions of interest instead.
 
     ac_enable : bool, optional
         If set to ``True`` (default), the frequency-dependent elements will
@@ -491,6 +562,17 @@ def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None
 
 
 def queue(*analysis):
+    """Queue one or more analyses to execute them subsequently with :func:`run`.
+
+    **Parameters**
+
+    analysis : one or more analysis descriptions.
+        The analyses to be queued.
+
+    **Returns:**
+
+    None
+    """
     global _queue
     for an in analysis:  # let's hope the user knows what he's doing!
         _queue += [copy.deepcopy(an)]
@@ -545,17 +627,14 @@ def run(circ, an_list=None):
 def new_x0(circ, icdict):
     """Builds an ``x0`` matrix from user supplied values.
 
-    in voltages_dict and currents_dict.
-of appropriate (reduce) size (reduced) from the values supplied
-
     Supplying a custom x0 can be useful:
     - To aid convergence in tough circuits.
     - To start a transient simulation from a particular x0
 
     **Parameters:**
-    circ: circuit instance
-        The circuit
 
+    circ : circuit instance
+        The circuit
     icdict : dict
         a dictionary specifying the node voltages and branch currents,
         where appropriate, in V and A, respectively, assembled as shown
@@ -566,17 +645,18 @@ of appropriate (reduce) size (reduced) from the values supplied
     The user-specified values are to be provided as follows:
 
     - to specify a nodal voltage: ``{'V(node)':<voltage value>}``
-
     - to specify a branch current: ``'I(<element>)':<current value>}``
 
 
     Examples:
 
     - ``{'V(n1)':2.3, 'V(n2)':0.45, ...}``
-
     - ``{'I(L1)':1.03e-3, I(V4):2.3e-6, ...}``
 
-    .. note:: this simulator uses the normal convention.
+    .. note:: 
+        This simulator uses the normal convention, also known as the
+        `Passive sign convention
+        <https://en.wikipedia.org/wiki/Passive_sign_convention>`.
 
     **Returns:**
 
@@ -594,7 +674,7 @@ def icmodified_x0(circ, x0):
 
     circ : circuit instance
         The circuit instance from which the initial conditions are to be
-        extracted
+        extracted.
 
     x0 : np matrix
         The vector to which the initial conditions are to be applied.
@@ -603,13 +683,24 @@ def icmodified_x0(circ, x0):
 
 
 def get_op_x0(circ):
-    """Shorthand to specify and run an OP analysis to get an x0
+    """Shorthand to specify and run an OP analysis to get a linearization
+    point.
+
+    **Parameters:**
+
+    circ : circuit instance
+        The circuit instance for which the linearization point is sought.
+
+    **Returns:**
+
+    x0 : an OP solution object
+        The linearization point.
     """
     return run(circ, [new_op()])
 
 
 def set_temperature(T):
-    """Set the simulation temperature, in Celsius"""
+    """Set the simulation temperature, in Celsius."""
     T = float(T)
     if T > 300:
         printing.print_warning("The temperature will be set to %f \xB0 C.")
@@ -707,7 +798,7 @@ def main(filename, outfile="stdout", verbose=3):
     (circ, directives, postproc_direct) = netlist_parser.parse_circuit(
         filename, read_netlist_from_stdin)
 
-    check, reason = dc_analysis.check_circuit(circ)
+    check, reason = utilities.check_circuit(circ)
     if not check:
         printing.print_general_error(reason)
         print(circ)

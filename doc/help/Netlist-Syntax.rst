@@ -1,5 +1,3 @@
-.. raw:: html
-
 Netlist Syntax
 ~~~~~~~~~~~~~~
 
@@ -158,11 +156,11 @@ Voltage-controlled switch
 
 ``S<string> n1 n2 ns1 ns2 <model_id>``
 
--  ``n1`` and ``n2`` are the nodes corresponding to the output port, where the
+- ``n1`` and ``n2`` are the nodes corresponding to the output port, where the
   switch opens and closes the connection.
--  ``ns1`` and ``ns2`` are the nodes corresponding to the driving port, where
+- ``ns1`` and ``ns2`` are the nodes corresponding to the driving port, where
   the voltage setting the switch status is read.
--  ``model_id`` is the model describing the switch operation. Notice that even
+- ``model_id`` is the model describing the switch operation. Notice that even
   if an ideal switch is a (piece-wise) linear element, its model implementation
   may not be, depending on the implementation details of the transition region.
 
@@ -205,12 +203,12 @@ Voltage-Controlled Voltage Source (VCVS)
 
 ``E<string> n+ n- ns+ ns- <value>``
 
--  ``n+`` and ``n-`` are the nodes corresponding to the output port, where the
+- ``n+`` and ``n-`` are the nodes corresponding to the output port, where the
   voltage is forced.
--  ``ns+`` and ``ns-`` are the nodes corresponding to the driving port, where
+- ``ns+`` and ``ns-`` are the nodes corresponding to the driving port, where
   the voltage is read.
--  ``value`` is the proportionality factor, ie:
-   ``V(n+) - V(n-) = value*[V(sn+) - V(sn-)]``.
+- ``value`` is the proportionality factor, ie:
+  ``V(n+) - V(n-) = value*[V(sn+) - V(sn-)]``.
 
 Voltage-Controlled Current Source (VCCS)
 ''''''''''''''''''''''''''''''''''''''''
@@ -221,12 +219,12 @@ Voltage-Controlled Current Source (VCCS)
 
 ``G<string> n+ n- ns+ ns- <value>``
 
--  ``n+`` and ``n-`` are the nodes corresponding to the output port, where the
+- ``n+`` and ``n-`` are the nodes corresponding to the output port, where the
   current is forced.
--  ``ns+`` and ``ns-`` are the nodes corresponding to the driving port, where
+- ``ns+`` and ``ns-`` are the nodes corresponding to the driving port, where
   the voltage is read.
--  ``value`` is the proportionality factor, ie:
-   ``I(n+,n-) = value*[V(sn+) - V(sn-)]``.
+- ``value`` is the proportionality factor, ie:
+  ``I(n+,n-) = value*[V(sn+) - V(sn-)]``.
 
 Non-linear elements
 ^^^^^^^^^^^^^^^^^^^
@@ -250,7 +248,7 @@ Diode
 -  ``<model_id>``: the ID of the diode model.
 -  ``AREA``: The area of the PN junction.
 -  ``T``: the temperature of operation, if different from the circuit
-  temperature.
+   temperature.
 -  ``IC``: initial condition statement (voltage).
 -  ``OFF``: Consider the diode to be initially off in transient analyses.
 
@@ -374,6 +372,7 @@ An exponential waveform may be described with one of the following syntaxes:
 ::
 
      type=EXP <V1> <V2> <TD1> <TAU1> [<TD2> <TAU2>]
+
 ::
 
     type=exp v1=<float> v2=float td1=float tau1=<float> td2=<float> tau2=<float> 
@@ -400,7 +399,7 @@ Mathematically, it is described by the equations:
 
     f(t) = V1+(V2-V1) \cdot \left[1-\exp \left(-\frac{t-TD1}{TAU1}\right)\right]
 
-* :math: t > TD2
+* :math:`t > TD2`
 
 .. math::
 
@@ -799,7 +798,7 @@ Plot
 Parameters: 
 
 - ``simulation_type``: which simulation will have the data
-plotted. Currently the available options are ``tran``, ``shooting`` and ``dc``. 
+  plotted. Currently the available options are ``tran``, ``shooting`` and ``dc``. 
 
 - ``variable1``, ``variable2``: the signals to be plotted.
 

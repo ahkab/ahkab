@@ -882,77 +882,10 @@ def generate_mna_and_N(circ, verbose=3):
 
     # Seems a good place to run some sanity check
     # for the time being we do not halt the execution
-    check_ground_paths(mna, circ, reduced_mna=False, verbose=verbose)
+    utilities.check_ground_paths(mna, circ, reduced_mna=False, verbose=verbose)
 
     # all done
     return (mna, N)
-
-
-def check_circuit(circ):
-    """Performs some easy sanity checks.
-
-    Returns: a tuple consisting of a boolean (test was passed or not)
-    and a string describing the error, if any.
-    """
-
-    if len(circ.nodes_dict) < 2:
-        test_passed = False
-        reason = "the circuit has less than two nodes."
-    elif 0 not in circ.nodes_dict:
-        test_passed = False
-        reason = "the circuit has no ref. Quitting."
-    elif len(circ) < 2:
-        test_passed = False
-        reason = "the circuit has less than two elements."
-    elif circ.has_duplicate_elem():
-        test_passed = False
-        reason = "duplicate elements found (check the names!)"
-    else:
-        test_passed = True
-        reason = ""
-
-    return test_passed, reason
-
-
-def check_ground_paths(mna, circ, reduced_mna=True, verbose=3):
-    """Checks that every node has a DC path to ground, wheather through
-    nonlinear or linear elements.
-    - This does not ensure that the circuit will have a DC solution.
-    - A node without DC path to ground would be rescued (likely) by GMIN
-      so (for the time being at least) we do *not* halt the execution.
-    - Also, two series capacitors always fail this check (GMIN saves us)
-
-    Bottom line: if there is no DC path to ground, there is probably a
-    mistake in the netlist. Print a warning.
-    """
-    test_passed = True
-    if reduced_mna:
-        # reduced_correction
-        r_c = 1
-    else:
-        r_c = 0
-    to_be_checked_for_nonlinear_paths = []
-    for node in circ.nodes_dict.keys():
-        if node == 0:
-            continue
-            # ground
-        if mna[node - r_c, node - r_c] == 0 and not mna[node - r_c, len(circ.nodes_dict) - r_c:].any():
-            to_be_checked_for_nonlinear_paths.append(node)
-    for node in to_be_checked_for_nonlinear_paths:
-        node_is_nl_op = False
-        for elem in circ:
-            if not elem.is_nonlinear:
-                continue
-            ops = elem.get_output_ports()
-            for op in ops:
-                if op.count(node):
-                    node_is_nl_op = True
-        if not node_is_nl_op:
-            if verbose:
-                printing.print_warning(
-                    "No path to ground from node " + circ.nodes_dict[node])
-            test_passed = False
-    return test_passed
 
 
 def build_x0_from_user_supplied_ic(circ, icdict):

@@ -358,12 +358,10 @@ def check_step_and_points(step=None, points=None, period=None,
     """
 
     if step is None and points is None:
-        print("Warning: neither step nor n. of points setted. Using",
-              default_points, "points.")
+        printing.print_warning("Neither step nor n. of points set. Using %d points." % default_points)
         points = default_points
     elif step is not None and points is not None:
-        print("Warning: shooting had both step and n. of points " + \
-              "setted. Using", step, "step. (NA)")
+        printing.print_warning("Both step and n. of points set. Using step (%f)." % step)
         points = None
 
     if points:
@@ -380,3 +378,70 @@ def check_step_and_points(step=None, points=None, period=None,
         points = points + 1
 
     return int(points), step
+
+def check_circuit(circ):
+    """Performs some easy sanity checks.
+
+    Returns: a tuple consisting of a boolean (test was passed or not)
+    and a string describing the error, if any.
+    """
+
+    if len(circ.nodes_dict) < 2:
+        test_passed = False
+        reason = "the circuit has less than two nodes."
+    elif not circ.nodes_dict.has_key(0):
+        test_passed = False
+        reason = "the circuit has no ref. Quitting."
+    elif len(circ) < 2:
+        test_passed = False
+        reason = "the circuit has less than two elements."
+    elif circ.has_duplicate_elem():
+        test_passed = False
+        reason = "duplicate elements found (check the names!)"
+    else:
+        test_passed = True
+        reason = ""
+
+    return test_passed, reason
+
+
+def check_ground_paths(mna, circ, reduced_mna=True, verbose=3):
+    """Checks that every node has a DC path to ground, wheather through
+    nonlinear or linear elements.
+    - This does not ensure that the circuit will have a DC solution.
+    - A node without DC path to ground would be rescued (likely) by GMIN
+      so (for the time being at least) we do *not* halt the execution.
+    - Also, two series capacitors always fail this check (GMIN saves us)
+
+    Bottom line: if there is no DC path to ground, there is probably a
+    mistake in the netlist. Print a warning.
+    """
+    test_passed = True
+    if reduced_mna:
+        # reduced_correction
+        r_c = 1
+    else:
+        r_c = 0
+    to_be_checked_for_nonlinear_paths = []
+    for node in circ.nodes_dict.iterkeys():
+        if node == 0:
+            continue
+            # ground
+        if mna[node - r_c, node - r_c] == 0 and not mna[node - r_c, len(circ.nodes_dict) - r_c:].any():
+            to_be_checked_for_nonlinear_paths.append(node)
+    for node in to_be_checked_for_nonlinear_paths:
+        node_is_nl_op = False
+        for elem in circ:
+            if not elem.is_nonlinear:
+                continue
+            ops = elem.get_output_ports()
+            for op in ops:
+                if op.count(node):
+                    node_is_nl_op = True
+        if not node_is_nl_op:
+            if verbose:
+                printing.print_warning(
+                    "No path to ground from node " + circ.nodes_dict[node])
+            test_passed = False
+    return test_passed
+

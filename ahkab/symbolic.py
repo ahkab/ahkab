@@ -18,10 +18,24 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This module offers the functions needed to perform a symbolic simulation,
-AC or DC.
+This module provides the functionality needed to perform a small-signal symbolic
+simulation.
 
-The principal method is solve(), which carries out the symbolic circuit solution.
+The principal method is :func:`symbolic_analysis`, which performs the symbolic
+circuit solution.
+
+.. note::
+
+    This module is geared towards *setting up and running* the symbolic
+    simulation.  Typically, it should be used in conjunction with
+    :class:`ahkab.results.symbolic_solution`, the symbolic solution class, which
+    holds several convenience methods to extensively manipulate, simplify,
+    post-process and analyze the simulation results, complementing the
+    functionality offered by the Sympy module itself.
+
+Reference
+\"\"\"\"\"\"\"\"\"
+
 """
 
 from __future__ import (unicode_literals, absolute_import,
@@ -73,7 +87,7 @@ s = sympy.Symbol('s', complex=True)
 enabled_assumptions = {'real':False, 'positive':False, 'complex':True}
 
 def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=3):
-    """Attempt a symbolic solution of the circuit.
+    """Attempt a symbolic, small-signal solution of the circuit.
 
     **Parameters:**
 
@@ -103,8 +117,12 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
 
     **Returns:** 
 
-    sol : dict
-        a dictionary with the solutions.
+    sol : symbolic solution
+        The solutions.
+
+    tfs : symbolic solution
+        The transfer functions, only if requested. Otherwise ``tfs`` is a
+        ``None`` object.
 
     """
     if subs is None:
@@ -155,8 +173,6 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
     for ks in list(sol.keys()):
         sol.update({ks: sol[ks].subs(subs_g)})
 
-    # sol = sol_to_dict(sol, x)
-
     if sol == {}:
         printing.print_warning("No solutions. Check the netlist.")
     else:
@@ -188,6 +204,27 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
 
 
 def calculate_gains(sol, xin, optimize=True):
+    """Calculate low-frequency gain and roots of a transfer function.
+
+    **Parameters:**
+
+    sol : dict
+        the circuit solution
+    xin : Sympy symbol
+        the input variable
+    optimize : boolean, optional
+        If ``optimize`` is set to ``False``, no algebraic simplification
+        will be attempted on the results. The default (``optimize=True``)
+        results in ``sympy.together`` being called on each expression.
+
+    **Returns:**
+
+    gs : dict
+        A dictionary with as keys the strings <key>/<xin> and as values
+        dictionaries with keys ``'gain'``, ``'gain0'``, ``'poles'``,
+        ``'zeros'``.
+
+    """
     gains = {}
     for key, value in sol.items():
         tf = {}
@@ -201,25 +238,68 @@ def calculate_gains(sol, xin, optimize=True):
     return gains
 
 
-def sol_to_dict(sol, x, optimize=True):
-    ret = {}
-    for index in range(x.shape[0]):
-        sol_current = sympy.together(sol[index]) if optimize else sol[index]
-        ret.update({str(x[index]): sol_current})
-    return ret
+# not used anymore. Superseeded by results.py
+#def sol_to_dict(sol, x, optimize=True):
+#    ret = {}
+#    for index in range(x.shape[0]):
+#        sol_current = sympy.together(sol[index]) if optimize else sol[index]
+#        ret.update({str(x[index]): sol_current})
+#    return ret
 
 
 def apply_substitutions(mna, N, subs):
+    """Apply the given a dictionary of substitutions.
+
+    The actual sustitution is performed calling Sympy's
+    ``subs()``.
+
+    Example of substitution:
+
+    ::
+
+        R1 = 5*R2
+
+
+    The above example can be carried out supplying the dictionary::
+
+        subs = {R1:5*R2}
+
+
+    **Parameters:**
+
+    mna : Sympy matrix
+        The MNA matrix.
+    N : Sympy matrix
+        The constant term N.
+    subs : dict
+        The dictionary of symbols substitutions.
+
+    **Returns:**
+
+    mna, N : ndarrays
+        The same matrices with the substitutions applied.
+
+    """
     mna = mna.subs(subs)
     N = N.subs(subs)
-    return (mna, N)
+    return mna, N
 
 
 def get_variables(circ):
-    """Returns a sympy matrix with the circuit variables to be solved for.
+    """Get a sympy matrix containing the circuit variables to be solved for.
+
+    **Parameters:**
+
+    circ : circuit instance
+        The circuit
+
+    **Returns:**
+    
+    vars : sympy matrix, shape (n, 1)
+        The variables in a column vector.
     """
-    nv_1 = len(circ.nodes_dict) - \
-        1  # numero di soluzioni di tensione (al netto del ref)
+    # numero di soluzioni di tensione (al netto del ref)
+    nv_1 = len(circ.nodes_dict) - 1
 
     # descrizioni dei componenti non definibili in tensione
     idescr = [elem.part_id.upper()
@@ -255,9 +335,44 @@ def _to_real_list(M):
 
 
 def generate_mna_and_N(circ, opts, ac=False, verbose=3):
-    """Generates a symbolic Modified Nodal Analysis matrix and N vector.
+    """Generate a symbolic Modified Nodal Analysis matrix and N vector.
+
+    **Parameters:**
+
+    circ : circuit instance
+        The circuit.
+    opts : dict
+        The options to be used for the generation of the matrices. As of now,
+        the only supported option is ``'r0s'`` which can be set to either 
+        ``True`` or ``False``, and selects whether the equivalent output
+        resistance of the transistors should be taken into account or not.
+    ac : bool, optional
+        Flag to trigger the inclusion of frequency-dependent elements. Defaults
+        to ``False`` currently (but may change).
+    verbose : int, optional
+        Verbosity flag, from ``0`` (silent) to ``6`` (very logorrhoic). Defaults
+        to ``3``.
+
+    **Returns:**
+
+    mna, N : Sympy matrices
+        The MNA matrix and the contant term of symbolic type.
+
+    .. note::
+        
+        Setting ``opts['r0s'] = True``, ie considering all the transistors output
+        resistances, can significantly slow down -- or even prevent by consuming
+        all available memory -- the solution of complex circuits with several
+        active elements.
+
+        We recommend a combination of the following:
+        
+        * setting the above option in simple circuits only,
+        * inserting explicitely the :math:`r_0` you wish to consider at circuit
+          level, 
+        * beefing up your machine with extra RAM and extra computing power,
+        * being patient.
     """
-    #   print options
     n_of_nodes = len(circ.nodes_dict)
     mna = smzeros(n_of_nodes)
     N = smzeros(n_of_nodes, 1)
@@ -345,8 +460,8 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
     for elem in circ:
         if circuit.is_elem_voltage_defined(elem):
             index = mna.shape[0]  # get_matrix_size(mna)[0]
-            mna = expand_matrix(mna, add_a_row=True, add_a_col=True)
-            N = expand_matrix(N, add_a_row=True, add_a_col=False)
+            mna = _expand_matrix(mna, add_a_row=True, add_a_col=True)
+            N = _expand_matrix(N, add_a_row=True, add_a_col=False)
             # KCL
             mna[elem.n1, index] = +1
             mna[elem.n2, index] = -1
@@ -412,7 +527,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
     return (mna, N, subs_g)
 
 
-def expand_matrix(mat, add_a_row=False, add_a_col=False):
+def _expand_matrix(mat, add_a_row=False, add_a_col=False):
     if add_a_row:
         row = smzeros(1, mat.shape[1])
         mat = mat.row_insert(mat.shape[0], row)
@@ -423,24 +538,29 @@ def expand_matrix(mat, add_a_row=False, add_a_col=False):
 
 
 def get_roots(expr):
+    """Given the transfer function ``expr``, returns ``poles, zeros``.
+    """
     num, den = sympy.fraction(expr)
     return sympy.solve(den, s), sympy.solve(num, s)
 
 
 def parse_substitutions(slist):
-    """Generates a substitution dictionary to be passed to solve()
+    """Generates a substitution dictionary from a substitution lists.
+
+    The dictionary is typically then passed to :func:`symbolic_analysis`.
 
     **Parameters:**
 
     slist : a list of strings
         The elements of the list should be according to the syntax
         ``'<part_id1>=<part_id2>'``, eg ``'R2=R1'``, instructing the simulator
-         to use the value of R1 (R1) instead of R2.
+        to use the value of R1 (R1) instead of R2.
 
     **Returns:**
 
     subs : dict
-        the dictionary of symbols to be passed to :func:`solve`.
+        the dictionary of symbols to be passed to :func:`symbolic_analysis`.
+
     """
     subs = {}
     for l in slist:
