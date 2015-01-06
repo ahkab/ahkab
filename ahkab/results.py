@@ -897,6 +897,30 @@ class symbolic_solution():
             self.save()
 
     def as_symbol(self, variable):
+        """Converts a string to a symbolic variable.
+
+        This symbol may then be used by the user as an atom to construct
+        new expressions, modify the results expressions or it can be passed
+        to Sympy's functions.
+
+        **Parameters:**
+
+        variable : string
+            The string that identifies the variable. Eg. ``'R1'`` for the variable
+            corresponding to the resistance of the resistor ``R1``. Note that the
+            case is disregarded.
+
+        **Returns:**
+
+        symbol : Sympy symbol
+            The corresponding symbol, if found.
+
+        **Raises:**
+
+        ValueError : exception
+            In case no corresponding symbol is found.
+        """
+
         symbs = filter(lambda x: x.name.lower() == variable.lower(), self._symbols)
         if len(symbs) == 0:
             raise ValueError, "No symbol %s in the results set."%(variable,)
@@ -904,17 +928,64 @@ class symbolic_solution():
             return symbs[0]
             
     def as_symbols(self, spacedstr):
+        """Convenience function to call :func:`as_symbol` multiple times.
+
+        **Parameters:**
+
+        spacedstr : string,
+            A string containing several symbol identifiers separated by spaces.
+            Eg. ``'R1 C2 L3'``.
+
+        **Returns:**
+
+        (s1, s2, ...) : tuple of Sympy symbol instances
+            The symbols corresponding to the identifiers in the string supplied,
+            ordered as the identifiers in the string.
+
+        **Raises:**
+
+        ValueError : exception
+            In case any corresponding symbol is not found.
+        """
         return map(self.as_symbol, spacedstr.split())
         
     def save(self):
+        """Write the results to disk.
+        
+        It is necessary first to set the ``filename`` attribute, indicating
+        which file to write to.
+
+        **Raises:**
+        
+        RuntimeError : exception
+            If the `filename` attribute is not set.
+        """
         if not self.filename:
-            raise Exception, "Writing the results to file requires setting the \
+            raise RuntimeError, "Writing the results to file requires setting the \
                               'filename' attribute"
         with open(self.filename, 'wb') as fp:
             pickle.dump(self, fp, protocol=2)
     
     @staticmethod
     def load(filename):
+        """Static method to load a symbolic solution from disk.
+
+        **Parameters:**
+
+        filename : str
+            The filename corresponding to the file to load from.
+
+        **Returns:**
+
+        sol : symbolic solution instance
+            The solution instance loaded from disk.
+
+        .. warning::
+
+            This method employs ``pickle.load``, which is to be used exclusively
+            on trusted data. **Only load trusted simulation files!**
+
+        """
         with open(filename, 'rb') as fp:
             asolution = pickle.load(fp)
         return asolution
@@ -958,6 +1029,7 @@ class symbolic_solution():
         return self.results[str(name).upper()]
 
     def get(self, name, default=None):
+        """Get the solution corresponding to a variable."""
         name = str(name).upper()
         try:
             return self.results[name]
@@ -981,6 +1053,7 @@ class symbolic_solution():
         return self.results.values()
 
     def items(self):
+        """Get all solutions."""
         return self.results.items()
 
     # iterator methods
@@ -989,6 +1062,7 @@ class symbolic_solution():
         return self
 
     def next(self):
+        """Iterator method."""
         if self.iter_index == len(self.results.keys())-1:
             self.iter_index = 0
             raise StopIteration
@@ -1013,6 +1087,7 @@ class pz_solution(solution, _mutable_data):
     """
     def __init__(self, circ, poles, zeros, outfile):
         solution.__init__(self, circ, outfile)
+        self.sol_type = "PZ"
         nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         self.poles = np.sort_complex(np.array(poles).reshape((-1,)))
         self.zeros = np.sort_complex(np.array(zeros).reshape((-1,)))
@@ -1055,9 +1130,6 @@ class pz_solution(solution, _mutable_data):
                "Poles: %s\nZeros: %s") % \
                (self.netlist_title, self.netlist_file, list(self.poles), 
                 list(self.zeros))
-
-    def get_type(self):
-        return "PZ"
 
     # Access as a dictionary BY VARIABLE NAME:
     def __getitem__(self, name):
