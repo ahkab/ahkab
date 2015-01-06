@@ -264,7 +264,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
     if (max_x is not None and max_x > 0) or max_dx is not None:
         from . import implicit_euler
         first_iterations_number = max_x if max_x is not None else 1
-        first_iterations_number = max( first_iterations_number, max_dx) \
+        first_iterations_number = max( first_iterations_number, max_dx+1) \
                                   if max_dx is not None else first_iterations_number
     else:
         first_iterations_number = 0
