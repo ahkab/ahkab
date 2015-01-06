@@ -413,9 +413,14 @@ class NetlistTest(unittest.TestCase):
 
     sim_opts : dict, optional
         A dictionary containing the options to be used for the test.
+
+    verbose : int
+        The verbosity level to be used in the test. From 0 (silent) to
+        6 (verbose). Notice higher verbosity values usually result in
+        higher coverage. Defaults to 6.
     """
 
-    def __init__(self, test_id, er=1e-6, ea=1e-9, sim_opts={}):
+    def __init__(self, test_id, er=1e-6, ea=1e-9, sim_opts={}, verbose=6):
         unittest.TestCase.__init__(self, methodName='test')
         self.test_id = test_id
         self.er = er
@@ -424,6 +429,7 @@ class NetlistTest(unittest.TestCase):
         self.ref_data = {} # the reference results will be loaded here
         self._sim_opts = sim_opts
         self._reset_opts = {}
+        self.verbose=verbose
 
     def _set_sim_opts(self, sim_opts):
         for opt in sim_opts.keys():
@@ -534,7 +540,7 @@ class NetlistTest(unittest.TestCase):
         start = time.time()
         res = main(filename=self.netlist,
                    outfile=os.path.join(self.reference_path, self.test_id),
-                   verbose=0)
+                   verbose=self.verbose)
         stop = time.time()
         times = stop - start
         print("done.\nThe test took %f s" % times)
@@ -652,7 +658,8 @@ class APITest(unittest.TestCase):
         Should we skip the test on Travis? Set to ``True`` for long tests
     """
 
-    def __init__(self, test_id, circ, an_list, er=1e-6, ea=1e-9, sim_opts={}, skip_on_travis=False):
+    def __init__(self, test_id, circ, an_list, er=1e-6, ea=1e-9, sim_opts={},
+                 skip_on_travis=False):
         unittest.TestCase.__init__(self, methodName='test')
         self.test_id = test_id
         self.er = er

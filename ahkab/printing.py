@@ -48,7 +48,7 @@ def print_analysis(an):
             print(" %s=%s" % (x, an[x]), end="")
         print("")
     elif an["type"] == "dc":
-        print(".dc", an["source_name"], "start =", an["start"], "stop =", an["stop"], "step =", an["step"], "type =", an["stype"])
+        print(".dc %(source)s start=%(start)g stop=%(stop)g step=%(step)g type=%(sweep_type)s" % an)
     elif an["type"] == "tran":
         sys.stdout.write(".tran tstep=" + str(an["tstep"]) + " tstop=" + str(
             an["tstop"]) + " tstart=" + str(an["tstart"]))
