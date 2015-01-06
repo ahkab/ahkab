@@ -389,7 +389,7 @@ def check_circuit(circ):
     if len(circ.nodes_dict) < 2:
         test_passed = False
         reason = "the circuit has less than two nodes."
-    elif not circ.nodes_dict.has_key(0):
+    elif not 0 in circ.nodes_dict:
         test_passed = False
         reason = "the circuit has no ref. Quitting."
     elif len(circ) < 2:
