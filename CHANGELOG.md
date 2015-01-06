@@ -1,6 +1,34 @@
 <!-- Name: Changelog -->
 #Changelog
 
+## Changelog for v 0.12
+
+Version 0.12 represents the culmination of efforts dating back to May and contains 142 commits.
+
+This release has no new features, but it has several bug fixes and it introduces Python3 support (!).
+
+Moreover, many commits were devoted to improving the documentation: you can find the new, improved documentation at http://ahkab.readthedocs.org/en/latest/
+
+### Features added:
+
+*None.*
+
+### Changes from contributors and pull requests merged:
+
+*None.* 
+
+### Bugs fixed, short list:
+
+* BUGFIX: Respect the user config when saving to file.
+* BUGFIX: Respect CLI-specified transient DFs.
+* BUGFIX: use the warning interface.
+* BUGFIX: always set the simulation options before running tests.
+* BUGFIX: fix detection of wd
+* BUGFIX: .include now recovers the path relative to the netlist
+* BUGFIX: fix printing of .DC statements.
+* BUGFIX: fix comparison of int and NoneType (new Python behaviour)
+
+
 ## Changelog for v 0.11
 
 Version 0.11 represent the culmination of four months of efforts.
