@@ -65,7 +65,7 @@ dc_lin_step = 'LIN'
 dc_sweep_skip_allowed = True
 
 # transient
-default_tran_method = "IMPLICIT_EULER"
+default_tran_method = "TRAP"
 hmin = 1e-20
 transient_max_time_iter = 0  # disabled
 transient_max_nr_iter = 20

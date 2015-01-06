@@ -10,12 +10,12 @@ from ahkab import main
 def get_reference_path():
     test_id = 'pz_spice'
     wd = os.getcwd()
-    if os.path.split(wd)[1] == 'ahkab':
-        reference_path = os.path.join(wd, 'tests', test_id)
+    if os.path.split(wd)[1] == test_id:
+        reference_path = "."
     elif os.path.split(wd)[1] == 'tests':
         reference_path = os.path.join(wd, test_id)
     else:
-        reference_path = "."
+        reference_path = os.path.join(wd, 'tests', test_id)
     return reference_path
 
 def _check_singularities(res, ref, atol=1e-4, rtol=1e-3):
