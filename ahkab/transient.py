@@ -263,6 +263,11 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
     # this is because we don't have any dx when we start, nor any past point value
     if (max_x is not None and max_x > 0) or max_dx is not None:
         from . import implicit_euler
+        first_iterations_number = max_x if max_x is not None else 1
+        first_iterations_number = max( first_iterations_number, max_dx) \
+                                  if max_dx is not None else first_iterations_number
+    else:
+        first_iterations_number = 0
     
     printing.print_info_line(("MNA (reduced):", 5), verbose)
     printing.print_info_line((str(mna), 5), verbose)
@@ -308,7 +313,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
     tick = ticker.ticker(increments_for_step=1)
     tick.display(verbose > 1)
     while time < tstop:
-        if iter_n < max(max_x, max_dx_plus_1):
+        if iter_n < first_iterations_number:
             x_coeff, const, x_lte_coeff, prediction, pred_lte_coeff = \
             implicit_euler.get_df((thebuffer.get_df_vector()[0],), tstep, \
             predict=(use_step_control and iter_n >= start_pred_iter))
