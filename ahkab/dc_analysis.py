@@ -630,7 +630,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
     # H(x) = N + T(x)
     # lets say: J = dF/dx = mna + dT(x)/dx
     # J*dx = -1*(mna*x+N+T(x))
-    # dT/dx � lo jacobiano -> g_eq (o gm)
+    # dT/dx e' lo jacobiano -> g_eq (o gm)
     # print_steps = False
     # locked_nodes = get_locked_nodes(element_list)
     mna_size = mna.shape[0]
@@ -638,11 +638,11 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
     tick = ticker.ticker(increments_for_step=1)
     tick.display(print_steps)
     if x is None:
+        # if no guess was specified, its all zeros
         x = np.zeros((mna_size, 1))
-                      # if no guess was specified, its all zeros
     else:
         if not x.shape[0] == mna_size:
-            raise Exception("x0s size is different from expected: " + \
+            raise ValueError("x0s size is different from expected: " + \
                 str(x.shape[0]) + " " + str(mna_size))
     if T is None:
         printing.print_warning(
@@ -650,8 +650,13 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
         T = np.zeros((mna_size, 1))
 
     sparse = mna_size > options.dense_matrix_limit
+    # We allocate the matrices once and then reuse them
     if sparse:
         mna = scipy.sparse.coo_matrix(mna)
+        J = scipy.sparse.lil_matrix((mna_size, mna_size))
+    else:
+        J = np.zeros((mna_size, mna_size))
+    Tx = np.zeros((mna_size, 1))
     converged = False
     iteration = 0
     while iteration < MAXIT:  # newton iteration counter
@@ -659,18 +664,18 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
         tick.step()
         if nonlinear_circuit:
             # build dT(x)/dx (stored in J) and Tx(x)
-            J, Tx = build_J_and_Tx(x, mna_size, circ, time, sparse)
-            J = J + mna
-            residuo = mna.dot(x) + T + Tx
-        else:
-            J = mna
-            residuo = mna.dot(x) + T
+            J[:, :] = 0.0
+            Tx[:, 0] = 0.0
+            for elem in circ:
+                if elem.is_nonlinear:
+                    update_J_and_Tx(J, Tx, x, elem, time)
+        residuo = mna.dot(x) + T + nonlinear_circuit*Tx
+
         if sparse:
-            J = scipy.sparse.csc_matrix(J)
-            lu = scipy.sparse.linalg.splu(J)
+            lu = scipy.sparse.linalg.splu(scipy.sparse.csc_matrix(mna + nonlinear_circuit*J))
             dx = lu.solve(-residuo)
         else:
-            dx = np.linalg.solve(J, -residuo)
+            dx = np.linalg.solve(mna + nonlinear_circuit*J, -residuo)
         x = x + get_td(dx, locked_nodes, n=iteration) * dx
         if not nonlinear_circuit:
             converged = True
@@ -689,18 +694,6 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
     else:
         convergence_by_node = []
     return (x, residuo, converged, iteration, convergence_by_node)
-
-
-def build_J_and_Tx(x, mna_size, element_list, time, sparse=False):
-    if sparse:
-        J = scipy.sparse.lil_matrix((mna_size, mna_size))
-    else:
-        J = np.zeros((mna_size, mna_size))
-    Tx = np.zeros((mna_size, 1))
-    for elem in element_list:
-        if elem.is_nonlinear:
-            update_J_and_Tx(J, Tx, x, elem, time)
-    return J, Tx
 
 
 def update_J_and_Tx(J, Tx, x, elem, time):
@@ -800,15 +793,15 @@ def generate_mna_and_N(circ, verbose=3):
     MNA e N vengono creati direttamente della dimensione det. dal numero dei nodi, poi se
     ci sono voltage sources vengono allargate.
 
-    Il vettore incognita � fatto cos�:
+    Il vettore incognita e' fatto cosi:
     x vettore colonna di lunghezza (N_nodi - 1) + N_vsources, i primi N_nodi valori di x, corrispondono
     alle tensioni ai nodi, gli altri alle correnti nei generatori di tensione.
     Le tensioni nodali sono ordinate tramite i numeri interni dei nodi, in ordine CRESCENTE, saltando
     il nodo 0, preso a riferimento.
-    L'ordine delle correnti nei gen di tensione � det. dall'ordine in cui essi vengono incontrati
+    L'ordine delle correnti nei gen di tensione e' det. dall'ordine in cui essi vengono incontrati
     scorrendo `circ`. Viene sempre usata la convenzione normale.
 
-    Il sistema � cos� fatto: MNA*x + N = 0
+    Il sistema e' cosi' fatto: MNA*x + N = 0
 
     Richiede in ingresso la descrizione del circuito, circ.
     Restituisce: (MNA, N)
