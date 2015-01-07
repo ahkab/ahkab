@@ -32,7 +32,7 @@
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
         <p><a href="https://travis-ci.org/ahkab/ahkab"><img src="https://travis-ci.org/ahkab/ahkab.png?branch=master" alt="Build Status"></a> <a href="https://coveralls.io/r/ahkab/ahkab?branch=master"><img src="https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master" alt="Coverage Status"></a>
-<a href="https://pypi.python.org/pypi/ahkab/"><img src="http://img.shields.io/badge/version-0.09-brightgreen.png" alt="PyPi version"></a> <a href="https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE"><img src="http://img.shields.io/badge/license-GPL%20v2-brightgreen.png" alt="GPLv2 license"></a></p>
+<a href="https://pypi.python.org/pypi/ahkab/"><img src="http://img.shields.io/badge/version-0.12-brightgreen.png" alt="PyPi version"></a> <a href="https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE"><img src="http://img.shields.io/badge/license-GPL%20v2-brightgreen.png" alt="GPLv2 license"></a></p>
 
 <h3>
 <a id="news" class="anchor" href="#news" aria-hidden="true"><span class="octicon octicon-link"></span></a>News!</h3>
@@ -75,12 +75,14 @@
 
 <p>An experimental <code>pypy</code> branch is available on Github for those who are mostly interested in the symbolic capabilities - be sure to install numpypy first!.</p>
 
-<p>The results are saved to disk, plotted or printed to stdout and can be read/processed by the most common tools (eg. <a href="http://www.gnu.org/software/octave/">Octave</a>, <a href="http://www.gnuplot.info/">gnuplot</a>, <a href="http://www.mathworks.com/products/matlab/">Matlab</a>, <a href="http://www.telltronics.org/software/gwave/">gwave</a> and others)</p>
-
 <h3>
 <a id="download-and-install" class="anchor" href="#download-and-install" aria-hidden="true"><span class="octicon octicon-link"></span></a>Download and install</h3>
 
-<p>There are no packages for the time being (this program is at an early development stage). Go to <a href="https://github.com/ahkab/ahkab">ahkab on github</a> and follow the instructions to check out the code. You can find the list of the dependencies in the <a href="https://github.com/ahkab/ahkab/wiki/Install:-Notes">Install notes</a>.</p>
+<p>That's so easy! Check out the code from Github, or install from a tarball or get ahkab off PYPI with a single command:</p>
+
+<pre><code># pip install ahkab</code></pre>
+
+<p>Notice pip will try to satisfy the dependencies for you. You may want to install them yourself with your OS package manager before running the above command.</p>
 
 <h3>
 <a id="run-standalone" class="anchor" href="#run-standalone" aria-hidden="true"><span class="octicon octicon-link"></span></a>Run standalone</h3>
@@ -97,7 +99,7 @@
 
 <p>For the time being, please refer to the documentation, in particular the <a href="http://ahkab.readthedocs.org/en/latest/help/Netlist-Syntax.html">netlist syntax page</a> for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.</p>
 
-<p>The latter option is shown briefly in the <strong><a href="http://ahkab.readthedocs.org/en/latest/examples/Python_API.html">Python API</a></strong> doc page. The code comes with docstrings associated with most functions, type <code>help(ahkab.function_name)</code>.</p>
+<p>The latter option is shown briefly in the <strong><a href="http://ahkab.readthedocs.org/en/latest/examples/Python_API.html">Python API</a></strong> doc page.</p>
 
 <p>Have fun! Don't forget to report back cool simulations or any bug may you run into!</p>
 
