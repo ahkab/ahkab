@@ -1,8 +1,6 @@
  ahkab
 ======
 
-***a SPICE-like electronic circuit simulator written in Python***
-
 The code should be easy to read and modify, the main language is Python
 -- 2 or 3 -- and it is platform-independent.\ |githalytics.com alpha|
 
@@ -61,9 +59,11 @@ read/processed by the most common tools (eg.
 Install
 -------
 
-The program requires: \* the Python interpreter version 2 or 3 (at least
-v.2.6 for Python2, v.3.3 for Python3), \* numpy>=1.7.0, scipy>0.11.1,
-matplotlib and sympy.
+The program requires:
+
+- the Python interpreter version 2 or 3 (at least v.2.6 for Python2,
+  v.3.3 for Python3), 
+- numpy>=1.7.0, scipy>0.11.1, matplotlib and sympy.
 
 If you need more information about the dependencies, check the `Install
 notes <https://github.com/ahkab/ahkab/wiki/Install:-Notes>`__.
@@ -156,8 +156,8 @@ Crowther <https://github.com/weilawei>`__.
 
 **Code:** the module ``py3compat.py`` is (c) 2013 - the Jinja team.
 
-**Deps:** many thanks to the authors of ``numpy``, ``scipy`` and
-``sympy``!
+**Deps:** many thanks to the authors of ``numpy``, ``scipy``,
+and ``matplotlib`` and ``sympy``!
 
 Bugs and patches
 ~~~~~~~~~~~~~~~~
