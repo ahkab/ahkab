@@ -499,29 +499,27 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
                 sys.exit(33)
 
     for elem in circ:
-        if circuit.is_elem_voltage_defined(elem):
-            if isinstance(elem, devices.Inductor):
-                if ac:
-                    # find its index to know which column corresponds to its
-                    # current
-                    this_index = circ.find_vde_index(elem.part_id, verbose=0)
-                    for cd in elem.coupling_devices:
-                        if cd.is_symbolic:
-                            M = _symbol_factory(
-                                cd.part_id, real=True, positive=True)
-                        else:
-                            M = cd.K
-                        # get `part_id` of the other inductor (eg. "L32")
-                        other_id_wdescr = cd.get_other_inductor(elem.part_id)
-                        # find its index to know which column corresponds to
-                        # its current
-                        other_index = circ.find_vde_index(
-                            other_id_wdescr, verbose=0)
-                        # add the term.
-                        mna[pre_vde + this_index,
-                            pre_vde + other_index] += -s * M
+        if ac and isinstance(elem, devices.Inductor):
+            # find its index to know which column corresponds to its
+            # current
+            this_index = circ.find_vde_index(elem.part_id, verbose=0)
+            for cd in elem.coupling_devices:
+                if cd.is_symbolic:
+                    M = _symbol_factory(
+                        cd.part_id, real=True, positive=True)
                 else:
-                    pass
+                    M = cd.K
+                # get `part_id` of the other inductor (eg. "L32")
+                other_id_wdescr = cd.get_other_inductor(elem.part_id)
+                # find its index to know which column corresponds to
+                # its current
+                other_index = circ.find_vde_index(
+                    other_id_wdescr, verbose=0)
+                # add the term.
+                mna[pre_vde + this_index,
+                    pre_vde + other_index] += -s * M
+        else:
+            pass
 
     # all done
     return (mna, N, subs_g)
