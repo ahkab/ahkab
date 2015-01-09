@@ -378,8 +378,8 @@ class op_solution(solution, _mutable_data):
                 v = v + x[elem.n1-1] if elem.n1 != 0 else v
                 v = v - x[elem.n2-1] if elem.n2 != 0 else v
                 vs = 0
-                vs = vs + x[elem.n1-1] if elem.n1 != 0 else vs
-                vs = vs - x[elem.n2-1] if elem.n2 != 0 else vs
+                vs = vs + x[elem.n1-1] if elem.sn1 != 0 else vs
+                vs = vs - x[elem.n2-1] if elem.sn2 != 0 else vs
                 tot_power = tot_power - v*vs*elem.alpha
             elif isinstance(elem, devices.ISource):
                 v = 0
