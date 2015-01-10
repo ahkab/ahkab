@@ -38,7 +38,7 @@ def test():
     mycircuit.add_vsource(part_id="V1", n1="in", n2=gnd, dc_value=5, ac_value=1)
 
     if cli:
-        printing.print_circuit(mycircuit)
+        print(mycircuit)
 
     subs = symbolic.parse_substitutions(('E2=E1', 'E3=E1', 'R01=R00', 'R02=R00',
                                          'R11=R00', 'R10=R00', 'C11=C10', 'Rf2=Rf1',
