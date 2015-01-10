@@ -583,4 +583,4 @@ def _symbol_factory(name, **options):
             filtered_options.update({i:options[i]})
         else:
             pass # discarded
-    return sympy.Symbol(name, **filtered_options)
+    return sympy.Symbol(name.upper(), **filtered_options)
