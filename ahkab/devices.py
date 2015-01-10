@@ -641,8 +641,18 @@ class GISource(Component):
 
     .. image:: images/elem/vccs.svg
 
-    Source port is a short circuit, dest. port is a ideal current source:
-    Io = alpha * Is
+    The source port is an open circuit, the output port is an ideal current
+    source:
+
+    .. math::
+
+        \\left\\{
+        \\begin{array}{ll}
+            I_s = 0\\\\
+            I_o = \\alpha \\cdot (V(sn_1) - V(sn_2))
+        \\end{array}
+        \\right.
+        
 
     Where a positive I enters in n+ and exits from n-
 
