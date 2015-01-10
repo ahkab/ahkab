@@ -592,13 +592,21 @@ class VSource(Component):
 
 
 class EVSource(Component):
-
-    """Linear voltage controlled voltage source (ideal)
+    """Linear voltage-controlled voltage source
 
     .. image:: images/elem/vcvs.svg
 
-    Source port is a open circuit, dest. port is a ideal voltage source:
-    (Vn1 - Vn2) = alpha * (Vsn1 - Vsn2)
+    Source port is an open circuit, the destination port is an ideal voltage
+    source.
+
+    .. math::
+
+        \\left\\{
+        \\begin{array}{ll}
+            I_s = 0\\\\
+            (Vn_1 - Vn_2) = \\alpha * (Vsn_1 - Vsn_2)
+        \\end{array}
+        \\right.
 
     n1: + node, output port
     n2: - node, output port
