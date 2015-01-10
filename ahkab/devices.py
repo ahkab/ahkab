@@ -704,26 +704,37 @@ class HVSource(Component):  # TODO: fixme
     def __str__(self):
         raise Exception("HVSource not implemented. TODO")
 
-class FISource(Component):  # TODO: fixme
-
+class FISource(Component):
     """Linear current-controlled current source
 
     .. image:: images/elem/cccs.svg
 
+    Source port is a short circuit, dest. port is a ideal current source:
+
+    .. math::
+
+        I_o = \\alpha \\cdot I_s
+
+    Where a positive I enters in n+ and exits from n-
+
+    n1: + node, output port
+    n2: - node, output port
+    alpha: prop constant between the currents
+
     """
-    def __init__(self, part_id='F', n1=None, n2=None, value=None, sn1=None, sn2=None):
-        print("HVSource not implemented. TODO")
+    def __init__(self, part_id='F', n1=None, n2=None, value=None, source_id=None):
         self.part_id = part_id
         self.n1 = n1
         self.n2 = n2
+        self.source_id = source_id
         self.alpha = value
-        self.sn1 = sn1
-        self.sn2 = sn2
         self.is_nonlinear = False
         self.is_symbolic = True
 
-    def __str__(self):
-        raise Exception("FVSource not implemented. TODO")
+    def get_netlist_elem_line(self, nodes_dict):
+        return "%s %s %s %s %g" % (self.part_id, nodes_dict[self.n1],
+                                nodes_dict[self.n2], self.source_id,
+                                self.alpha)
 
 
 #

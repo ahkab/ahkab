@@ -573,6 +573,12 @@ def print_elements_ops(circ, x):
             v = v - x[elem.n2 - 1] if elem.n2 != 0 else v
             tot_power = tot_power - v * x[nv_1 + i_index, 0]
             i_index = i_index + 1
+        elif isinstance(elem, devices.FISource):
+            local_i_index = circ.find_vde_index(elem.source_id, verbose=0)
+            v = 0.
+            v = v + x[elem.n1 - 1] if elem.n1 != 0 else v
+            v = v - x[elem.n2 - 1] if elem.n2 != 0 else v
+            tot_power = tot_power - v * elem.alpha * x[nv_1 + local_i_index, 0]
         elif circuit.is_elem_voltage_defined(elem):
             i_index = i_index + 1
     print("TOTAL POWER: " + str(float(tot_power)) + " W")
@@ -836,6 +842,10 @@ def generate_mna_and_N(circ, verbose=3):
         elif circuit.is_elem_voltage_defined(elem):
             pass
             # we'll add its lines afterwards
+        elif isinstance(elem, devices.FISource):
+            # we add these last, they depend on voltage sources
+            # to sense the current
+            pass
         else:
             print("dc_analysis.py: BUG - Unknown linear element. Ref. #28934")
     # process vsources
@@ -872,6 +882,13 @@ def generate_mna_and_N(circ, verbose=3):
                 print("dc_analysis.py: BUG - found an unknown voltage_def elem.")
                 print(elem)
                 sys.exit(33)
+
+    # iterate again for devices that depend on voltage-defined ones.
+    for elem in circ:
+        if isinstance(elem, devices.FISource):
+            local_i_index = circ.find_vde_index(elem.source_id, verbose=0)
+            mna[elem.n1, n_of_nodes + local_i_index] = mna[elem.n1, n_of_nodes + local_i_index] + elem.alpha
+            mna[elem.n2, n_of_nodes + local_i_index] = mna[elem.n2, n_of_nodes + local_i_index] - elem.alpha
 
     # Seems a good place to run some sanity check
     # for the time being we do not halt the execution

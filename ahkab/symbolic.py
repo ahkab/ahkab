@@ -446,6 +446,9 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gd
             mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - gd
             mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + gd
+        elif isinstance(elem, devices.FISource):
+            # These are added after all VDEs have been accounted for
+            pass
         elif isinstance(elem, devices.InductorCoupling):
             pass
             # this is taken care of within the inductors
@@ -518,6 +521,14 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
                 # add the term.
                 mna[pre_vde + this_index,
                     pre_vde + other_index] += -s * M
+        elif isinstance(elem, devices.FISource):
+            source_current_index = circ.find_vde_index(elem.source_id, verbose=0)
+            if elem.is_symbolic:
+                F = _symbol_factory(elem.part_id, real=True)
+            else:
+                F = elem.alpha
+            mna[elem.n1, pre_vde + source_current_index] += +F
+            mna[elem.n2, pre_vde + source_current_index] += -F
         else:
             pass
 
