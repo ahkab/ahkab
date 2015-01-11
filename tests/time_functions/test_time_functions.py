@@ -8,6 +8,7 @@ def test():
     """Test pulse and sin API"""
     step = devices.pulse(v1=0, v2=1, td=500e-9, tr=1e-12, pw=1, tf=1e-12, per=2)
     damped_sin = devices.sin(vo=0, va=1, td=500e-9, freq=15e3, theta=5e3, phi=90.)
+    exp = devices.exp(v1=.5, v2=-.05, td1=0, tau1=20e-6, td2=400e-6, tau2=20e-6)
 
     mycircuit = circuit.Circuit(title="Butterworth Example circuit", filename=None)
 
@@ -20,10 +21,9 @@ def test():
     mycircuit.add_capacitor(name="C2", n1="n4", n2=gnd, value=155.12e-9)
     mycircuit.add_resistor(name="R2", n1="n4", n2=gnd, value=1.2e3)
 
-    mycircuit.add_vsource("V1", n1="n1", n2='n5', dc_value=5, ac_value=.5, function=step)
-    mycircuit.add_vsource("V2", n1="n5", n2=gnd, dc_value=5, ac_value=.5, function=damped_sin)
-
-    #printing.print_circuit(mycircuit)
+    mycircuit.add_vsource("V1", n1="n1", n2='n5', dc_value=3.3333, ac_value=.33333, function=step)
+    mycircuit.add_vsource("V2", n1="n5", n2='n6', dc_value=3.3333, ac_value=.33333, function=damped_sin)
+    mycircuit.add_vsource("V3", n1="n6", n2=gnd, dc_value=3.3333, ac_value=.33333, function=exp)
 
     op_analysis = ahkab.new_op(outfile='time_functions')
     ac_analysis = ahkab.new_ac(start=1e3, stop=1e5, points=100, outfile='time_functions')
