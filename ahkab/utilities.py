@@ -118,15 +118,6 @@ def check_file(filename):
         ret = True
     return ret
 
-# Use scipy.factorial
-
-
-def fact(num):
-    """Returns: num!"""
-    if num == 1:
-        return 1
-    return reduce(operator.mul, range(2, num + 1))
-
 
 class combinations:
 
