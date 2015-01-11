@@ -523,69 +523,6 @@ def op_analysis(circ, x0=None, guess=True, outfile=None, verbose=3):
     return opsolution
 
 
-def print_elements_ops(circ, x):
-    tot_power = 0
-    i_index = 0
-    nv_1 = len(circ.nodes_dict) - 1
-    print("OP INFORMATION:")
-    for elem in circ:
-        ports_v_v = []
-        if hasattr(elem, "print_op_info"):
-            if elem.is_nonlinear:
-                oports = elem.get_output_ports()
-                for index in range(len(oports)):
-                    dports = elem.get_drive_ports(index)
-                    ports_v = []
-                    for port in dports:
-                        tempv = 0
-                        if port[0]:
-                            tempv = x[port[0] - 1]
-                        if port[1]:
-                            tempv = tempv - x[port[1] - 1]
-                        ports_v.append(tempv)
-                ports_v_v.append(ports_v)
-            else:
-                port = (elem.n1, elem.n2)
-                tempv = 0
-                if port[0]:
-                    tempv = x[port[0] - 1]
-                if port[1]:
-                    tempv = tempv - x[port[1] - 1]
-                ports_v_v = ((tempv,),)
-            elem.print_op_info(ports_v_v)
-            print("-------------------")
-        if isinstance(elem, devices.GISource):
-            v = 0
-            v = v + x[elem.n1 - 1] if elem.n1 != 0 else v
-            v = v - x[elem.n2 - 1] if elem.n2 != 0 else v
-            vs = 0
-            vs = vs + x[elem.sn1 - 1] if elem.sn1 != 0 else vs
-            vs = vs - x[elem.sn2 - 1] if elem.sn2 != 0 else vs
-            tot_power = tot_power - v * vs * elem.alpha
-        elif isinstance(elem, devices.ISource):
-            v = 0
-            v = v + x[elem.n1 - 1] if elem.n1 != 0 else v
-            v = v - x[elem.n2 - 1] if elem.n2 != 0 else v
-            tot_power = tot_power - v * elem.I()
-        elif isinstance(elem, devices.VSource) or isinstance(elem, devices.EVSource):
-            v = 0
-            v = v + x[elem.n1 - 1] if elem.n1 != 0 else v
-            v = v - x[elem.n2 - 1] if elem.n2 != 0 else v
-            tot_power = tot_power - v * x[nv_1 + i_index, 0]
-            i_index = i_index + 1
-        elif isinstance(elem, devices.FISource):
-            local_i_index = circ.find_vde_index(elem.source_id, verbose=0)
-            v = 0.
-            v = v + x[elem.n1 - 1] if elem.n1 != 0 else v
-            v = v - x[elem.n2 - 1] if elem.n2 != 0 else v
-            tot_power = tot_power - v * elem.alpha * x[nv_1 + local_i_index, 0]
-        elif circuit.is_elem_voltage_defined(elem):
-            i_index = i_index + 1
-    print("TOTAL POWER: " + str(float(tot_power)) + " W")
-
-    return None
-
-
 def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=False, vector_norm=lambda v: max(abs(v)), debug=True):
     """
     Solves a problem like F(x) = 0 using the Newton Algorithm with a variable damping td.
