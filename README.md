@@ -12,7 +12,7 @@ The code should be easy to read and modify, the main language is Python -- 2 or 
 My resources are limited these days, so the much-needed work is proceeding slowly, albeit hopefully steadily. If you are interested and you would like to contribute to refactoring or documenting a particular feature, it would be very welcome.
 
 [![Build Status](https://travis-ci.org/ahkab/ahkab.png?branch=master)](https://travis-ci.org/ahkab/ahkab) [![Coverage Status](https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master)](https://coveralls.io/r/ahkab/ahkab?branch=master)
-[![PyPi version](http://img.shields.io/badge/version-0.12-brightgreen.png)](https://pypi.python.org/pypi/ahkab/) [![GPLv2 license](http://img.shields.io/badge/license-GPL%20v2-brightgreen.png)](https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE)
+[![PyPi version](http://img.shields.io/badge/version-0.12-brightgreen.png)](https://pypi.python.org/pypi/ahkab/) [![GPLv2 license](http://img.shields.io/badge/license-GPL%20v2-brightgreen.png)](https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE) [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.13774.svg)](http://dx.doi.org/10.5281/zenodo.13774)
 <!--- [![PyPi downloads](https://pypip.in/download/ahkab/badge.png)](https://pypi.python.org/pypi/ahkab/) --->
 
 
@@ -102,15 +102,22 @@ This project was born when I was an enthusistic undergrad, apparently with plent
 
 I am grateful to prof. Brambilla for teaching one of the most interesting courses of my university years. -GV
 
+### Bugs and patches ###
+
+Does it work? Bugs? Do you have patches? Did you run some noteworthy simulation? Let me know! Feedback is very welcome, my [email address](http://tinymailto.com/5310) is available after a captcha.
+
+### Support the development with a donation ###
+
+If you wish to support the development of `ahkab`, ***please donate to cancer research:***
+
+* **[Association for International Cancer Research *(eng)*](http://www.aicr.org.uk/donate.aspx)**,
+  or
+* **[Fond. IRCCS Istituto Nazionale dei Tumori *(it)*](http://www.istitutotumori.mi.it/modules.php?name=Content&pa=showpage&pid=24)**.
+
 ### Credits ###
-**Contributors:** [Giuseppe Venturini](https://github.com/ggventurini), [Ian Daniher](https://github.com/itdaniher), [Rob Crowther](https://github.com/weilawei).
+**Authors:** [Giuseppe Venturini](https://github.com/ggventurini), with contributions from [Ian Daniher](https://github.com/itdaniher) and [Rob Crowther](https://github.com/weilawei).
 
 **Code:** the module `py3compat.py` is (c) 2013 - the Jinja team.
 
-**Deps:** many thanks to the authors of `numpy`, `scipy` and `sympy`!
+**Dependencies:** many thanks to the authors of `numpy`, `scipy` and `sympy`!
 
-### Bugs and patches ###
-
-Note that _I often add new functionality at the expense of breaking stuff_. Most likely I will introduce a new feature even if that means breaking a couple of others. It should get fixed soon, but if you have a bit of time to spare, you can send me a pull request or a patch. :)
-
-Does it work? Bugs? Do you have patches? Did you run some noteworthy simulation? Let me know! Feedback is very welcome, my [email address](http://tinymailto.com/5310) is available after a captcha.
