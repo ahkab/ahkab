@@ -18,7 +18,11 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This file holds miscellaneous utility functions needed by the simulator.
+This module holds miscellaneous utility functions.
+
+Module reference
+################
+
 """
 
 from __future__ import (unicode_literals, absolute_import,
@@ -49,10 +53,10 @@ def expand_matrix(matrix, add_a_row=False, add_a_col=False):
         If set to ``True`` a column is appended.
 
     **Returns:**
-    
+
     matrix : ndarray
         A reference to the same matrix supplied.
-    
+
     """
     n_row, n_col = matrix.shape
     if add_a_col:
@@ -99,7 +103,7 @@ def remove_row_and_col(matrix, rrow=0, rcol=0):
     rcol : int or None, optional
         The index of the row to be removed. If set to ``None``, no row
         will be removed. By default the first column is removed.
-    
+
     .. note::
 
         No size checking is done.
@@ -131,7 +135,7 @@ def remove_row(matrix, rrow=0):
     rrow : int or None, optional
         The index of the row to be removed. If set to ``None``, no row
         will be removed. By default the first row is removed.
-    
+
     .. note::
 
         No size checking is done.
@@ -153,7 +157,7 @@ def check_file(filename):
         The file name.
 
     **Returns:**
-    
+
     chk : boolean
         A value of ``True`` if ``filename`` is found and it is a file.
         ``False``, otherwise.
@@ -232,7 +236,21 @@ class combinations:
 
 class log_axis_iterator:
 
-    """This iterator provides the values for a logarithmic sweep.
+    """This iterator provides the values for a base-10 logarithmic sweep.
+
+    **Parameters:**
+
+    max : float
+        The maximum value, also the end point of the axis.
+    min : float
+        The minimum value, also the start point of the axis.
+    nsteps : int
+        The number of intervals in which the ``max`` - ``min``
+        interval will be divided.
+
+    Notice that, differently from numpy's ``logspace()``, the
+    values are only computed at access time, and hence the
+    memory footprint of the iterator is low.
     """
 
     def __init__(self, max, min, nsteps):
@@ -277,6 +295,20 @@ class log_axis_iterator:
 class lin_axis_iterator:
 
     """This iterator provides the values for a linear sweep.
+
+    **Parameters:**
+
+    max : float
+        The maximum value, also the end point of the axis.
+    min : float
+        The minimum value, also the start point of the axis.
+    nsteps : int
+        The number of intervals in which the ``max`` - ``min``
+        interval will be divided.
+
+    Notice that, differently from numpy's ``linspace()``, the
+    values are only computed at access time, and hence the
+    memory footprint of the iterator is low.
     """
 
     def __init__(self, max, min, nsteps):
@@ -325,11 +357,37 @@ def Celsius2Kelvin(cel):
 
 
 def Kelvin2Celsius(kel):
-    """Convert Kelvin degrees to Celsius 
+    """Convert Kelvin degrees to Celsius
     """
     return kel - 273.15
 
 def convergence_check(x, dx, residuum, nv_minus_one, debug=False):
+    """Perform a convergence check
+
+    **Parameters:**
+
+    x : array-like
+        The results to be checked.
+    dx : array-like
+        The last increment from a Newton-Rhapson iteration, solving
+        ``F(x) = 0``.
+    residuum : array-like
+        The remaining error, ie ``F(x) = residdum``
+    nv_minus_one : int
+        Number of voltage variables in x. If ``nv_minus_one`` is equal to
+        ``n``, it means ``x[:n]`` are all voltage variables.
+    debug : boolean, optional
+        Whether extra information is needed for debug purposes. Defaults to
+        ``False``.
+
+    **Returns:**
+
+    chk : boolean
+        Whether the check was passed or not. ``True`` means 'convergence!'.
+    rbn : ndarray
+        The convergence check results by node, if ``debug`` was set to ``True``,
+        else ``None``.
+    """
     if not hasattr(x, 'shape'):
         x = np.mat(np.array(x))
         dx = np.mat(np.array(dx))
@@ -344,18 +402,93 @@ def convergence_check(x, dx, residuum, nv_minus_one, debug=False):
 
 
 def voltage_convergence_check(x, dx, residuum, debug=False):
+    """Perform a convergence check for voltage variables
+
+    **Parameters:**
+
+    x : array-like
+        The results to be checked.
+    dx : array-like
+        The last increment from a Newton-Rhapson iteration, solving
+        ``F(x) = 0``.
+    residuum : array-like
+        The remaining error, ie ``F(x) = residdum``
+    debug : boolean, optional
+        Whether extra information is needed for debug purposes. Defaults to
+        ``False``.
+
+    **Returns:**
+
+    chk : boolean
+        Whether the check was passed or not. ``True`` means 'convergence!'.
+    rbn : ndarray
+        The convergence check results by node, if ``debug`` was set to ``True``,
+        else ``None``.
+    """
     return custom_convergence_check(x, dx, residuum, er=options.ver,
                                     ea=options.vea, eresiduum=options.iea,
                                     debug=debug)
 
 
 def current_convergence_check(x, dx, residuum, debug=False):
+    """Perform a convergence check for current variables
+
+    **Parameters:**
+
+    x : array-like
+        The results to be checked.
+    dx : array-like
+        The last increment from a Newton-Rhapson iteration, solving
+        ``F(x) = 0``.
+    residuum : array-like
+        The remaining error, ie ``F(x) = residdum``
+    debug : boolean, optional
+        Whether extra information is needed for debug purposes. Defaults to
+        ``False``.
+
+    **Returns:**
+
+    chk : boolean
+        Whether the check was passed or not. ``True`` means 'convergence!'.
+    rbn : ndarray
+        The convergence check results by node, if ``debug`` was set to ``True``,
+        else ``None``.
+    """
     return custom_convergence_check(x, dx, residuum, er=options.ier,
                                     ea=options.iea, eresiduum=options.vea,
                                     debug=debug)
 
 
-def custom_convergence_check(x, dx, residuum, er, ea, eresiduum, vector_norm=lambda v: abs(v), debug=False):
+def custom_convergence_check(x, dx, residuum, er, ea, eresiduum, debug=False):
+    """Perform a custom convergence check
+
+    **Parameters:**
+
+    x : array-like
+        The results to be checked.
+    dx : array-like
+        The last increment from a Newton-Rhapson iteration, solving
+        ``F(x) = 0``.
+    residuum : array-like
+        The remaining error, ie ``F(x) = residdum``
+    ea : float
+        The value to be employed for the absolute error.
+    er : float
+        The value for the relative error to be employed.
+    eresiduum : float
+        The maximum allowed error for the residuum (left over error).
+    debug : boolean, optional
+        Whether extra information is needed for debug purposes. Defaults to
+        ``False``.
+
+    **Returns:**
+
+    chk : boolean
+        Whether the check was passed or not. ``True`` means 'convergence!'.
+    rbn : ndarray
+        The convergence check results by node, if ``debug`` was set to ``True``,
+        else ``None``.
+    """
     all_check_results = []
     if not hasattr(x, 'shape'):
         x = np.array(x)
@@ -368,8 +501,8 @@ def custom_convergence_check(x, dx, residuum, er, ea, eresiduum, vector_norm=lam
                               atol=eresiduum, rtol=0)
         else:
             for i in range(x.shape[0]):
-                if vector_norm(dx[i, 0]) < er*vector_norm(x[i, 0]) + ea and \
-                   vector_norm(residuum[i, 0]) < eresiduum:
+                if np.abs(dx[i, 0]) < er*np.abs(x[i, 0]) + ea and \
+                   np.abs(residuum[i, 0]) < eresiduum:
                     all_check_results.append(True)
                 else:
                     all_check_results.append(False)
@@ -449,7 +582,7 @@ def check_circuit(circ):
         The circuit to be checked.
 
     **Returns:**
-    
+
     chk : boolean
         The logical ``and()`` of the answer to the above questions.
     msg : string
@@ -476,8 +609,8 @@ def check_circuit(circ):
 
 
 def check_ground_paths(mna, circ, reduced_mna=True, verbose=3):
-    """Checks that every node has a DC path to ground 
-    
+    """Checks that every node has a DC path to ground
+
     The path to ground might be through non-linear elements.
 
     .. note::
