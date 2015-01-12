@@ -37,6 +37,8 @@ import numpy as np
 from . import printing
 from . import options
 
+#: The machine epsilon, the upper bound on the relative error due to rounding in
+#: floating point arithmetic.
 EPS = np.finfo(float).eps
 
 
