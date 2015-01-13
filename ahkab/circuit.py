@@ -433,11 +433,6 @@ class Circuit(list):
             a dictionary holding the parameters to be supplied to the 
             model to initialize it.
 
-        **Returns:**
-
-        models : list
-            the updated models
-
         """
 
         if 'name' not in model_parameters:
@@ -457,7 +452,6 @@ class Circuit(list):
         else:
             raise CircuitError("Unknown model type %s" % (model_type,))
         self.models.update({model_label: model_iter})
-        return self.models
 
     def remove_model(self, model_label):
         """Remove a model from the available models.
@@ -495,10 +489,6 @@ class Circuit(list):
         value : float,
             The resistance between ``n1`` and ``n2`` in Ohm.
 
-        **Returns:** 
-
-            True
-
         .. seealso:: 
 
             :func:`add_resistor`, :func:`add_capacitor`, 
@@ -516,7 +506,6 @@ class Circuit(list):
         elem = devices.Resistor(n1=n1, n2=n2, value=value)
         elem.part_id = name
         self.append(elem)
-        return True
 
     def add_capacitor(self, name, n1, n2, value, ic=None):
         """Adds a capacitor to the circuit. 
@@ -540,10 +529,6 @@ class Circuit(list):
             The initial condition, if any. See the simulation docs for
             how this affects the results.
 
-        **Returns:**
-        
-        True
-
         .. seealso:: 
             :func:`add_resistor`,
             :func:`add_inductor`, :func:`add_vsource`, :func:`add_isource`,
@@ -561,7 +546,6 @@ class Circuit(list):
         elem.part_id = name
 
         self.append(elem)
-        return True
 
     def add_inductor(self, name, n1, n2, value, ic=None):
         """Adds an inductor to the circuit. 
@@ -585,10 +569,6 @@ class Circuit(list):
             Initial condition, see simulation types for how this affects
             the results.
 
-        **Returns:** 
-
-        True
-
         .. seealso:: 
 
             :func:`add_resistor`, :func:`add_capacitor`, 
@@ -604,7 +584,6 @@ class Circuit(list):
         elem.part_id = name
 
         self.append(elem)
-        return True
 
     def add_inductor_coupling(self, name, L1, L2, value):
         """Add a coupling between two inductors.
@@ -662,10 +641,6 @@ class Circuit(list):
             AC voltage value, defaults to 0.
         function : function, optional
             Time function. See devices.py for built-in options.
-
-        **Returns:**
-        
-        True
         """
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
@@ -678,7 +653,6 @@ class Circuit(list):
             elem._time_function = function
 
         self.append(elem)
-        return True
 
     def add_isource(self, part_id, n1, n2, dc_value, ac_value=0, function=None):
         """Adds a current source to the circuit (also takes care that the nodes
@@ -697,10 +671,6 @@ class Circuit(list):
             AC current value, defaults to 0.
         function : function, optional
             Time function. See devices.py for built-in options.
-
-        **Returns:**
-        
-        True
         """
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
@@ -713,7 +683,6 @@ class Circuit(list):
             elem._time_function = function
 
         self.append(elem)
-        return True
 
     def add_diode(self, part_id, n1, n2, model_label, models=None, Area=None,
                   T=None, ic=None, off=False):
@@ -741,10 +710,6 @@ class Circuit(list):
             Initial condition (not really implemented yet)
         off : bool, optional
             Consider the diode to be initially off.
-
-        **Returns:**
-        
-        True
         """
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
@@ -757,7 +722,6 @@ class Circuit(list):
                            model_label], AREA=Area, T=T, ic=ic, off=off)
         self.append(elem)
 
-        return True
 
     def add_mos(self, part_id, nd, ng, ns, nb, w, l, model_label, models=None,
                 m=1, n=1):
@@ -788,10 +752,6 @@ class Circuit(list):
             Shunt multiplier value. Defaults to 1.
         n : int, optional
             Series multiplier value, not always supported. Defaults to 1.
-
-        **Returns:**
-        
-        True
         """
         nd = self.add_node(nd)
         ng = self.add_node(ng)
@@ -817,7 +777,6 @@ class Circuit(list):
 
         self.append(elem)
 
-        return True
 
     def add_cccs(self, part_id, n1, n2, source_id, value):
         """Adds a current-controlled current source (CCCS) to the circuit
@@ -839,10 +798,6 @@ class Circuit(list):
             .. math::
             
                 I_o = \\alpha I_s
-
-        **Returns:**
-        
-        True
         """
         # Add the nodes, this is SAFE: if a node is already known to the circuit,
         # the methods will just ignore the request.
@@ -853,8 +808,6 @@ class Circuit(list):
                                 source_id=source_id, value=value)
         # add it!
         self.append(elem)
-
-        return True
 
     def add_vcvs(self, part_id, n1, n2, sn1, sn2, value):
         """Adds a voltage-controlled voltage source (vcvs) to the circuit
@@ -874,8 +827,6 @@ class Circuit(list):
         alpha : float
             The proportionality factor between input and output voltages:
             :math:`V(out_p) - V(out_n) = \\alpha \\cdot (V(in_p) - V(in_n))`
-
-        Returns: True
         """
 
         n1 = self.add_node(n1)
@@ -888,7 +839,6 @@ class Circuit(list):
 
         self.append(elem)
 
-        return True
 
     def add_vccs(self, part_id, n1, n2, sn1, sn2, value):
         """Adds a voltage-controlled current source (VCCS) to the circuit
@@ -911,8 +861,6 @@ class Circuit(list):
             .. math::
 
                 I[G1] = alpha * (V(inp) - V(inn))
-
-        Returns: True
         """
 
         n1 = self.add_node(n1)
@@ -924,7 +872,6 @@ class Circuit(list):
             part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=value)
 
         self.append(elem)
-        return True
 
     def add_switch(self, name, n1, n2, sn1, sn2, ic, model_label, models=None):
         """Adds a voltage-controlled or current-controlled switch to the circuit
@@ -960,8 +907,6 @@ class Circuit(list):
         models : dict, optional
             A dictionary assembled as (identifier:instance), containing all the available model
             instances. If not set or ``None``, the circuit models will be used (recommended).
-
-        Returns: True
         """
 
         n1 = self.add_node(n1)
@@ -977,7 +922,6 @@ class Circuit(list):
         elem = switch.switch_device(
             part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, model=models[model_label])
         self.append(elem)
-        return True
 
     def add_user_defined(self, module, label, param_dict):
         """Adds a user defined element.
@@ -1012,7 +956,6 @@ class Circuit(list):
                                         " error: " + error_msg)
 
         self.append(elem)
-        return True
 
     def remove_elem(self, elem):
         """Removes an element from the circuit and takes care that no
