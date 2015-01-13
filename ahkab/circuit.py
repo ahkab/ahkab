@@ -265,13 +265,27 @@ class Circuit(list):
         return ext_node
 
     def is_int_node_internal_only(self, int_node):
-        """Check whether a supplied node id corresponds to an "internal node"
-        or not.
+        """Check whether an internal node is an "internal only node" or not.
+
+        **Parameters:**
+
+        int_node : int
+            The internal only node to be checked.
+
+        **Returns:**
+
+        chk : boolean
+            The result of the check.
         """
         return self.nodes_dict[int_node].find("INT") > -1
 
     def is_nonlinear(self):
         """Check whether the circuit is non-linear or not.
+
+        **Returns:**
+
+        chk : boolean
+            The result of the check.
         """
         for elem in self:
             if elem.is_nonlinear:
@@ -281,9 +295,9 @@ class Circuit(list):
     def get_locked_nodes(self):
         """Get all nodes connected to non-linear elements.
 
-        This list is meant to be passed to dc_solve or mdn_solver to be used in
-        get_td to evaluate the damping coefficient in a Newton-Rhapson
-        iteration.
+        This list is meant to be passed to ``dc_solve`` or ``mdn_solver`` to be
+        used in ``get_td`` to evaluate the damping coefficient in a
+        Newton-Rhapson iteration.
 
         **Returns:**
 
@@ -366,6 +380,10 @@ class Circuit(list):
         No circuit should ever have duplicate elements
         (ie elements with the same ``part_id``).
         
+        **Returns:**
+
+        chk : boolean
+            The result of the check.
         """
         for index1 in range(len(self)):
             for index2 in range(index1 + 1, len(self)):
@@ -390,13 +408,15 @@ class Circuit(list):
 
         **Returns:**
 
-        elem : circuit element or None
+        elem : circuit element
             Depending whether a matching element was found or not.
+
+        :raises ValueError: if the element is not found.
         """
         for e in self:
             if e.part_id.lower() == name.lower():
                 return e
-        return None
+        raise ValueError('Element %s not found')
 
     def add_model(self, model_type, model_label, model_parameters):
         """Add a model to the available circuit models.
@@ -553,10 +573,10 @@ class Circuit(list):
         **Parameters:**
 
         name : string
-            the inductor name (eg "Lfilter"). The first letter is always L.
+            The inductor name (eg "Lfilter"). The first letter is always L.
 
         n1, n2 : string
-            the nodes to which the element is connected. Eg. ``"in"`` or ``"out_a"``.
+            The nodes to which the element is connected. Eg. ``"in"`` or ``"out_a"``.
 
         value : float
             The inductance value.
@@ -587,7 +607,21 @@ class Circuit(list):
         return True
 
     def add_inductor_coupling(self, name, L1, L2, value):
-        """ Write DOC XXX
+        """Add a coupling between two inductors.
+
+        **Parameters:**
+
+        part_id : string
+            The part ID for the inductor coupling device. Eg. ``'K1'``,
+            the first letter is always ``'K'``.
+        L1 : string
+            The part ID of the first inductor to be coupled.
+        L2 : string
+            The part ID of the second inductor to be coupled.
+        value : float
+            The ``k`` value of the mutual coupling coefficient.
+            Its value must be greater than zero and lesser or equal to``1``
+            or instability ensues.
         """
         L1elem, L2elem = None, None
 
@@ -600,9 +634,7 @@ class Circuit(list):
         if L1elem is None or L2elem is None:
             error_msg = "One or more coupled inductors for %s were not found: %s (found: %s), %s (found: %s)." % \
                 (name, L1, L1elem is not None, L2, L2elem is not None)
-            printing.print_general_error(error_msg)
-            printing.print_general_error("Quitting.")
-            sys.exit(30)
+            raise ValueError(error_msg)
 
         M = math.sqrt(L1elem.value * L2elem.value) * value
 
@@ -826,16 +858,22 @@ class Circuit(list):
 
     def add_vcvs(self, part_id, n1, n2, sn1, sn2, value):
         """Adds a voltage-controlled voltage source (vcvs) to the circuit
-        (also takes care that its nodes are added as well).
+        
+        This method also takes care that its nodes are added as well.
 
-        Parameters:
-        name (string): the vcvs name (eg "E1"). The first letter is always E.
-        n1, n2 (string): the output port nodes, where the output voltage is
-                     forced. Eg. "outp", "outm" or "out_a", "out_b".
-        sn1, sn2 (string): the input port nodes, where the input voltage is
-                     read. Eg. "inp", "inm" or "in_a", "in_b".
-                alpha (float): The proportionality factor between input and output voltages:
-                V(outp) - V(outn) = alpha * (V(inp) - V(inn))
+        **Parameters:**
+
+        name : string
+            The vcvs ID (eg "E1"). The first letter is always E.
+        n1, n2 : string
+            The output port nodes, where the output voltage is
+            forced. Eg. "outp", "outm" or "out_a", "out_b".
+        sn1, sn2 : string
+            The input port nodes, where the input voltage is
+            read. Eg. "inp", "inm" or "in_a", "in_b".
+        alpha : float
+            The proportionality factor between input and output voltages:
+            :math:`V(out_p) - V(out_n) = \\alpha \\cdot (V(in_p) - V(in_n))`
 
         Returns: True
         """
@@ -853,18 +891,25 @@ class Circuit(list):
         return True
 
     def add_vccs(self, part_id, n1, n2, sn1, sn2, value):
-        """Adds a voltage-controlled current source (vccs) to the circuit
-        (also takes care that its nodes are added as well).
+        """Adds a voltage-controlled current source (VCCS) to the circuit
+        
+        This method also takes care that its nodes are added as well.
 
-        Parameters:
-        name (string): the vccs name (eg "G1"). The first letter is always G.
-        n1, n2 (string): the output port nodes, where the output current is
-                     forced. Eg. "outp", "outm" or "out_a", "out_b".
-                     The usual convention is used: a positive current
-                     flows into n1 and out of n2.
-        sn1, sn2 (string): the input port nodes, where the input voltage is
-                       read. Eg. "inp", "inm" or "in_a", "in_b".
-                alpha (float): The proportionality factor between input and output voltages:
+        **Parameters:**
+
+        name : string
+            The VCCS ID (eg ``"G1"``). The first letter is always ``'G'``.
+        n1, n2 : string
+            the output port nodes, where the output current is
+            forced. Eg. "outp", "outm" or "out_a", "out_b".
+            The usual convention is used: a positive current
+            flows into ``n1`` and out of ``n2``.
+        sn1, sn2 : string
+            The input port nodes, where the input voltage is
+            sensed. Eg. "inp", "inm" or "in_a", "in_b".
+            alpha (float): The proportionality factor between input and output voltages:
+            .. math::
+
                 I[G1] = alpha * (V(inp) - V(inn))
 
         Returns: True
@@ -895,7 +940,7 @@ class Circuit(list):
           switch model for a voltage-controlled switch and the same for the
           current-controlled switch. Mixing them up will go undetected.
 
-        Parameters:
+        **Parameters:**
 
         name : string
             the switch ID (eg ``"S1"`` - voltage-controlled - or ``"Wa"`` -
@@ -903,14 +948,18 @@ class Circuit(list):
         n1, n2 : string
             the output port nodes, where the switch is connected. Eg. ``"out1"``,
             ``"out2"`` or ``"n_a"``, ``"n_b"``.
-        sn1, sn2 (string): the input port nodes, where the input voltage is
-                       read. Eg. "inp", "inm" or "in_a", "in_b".
-        ic (boolean): the initial conditions for transient simulation. Not currently
-                      implemented!
-        model_label (string): the switch model identifier. The model needs to be added
-                              first, then the elements using it.
-        models (dict(identifier:instance), optional): list of available model
-            instances. If not set or None, the circuit models will be used (recommended).
+        sn1, sn2 : string
+            The input port nodes, where the input voltage is
+            read. Eg. "inp", "inm" or "in_a", "in_b".
+        ic : boolean
+            The initial conditions for transient simulation. Not currently
+            implemented!
+        model_label : string
+            The switch model identifier. The model needs to be added
+            first, then the elements using it.
+        models : dict, optional
+            A dictionary assembled as (identifier:instance), containing all the available model
+            instances. If not set or ``None``, the circuit models will be used (recommended).
 
         Returns: True
         """
@@ -954,11 +1003,13 @@ class Circuit(list):
         elem = elem_class(**param_dict)
         elem.part_id = "y%s" % name[1:]
 
+        # call check() if supported
         if hasattr(elem, "check"):
             selfcheck_result, error_msg = elem.check()
             if not selfcheck_result:
-                raise NetlistParseError("module: " + module_name + " elem type: " + elem_type_name + " error: " +\
-                    error_msg)
+                raise NetlistParseError("module: " + module_name + \
+                                        " elem type: " + elem_type_name + \
+                                        " error: " + error_msg)
 
         self.append(elem)
         return True
@@ -966,10 +1017,21 @@ class Circuit(list):
     def remove_elem(self, elem):
         """Removes an element from the circuit and takes care that no
         "orphan" nodes are left.
-        circ: the circuit instance
-        elem: the element to be removed
 
-        Returns: True if the element was found and removed, False otherwise
+        .. note::
+
+            Removing elements is experimental.
+
+        **Parameters:**
+
+        elem : component instance
+            The element to be removed.
+
+        **Returns:**
+        
+        fb : boolean
+            A boolean set to ``True`` if the element was found and removed,
+            ``False`` otherwise.
         """
         if elem not in self:
             return False
@@ -1003,15 +1065,22 @@ class Circuit(list):
         return True
 
     def find_vde_index(self, id_wdescr, verbose=3):
-        """Finds a voltage defined element MNA index.
+        """Finds a voltage-defined element MNA index.
 
-        Parameters:
-        id_wdescr (string): the element name, eg. 'V1'. Notice it includes
-                            both the id ('V') and the description ('1').
-        verbose (int): verbosity level, from 0 (silent) to 6 (debug).
+        **Parameters:**
 
-        Returns:
-        the index (int)
+        id_wdescr : string
+            The element name, eg. 'V1'. Notice it includes
+            both the id ('V') and the description ('1').
+        verbose : int
+            The verbosity level, from 0 (silent) to 6 (debug).
+
+        **Returns:**
+
+        indx : int
+            The index.
+
+        :raises ValueError: if no such element is in the circuit.
         """
         vde_index = 0
         found = False
@@ -1024,23 +1093,29 @@ class Circuit(list):
                     vde_index += 1
 
         if not found:
-            printing.print_warning(
-                "find_vde_index(): element %s was not found. This is a bug." % (id_wdescr,))
+            raise ValueError(("find_vde_index(): element %s was not found." +\
+                              " This is a bug.") % (id_wdescr,))
         else:
-            printing.print_info_line(
-                ("%s found at index %d" % (id_wdescr, vde_index), 6), verbose)
+            printing.print_info_line(("%s found at index %d" % (id_wdescr,
+                                     vde_index), 6), verbose)
         return vde_index
 
     def find_vde(self, index):
         """Finds a voltage defined element MNA index.
 
-        Parameters:
-        id_wdescr (string): the element name, eg. 'V1'. Notice it includes
-                            both the id ('V') and the description ('1').
-                            The search term is case insensitive.
+        **Parameters:**
 
-        Returns:
-        the index (int)
+        id_wdescr : string
+            The element name, eg. ``'V1'``. Notice it includes
+            both the id ('V') and the description ('1').
+            The search term is case insensitive.
+
+        **Returns:**
+        
+        indx : int
+            The index.
+
+        :raises IndexError: if no element corresponds to such an index.
         """
         index = index - len(self.nodes) + 1
         ni = 0
@@ -1056,15 +1131,25 @@ class Circuit(list):
         if found:
             ret = e
         else:
-            ret = None
+            raise IndexError('No element corresponds to vde index %d' % 
+                             index + len(self.nodes) - 1)
         return ret
 
 
 # STATIC METHODS
 def is_elem_voltage_defined(elem):
-    """Returns:
-    True if the elem is a vsource, inductor, evsource or hvsource
-    False otherwise.
+    """Check if an element needs its own KCL equation
+
+    **Parameters:**
+
+    elem : Component
+        The element to be cechekd.
+
+    **Returns:**
+
+    chk : bool
+        ``True`` if ``elem`` is a voltage source, an inductor, a voltage-controlled
+        voltage source or a current-controlled voltage source. ``False`` otherwise.
     """
     if isinstance(elem, devices.VSource) or isinstance(elem, devices.EVSource) or \
         isinstance(elem, devices.HVSource) or isinstance(elem, devices.Inductor) \
@@ -1075,29 +1160,26 @@ def is_elem_voltage_defined(elem):
 
 
 class NodeNotFoundError(Exception):
-
     """Circuit Node exception."""
     pass
 
 
 class CircuitError(Exception):
-
     """General circuit assembly exception."""
     pass
 
 
 class ModelError(Exception):
-
     """Model not found exception."""
     pass
 
 
 class subckt:
-
     """This class holds the necessary information about a circuit.
+
     An instance of this class is returned by:
 
-      netlist_parser.parse_sub_declaration(subckt_lines)
+    ``netlist_parser.parse_sub_declaration(subckt_lines)``
 
 
     """
@@ -1112,7 +1194,6 @@ class subckt:
 
 
 class circuit_wrapper:
-
     """Within a subcircuit, the nodes name are fictious.
     The nodes of the subcircuit that are connected to the
     nodes of the circuit have to be renamed to them, the
