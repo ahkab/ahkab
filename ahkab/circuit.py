@@ -53,6 +53,7 @@ remove most elements to the circuit:
 * :func:`Circuit.add_isource`
 * :func:`Circuit.add_diode`
 * :func:`Circuit.add_mos`
+* :func:`Circuit.add_cccs`
 * :func:`Circuit.add_vcvs`
 * :func:`Circuit.add_vccs`
 * :func:`Circuit.add_user_defined`
@@ -485,7 +486,7 @@ class Circuit(list):
             :func:`add_resistor`, :func:`add_capacitor`, 
             :func:`add_inductor`, :func:`add_vsource`, :func:`add_isource`,
             :func:`add_diode`, :func:`add_mos`, :func:`add_vcvs`, :func:`add_vccs`,
-            :func:`add_user_defined`, :func:`remove_elem`
+            :func:`add_cccs`, :func:`add_user_defined`, :func:`remove_elem`
  
         """
         n1 = self.add_node(n1)
@@ -529,7 +530,7 @@ class Circuit(list):
             :func:`add_resistor`,
             :func:`add_inductor`, :func:`add_vsource`, :func:`add_isource`,
             :func:`add_diode`, :func:`add_mos`, :func:`add_vcvs`, :func:`add_vccs`,
-            :func:`add_user_defined`, :func:`remove_elem`
+            :func:`add_cccs`, :func:`add_user_defined`, :func:`remove_elem`
 
         """
         if value == 0:
@@ -575,7 +576,7 @@ class Circuit(list):
             :func:`add_resistor`, :func:`add_capacitor`, 
             :func:`add_inductor`, :func:`add_vsource`, :func:`add_isource`,
             :func:`add_diode`, :func:`add_mos`, :func:`add_vcvs`, :func:`add_vccs`,
-            :func:`add_user_defined`, :func:`remove_elem`
+            :func:`add_cccs`, :func:`add_user_defined`, :func:`remove_elem`
         """
 
         n1 = self.add_node(n1)
