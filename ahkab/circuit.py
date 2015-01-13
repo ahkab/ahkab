@@ -185,9 +185,7 @@ class Circuit(list):
 
         """
         got_ref = 0 in self.nodes_dict
-        try:
-            list(self.nodes_dict.values()).index(name)
-        except ValueError:
+        if not name in list(self.nodes_dict.values()):
             if name == '0':
                 int_node = 0
             else:
