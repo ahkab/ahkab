@@ -76,8 +76,8 @@ def get_dc_guess(circ, verbose=3):
         print("")
 
     nv = len(circ.nodes_dict)
-    M = np.mat(np.zeros((1, nv)))
-    T = np.mat(np.zeros((1, 1)))
+    M = np.zeros((1, nv))
+    T = np.zeros((1, 1))
     index = 0
     v_eq = 0  # number of current equations
     one_element_with_dc_guess_found = False
@@ -97,10 +97,10 @@ def get_dc_guess(circ, verbose=3):
                     if n1 == n2:
                         continue
                     if index:
-                        M = utilities.expand_matrix(
-                            M, add_a_row=True, add_a_col=False)
-                        T = utilities.expand_matrix(
-                            T, add_a_row=True, add_a_col=False)
+                        M = utilities.expand_matrix(M, add_a_row=True,
+                                                    add_a_col=False)
+                        T = utilities.expand_matrix(T, add_a_row=True,
+                                                    add_a_col=False)
                     M[index, n1] = +1
                     M[index, n2] = -1
                     T[index] = elem.dc_guess[port_index]
@@ -110,10 +110,10 @@ def get_dc_guess(circ, verbose=3):
                 if elem.n1 == elem.n2:
                     continue
                 if index:
-                    M = utilities.expand_matrix(
-                        M, add_a_row=True, add_a_col=False)
-                    T = utilities.expand_matrix(
-                        T, add_a_row=True, add_a_col=False)
+                    M = utilities.expand_matrix(M, add_a_row=True,
+                                                add_a_col=False)
+                    T = utilities.expand_matrix(T, add_a_row=True,
+                                                add_a_col=False)
                 M[index, elem.n1] = +1
                 M[index, elem.n2] = -1
                 T[index] = elem.dc_guess[0]
@@ -188,11 +188,11 @@ def get_dc_guess(circ, verbose=3):
     #    I'm not sure about this though.
 
     if M.shape[0] != M.shape[1]:
-        Rp = np.mat(np.linalg.pinv(M)) * T
+        Rp = np.dot(np.linalg.pinv(M), T)
     else:  # case M.shape[0] == M.shape[1], use normal
         if np.linalg.det(M) != 0:
             try:
-                Rp = np.linalg.inv(M) * T
+                Rp = np.dot(np.linalg.inv(M), T)
             except np.linalg.linalg.LinAlgError:
                 eig = np.linalg.eig(M)[0]
                 cond = abs(eig).max() / abs(eig).min()
@@ -210,14 +210,13 @@ def get_dc_guess(circ, verbose=3):
     #    voltage defined elem.
     # Both them are set to 0
     for index in removed_index:
-        Rp = np.concatenate((
-                               np.concatenate((Rp[:index, 0],
-                                                  np.mat(np.zeros((1, 1)))), axis=0),
-                               Rp[index:, 0]), axis=0)
+        Rp = np.concatenate((np.concatenate((Rp[:index, 0],
+                                             np.zeros((1, 1))), axis=0),
+                             Rp[index:, 0]), axis=0)
     # add the 0s for the currents due to the voltage defined
     # elements (we have no guess for those...)
     if v_eq > 0:
-        Rp = np.concatenate((Rp, np.mat(np.zeros((v_eq, 1)))), axis=0)
+        Rp = np.concatenate((Rp, np.zeros((v_eq, 1))), axis=0)
 
     if verbose == 5:
         print(circ.nodes_dict)
