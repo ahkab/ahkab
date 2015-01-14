@@ -17,7 +17,12 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides the get_dc_guess() method.
+"""This module provides the :func:`get_dc_guess` method, used to
+compute a starting point to initialize a Newton-Rhapson solver.
+
+Module reference
+################
+
 """
 
 from __future__ import (unicode_literals, absolute_import,
@@ -33,13 +38,29 @@ from . import utilities
 
 
 def get_dc_guess(circ, verbose=3):
-    """This method tries to build a DC guess, according to what the
-    elements suggest.
-    A element can suggest its guess through the elem.dc_guess field.
+    """Build a DC guess from circuit inspection.
 
-    verbose: verbosity level (from 0 silent to 5 debug)
+    Notice that OP analysis will call this method on the users' behalf if not
+    instructed not to do so.
 
-    Returns: the dc_guess (matrix) or None
+    A element can suggest its guess through the ``elem.dc_guess`` field.
+    If the field is not set, or not available, no information on the most
+    likely biasing voltage is assumed.
+
+    **Parameters:**
+
+    circ : Circuit instance
+        The circuit instance the guess is being computed for.
+
+    verbose : int, optional
+        The verbosity level (from 0 silent to 6 debug). Defaults to 3, medium
+        verbosity.
+
+    **Returns:**
+
+    dcg : ndarray or None
+        The DC guess, in numpy array form, or ``None``, if it was not possible
+        to compute a meaningful guess.
     """
     if verbose:
         sys.stdout.write("Calculating guess: ")

@@ -28,6 +28,7 @@ Module reference
    constants
    csvlib
    dc_analysis
+   dc_guess
    devices
    diode
    ekv
@@ -65,9 +66,6 @@ Documentation in progress
    :members:
 
 .. automodule:: ahkab.transient
-   :members:
-
-.. automodule:: ahkab.dc_guess
    :members:
 
 .. automodule:: ahkab.implicit_euler
