@@ -25,18 +25,32 @@ from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 import math
 
+#: e - electron charge
 e = 1.60217646e-19
+#: Simulation tmperature
 T = 300
+#: reference temperature
 Tref = 300
+#: Boltzmann constant
 k = 1.3806503e-23
 
 
 def Vth(T=Tref):
+    """The thermal voltage: :math:`kT/q`."""
     return k * T / e
 
 
 class silicon:
+    """Silicon class
+    
+    Access this class as ``utilities.si``.
 
+    **Attributes**
+
+    esi: permittivity of silicon.
+    eox: permittivity of silicon dioxide.
+
+    """
     def __init__(self):
         self.esi = 104.5 * 10 ** -12  # F/m
         self.eox = 34.5 * 10 ** -12  # F/m
@@ -46,4 +60,5 @@ class silicon:
 
     def ni(self, T=Tref):
         return 1.45 * 10 ** 16 * (T / Tref) * math.exp(self.Eg(Tref) / (2 * Vth(Tref)) - self.Eg(T) / (2 * Vth(T)))
+
 si = silicon()
