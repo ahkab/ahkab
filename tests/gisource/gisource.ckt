@@ -1,0 +1,10 @@
+test for transconductors
+ia 1 2 type=idc idc=1m
+r1 1 0 .5k
+r2 2 0 .5k
+g1 3 4 2 1 1e-3
+r3 3 0 1k
+r4 4 0 1k
+
+.op
+.symbolic
