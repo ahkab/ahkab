@@ -96,7 +96,7 @@ This is done through:
 .. rubric:: Internal only nodes
 
 The number of internal only nodes (added automatically by the simulator)
-is held in ``Circuit.internal_nodes``. That value shouldn't be changed by 
+is held in ``Circuit.internal_nodes``. That value shouldn't be changed by
 hand.
 
 Device models
@@ -174,12 +174,12 @@ class Circuit(list):
 
         **Returns:**
 
-        node : string 
+        node : string
             the _unique_ identifier of the node.
 
         :raises ValueError: if a new node with the given id cannot be created,
           for example because a node with the same name already exists in the
-          circuit. The only exception is the ground node, which has the 
+          circuit. The only exception is the ground node, which has the
           reserved id ``'0'``, and for which this method won't raise any
           exception.
 
@@ -204,7 +204,7 @@ class Circuit(list):
         The nodes labels are stored in ``Circuit.nodes_dict``, as a dictionary of pairs
         like ``{int_node:ext_node}``.
 
-        Those internal names are integers, by definition, and are generated 
+        Those internal names are integers, by definition, and are generated
         starting from 1, then 2, 3, 4, 5...
         The integer ``0`` is reserved for the reference node (gnd), which is required
         for the circuit to be non-pathological and has ``ext_name=str(int_name)='0'``.
@@ -248,9 +248,9 @@ class Circuit(list):
         simulator treats specially, hiding them from the user if not
         explicitly asked about them.
 
-        This method generates the external names for such nodes. 
+        This method generates the external names for such nodes.
 
-        .. note:: 
+        .. note::
 
             They are *NOT* added to the circuit during their creation.
 
@@ -353,18 +353,18 @@ class Circuit(list):
         int_node : int
             The internal node id to be converted.
 
-        .. note:: 
+        .. note::
 
-            Accessing this function is the same as referencing ``circuit_inst.nodes_dict[int_node]``, 
+            Accessing this function is the same as referencing ``circuit_inst.nodes_dict[int_node]``,
             except a ``NodeNotFoundError`` exception is thrown instead of a ``KeyError``.
 
         .. note::
 
             This method is fast much faster than :func:`Circuit.ext_node_to_int`.
 
-        **Returns:** 
+        **Returns:**
 
-        ext_node : string 
+        ext_node : string
             the string id associated with ``int_node``.
         """
         try:
@@ -379,7 +379,7 @@ class Circuit(list):
 
         No circuit should ever have duplicate elements
         (ie elements with the same ``part_id``).
-        
+
         **Returns:**
 
         chk : boolean
@@ -404,7 +404,7 @@ class Circuit(list):
         **Parameters:**
 
         name : string
-            The ``part_id`` of the element 
+            The ``part_id`` of the element
 
         **Returns:**
 
@@ -430,7 +430,7 @@ class Circuit(list):
             a unique identifier for the model being added (eg. "nch1").
 
         model_parameters: dict
-            a dictionary holding the parameters to be supplied to the 
+            a dictionary holding the parameters to be supplied to the
             model to initialize it.
 
         """
@@ -474,7 +474,7 @@ class Circuit(list):
     def add_resistor(self, name, n1, n2, value):
         """Adds a resistor to the circuit.
 
-        The resistor instance is added to the circuit elements 
+        The resistor instance is added to the circuit elements
         and connected to the provided nodes. If the nodes are not
         found in the circuit, they are created and added as well.
 
@@ -489,13 +489,13 @@ class Circuit(list):
         value : float,
             The resistance between ``n1`` and ``n2`` in Ohm.
 
-        .. seealso:: 
+        .. seealso::
 
-            :func:`add_resistor`, :func:`add_capacitor`, 
+            :func:`add_resistor`, :func:`add_capacitor`,
             :func:`add_inductor`, :func:`add_vsource`, :func:`add_isource`,
             :func:`add_diode`, :func:`add_mos`, :func:`add_vcvs`, :func:`add_vccs`,
             :func:`add_cccs`, :func:`add_user_defined`, :func:`remove_elem`
- 
+
         """
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
@@ -508,9 +508,9 @@ class Circuit(list):
         self.append(elem)
 
     def add_capacitor(self, name, n1, n2, value, ic=None):
-        """Adds a capacitor to the circuit. 
+        """Adds a capacitor to the circuit.
 
-        The capacitor instance is added to the circuit elements 
+        The capacitor instance is added to the circuit elements
         and connected to the provided nodes. If the nodes are not
         found in the circuit, they are created and added as well.
 
@@ -529,7 +529,7 @@ class Circuit(list):
             The initial condition, if any. See the simulation docs for
             how this affects the results.
 
-        .. seealso:: 
+        .. seealso::
             :func:`add_resistor`,
             :func:`add_inductor`, :func:`add_vsource`, :func:`add_isource`,
             :func:`add_diode`, :func:`add_mos`, :func:`add_vcvs`, :func:`add_vccs`,
@@ -548,9 +548,9 @@ class Circuit(list):
         self.append(elem)
 
     def add_inductor(self, name, n1, n2, value, ic=None):
-        """Adds an inductor to the circuit. 
+        """Adds an inductor to the circuit.
 
-        The inductor instance is added to the circuit elements 
+        The inductor instance is added to the circuit elements
         and connected to the provided nodes. If the nodes are not
         found in the circuit, they are created and added as well.
 
@@ -569,9 +569,9 @@ class Circuit(list):
             Initial condition, see simulation types for how this affects
             the results.
 
-        .. seealso:: 
+        .. seealso::
 
-            :func:`add_resistor`, :func:`add_capacitor`, 
+            :func:`add_resistor`, :func:`add_capacitor`,
             :func:`add_inductor`, :func:`add_vsource`, :func:`add_isource`,
             :func:`add_diode`, :func:`add_mos`, :func:`add_vcvs`, :func:`add_vccs`,
             :func:`add_cccs`, :func:`add_user_defined`, :func:`remove_elem`
@@ -796,7 +796,7 @@ class Circuit(list):
         value : float
             The proportionality factor between input and output currents.
             .. math::
-            
+
                 I_o = \\alpha I_s
         """
         # Add the nodes, this is SAFE: if a node is already known to the circuit,
@@ -811,7 +811,7 @@ class Circuit(list):
 
     def add_vcvs(self, part_id, n1, n2, sn1, sn2, value):
         """Adds a voltage-controlled voltage source (vcvs) to the circuit
-        
+
         This method also takes care that its nodes are added as well.
 
         **Parameters:**
@@ -842,7 +842,7 @@ class Circuit(list):
 
     def add_vccs(self, part_id, n1, n2, sn1, sn2, value):
         """Adds a voltage-controlled current source (VCCS) to the circuit
-        
+
         This method also takes care that its nodes are added as well.
 
         **Parameters:**
@@ -971,7 +971,7 @@ class Circuit(list):
             The element to be removed.
 
         **Returns:**
-        
+
         fb : boolean
             A boolean set to ``True`` if the element was found and removed,
             ``False`` otherwise.
@@ -1054,7 +1054,7 @@ class Circuit(list):
             The search term is case insensitive.
 
         **Returns:**
-        
+
         indx : int
             The index.
 
@@ -1074,7 +1074,7 @@ class Circuit(list):
         if found:
             ret = e
         else:
-            raise IndexError('No element corresponds to vde index %d' % 
+            raise IndexError('No element corresponds to vde index %d' %
                              index + len(self.nodes) - 1)
         return ret
 
@@ -1122,14 +1122,23 @@ class subckt:
 
     An instance of this class is returned by:
 
-    ``netlist_parser.parse_sub_declaration(subckt_lines)``
+    :func:`ahkab.netlist_parser.parse_sub_declaration`
 
+    **Parameters:**
+
+    name : string
+        The subcircuit definition label.
+    code : string
+        The netlist code that can be instantiated have a circuit
+        instance.
+    connected_nodes_list : list
+        A list of nodes that are used in the circuit and that are
+        meant to be connected to the external circuit.
+
+    Notice that in the current implementation, the GND node (0)
+    is *always* global.
 
     """
-    name = ""
-    connected_nodes_list = []
-    code = []
-
     def __init__(self, name, code, connected_nodes_list):
         self.name = name
         self.connected_nodes_list = connected_nodes_list
@@ -1137,15 +1146,40 @@ class subckt:
 
 
 class circuit_wrapper:
-    """Within a subcircuit, the nodes name are fictious.
+    """Fictious circuit class, meant to wrap subcircuits.
+
+    Not meant for end users at this stage.
+
+    Rationale:
+
+    Within a subcircuit, the nodes name are fictious.
+    All nodes have to be renamed before a subcircuit instance
+    may be insterted in a circuit (all our circuits are flat in
+    memory for now).
+
     The nodes of the subcircuit that are connected to the
-    nodes of the circuit have to be renamed to them, the
-    others have to be renamed too.
+    nodes of the circuit have to be renamed to them, those
+    that are not referenced there need to be renamed in order
+    for them ot be unique.
 
     This class wraps a circuit object and performs the conversion
-    _before_ calling circ.add_node()
+    _before_ calling ``circ.add_node()``.
 
-    While instatiating/calling a subcircuit wrap circ in this.
+    While instatiating/calling a subcircuit wrap the circuit instance
+    in this.
+
+    **Parameters:**
+
+    circ : circuit instance
+        The main circuit. Remember that all our assembled circuits
+        are flat in memory.
+    connection_nodes_dict : dictionary
+        The dictionary mapping internal nodes to global, circuit-wide nodes.
+    subckt_name : string
+        The subcircuit instance name. The first letter must always be ``'X'``.
+    subckt_label : string
+        The label of the subcircuit that is being instantiated.
+
     """
 
     def __init__(self, circ, connection_nodes_dict, subckt_name, subckt_label):
@@ -1157,11 +1191,12 @@ class circuit_wrapper:
 
     def add_node(self, ext_name):
         """We want to perform the following conversions:
-        connected node in the subcircuit -> node in the upper circuit
-        local-only node of the subcircuit -> rename it to something uniq
-        REF (0) -> REF (0)
 
-        And then call circ.add_node()
+        * connected node in the subcircuit -> node in the upper circuit
+        * local-only node of the subcircuit -> rename it to something unique
+        * REF (0) -> REF (0)
+
+        And then call ``circ.add_node()``.
         """
         if ext_name not in self.subckt_node_filter_dict:
             self.subckt_node_filter_dict.update(
