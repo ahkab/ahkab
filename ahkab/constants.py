@@ -17,7 +17,8 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Holds some constants useful for equations
+"""Constants useful for building equations and expressions describing
+semiconductor physics
 """
 
 
@@ -47,8 +48,9 @@ class silicon:
 
     **Attributes**
 
-    esi: permittivity of silicon.
-    eox: permittivity of silicon dioxide.
+    **esi**: permittivity of silicon.
+
+    **eox**: permittivity of silicon dioxide.
 
     """
     def __init__(self):
@@ -56,9 +58,12 @@ class silicon:
         self.eox = 34.5 * 10 ** -12  # F/m
 
     def Eg(self, T=Tref):
+        """Energy gap of silicon at temperature ``T``"""
         return (1.16 - 0.000702 * T ** 2 / (1108 + T))  # eV
 
     def ni(self, T=Tref):
+        """Intrinsic carriet concentration at temperature ``T``"""
         return 1.45 * 10 ** 16 * (T / Tref) * math.exp(self.Eg(Tref) / (2 * Vth(Tref)) - self.Eg(T) / (2 * Vth(T)))
 
+#: Silicon class instantiated.
 si = silicon()
