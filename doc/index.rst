@@ -33,6 +33,7 @@ Module reference
    diode
    ekv
    mosq
+   options
    plotting
    printing
    pss
@@ -69,9 +70,6 @@ Documentation in progress
    :members:
 
 .. automodule:: ahkab.implicit_euler
-   :members:
-
-.. automodule:: ahkab.options
    :members:
 
 
