@@ -771,7 +771,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
             Tx[:, 0] = 0.0
             for elem in circ:
                 if elem.is_nonlinear:
-                    update_J_and_Tx(J, Tx, x, elem, time)
+                    _update_J_and_Tx(J, Tx, x, elem, time)
         residuo = mna.dot(x) + T + nonlinear_circuit*Tx
 
         if sparse:
@@ -799,7 +799,7 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None, print_steps=
     return (x, residuo, converged, iteration, convergence_by_node)
 
 
-def update_J_and_Tx(J, Tx, x, elem, time):
+def _update_J_and_Tx(J, Tx, x, elem, time):
     out_ports = elem.get_output_ports()
     for index in range(len(out_ports)):
         n1, n2 = out_ports[index]
