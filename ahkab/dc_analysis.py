@@ -594,7 +594,7 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
 def op_analysis(circ, x0=None, guess=True, outfile=None, verbose=3):
     """Runs an Operating Point (OP) analysis
 
-    **Parameters:**`
+    **Parameters:**
 
     circ : Circuit instance
         The circuit instance on which the simulation is run
