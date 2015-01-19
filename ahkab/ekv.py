@@ -29,6 +29,8 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Partial implementation of the EKV 3.0 MOS transistor model
+
 The EKV model was developed by Matthias Bucher, Christophe Lallement,
 Christian Enz, Fabien Théodoloz, François Krummenacher at the Electronics
 Laboratories, Swiss Federal Institute of Technology (EPFL),
@@ -41,27 +43,32 @@ is based is available here:
 
 This module defines two classes:
 
-    ekv_device
+* :class:`ekv_device`
+* :class:`ekv_mos_model`
 
-    ekv_mos_model
 
-
-Features:
+**Features:**
 
 * EKV model implementation, computation of charges, potentials,
-  reverse and forward currents, slope factor and normalization factors,
-* Calculation of trans-conductances based on the charge approach.
+  reverse and forward currents, slope factor and normalization factors.
+* Calculation of trans-conductances based on the charge-driven approach.
 * N/P MOS symmetry
 * Rudimentary temperature effects.
 
-The Missing Features:
-* Channel length modulation
-* Reverse Short Channel Effect (RSCE)
-* Complex mobility degradation is missing
-* Transcapacitances
-* Quasistatic implementation
+**The Missing Features:**
+
+* Channel length modulation,
+* Reverse Short Channel Effect (RSCE),
+* Complex mobility degradation,
+* Transcapacitances,
+* Quasi-static implementation,
 
 Patches to implement the above are welcome!
+
+.. note::
+    The default values in the model are suitable for a generic
+    500nm feature-size CMOS process.
+
 """
 
 from __future__ import (unicode_literals, absolute_import,
@@ -93,43 +100,41 @@ ISMALL_GUESS_MIN = 1e-10
 
 
 class ekv_device:
-    """A EKV MOS transistor.
+    """EKV device
+
+    **Parameters:**
+
+    part_id : string
+        The element identifier, eg 'M1'
+
+    nd : int
+        drain node
+    ng : int
+        gate node
+    ns : int
+        source node
+    nb : int
+        bulk node
+    L : float
+        element width [m]
+    W : float
+        element length [m]
+    M : int
+        multiplier (n. of shunt devices)
+    N : int
+        series mult. (n. of series devices)
+    model : ekv_model instance
+        The corresponding instance of ekv_mos_model
+
+    Selected methods:
+    - get_output_ports() -> (nd, ns)
+    - get_drive_ports() -> (nd, nb), (ng, nb), (ns, nb)
+
     """
+
     INIT_IFRN_GUESS = 1
 
     def __init__(self, part_id, nd, ng, ns, nb, W, L, model, M=1, N=1):
-        """ EKV device
-
-        **Parameters:**
-
-        part_id : string
-            The element identifier, eg 'M1'
-
-        nd : int
-            drain node
-        ng : int
-            gate node
-        ns : int
-            source node
-        nb : int
-            bulk node
-        L : float
-            element width [m]
-        W : float
-            element length [m]
-        M : int
-            multiplier (n. of shunt devices)
-        N : int
-            series mult. (n. of series devices)
-        model : ekv_model instance
-            The corresponding instance of ekv_mos_model
-
-        Selected methods:
-        - get_output_ports() -> (nd, ns)
-        - get_drive_ports() -> (nd, nb), (ng, nb), (ns, nb)
-
-
-        """
         self.ng = ng
         self.nb = nb
         self.n1 = nd
@@ -354,21 +359,22 @@ class ekv_mos_model:
         if GAMMA is not None:
             self.GAMMA = float(GAMMA)
         elif NSUB is not None:
-            self.GAMMA = math.sqrt(
-                2.0 * constants.e * constants.si.esi * NSUB * 10 ** 6 / self.COX)
+            self.GAMMA = math.sqrt(2.0*constants.e*constants.si.esi*NSUB
+                                   *10**6/self.COX)
         else:
             self.GAMMA = GAMMA_DEFAULT
         if PHI is not None:
             self.PHI = float(PHI)
         elif NSUB is not None:
-            self.PHI = 2. * constants.Vth(self.TNOM) * math.log(
-                NSUB * 10.0 ** 6.0 / constants.si.ni(self.TNOM))
+            self.PHI = 2. * constants.Vth(self.TNOM) * \
+                       math.log(NSUB*10.0**6.0/constants.si.ni(self.TNOM))
         else:
             self.PHI = PHI_DEFAULT
         if VTO is not None:
             self.VTO = self.NPMOS * float(VTO)
             if self.VTO < 0:
-                print("(W): model %s has internal negative VTO (%f V)." % (self.name, self.VTO))
+                printing.print_warning("model %s has internal negative VTO (%f V)."
+                                       % (self.name, self.VTO))
         elif VFB is not None:
             self.VTO = VFB + PHI + GAMMA * PHI  # inv here??
         else:
@@ -401,7 +407,9 @@ class ekv_mos_model:
             raise Exception(sc_reason + " out of range")
 
     def set_device_temperature(self, T):
-        """Change the temperature of the device. VTO, KP and PHI get updated.
+        """Change the temperature of the device.
+        
+        Correspondingly, ``VTO``, ``KP`` and ``PHI`` get updated.
         """
         self.TEMP = T
         self.VTO = self.VTO - self.TCV * (T - self.TNOM)
@@ -659,8 +667,13 @@ class ekv_mos_model:
 
     def get_ismall(self, vsmall, ip_abs_err, iguess=None, debug=False):
         """Solves the problem: given v, find i such that:
+
+        .. math::
             v = ln(q) + 2q
+
+        ..math::
             q = sqrt(.25 + i) - .5
+
         A damped Newton algorithm is used inside.
         """
         # starting guess for Newton's Method.
