@@ -726,9 +726,6 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None,
         are more than one.
     mna : ndarray
         The Modified Network Analysis matrix of the circuit, reduced, see above.
-def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None,
-               print_steps=False, vector_norm=lambda v: max(abs(v)),
-               debug=True):
     circ : circuit instance
         The circuit instance.
     T : ndarray,
