@@ -226,6 +226,23 @@ Voltage-Controlled Current Source (VCCS)
 - ``value`` is the proportionality factor, ie:
   ``I(n+,n-) = value*[V(sn+) - V(sn-)]``.
 
+Current-Controlled Current Source (CCCS)
+''''''''''''''''''''''''''''''''''''''''
+
+.. image:: ../images/elem/cccs.svg
+
+**General syntax:**
+
+``F<string> n+ n- <voltage_source> <value>``
+
+- ``n+`` and ``n-`` are the nodes corresponding to the output port, where the
+  current is forced.
+- ``voltage_source`` is the ID of a voltage source whose current controls the 
+  dependent current source. It must exist in the circuit. Note that netlists
+  are case-insensitive, ie ``Va`` is the same as ``vA``.
+- ``value`` is the proportionality factor, ie:
+  :math:`I(n+,n-) = value*I[<voltage_source>]`.
+
 Non-linear elements
 ^^^^^^^^^^^^^^^^^^^
 
