@@ -885,6 +885,7 @@ def get_td(dx, locked_nodes, n=-1):
     """Calculates the damping coefficient for the Newthon method.
 
     The damping coefficient is choosen as the lowest between:
+
     - the damping required for the first NR iterations, a parameter which is set
       through the integer ``options.nr_damp_first_iters``.
     - If ``options.nl_voltages_lock`` evaluates to ``True``, the biggest damping
@@ -904,6 +905,7 @@ def get_td(dx, locked_nodes, n=-1):
         The NR iteration counter
 
     .. note::
+
         If ``n`` is set to ``-1`` (or any negative value), ``td`` is independent
         from the iteration number and ``options.nr_damp_first_iters`` is ignored.
 
@@ -911,6 +913,7 @@ def get_td(dx, locked_nodes, n=-1):
 
     td : float
         The damping coefficient.
+
     """
 
     if not options.nr_damp_first_iters or n < 0:
