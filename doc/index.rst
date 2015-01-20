@@ -12,6 +12,7 @@ Command line interface and netlist syntax
 .. toctree::
    :maxdepth: 1
 
+   help/Command-Line-Help
    help/Netlist-Syntax
 
 
