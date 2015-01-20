@@ -36,75 +36,74 @@ def _cli():
              " (c) 2006-2015 Giuseppe Venturini")
 
     # general options
-    parser.add_option(
-        "-v", "--verbose", action="store", type="string", dest="verbose",
-        default="3", help="Verbose level: from 0 (almost silent) to 5 (debug)")
-    parser.add_option(
-        "-p", "--print", action="store_true", dest="print_circuit", default=False,
-        help="Print the parsed circuit")
-    parser.add_option(
-        "-o", "--outfile", action="store", type="string", dest="outfile",
-        default='stdout', help="Data output file. Defaults to stdout.")
-    parser.add_option(
-        "", "--dc-guess", action="store", type="string", dest="dc_guess",
-        default="guess", help="Guess to be used to start a op or dc " + \
-                              "analysis: none or guess. Defaults to guess.")
-    parser.add_option(
-        "-t", "--tran-method", action="store", type="string", dest="method",
-        default=transient.TRAP.lower(), help="Method to be used in transient "+\
-                "analysis: " + transient.IMPLICIT_EULER.lower() + ", " + \
-                transient.TRAP.lower() + ", " + transient.GEAR2.lower() + \
-                ", " + transient.GEAR3.lower() + ", " + \
-                transient.GEAR4.lower() + ", " + transient.GEAR5.lower() + \
-                " or " + transient.GEAR6.lower() + ". Defaults to TRAP.")
-    parser.add_option(
-        "", "--t-fixed-step", action="store_true", dest="no_step_control",
-        default=False, help="Disables the step control in transient analysis.")
-    parser.add_option(
-        "", "--v-absolute-tolerance", action="store", type="string", dest="vea",
-        default=None, help="Voltage absolute tolerance. Default: " +
-        str(options.vea) + " V")
-    parser.add_option(
-        "", "--v-relative-tolerance", action="store", type="string", dest="ver",
-        default=None, help="Voltage relative tolerance. \
-                      Default: " + str(options.ver))
-    parser.add_option(
-        "", "--i-absolute-tolerance", action="store", type="string", dest="iea",
-        default=None, help="Current absolute tolerance. Default: " +
-        str(options.iea) + " A")
-    parser.add_option(
-        "", "--i-relative-tolerance", action="store", type="string", dest="ier",
-        default=None, help="Current relative tolerance. " + \
-        "Default: " + str(options.ier))
-    parser.add_option(
-        "", "--h-min", action="store", type="string", dest="hmin", default=None,
-        help="Minimum time step. Default: " + str(options.hmin))
-    parser.add_option(
-        "", "--dc-max-nr", action="store", type="string", dest="dc_max_nr_iter",
-        default=None, help="Maximum nr of NR iterations for dc analysis. " + \
-        "Default: " + str(options.dc_max_nr_iter))
+    parser.add_option("-v", "--verbose", action="store", type="string",
+                     dest="verbose", default="3", help="Verbose level: " +
+                    "from 0 (almost silent) to 5 (debug)")
+    parser.add_option("-p", "--print", action="store_true",
+                      dest="print_circuit", default=False, help="Print " +
+                      "the parsed circuit")
+    parser.add_option("-o", "--outfile", action="store", type="string",
+                      dest="outfile", default='stdout', help="Data output " +
+                      "file. Defaults to stdout.")
+    parser.add_option("", "--dc-guess", action="store", type="string",
+                      dest="dc_guess", default="guess", help="Guess to be " +
+                      "used to start a OP or DC analysis: none or guess. " +
+                      "Defaults to guess.")
+    parser.add_option("-t", "--tran-method", action="store", type="string",
+                      dest="method", default=transient.TRAP.lower(),
+                      help="Method to be used in transient analysis: " +
+                      transient.IMPLICIT_EULER.lower() + ", " +
+                      transient.TRAP.lower() + ", " +
+                      transient.GEAR2.lower() + ", " +
+                      transient.GEAR3.lower() + ", " +
+                      transient.GEAR4.lower() + ", " +
+                      transient.GEAR5.lower() + " or " +
+                      transient.GEAR6.lower() + ". Defaults to TRAP.")
+    parser.add_option("", "--t-fixed-step", action="store_true",
+                      dest="no_step_control", default=False, help="Disables" +
+                      " the step control in transient analysis.")
+    parser.add_option("", "--v-absolute-tolerance", action="store",
+                      type="string", dest="vea", default=None, help="Voltage" +
+                      " absolute tolerance. Default: " + str(options.vea) + " V")
+    parser.add_option("", "--v-relative-tolerance", action="store",
+                      type="string", dest="ver", default=None, help="Voltage " +
+                      "relative tolerance. Default: " + str(options.ver))
+    parser.add_option("", "--i-absolute-tolerance", action="store",
+                      type="string", dest="iea", default=None, help="Current " +
+                      "absolute tolerance. Default: " + str(options.iea) + " A")
+    parser.add_option("", "--i-relative-tolerance", action="store",
+                      type="string", dest="ier", default=None, help="Current " +
+                      "relative tolerance. Default: " + str(options.ier))
+    parser.add_option("", "--h-min", action="store", type="string",
+                      dest="hmin", default=None, help="Minimum time step. " +
+                      "Default: " + str(options.hmin))
+    parser.add_option("", "--dc-max-nr", action="store", type="string",
+                      dest="dc_max_nr_iter", default=None, help="Maximum " +
+                      "number of NR iterations for DC and OP analyses. " +
+                      "Default: " + str(options.dc_max_nr_iter))
     parser.add_option("", "--t-max-nr", action="store", type="string",
-        dest="transient_max_nr_iter", default=None, help="Maximum number of NR \
-        iterations for each time step during transient analysis. " + \
-        "Default: " + str(options.transient_max_nr_iter))
+                      dest="transient_max_nr_iter", default=None,
+                      help="Maximum number of NR iterations for each time " +
+                      "step during transient analysis. Default: " +
+                      str(options.transient_max_nr_iter))
     parser.add_option("", "--t-max-time", action="store", type="string",
-        dest="transient_max_time_iter", default=None,
-        help="Maximum number of time iterations during " + \
-        "transient analysis. Setting it to 0 (zero) disables " + \
-        "the limit. Default: " + \
-        str(options.transient_max_time_iter))
+                      dest="transient_max_time_iter", default=None,
+                      help="Maximum number of time iterations during " +
+                      "transient analysis. Setting it to 0 (zero) disables " +
+                      "the limit. Default: " +
+                      str(options.transient_max_time_iter))
     parser.add_option("", "--s-max-nr", action="store", type="string",
-        dest="shooting_max_nr_iter", default=None,
-        help="Maximum number of NR iterations during shooting " + \
-        "analysis. Setting it to 0 (zero) disables the " + \
-        "limit. Default: " + str(options.shooting_max_nr_iter))
-    parser.add_option(
-        "", "--gmin", action="store", type="string", dest="gmin",
-        default=None, help="The minimum conductance to ground. " + \
-        "Inserted when requested. Default: " + str(options.gmin))
-    parser.add_option(
-        "", "--cmin", action="store", type="string", dest="cmin", default=None,
-        help="The minimum capacitance to ground. Default: " + str(options.cmin))
+                      dest="shooting_max_nr_iter", default=None,
+                      help="Maximum number of NR iterations during shooting " +
+                      "analysis. Setting it to 0 (zero) disables the " +
+                      "limit. Default: " + str(options.shooting_max_nr_iter))
+    parser.add_option("", "--gmin", action="store", type="string", dest="gmin",
+                      default=None, help="The minimum conductance to ground. " +
+                      "Inserted when requested. Default: " +
+                      str(options.gmin))
+    parser.add_option("", "--cmin", action="store", type="string", dest="cmin",
+                      default=None, help="The minimum capacitance to ground. " +
+                      "Default: " + str(options.cmin))
 
     (cli_options, remaning_args) = parser.parse_args()
 
