@@ -605,19 +605,31 @@ class VSource(Component):
 
     .. image:: images/elem/vsource.svg
 
-    Defaults to a DC voltage source. To implement a time-varying source:
-    set ``_time_function`` to an appropriate ``function(time)`` and
-    ``is_timedependent=True``
+    Defaults to a DC voltage source.
 
-    n1: + node
-    n2: - node
-    dc_value: DC voltage (V)
-    ac_value: AC voltage (V)
+    To implement a time-varying source:
 
-    Note: if DC voltage is set and is_timedependent == True, dc_value will be returned
-    if the voltage is evaluated in a DC analysis. This may be useful to simulate a OP
-    and then perform a transient analysis with the OP as starting point.
-    Otherwise the value in t=0 is used for DC analysis.
+    * set ``_time_function`` to an appropriate instance having a ``value(self,
+      time)`` method
+    * set ``is_timedependent`` to ``True``.
+
+    **Parameters:**
+
+    part_id : string, optional
+        The unique identifier of this element. The first letter should be
+        ``'V'``.
+    n1 : int, optional
+        *Internal* node to be connected to the anode. It must be set for the
+        device to be valid.
+    n2 : int, optional
+        *Internal* node to be connected to the cathode. It must be set for the
+        device to be valid.
+    dc_value : float, optional
+        DC voltage in Volt. Defaults to 1.
+    ac_value : complex float, optional
+        AC voltage in Volt. Defaults to no AC characteristics,
+        ie :math:`V(\\omega) = 0 \\;\\;\\forall \\omega > 0`.
+
     """
 
     def __init__(self, part_id='V', n1=None, n2=None, dc_value=1.0, ac_value=0):
@@ -646,8 +658,22 @@ class VSource(Component):
         return rep
 
     def V(self, time=None):
-        """Returns the voltage in V at the time supplied.
-        If time is not supplied, or set to None, or the source is DC, returns dc_value"""
+        """Evaluate the voltage applied by the voltage source.
+
+        If ``time`` is not supplied, or if it is set to ``None``, or if the
+        source is only specified for DC, returns ``dc_value``.
+
+        **Parameters:**
+
+        time : float or None, optional
+            The time at which the voltage is evaluated, if any.
+
+        **Returns:**
+
+        V : float
+            The voltage, in Volt.
+        """
+
         if not self.is_timedependent or \
             (self._time_function is None) or \
                 (time is None and self.dc_value is not None):
@@ -656,6 +682,20 @@ class VSource(Component):
             return self._time_function.value(time)
 
     def get_netlist_elem_line(self, nodes_dict):
+        """A netlist line that, parsed, evaluates to the same instance
+
+        **Parameters:**
+
+        nodes_dict : dict
+            The nodes dictionary of the circuit, so that the method
+            can convert its internal node IDs to the corresponding
+            external ones.
+
+        **Returns:**
+
+        ntlst_line : string
+            The netlist line.
+        """
         rep = ""
         rep += "%s %s %s " % (self.part_id, nodes_dict[self.n1],
                              nodes_dict[self.n2])
