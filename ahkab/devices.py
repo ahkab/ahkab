@@ -17,9 +17,66 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 """
-This module contains several basic element classes.
+This module contains several basic element classes and time functions.
 
-General form of a nonlinear element class:
+Introduction
+------------
+
+While they may be instantiated directly by the user, notice that the
+main ``ahkab`` module provides convenience functions to instantiate
+and connect into a circuit instance all of the following devices.
+
+Of more interest to the end user are the time function classes,
+which the user will have to instantiate to provide a time-varying
+characteristic to independent sources.
+
+Notice that both time functions and circuit elements are not restricted
+to those provided here, the user is welcome to provide his own.
+
+While implementing a new component requires some understanding of the internals
+of the simultor and it is expected to be less common, implementing a custom time
+function is easy and common practice, as long as you are intefacing to the
+simulator through Python.
+
+Both of the two cases have a dedicated section below.
+
+Classes defined in this module
+------------------------------
+
+Elements
+========
+
+.. autosummary::
+    ISource
+    VSource
+    Resistor
+    Capacitor
+    Inductor
+    InductorCoupling
+    EVSource
+    GISource
+    HVSource
+    FISource
+
+Time functions
+===============
+
+.. autosummary::
+    pulse
+    sin
+    exp
+
+Defining new elements and subclassing ``Component``
+---------------------------------------------------
+
+We recommend to subclass :class:`ahkab.devices.Component` if you intend to
+define a new element.
+
+The general form of a (possibly nonlinear) element class is described in the
+following.
+
+Required attributes and methods
+===============================
 
 The class must provide:
 
@@ -75,27 +132,48 @@ position ``port_index`` in the ``ports_vector`` (see point **2** above)
 and the element output current, when the operating point is specified by
 the voltages in the ``voltages_vector``.
 
-5. elem.is_nonlinear
+5. ``elem.is_nonlinear``
 
 A non linear element must have a ``elem.is_nonlinear`` field set to True.
 
-6. elem.is_symbolic
+6. ``elem.is_symbolic``
 
 This boolean flag is used to know whether the element should be treated
 symbolically by the ymbolic solver or not. It is meant to be toggled
 by the user at will.
 
-Recommended:
+7. Every element should have a ``get_netlist_elem_line(self, nodes_dict)``
+allowing the element to print a netlist entry that parses to itself.
+
+Recommended attributes and methods
+==================================
 
 1. A non linear element may have a list/tuple of the same length of its
-``ports_vector`` in which there are the recommended guesses for dc analysis.
+``ports_vector`` in which there are the recommended guesses for DC and OP
+analyses.
 
 Eg. ``Vgs`` is set to ``Vt0`` in mosfets.
 
 This is obviously useless for linear devices.
 
-2. Every element should have a ``get_netlist_elem_line(self, nodes_dict)``
-allowing the element to print a netlist entry that parses to itself.
+Defining custom time functions
+------------------------------
+
+Defining a custom time function is easy, all you need is:
+
+* An object with a ``value(self, time)`` method.
+
+The simulator will call ``value(self, time)`` of the class instance you provide
+at every time step in time-based simulations. It expects to receive as return
+value a ``float``, corresponding to the value of the voltage applied by the
+voltage source, in Volt, if the custom time function was passed to
+:class:`VSource`, or to the value of the current flowing through the current
+source, if the custom time function was passed to :class:`ISource`.
+
+The standard notation applies.
+
+Module reference
+----------------
 
 """
 
