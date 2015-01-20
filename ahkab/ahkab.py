@@ -29,19 +29,52 @@ you the need to call directly the functions in most submodules.
 Do you have a circuit?
 ======================
 
-To run a simulation, you'll need a circuit first: a circuit can be described with a
-simulation deck or with a circuit object.
+To run a simulation, you'll need a circuit first: a circuit can be described
+with a simulation deck or with a circuit object.
 
-In case you have a netlist (simulation deck) available, you may call
-:func:`main` directly. The netlist should be described according to the rules in
-:doc:`help/Netlist-Syntax`. Running the simulation through the :func:`main`
-method allows to process the result in Python.
+Define your circuit by means of a Circuit object
+------------------------------------------------
 
 In a Python script, describing the circuit through the
-:class:`ahkab.circuit.Circuit` interface is arguably more versatile a choice.
+:class:`ahkab.circuit.Circuit` interface is a very versatile a choice.
 
-Create a simulation object
-==========================
+Refer to :class:`ahkab.circuit.Circuit` for a complete description of the
+process and the documentation of several helper functions to assist you in this
+task.
+
+You may then jump to :ref:`create-simulation-object`.
+
+Define your circuit by means of a netlist file
+----------------------------------------------
+
+The circuit description can also be provided as a text file, also known as
+netlist deck, for historical reason. This file will also typically include
+simulation and post-processing directives, such as plotting.
+
+The netlist should be described according to the rules in
+:doc:`help/Netlist-Syntax`.
+
+If you have a netlist (simulation deck) available, you have several possibilities.
+
+The first, assuming your netlist defines some simulation would be to run it:
+
+* you may call ``ahkab`` from the command line. The command line interface is
+  described in :doc:`help/Command-Line-Help`.
+* you may call :func:`main` directly from Python. Running the simulation through
+  :func:`main` method allows to process the result in Python.
+
+Alternatively, you may parse the netlist through
+:func:`ahkab.netlist_parser.parse_circuit`, which will return the circuit
+instance, all the simulations defined in the deck and all the post-processing
+directives as well.
+
+You may now modify the circuit and simulation objects as you please, or create
+new ones, as well as run them as described in the :ref:`run-it` section.
+
+.. _create-simulation-object:
+
+How to create a simulation object
+=================================
 
 Next, you need to have a simulation object you would like to run.
 
@@ -58,6 +91,8 @@ The following methods are available to quickly create a simulation object:
 
 Click on one of the above hyperlinks to be taken to the corresponding
 documentation section.
+
+.. _run-it:
 
 Run it!
 =======
