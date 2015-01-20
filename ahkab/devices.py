@@ -973,6 +973,7 @@ class exp:
         self._type = "V"
 
     def value(self, time):
+        """Evaluate the exponential function at the given time."""
         if time < self.td1:
             return self.v1
         elif time < self.td2:
