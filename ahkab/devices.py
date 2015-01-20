@@ -536,9 +536,9 @@ class ISource(Component):
 
     .. image:: images/elem/isource.svg
 
-    Defaults to a DC current source. To implement a time-varying source:
-    set ``_time_function`` to an appropriate ``function(time)`` and
-    ``is_timedependent=True``
+    By default it is a DC current source. To implement a time-varying source
+    set ``_time_function`` to an appropriate ``function(time)`` and set
+    ``is_timedependent`` to ``True``.
 
     n1: + node
     n2: - node
