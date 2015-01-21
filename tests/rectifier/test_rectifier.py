@@ -38,7 +38,7 @@ def assemble():
     cir.add_resistor('R4d', 'int3', 'int1', 1e5)
 
     if cli:
-        printing.print_circuit(cir)
+        print(cir)
 
     return cir
 
