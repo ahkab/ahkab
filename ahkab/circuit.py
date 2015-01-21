@@ -68,7 +68,7 @@ Example:
     # get the ref node (gnd)
     gnd = mycircuit.get_ground_node()
     # add a node named n1 and a 600 ohm resistor connected between n1 and gnd
-    mycircuit.add_resistor(name="R1", n1="n1", n2=gnd, R=600)
+    mycircuit.add_resistor(part_id="R1", n1="n1", n2=gnd, R=600)
 
 Refer to the methods help for additional information.
 
@@ -395,7 +395,7 @@ class Circuit(list):
         """Returns the reference node, AKA GND."""
         return '0'
 
-    def get_elem_by_name(self, name):
+    def get_elem_by_name(self, part_id):
         """Get a circuit element from its ``part_id`` value.
 
         If no matching element is found, the method returns
@@ -403,7 +403,7 @@ class Circuit(list):
 
         **Parameters:**
 
-        name : string
+        part_id : string
             The ``part_id`` of the element
 
         **Returns:**
@@ -414,7 +414,7 @@ class Circuit(list):
         :raises ValueError: if the element is not found.
         """
         for e in self:
-            if e.part_id.lower() == name.lower():
+            if e.part_id.lower() == part_id.lower():
                 return e
         raise ValueError('Element %s not found')
 
@@ -471,7 +471,7 @@ class Circuit(list):
             del self.models[model_label]
         # should print a warning here
 
-    def add_resistor(self, name, n1, n2, value):
+    def add_resistor(self, part_id, n1, n2, value):
         """Adds a resistor to the circuit.
 
         The resistor instance is added to the circuit elements
@@ -480,8 +480,8 @@ class Circuit(list):
 
         **Parameters:**
 
-        name : string
-            the resistor name (eg "R1"). The first letter is replaced by an R
+        part_id : string
+            the resistor part_id (eg "R1"). The first letter is replaced by an R
 
         n1, n2 : string
             the nodes to which the resistor is connected.
@@ -503,11 +503,10 @@ class Circuit(list):
         if value == 0:
             raise CircuitError("ZERO-valued resistors are not allowed.")
 
-        elem = devices.Resistor(n1=n1, n2=n2, value=value)
-        elem.part_id = name
+        elem = devices.Resistor(part_id=part_id, n1=n1, n2=n2, value=value)
         self.append(elem)
 
-    def add_capacitor(self, name, n1, n2, value, ic=None):
+    def add_capacitor(self, part_id, n1, n2, value, ic=None):
         """Adds a capacitor to the circuit.
 
         The capacitor instance is added to the circuit elements
@@ -516,8 +515,8 @@ class Circuit(list):
 
         **Parameters:**
 
-        name : string
-            The capacitor name (eg "C1"). The first letter is always C.
+        part_id : string
+            The capacitor part_id (eg "C1"). The first letter is always C.
 
         n1, n2 : string
             The nodes to which the element is connected.
@@ -542,12 +541,11 @@ class Circuit(list):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
 
-        elem = devices.Capacitor(n1=n1, n2=n2, value=value, ic=ic)
-        elem.part_id = name
+        elem = devices.Capacitor(part_id=part_id, n1=n1, n2=n2, value=value, ic=ic)
 
         self.append(elem)
 
-    def add_inductor(self, name, n1, n2, value, ic=None):
+    def add_inductor(self, part_id, n1, n2, value, ic=None):
         """Adds an inductor to the circuit.
 
         The inductor instance is added to the circuit elements
@@ -556,8 +554,8 @@ class Circuit(list):
 
         **Parameters:**
 
-        name : string
-            The inductor name (eg "Lfilter"). The first letter is always L.
+        part_id : string
+            The inductor part_id (eg "Lfilter"). The first letter is always L.
 
         n1, n2 : string
             The nodes to which the element is connected. Eg. ``"in"`` or ``"out_a"``.
@@ -580,12 +578,11 @@ class Circuit(list):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
 
-        elem = devices.Inductor(n1=n1, n2=n2, value=value, ic=ic)
-        elem.part_id = name
+        elem = devices.Inductor(part_id=part_id, n1=n1, n2=n2, value=value, ic=ic)
 
         self.append(elem)
 
-    def add_inductor_coupling(self, name, L1, L2, value):
+    def add_inductor_coupling(self, part_id, L1, L2, value):
         """Add a coupling between two inductors.
 
         **Parameters:**
@@ -612,13 +609,12 @@ class Circuit(list):
 
         if L1elem is None or L2elem is None:
             error_msg = "One or more coupled inductors for %s were not found: %s (found: %s), %s (found: %s)." % \
-                (name, L1, L1elem is not None, L2, L2elem is not None)
+                (part_id, L1, L1elem is not None, L2, L2elem is not None)
             raise ValueError(error_msg)
 
         M = math.sqrt(L1elem.value * L2elem.value) * value
 
-        elem = devices.InductorCoupling(L1=L1, L2=L2, K=value, M=M)
-        elem.part_id = name
+        elem = devices.InductorCoupling(part_id=part_id, L1=L1, L2=L2, K=value, M=M)
         L1elem.coupling_devices.append(elem)
         L2elem.coupling_devices.append(elem)
 
@@ -630,8 +626,8 @@ class Circuit(list):
 
         **Parameters:**
 
-        name : string
-            The voltage source name (eg "VA"). The first letter is always V.
+        part_id : string
+            The voltage source part_id (eg "VA"). The first letter is always V.
         n1, n2 : string
             The nodes to which the element is connected. Eg. ``"in"`` or
             ``"out_a"``.
@@ -645,8 +641,8 @@ class Circuit(list):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
 
-        elem = devices.VSource(
-            part_id=part_id, n1=n1, n2=n2, dc_value=dc_value, ac_value=ac_value)
+        elem = devices.VSource(part_id=part_id, n1=n1, n2=n2, dc_value=dc_value,
+                               ac_value=ac_value)
 
         if function is not None:
             elem.is_timedependent = True
@@ -660,7 +656,7 @@ class Circuit(list):
 
         **Parameters:**
 
-        name : string
+        part_id : string
             The current source ID (eg ``"IA"`` or ``"I3"``). The first letter
             is always I.
         n1, n2 : string
@@ -675,8 +671,8 @@ class Circuit(list):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
 
-        elem = devices.ISource(
-            part_id=part_id, n1=n1, n2=n2, dc_value=dc_value, ac_value=ac_value)
+        elem = devices.ISource(part_id=part_id, n1=n1, n2=n2, dc_value=dc_value,
+                               ac_value=ac_value)
 
         if function is not None:
             elem.is_timedependent = True
@@ -691,7 +687,7 @@ class Circuit(list):
 
         **Parameters:**
 
-        name : string
+        part_id : string
             The diode ID (eg "D1"). The first letter is always D.
         n1, n2 : string
             the nodes to which the element is connected. eg. ``"in"`` or
@@ -730,8 +726,8 @@ class Circuit(list):
 
         **Parameters:**
 
-        name : string
-            The mos name (eg "M1"). The first letter is always M.
+        part_id : string
+            The mos part_id (eg "M1"). The first letter is always M.
         nd : string
             The drain node.
         ng : string
@@ -765,13 +761,11 @@ class Circuit(list):
             raise ModelError("Unknown model id: " + model_label)
 
         if isinstance(models[model_label], ekv.ekv_mos_model):
-            elem = ekv.ekv_device(
-                part_id, nd, ng, ns, nb, w, l, models[model_label], m, n)
-
+            elem = ekv.ekv_device(part_id, nd, ng, ns, nb, w, l,
+                                  models[model_label], m, n)
         elif isinstance(models[model_label], mosq.mosq_mos_model):
-            elem = mosq.mosq_device(
-                nd, ng, ns, nb, w, l, models[model_label], m, n, part_id)
-
+            elem = mosq.mosq_device(part_id, nd, ng, ns, nb, w, l,
+                                    models[model_label], m, n)
         else:
             raise Exception("Unknown model type for " + model_label)
 
@@ -816,7 +810,7 @@ class Circuit(list):
 
         **Parameters:**
 
-        name : string
+        part_id : string
             The vcvs ID (eg "E1"). The first letter is always E.
         n1, n2 : string
             The output port nodes, where the output voltage is
@@ -834,8 +828,8 @@ class Circuit(list):
         sn1 = self.add_node(sn1)
         sn2 = self.add_node(sn2)
 
-        elem = devices.EVSource(
-            part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=value)
+        elem = devices.EVSource(part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2,
+                                value=value)
 
         self.append(elem)
 
@@ -847,7 +841,7 @@ class Circuit(list):
 
         **Parameters:**
 
-        name : string
+        part_id : string
             The VCCS ID (eg ``"G1"``). The first letter is always ``'G'``.
         n1, n2 : string
             the output port nodes, where the output current is
@@ -868,12 +862,12 @@ class Circuit(list):
         sn1 = self.add_node(sn1)
         sn2 = self.add_node(sn2)
 
-        elem = devices.GISource(
-            part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=value)
+        elem = devices.GISource(part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2,
+                                value=value)
 
         self.append(elem)
 
-    def add_switch(self, name, n1, n2, sn1, sn2, ic, model_label, models=None):
+    def add_switch(self, part_id, n1, n2, sn1, sn2, ic, model_label, models=None):
         """Adds a voltage-controlled or current-controlled switch to the circuit
         (also takes care that its nodes are added as well).
 
@@ -881,7 +875,7 @@ class Circuit(list):
 
         - Current-controlled switches are not yet implemented. If you try to add one
           you'll trigger an error.
-        - The switches name should begin with 'S' for voltage-controlled switches
+        - The switches part_id should begin with 'S' for voltage-controlled switches
           and with 'W' for current-controlled switches.
         - The actual behavior is set by the model. Make sure you supply a voltage-controlled
           switch model for a voltage-controlled switch and the same for the
@@ -889,7 +883,7 @@ class Circuit(list):
 
         **Parameters:**
 
-        name : string
+        part_id : string
             the switch ID (eg ``"S1"`` - voltage-controlled - or ``"Wa"`` -
             current-controlled). The first letter is always ``S`` or ``W``.
         n1, n2 : string
@@ -919,8 +913,9 @@ class Circuit(list):
         if model_label not in models:
             raise ModelError("Unknown switch model id: " + model_label)
 
-        elem = switch.switch_device(
-            part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2, model=models[model_label])
+        elem = switch.switch_device(part_id=part_id, n1=n1, n2=n2, sn1=sn1,
+                                    sn2=sn2, model=models[model_label])
+
         self.append(elem)
 
     def add_user_defined(self, module, label, param_dict):
@@ -945,7 +940,7 @@ class Circuit(list):
         param_dict.update({"circuit_node": self.add_node})
 
         elem = elem_class(**param_dict)
-        elem.part_id = "y%s" % name[1:]
+        elem.part_id = "y%s" % part_id[1:]
 
         # call check() if supported
         if hasattr(elem, "check"):
@@ -1013,7 +1008,7 @@ class Circuit(list):
         **Parameters:**
 
         id_wdescr : string
-            The element name, eg. 'V1'. Notice it includes
+            The element part_id, eg. 'V1'. Notice it includes
             both the id ('V') and the description ('1').
         verbose : int
             The verbosity level, from 0 (silent) to 6 (debug).
@@ -1044,19 +1039,17 @@ class Circuit(list):
         return vde_index
 
     def find_vde(self, index):
-        """Finds a voltage defined element MNA index.
+        """Finds a voltage-defined element MNA from its index
 
         **Parameters:**
 
-        id_wdescr : string
-            The element name, eg. ``'V1'``. Notice it includes
-            both the id ('V') and the description ('1').
-            The search term is case insensitive.
+        index : int
+            The element index in the KVL equations.
 
         **Returns:**
 
-        indx : int
-            The index.
+        e : The circuit element, a n instance of a subclass of Component
+            The element corresponding to ``index``.
 
         :raises IndexError: if no element corresponds to such an index.
         """

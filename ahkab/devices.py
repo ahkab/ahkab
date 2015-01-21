@@ -389,7 +389,7 @@ class Resistor(Component):
     #     n1 o---+  \  /  \  /  \  +---o n2
     #                \/    \/    \/
     #
-    def __init__(self, part_id='R', n1=None, n2=None, value=None):
+    def __init__(self, part_id, n1, n2, value):
         self.part_id = part_id
         self._value = value
         self._g = 1./value
@@ -445,7 +445,7 @@ class Capacitor(Component):
     #               |  |
     #               |  |
     #
-    def __init__(self, part_id='C', n1=None, n2=None, value=None, ic=None):
+    def __init__(self, part_id, n1, n2, value, ic):
         self.part_id = part_id
         self.value = value
         self.n1 = n1
@@ -487,7 +487,7 @@ class Inductor(Component):
     #  n1 o----((((((((----o n2
     #
     #
-    def __init__(self, part_id='L', n1=None, n2=None, value=None, ic=None):
+    def __init__(self, part_id, n1, n2, value, ic):
         self.value = value
         self.n1 = n1
         self.n2 = n2
@@ -500,7 +500,10 @@ class Inductor(Component):
 
 
 class InductorCoupling(Component):
-    def __init__(self, part_id='K', L1=None, L2=None, K=None, M=None):
+    # K1 L1 L2 k=<float>
+    # M = sqrt(L1elem.value * L2elem.value) * Kvalue
+    def __init__(self, part_id, L1, L2, K, M):
+        self.part_id = part_id
         self.L1 = L1
         self.L2 = L2
         self.M = M
@@ -551,7 +554,7 @@ class ISource(Component):
     with the OP as starting point.
     Otherwise the value in ``t=0`` is used for DC analysis.
     """
-    def __init__(self, part_id='I', n1=None, n2=None, dc_value=None, ac_value=0):
+    def __init__(self, part_id, n1, n2, dc_value=None, ac_value=0):
         self.part_id = part_id
         self.dc_value = dc_value
         self.abs_ac = np.abs(ac_value) if ac_value else None
@@ -632,7 +635,7 @@ class VSource(Component):
 
     """
 
-    def __init__(self, part_id='V', n1=None, n2=None, dc_value=1.0, ac_value=0):
+    def __init__(self, part_id, n1, n2, dc_value, ac_value=0):
         self.part_id = part_id
         self.dc_value = dc_value
         self.n1 = n1
@@ -736,7 +739,7 @@ class EVSource(Component):
     is_nonlinear = False
     is_symbolic = True
 
-    def __init__(self, part_id='E', n1=None, n2=None, value=None, sn1=None, sn2=None):
+    def __init__(self, part_id, n1, n2, value, sn1, sn2):
         self.part_id = part_id
         self.n1 = n1
         self.n2 = n2
@@ -784,7 +787,7 @@ class GISource(Component):
     is_nonlinear = False
     is_symbolic = True
 
-    def __init__(self, part_id='G', n1=None, n2=None, value=None, sn1=None, sn2=None):
+    def __init__(self, part_id, n1, n2, value, sn1, sn2):
         self.part_id = part_id
         self.n1 = n1
         self.n2 = n2
@@ -808,14 +811,13 @@ class HVSource(Component):  # TODO: fixme
     .. image:: images/elem/ccvs.svg
 
     """
-    def __init__(self, part_id='H', n1=None, n2=None, value=None, sn1=None, sn2=None):
+    def __init__(self, part_id, n1, n2, value, source_id):
         print("HVSource not implemented. TODO")
         self.part_id = part_id
         self.n1 = n1
         self.n2 = n2
         self.alpha = value
-        self.sn1 = sn1
-        self.sn2 = sn2
+        self.source_id = source_id
         self.is_nonlinear = False
         self.is_symbolic = True
 
@@ -840,7 +842,8 @@ class FISource(Component):
     alpha: prop constant between the currents
 
     """
-    def __init__(self, part_id='F', n1=None, n2=None, value=None, source_id=None):
+    #F
+    def __init__(self, part_id, n1, n2, value, source_id):
         self.part_id = part_id
         self.n1 = n1
         self.n2 = n2

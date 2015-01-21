@@ -14,12 +14,12 @@ def test():
 
     gnd = mycircuit.get_ground_node()
 
-    mycircuit.add_resistor(name="R1", n1="n1", n2="n2", value=600)
-    mycircuit.add_inductor(name="L1", n1="n2", n2="n3", value=15.24e-3)
-    mycircuit.add_capacitor(name="C1", n1="n3", n2=gnd, value=119.37e-9)
-    mycircuit.add_inductor(name="L2", n1="n3", n2="n4", value=61.86e-3)
-    mycircuit.add_capacitor(name="C2", n1="n4", n2=gnd, value=155.12e-9)
-    mycircuit.add_resistor(name="R2", n1="n4", n2=gnd, value=1.2e3)
+    mycircuit.add_resistor(part_id="R1", n1="n1", n2="n2", value=600)
+    mycircuit.add_inductor(part_id="L1", n1="n2", n2="n3", value=15.24e-3)
+    mycircuit.add_capacitor(part_id="C1", n1="n3", n2=gnd, value=119.37e-9)
+    mycircuit.add_inductor(part_id="L2", n1="n3", n2="n4", value=61.86e-3)
+    mycircuit.add_capacitor(part_id="C2", n1="n4", n2=gnd, value=155.12e-9)
+    mycircuit.add_resistor(part_id="R2", n1="n4", n2=gnd, value=1.2e3)
 
     mycircuit.add_vsource("V1", n1="n1", n2='n5', dc_value=3.3333, ac_value=.33333, function=step)
     mycircuit.add_vsource("V2", n1="n5", n2='n6', dc_value=3.3333, ac_value=.33333, function=damped_sin)

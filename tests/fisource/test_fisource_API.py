@@ -20,11 +20,11 @@ def test():
     mycircuit = circuit.Circuit(title="Test CCCS API", filename=None)
     gnd = mycircuit.get_ground_node()
 
-    mycircuit.add_resistor(name="R1", n1="1", n2=gnd, value=500)
-    mycircuit.add_resistor(name="R2", n1="2", n2=gnd, value=500)
+    mycircuit.add_resistor(part_id="R1", n1="1", n2=gnd, value=500)
+    mycircuit.add_resistor(part_id="R2", n1="2", n2=gnd, value=500)
     mycircuit.add_cccs('F1', n1='3', n2='4', source_id='VA', value=5)
-    mycircuit.add_resistor(name="R3", n1="3", n2=gnd, value=1e3)
-    mycircuit.add_resistor(name="R4", n1="4", n2=gnd, value=1e3)
+    mycircuit.add_resistor(part_id="R3", n1="3", n2=gnd, value=1e3)
+    mycircuit.add_resistor(part_id="R4", n1="4", n2=gnd, value=1e3)
     mycircuit.add_vsource("VA", n1="1", n2='2', dc_value=0.1)
 
     print(mycircuit)

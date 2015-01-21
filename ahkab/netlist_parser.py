@@ -306,8 +306,7 @@ def parse_elem_resistor(line, circ, line_elements=None):
     if value == 0:
         raise NetlistParseError("ZERO-valued resistors are not allowed.")
 
-    elem = devices.Resistor(
-        part_id=line_elements[0], n1=n1, n2=n2, value=value)
+    elem = devices.Resistor(part_id=line_elements[0], n1=n1, n2=n2, value=value)
 
     return [elem]
 
@@ -344,8 +343,8 @@ def parse_elem_capacitor(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
 
-    elem = devices.Capacitor(part_id=line_elements[
-                             0], n1=n1, n2=n2, value=convert_units(line_elements[3]), ic=ic)
+    elem = devices.Capacitor(part_id=line_elements[0], n1=n1, n2=n2,
+                             value=convert_units(line_elements[3]), ic=ic)
 
     return [elem]
 
@@ -382,8 +381,8 @@ def parse_elem_inductor(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
 
-    elem = devices.Inductor(part_id=line_elements[
-                            0], n1=n1, n2=n2, value=convert_units(line_elements[3]), ic=ic)
+    elem = devices.Inductor(part_id=line_elements[0], n1=n1, n2=n2,
+                            value=convert_units(line_elements[3]), ic=ic)
 
     return [elem]
 
@@ -407,7 +406,7 @@ def parse_elem_inductor_coupling(line, circ, line_elements=None, elements=[]):
     if (len(line_elements) < 4) or (len(line_elements) > 4 and not line_elements[5][0] == "*"):
         raise NetlistParseError("")
 
-    name = line_elements[0]
+    part_id = line_elements[0]
     L1 = line_elements[1]
     L2 = line_elements[2]
 
@@ -428,15 +427,15 @@ def parse_elem_inductor_coupling(line, circ, line_elements=None, elements=[]):
             L2elem = e
 
     if L1elem is None or L2elem is None:
-        error_msg = "One or more coupled inductors for %s were not found: %s (found: %s), %s (found: %s)." % \
-            (name, L1, L1elem is not None, L2, L2elem is not None)
-        printing.print_general_error(error_msg)
-        raise NetlistParseError("")
+        error_msg = "One or more coupled inductors for " + \
+                    "%s were not found: %s (found: %s), %s (found: %s)." % \
+                    (part_id, L1, L1elem is not None, L2, L2elem is not None)
+        raise NetlistParseError(error_msg)
 
     M = math.sqrt(L1elem.value * L2elem.value) * Kvalue
 
-    elem = devices.InductorCoupling(L1=L1, L2=L2, K=Kvalue, M=M)
-    elem.part_id = name
+    elem = devices.InductorCoupling(part_id=part_id, L1=L1, L2=L2, K=Kvalue,
+                                    M=M)
     L1elem.coupling_devices.append(elem)
     L2elem.coupling_devices.append(elem)
 
@@ -512,8 +511,8 @@ def parse_elem_vsource(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
 
-    elem = devices.VSource(
-        n1=n1, n2=n2, dc_value=dc_value, part_id=line_elements[0], ac_value=vac)
+    elem = devices.VSource(part_id=line_elements[0], n1=n1, n2=n2,
+                           dc_value=dc_value, ac_value=vac)
 
     if function is not None:
         elem.is_timedependent = True
@@ -589,8 +588,8 @@ def parse_elem_isource(line, circ, line_elements=None):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
 
-    elem = devices.ISource(
-        part_id=line_elements[0], n1=n1, n2=n2, dc_value=dc_value, ac_value=iac)
+    elem = devices.ISource(part_id=line_elements[0], n1=n1, n2=n2,
+                           dc_value=dc_value, ac_value=iac)
 
     if function is not None:
         elem.is_timedependent = True
@@ -741,11 +740,11 @@ def parse_elem_mos(line, circ, line_elements, models):
     elem = None
 
     if isinstance(models[model_label], ekv.ekv_mos_model):
-        elem = ekv.ekv_device(line_elements[0], nd, ng, ns, nb, w, l, models[
-                              model_label], m, n)
+        elem = ekv.ekv_device(line_elements[0], nd, ng, ns, nb, w, l,
+                              models[model_label], m, n)
     elif isinstance(models[model_label], mosq.mosq_mos_model):
-        elem = mosq.mosq_device(nd, ng, ns, nb, w, l, models[
-                                model_label], m, n, part_id=line_elements[0])
+        elem = mosq.mosq_device(line_elements[0], nd, ng, ns, nb, w, l,
+                                models[model_label], m, n)
     else:
         raise NetlistParseError("Unknown MOS model type: " + model_label)
 
@@ -781,8 +780,8 @@ def parse_elem_vcvs(line, circ, line_elements=None):
     sn1 = circ.add_node(ext_sn1)
     sn2 = circ.add_node(ext_sn2)
 
-    elem = devices.EVSource(part_id=line_elements[
-                            0], n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=convert_units(line_elements[5]))
+    elem = devices.EVSource(part_id=line_elements[0], n1=n1, n2=n2, sn1=sn1,
+                            sn2=sn2, value=convert_units(line_elements[5]))
 
     return [elem]
 
@@ -821,8 +820,8 @@ def parse_elem_vccs(line, circ, line_elements=None):
     sn1 = circ.add_node(ext_sn1)
     sn2 = circ.add_node(ext_sn2)
 
-    elem = devices.GISource(part_id=line_elements[
-                            0], n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=convert_units(line_elements[5]))
+    elem = devices.GISource(part_id=line_elements[0], n1=n1, n2=n2, sn1=sn1,
+                            sn2=sn2, value=convert_units(line_elements[5]))
 
     return [elem]
 

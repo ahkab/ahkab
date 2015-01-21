@@ -70,11 +70,14 @@ ISMALL_GUESS_MIN = 1e-10
 
 
 class mosq_device:
-    def __init__(self, nd, ng, ns, nb, W, L, model, M=1, N=1, part_id='M'):
+    def __init__(self, part_id, nd, ng, ns, nb, W, L, model, M=1, N=1):
         """Quadratic Law MOSFET device
 
         **Parameters:**
 
+        part_id : string
+            The part ID of the model. Eg. ``'M1'`` or ``'Mlow'``, the first
+            letter should always be ``'M'``.
         nd : int
             drain node
         ng : int
@@ -87,12 +90,12 @@ class mosq_device:
             element width [m]
         W : float
             element length [m]
-        M : int
-            shunt multiplier (n. of shunt devices)
-        N : int
-            series multiplier (n. of series devices)
         model : mosq_mos_model instance
             the model for the device
+        M : int, optional
+            shunt multiplier (n. of shunt devices)
+        N : int, optional
+            series multiplier (n. of series devices)
 
         Selected methods:
         - get_output_ports() -> (nd, ns)
