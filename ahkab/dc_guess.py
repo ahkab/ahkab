@@ -210,9 +210,9 @@ def get_dc_guess(circ, verbose=3):
     #    voltage defined elem.
     # Both them are set to 0
     for index in removed_index:
-        Rp = np.concatenate((np.concatenate((Rp[:index, 0],
+        Rp = np.concatenate((np.concatenate((Rp[:index, 0].reshape((-1, 1)),
                                              np.zeros((1, 1))), axis=0),
-                             Rp[index:, 0]), axis=0)
+                             Rp[index:, 0].reshape((-1, 1))), axis=0)
     # add the 0s for the currents due to the voltage defined
     # elements (we have no guess for those...)
     if v_eq > 0:
