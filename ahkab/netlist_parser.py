@@ -156,14 +156,14 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
             ffile = get_next_file_and_close_current(file_list, file_index)
             # print file_list
 
-    except NetlistParseError as xxx_todo_changeme1:
-        (msg,) = xxx_todo_changeme1.args
+    except NetlistParseError as npe:
+        (msg,) = npe.args
         if len(msg):
             printing.print_general_error(msg)
         printing.print_parse_error(line_n, line)
         # if not read_netlist_from_stdin:
             # ffile.close()
-        sys.exit(45)
+        raise NetlistParseError(msg)
 
     # if not read_netlist_from_stdin:
         # ffile.close()
@@ -219,12 +219,12 @@ def main_netlist_parser(circ, netlist_lines, subckts_dict, models):
             except KeyError:
                 raise NetlistParseError("unknown element.")
     #   Handle errors from individual parse functions
-    except NetlistParseError as xxx_todo_changeme2:
-        (msg,) = xxx_todo_changeme2.args
+    except NetlistParseError as npe:
+        (msg,) = npe.args
         if len(msg):
             printing.print_general_error(msg)
         printing.print_parse_error(line_n, line)
-        sys.exit(45)
+        raise NetlistParseError(msg)
 
     return elements
 
@@ -1175,12 +1175,12 @@ def parse_postproc(circ, postproc_direc):
                 postproc_list.append(plot_postproc)
             else:
                 raise NetlistParseError("Unknown postproc directive.")
-        except NetlistParseError as xxx_todo_changeme:
-            (msg,) = xxx_todo_changeme.args
+        except NetlistParseError as npe:
+            (msg,) = npe.args
             if len(msg):
                 printing.print_general_error(msg)
             printing.print_parse_error(line_n, line)
-            sys.exit(0)
+            raise NetlistParseError(msg)
     return postproc_list
 
 
