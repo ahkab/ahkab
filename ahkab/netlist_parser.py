@@ -327,7 +327,9 @@ def parse_elem_capacitor(line, circ, line_elements=None):
     if line_elements is None:
         line_elements = line.split()
 
-    if (len(line_elements) < 4) or (len(line_elements) > 5 and not line_elements[6][0] == "*"):
+    if (len(line_elements) < 4) or \
+       (len(line_elements) > 5 and not line_elements[5][0] == "*" and
+        not line_elements[4][0] == "*"):
         raise NetlistParseError("")
 
     ic = None
