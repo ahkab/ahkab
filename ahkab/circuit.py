@@ -141,10 +141,12 @@ class Circuit(list):
         The circuit title.
 
     filename : string, optional
+
+        .. deprecated:: 0.09
+
         If the circuit instance corresponds to a netlist file on disk,
         set this to the netlist filename.
 
-    .. deprecated:: the filename option was deprecated in v. 0.09
     """
     def __init__(self, title, filename=None):
         self.title = title
@@ -788,10 +790,17 @@ class Circuit(list):
             The voltage source to be used to sense the current that drives
             the output. Eg. ``'V1'``.
         value : float
-            The proportionality factor between input and output currents.
+            The proportionality factor between input (:math:`I_s`) and output
+            (:math:`I_o`) currents. Mathematically:
+
             .. math::
 
                 I_o = \\alpha I_s
+
+        .. seealso::
+
+            :class:`ahkab.devices.FISource`
+
         """
         # Add the nodes, this is SAFE: if a node is already known to the circuit,
         # the methods will just ignore the request.
@@ -819,8 +828,13 @@ class Circuit(list):
             The input port nodes, where the input voltage is
             read. Eg. "inp", "inm" or "in_a", "in_b".
         alpha : float
-            The proportionality factor between input and output voltages:
-            :math:`V(out_p) - V(out_n) = \\alpha \\cdot (V(in_p) - V(in_n))`
+            The proportionality factor between input and output voltages is
+            given by the relationship:
+
+            .. math::
+
+                V(out_p) - V(out_n) = \\alpha \\cdot (V(in_p) - V(in_n))
+
         """
 
         n1 = self.add_node(n1)
@@ -844,17 +858,21 @@ class Circuit(list):
         part_id : string
             The VCCS ID (eg ``"G1"``). The first letter is always ``'G'``.
         n1, n2 : string
-            the output port nodes, where the output current is
+            The output port nodes, where the output current is
             forced. Eg. "outp", "outm" or "out_a", "out_b".
-            The usual convention is used: a positive current
-            flows into ``n1`` and out of ``n2``.
+            The passive convention is used as everywhere else in the simulator:
+            a positive current flows into ``n1`` and out of ``n2``.
         sn1, sn2 : string
             The input port nodes, where the input voltage is
             sensed. Eg. "inp", "inm" or "in_a", "in_b".
-            alpha (float): The proportionality factor between input and output voltages:
+        value : float
+            The proportionality factor between input and output voltages,
+            which are related by the equality:
+
             .. math::
 
-                I[G1] = alpha * (V(inp) - V(inn))
+                I_o = alpha * \\left[V(inp) - V(inn)\\right]
+
         """
 
         n1 = self.add_node(n1)
@@ -869,17 +887,22 @@ class Circuit(list):
 
     def add_switch(self, part_id, n1, n2, sn1, sn2, ic, model_label, models=None):
         """Adds a voltage-controlled or current-controlled switch to the circuit
-        (also takes care that its nodes are added as well).
 
-        Notice:
+        This method also takes care that its nodes are added to the circuit as
+        well, if necessary.
 
-        - Current-controlled switches are not yet implemented. If you try to add one
-          you'll trigger an error.
-        - The switches part_id should begin with 'S' for voltage-controlled switches
-          and with 'W' for current-controlled switches.
-        - The actual behavior is set by the model. Make sure you supply a voltage-controlled
-          switch model for a voltage-controlled switch and the same for the
-          current-controlled switch. Mixing them up will go undetected.
+        **Notice:**
+
+        - Current-controlled switches are not yet implemented. If you try to add
+          one, you'll trigger an error. If you got a bit of time to spare,
+          patches are welcome.
+        - The switches ``part_id`` should begin with ``'S'`` for
+          voltage-controlled switches and with ``'W'`` for current-controlled
+          switches.
+        - The actual behavior is set by the model. Make sure you supply a
+          voltage-controlled switch model for a voltage-controlled switch and
+          the appropriate type of model for the current-controlled switch.
+          Mixing them up will go undetected.
 
         **Parameters:**
 
@@ -958,7 +981,7 @@ class Circuit(list):
 
         .. note::
 
-            Removing elements is experimental.
+            Removing elements is *really* experimental.
 
         **Parameters:**
 
@@ -1039,7 +1062,7 @@ class Circuit(list):
         return vde_index
 
     def find_vde(self, index):
-        """Finds a voltage-defined element MNA from its index
+        """Finds a voltage-defined element from its MNA KVL index
 
         **Parameters:**
 
