@@ -17,10 +17,86 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Parse spice-like files, generate circuits instances and print them.
-The syntax is explained in the docs and it's based on [1] whenever possible.
+"""Parse spice-like netlist files and generate circuits instances.
 
-Ref. [1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
+The syntax is explained in :doc:`help/Netlist-Syntax` and it's based on [#1]_
+whenever possible.
+
+.. [#1] http://newton.ex.ac.uk/teaching/CDHW/Electronics2/userguide/
+
+Introduction
+------------
+
+This module has one main circuit that is expected to be useful to the end user:
+:func:`parse_circuit`, which encapsulates parsing a netlist file and returns the
+circuit, the simulation objects and the post-processing directives (such as
+plotting instructions).
+
+Additionally, the module provides utility functions related to parsing, among
+which the end user may be interested in the :func:`convert` function, which allows
+converting from SPICE-like representations of floats, booleans and strings to
+their Python representations.
+
+The last type of functions in the module are utility functions to go through the
+netlist files and remove comments.
+
+Except for the aforementioned functions, the rest seem to be more suitable for
+developers than end users.
+
+Overview
+--------
+
+Function for parsing
+====================
+
+.. autosummary::
+    parse_circuit
+    main_netlist_parser
+    parse_elem_resistor
+    parse_elem_capacitor
+    parse_elem_inductor
+    parse_elem_inductor_coupling
+    parse_elem_vsource
+    parse_elem_isource
+    parse_elem_diode
+    parse_elem_mos
+    parse_elem_vcvs
+    parse_elem_vccs
+    parse_elem_cccs
+    parse_elem_switch
+    parse_elem_user_defined
+    parse_models
+    parse_time_function
+    parse_postproc
+    parse_ics
+    parse_analysis
+    parse_single_analysis
+    parse_temp_directive
+    parse_param_value_from_string
+    parse_ic_directive
+    parse_sub_declaration
+    parse_sub_instance
+    parse_include_directive
+
+Utility functions for conversions
+=================================
+
+.. autosummary::
+    convert
+    convert_units
+    convert_boolean
+
+Utility functions for file/txt handling
+=======================================
+
+.. autosummary::
+    join_lines
+    is_valid_value_param_string
+    get_next_file_and_close_current
+
+
+Module reference
+----------------
 """
 
 from __future__ import (unicode_literals, absolute_import,

@@ -34,6 +34,7 @@ Module reference
    diode
    ekv
    mosq
+   netlist_parser
    options
    plotting
    printing
@@ -62,9 +63,6 @@ Documentation in progress
 -------------------------
 
 .. automodule:: ahkab.gear
-   :members:
-
-.. automodule:: ahkab.netlist_parser
    :members:
 
 .. automodule:: ahkab.transient
