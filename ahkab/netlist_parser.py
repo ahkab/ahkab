@@ -1492,17 +1492,17 @@ def parse_sub_instance(line, circ, subckts_dict, line_elements=None, models=None
         if node not in connection_nodes_dict:
             raise NetlistParseError("unconnected subckt node " + node)
 
-    wrapped_circ = circuit.circuit_wrapper(
-        circ, connection_nodes_dict, subckt.name, line_elements[0])
+    wrapped_circ = circuit._circuit_wrapper(circ, connection_nodes_dict,
+                                            subckt.name, line_elements[0])
 
-    elements_list = main_netlist_parser(
-        wrapped_circ, subckt.code, subckts_dict, models)
+    elements_list = main_netlist_parser(wrapped_circ, subckt.code,
+                                        subckts_dict, models)
 
     # Every subckt adds elements with the _same description_ (elem.part_id[1:])
     # We modify it so that each description is unique for every instance
     for element in elements_list:
         element.part_id = element.part_id[0] + \
-            "-" + wrapped_circ.prefix + element.part_id[1:]
+                          "-" + wrapped_circ.prefix + element.part_id[1:]
 
     return elements_list
 

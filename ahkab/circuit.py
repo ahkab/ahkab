@@ -1161,7 +1161,7 @@ class subckt:
         self.code = code
 
 
-class circuit_wrapper:
+class _circuit_wrapper:
     """Fictious circuit class, meant to wrap subcircuits.
 
     Not meant for end users at this stage.
