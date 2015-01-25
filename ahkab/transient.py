@@ -560,9 +560,8 @@ def generate_D(circ, shape):
 class dfbuffer:
     """This is a LIFO buffer with a method to read it all without deleting the elements.
 
-    Newer entries are added on top of the buffer.
-
-    It checks the size of the added elements, to be sure they are of the same size.
+    Newer entries are added on top of the buffer. It checks the size of the
+    added elements, to be sure they are of the same size.
 
     **Parameters:**
 
@@ -584,15 +583,41 @@ class dfbuffer:
         self._width = width
 
     def add(self, atuple):
+        """Add a new data point to the buffer.
+
+        **Parameters:**
+
+        atuple : tuple of floats
+            The data point to be added. Notice that the length of the tuple must
+            agree with the width of the buffer.
+
+        :raises ValueError: if the provided tuple and the buffer width do not
+        match.
+
+        """
         if not len(atuple) == self._width:
-            raise ValueError("Attempted to add a element of wrong size to LIFO buffer. BUG?")
+            raise ValueError("Attempted to add a element of wrong size to the" +
+                             "LIFO buffer.")
         self._the_real_buffer.insert(0, atuple)
         if len(self._the_real_buffer) > self._length:
             self._the_real_buffer = self._the_real_buffer[:self._length]
 
     def get_df_vector(self):
-        """Returns a vector conforming to the specification of the df formulae.
-        That is [[time(n), x(n), dx(n)], [time(n-1), x(n-1), dx(n-1)], ...]
+        """Read out the contents of the buffer, without any modification
+
+        This method, in the context of a transient analysis, returns a vector
+        suitable for a differentiation formula.
+
+        **Returns:**
+
+        vec : list of tuples
+            a list of tuples, each tuple being composed of ``width`` floats. In
+            the context of a transient analysis, the list (or vector) conforms
+            to the specification of the differentiation formulae.
+            That is, the simulator stores in the buffer a list similar to::
+
+                [[time(n), x(n), dx(n)], [time(n-1), x(n-1), dx(n-1)], ...]
+
         """
         return self._the_real_buffer
 
