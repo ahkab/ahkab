@@ -18,15 +18,23 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 """ This module provides the methods required to perform a transient analysis.
+
 Our problem can be written as:
-    D*dx/dt + MNA*x + Tv(x) + Tt(t) + N = 0
+
+.. math::
+
+    D \\cdot dx/dt + MNA \\cdot x + T_v(x) + T_t(t) + N = 0
+
 We need:
-    1. MNA, the static Modified Nodal Analysis matrix
-    2. N
-    3. T(x)
-    4. Tt(t) (to be evaluated at each time step)
-    5. D matrix
-    6. a differentiation method to approximate dx/dt
+
+    1. :math:`MNA`, the static Modified Nodal Analysis matrix,
+    2. :math:`N`, constant DC term,
+    3. :math:`T_v(x)`, the non-linear DC term
+    4. :math:`T_t(t)`, the time variant term, time dependent-sources,
+       to be evaluated at each time step,
+    5. The dynamic :math:`D` matrix,
+    6. a differentiation method to approximate :math:`dx/dt`.
+
 """
 
 from __future__ import (unicode_literals, absolute_import,
@@ -46,7 +54,7 @@ from . import printing
 from . import utilities
 from . import devices
 from . import results
-           
+
 # differentiation methods, add them here
 IMPLICIT_EULER = "IMPLICIT_EULER"
 TRAP = "TRAP"
@@ -110,10 +118,10 @@ specs = {'tran':{'tokens':({
            }
 
 
-def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_method, use_step_control=True, x0=None, 
+def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_method, use_step_control=True, x0=None,
                        mna=None, N=None, D=None, outfile="stdout", return_req_dict=None, verbose=3):
     """Performs a transient analysis of the circuit described by circ.
-    
+
     Parameters:
     circ: circuit instance to be simulated.
     tstart: start value. Better leave this to zero.
@@ -137,10 +145,10 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
         print_step_and_lte = True
     else:
         print_step_and_lte = False
-    
+
     method = method.upper() if method is not None else options.default_tran_method
     HMAX = tstep
-    
+
     #check parameters
     if tstart > tstop:
         printing.print_general_error("tstart > tstop")
@@ -153,17 +161,17 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
         tmpstr = "Vea = %g Ver = %g Iea = %g Ier = %g max_time_iter = %g HMIN = %g" % \
         (options.vea, options.ver, options.iea, options.ier, options.transient_max_time_iter, options.hmin)
         printing.print_info_line((tmpstr, 5), verbose)
-    
+
     locked_nodes = circ.get_locked_nodes()
-    
+
     if print_step_and_lte:
         flte = open("step_and_lte.graph", "w")
         flte.write("#T\tStep\tLTE\n")
-    
+
     printing.print_info_line(("Starting transient analysis: ", 3), verbose)
     printing.print_info_line(("Selected method: %s" % (method,), 3), verbose)
     #It's a good idea to call transient with prebuilt MNA and N matrix
-    #the analysis will be slightly faster (long netlists). 
+    #the analysis will be slightly faster (long netlists).
     if mna is None or N is None:
         (mna, N) = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
         mna = utilities.remove_row_and_col(mna)
@@ -189,11 +197,11 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
         else:
             opsol =  results.op_solution(x=x0, error=np.matrix(np.zeros((mna.shape[0], 1))), circ=circ, outfile=None)
         printing.print_info_line(("Using the supplied op as x(t=%g)." % (tstart,), 5), verbose)
-        
+
     if verbose > 4:
         print("x0:")
         opsol.print_short()
-    
+
     # setup the df method
     printing.print_info_line(("Selecting the appropriate DF ("+method+")... ", 5), verbose, print_nl=False)
     if method == IMPLICIT_EULER:
@@ -221,17 +229,17 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
     else:
         df = import_custom_df_module(method, print_out=(outfile != "stdout"))
         # df is none if module is not found
-    
+
     if df is None:
         sys.exit(23)
-        
+
     if not df.has_ff() and use_step_control:
         printing.print_warning("The chosen DF does not support step control. Turning off the feature.")
         use_step_control = False
         #use_aposteriori_step_control = False
 
     printing.print_info_line(("done.", 5), verbose)
-        
+
     # setup the data buffer
     # if you use the step control, the buffer has to be one point longer.
     # That's because the excess point is used by a FF in the df module to predict the next value.
@@ -251,14 +259,14 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
         thebuffer = dfbuffer(length=max(max_x, max_dx) + 1, width=3)
     thebuffer.add((tstart, x0, None)) #setup the first values
     printing.print_info_line(("done.", 5), verbose) #FIXME
-    
+
     #setup the output buffer
     if return_req_dict:
         output_buffer = dfbuffer(length=return_req_dict["points"], width=1)
         output_buffer.add((x0,))
     else:
         output_buffer = None
-    
+
     # import implicit_euler to be used in the first iterations
     # this is because we don't have any dx when we start, nor any past point value
     if (max_x is not None and max_x > 0) or max_dx is not None:
@@ -268,12 +276,12 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
                                   if max_dx is not None else first_iterations_number
     else:
         first_iterations_number = 0
-    
+
     printing.print_info_line(("MNA (reduced):", 5), verbose)
     printing.print_info_line((str(mna), 5), verbose)
     printing.print_info_line(("D (reduced):", 5), verbose)
     printing.print_info_line((str(D), 5), verbose)
-    
+
     # setup the initial values to start the iteration:
     x = None
     time = tstart
@@ -295,7 +303,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
         pmax_dx_plus_1 = None
     else:
         pmax_dx_plus_1 = pmax_dx +1
-    
+
     # setup error vectors
     aerror = np.mat(np.zeros((x0.shape[0], 1)))
     aerror[:nv-1, 0] = options.vea
@@ -303,7 +311,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
     rerror = np.mat(np.zeros((x0.shape[0], 1)))
     rerror[:nv-1, 0] = options.ver
     rerror[nv-1:, 0] = options.ier
-    
+
     iter_n = 0  # contatore d'iterazione
     # when to start predicting the next point
     start_pred_iter = max(*[i for i in (0, pmax_x, pmax_dx_plus_1) if i is not None])
@@ -320,22 +328,22 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
         else:
             [x_coeff, const, x_lte_coeff, prediction, pred_lte_coeff] = \
             df.get_df(thebuffer.get_df_vector(), tstep, predict=use_step_control)
-        
+
         if options.transient_prediction_as_x0 and use_step_control and prediction is not None:
             x0 = prediction
         elif x is not None:
             x0 = x
-        
+
         (x1, error, solved, n_iter) = dc_analysis.dc_solve(
-                                                     mna=(mna + np.multiply(x_coeff, D)), 
-                                                     Ndc=N,  Ntran=D*const, circ=circ, 
-                                                     Gmin=Gmin_matrix, x0=x0, 
-                                                     time=(time + tstep), 
-                                                     locked_nodes=locked_nodes, 
-                                                     MAXIT=options.transient_max_nr_iter, 
+                                                     mna=(mna + np.multiply(x_coeff, D)),
+                                                     Ndc=N,  Ntran=D*const, circ=circ,
+                                                     Gmin=Gmin_matrix, x0=x0,
+                                                     time=(time + tstep),
+                                                     locked_nodes=locked_nodes,
+                                                     MAXIT=options.transient_max_nr_iter,
                                                      verbose=0
                                                      )
-        
+
         if solved:
             old_step = tstep #we will modify it, if we're using step control otherwise it's the same
             # step control (yeah)
@@ -344,7 +352,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
                     # this is the Local Truncation Error :)
                     lte = abs((x_lte_coeff / (pred_lte_coeff - x_lte_coeff)) * (prediction - x1))
                     # it should NEVER happen that new_step > 2*tstep, for stability
-                    new_step_coeff = 2 
+                    new_step_coeff = 2
                     for index in range(x.shape[0]):
                         if lte[index, 0] != 0:
                             new_value = ((aerror[index, 0] + rerror[index, 0]*abs(x[index, 0])) / lte[index, 0]) \
@@ -353,7 +361,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
                                 new_step_coeff = new_value
                             #print new_value
                     new_step = tstep * new_step_coeff
-                    if options.transient_use_aposteriori_step_control and new_step < options.transient_aposteriori_step_threshold * tstep: 
+                    if options.transient_use_aposteriori_step_control and new_step < options.transient_aposteriori_step_threshold * tstep:
                         #don't recalculate a x for a small change
                         tstep = check_step(new_step, time, tstop, HMAX)
                         #print "Apost. (reducing) step = "+str(tstep)
@@ -363,17 +371,17 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
                 else:
                     #print "LTE not calculated."
                     lte = None
-            if print_step_and_lte and lte is not None: 
+            if print_step_and_lte and lte is not None:
                 #if you wish to look at the step. We print just a lte
                 flte.write(str(time)+"\t"+str(old_step)+"\t"+str(lte.max())+"\n")
-            # if we get here, either aposteriori_step_control is 
+            # if we get here, either aposteriori_step_control is
             # disabled, or it's enabled and the error is small
             # enough. Anyway, the result is GOOD, STORE IT.
             time = time + old_step
             x = x1
             iter_n = iter_n + 1
             sol.add_line(time, x)
-            
+
             dxdt = np.multiply(x_coeff, x) + const
             thebuffer.add((time, x, dxdt))
             if output_buffer is not None:
@@ -394,12 +402,12 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
             printing.print_general_error("MAX_TIME_ITER exceeded ("+str(options.transient_max_time_iter)+"), iteration halted.")
             solved = False
             break
-    
+
     if print_step_and_lte:
         flte.close()
-    
+
     tick.hide(verbose > 1)
-    
+
     if solved:
         printing.print_info_line(("done.", 3), verbose)
         printing.print_info_line(("Average time step: %g" % ((tstop - tstart)/iter_n,), 3), verbose)
@@ -411,16 +419,41 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
     else:
         print("failed.")
         ret_value =  None
-    
+
     return ret_value
 
 def check_step(tstep, time, tstop, HMAX):
-    """Checks the step for the following problems:
-    - the step must be shorter than HMAX (that usually is the tstep provided by the user)
-    - the step must be shorter than the simulation time left (ie tstop - time)
-    - the step must be longer than options.hmin, if not halt the simulation.
-    
-    Returns: the step provided if it's ok, a shortened step otherwise.
+    """Checks the step for several common issues and corrects them.
+
+    The following problems are checked:
+
+    - the step must be shorter than ``HMAX``. In the context of a trnsient
+      analysis, that usually is the time step provided by the user,
+    - the step must be shorter than the simulation time left (ie stop time -
+      current time),
+    - the step must be longer than ``options.hmin``, the minimum allowable time
+      step. If the step goes below this value, convergence problems due to
+      machine precision will occur. Typically when this happens, we halt the
+      simulation.
+
+    **Parameters:**
+
+    tstep : float
+        The time step, in second, that needs to be checked.
+    time : float
+        The current simulation time.
+    tstop : float
+        The time at which the simulation ends.
+    HMAX : float
+        The maximum allowable time step.
+
+    **Returns:**
+
+    tstep : float
+        The step provided if it passes the tests, a *shortened* step otherwise.
+
+    :raises ValueError: When the step is shorter than ``option.hmin``.
+
     """
     if tstep > HMAX:
         tstep = HMAX
@@ -428,29 +461,60 @@ def check_step(tstep, time, tstop, HMAX):
         tstep = tstop - time
     elif tstep < options.hmin:
         printing.print_general_error("Step size too small: "+str(tstep))
-        raise Exception("Step size too small")
+        raise ValueError("Step size too small")
     return tstep
 
 def generate_D(circ, shape):
-    """Generates the derivate coefficients. Shape is the REDUCED MNA shape, D will be of the same shape.
-    It's easy to set up the voltage lines, we know that line 2 refers to node 2, etc... 
-    So everything's fine with capacitors. 
-    Inductors generate, together with voltage sources, ccvs, vcvs, a additional line in the
-    mna matrix, and hence in D too. The current flowing through the device gets added to the x vector.
-    In inductors, we have:
-     V(n1) - V(n2) - VL = 0
-    Where VL = L dI/dt
-    That's 0 (zero) in DC analysis, but not in transient analysis, where it needs to be differentiated.
-    To understand on which line does the inductor's L*dI/dt go, we use the order in `circuit`:
-    First are all voltage lines, then the current ones in the same order of the elements that introduce
-    them.
-    Therefore, we look at `circ`.
-    
+    """Generates the D matrix
+
     For every time t, the D matrix is used (elsewhere) to solve the following system:
-    
-    D*dx/dt + MNA*x + N + T(x) = 0
-    
-    Returns: the UNREDUCED D matrix
+
+    .. math::
+
+        D dx/dt + MNA x + N + T(x) = 0
+
+    It's easy to set up the KCL law for the voltage unknowns, capacitors
+    introduce stamps just like resistors do in the MNA and we know that row 1
+    refers to node 1, row 2 refers to node 2, and so on
+
+    Inductors generate, together with voltage sources, ccvs, vcvs, a additional
+    line in the MNA matrix, and hence in D too.
+
+    The current flowing through the device gets added to the x vector.
+
+    In the case of an inductors, we have:
+
+    .. math::
+
+        V(n_1) - V(n_2) - V_L = 0
+
+    Where:
+
+    .. math::
+
+        V_L = L dI/dt
+
+    That's 0 (zero) in DC analysis, but not in transient analysis, where it
+    needs to be differentiated.
+
+    To understand on which line does the inductor's L*dI/dt go, we use the order
+    of the elements in `circuit`: first are all voltage lines, then the current
+    ones in the same order of the elements that introduce
+    them. Therefore, we need to access the circuit (`circ`).
+
+    **Parameters:**
+
+    circ : circuit instance
+        The circuit instance for which the :math:`D` matrix is computed.
+
+    shape : tuple of ints
+        The shape of the *reduced* :math:`MNA` matrix, D will be of the same
+        shape.
+
+    **Returns:**
+
+    D : ndarray
+        The *unreduced* D matrix.
     """
     D = np.matrix(np.zeros((shape[0]+1, shape[1]+1)))
     nv = len(circ.nodes_dict)# - 1
@@ -481,7 +545,7 @@ def generate_D(circ, shape):
                     D[ nv + i_eq, nv + other_index ] += -1 * cd.M
             # carry on as usual
             i_eq = i_eq + 1
-        
+
     if options.cmin > 0:
         cmin_mat = np.matrix(np.eye(shape[0]+1-i_eq))
         cmin_mat[0, 1:] = 1
@@ -495,36 +559,45 @@ def generate_D(circ, shape):
 
 class dfbuffer:
     """This is a LIFO buffer with a method to read it all without deleting the elements.
+
     Newer entries are added on top of the buffer.
+
     It checks the size of the added elements, to be sure they are of the same size.
+
+    **Parameters:**
+
+    length : int
+        The length of the buffer. Samples are added at index ``0``, shifting all
+        the previous samples back to higher indices. Samples at an index equal
+        to ``length`` (or higher) are discarded without notice.
+    width : int
+        The width of the buffer, every time :func:`add` is called, it must be to
+        add a tuple of the same length as this parameter.
     """
     _the_real_buffer = None
     _length = 0
     _width  = 0
-    
+
     def __init__(self, length, width):
         self._the_real_buffer = []
         self._length = length
         self._width = width
-    
+
     def add(self, atuple):
         if not len(atuple) == self._width:
-            printing.print_warning("Attempted to add a element of wrong size to LIFO buffer. BUG?")
-            return False
-        else:
-            self._the_real_buffer.insert(0, atuple)
-            if len(self._the_real_buffer) > self._length:
-                self._the_real_buffer = self._the_real_buffer[:self._length]
-            return True
-    
+            raise ValueError("Attempted to add a element of wrong size to LIFO buffer. BUG?")
+        self._the_real_buffer.insert(0, atuple)
+        if len(self._the_real_buffer) > self._length:
+            self._the_real_buffer = self._the_real_buffer[:self._length]
+
     def get_df_vector(self):
-        """Returns a vector conforming to the specification of the df formulae. 
+        """Returns a vector conforming to the specification of the df formulae.
         That is [[time(n), x(n), dx(n)], [time(n-1), x(n-1), dx(n-1)], ...]
         """
         return self._the_real_buffer
-    
+
     def isready(self):
-        """This shouldn't be used to determine if the buffer has enough points to 
+        """This shouldn't be used to determine if the buffer has enough points to
         use the df _if_ you use the step control.
         In that case, it holds even the points required for the FF.
         """
@@ -532,7 +605,7 @@ class dfbuffer:
             return True
         else:
             return False
-    
+
     def get_as_matrix(self):
         for vindex in range(self._width):
             for index in range(len(self._the_real_buffer)):
@@ -551,7 +624,7 @@ def import_custom_df_module(method, print_out):
     Parameters:
     method: a string, the name of the df method module
     print_out: print to stdout some verbose messages
-    
+
     Returns:
     The df module or None if the module is not found.
     """
@@ -562,5 +635,5 @@ def import_custom_df_module(method, print_out):
     except:
         printing.print_general_error("Unrecognized method: "+method.lower()+".")
         df = None
-    
+
     return df
