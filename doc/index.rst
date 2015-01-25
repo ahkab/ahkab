@@ -46,6 +46,7 @@ Module reference
    symbolic
    testing 
    ticker
+   transient
    trap
    utilities
 
@@ -63,9 +64,6 @@ Documentation in progress
 -------------------------
 
 .. automodule:: ahkab.gear
-   :members:
-
-.. automodule:: ahkab.transient
    :members:
 
 .. automodule:: ahkab.implicit_euler
