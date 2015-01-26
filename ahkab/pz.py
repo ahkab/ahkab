@@ -234,7 +234,7 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
                 raise Exception("Unknown input source type %s" % input_source)
         else:
             continue
-        TV = -1. * MNAinv * MC
+        TV = -1. * np.dot(MNAinv, MC)
         dei_victim = 0
         vde2 = -1
         for e2 in mc:
@@ -292,7 +292,7 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
                 MC[nodes_m1 + vde1, 0] += -1.
             else:
                 continue
-            TV = -1. * MNAinv * MC
+            TV = -1.*np.dot(MNAinv, MC)
             v = 0
             o1, o2 = output_port
             if o1:

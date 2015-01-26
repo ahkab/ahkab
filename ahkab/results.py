@@ -862,7 +862,7 @@ Run on %s, data filename %s.>" % \
 
     def set_results(self, t, x):
         """All the results are set at the same time for a PSS"""
-        time = np.mat(np.array(t))
+        time = np.array(t)
         data = np.concatenate((time, x), axis=0)
         self._add_data(data)
 
