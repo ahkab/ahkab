@@ -21,7 +21,8 @@
 This module offers the functions needed to plot the results
 of a simulation.
 
-It is only functional if matplotlib is installed.
+It is only functional if `matplotlib <http://matplotlib.org/>`_
+is installed.
 
 Module reference
 ''''''''''''''''
