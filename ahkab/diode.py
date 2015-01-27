@@ -34,7 +34,9 @@ from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
 import numpy as np
+import scipy, scipy.optimize
 
+from scipy.optimize import newton
 from math import exp
 
 from . import constants
@@ -358,28 +360,20 @@ class diode_model:
             i = self._get_i(vext) * dev.AREA
             dev.last_vd = vext
         else:
-            i = self._get_irs(vext, dev)
+            vd = dev.last_vd if dev.last_vd is not None else 10*self.VT
+            vd = newton(self._obj_irs, vd, fprime=self._obj_irs_prime,
+                        args=(vext, dev), tol=options.vea, maxiter=500)
+            i = self._get_i(vext-vd)
+            dev.last_vd = vd
         return i
 
-    def _get_irs(self, vext, dev):
-        vth = self.VT
-        vd = dev.last_vd if dev.last_vd is not None else 10*vth
-        idiode = self._get_i(vd) * dev.AREA
-        while True:
-            gm = self.get_gm(0, [vd], 0, dev, rs=False)
-            dvd = (vext - idiode * self.RS - vd) / (1.0 + gm * self.RS)
-            vd = vd + min(damping_factor*self.VT, abs(dvd)) * np.sign(dvd)
-            idiode_old = idiode
-            idiode = self._get_i(vd) * dev.AREA
-            di = idiode - idiode_old
-            if utilities.convergence_check(x=(idiode, vd),
-                                           dx=(di, dvd),
-                                           residuum=((vd - vext)/self.RS + idiode,
-                                           vext - vd - idiode*self.RS),
-                                           nv_minus_one=1)[0]:
-                break
-        dev.last_vd = vd
-        return idiode
+    def _obj_irs(self, x, vext, dev):
+        # obj fn for newton
+        return x/self.RS-self._get_i(vext-x)*dev.AREA
+
+    def _obj_irs_prime(self, x, vext, dev):
+        # obj fn derivative for newton
+        return 1./self.RS + self.get_gm(0, [vext-x], 0, dev, rs=False)
 
     def _safe_exp(self, x):
         return exp(x) if x < 70 else exp(70) + 10 * x
