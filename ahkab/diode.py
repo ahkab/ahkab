@@ -44,7 +44,7 @@ from . import options
 
 damping_factor = 4.
 
-class diode:
+class diode(object):
     """A diode element.
 
     **Parameters:**
@@ -80,9 +80,9 @@ class diode:
         self.is_nonlinear = True
         self.is_symbolic = True
         self.dc_guess = [0.425]
-        class dev_class:
+        class _dev_class(object):
             pass
-        self.device = dev_class()
+        self.device = _dev_class()
         self.device.AREA = AREA if AREA is not None else 1.0
         self.device.T = T
         self.device.last_vd = .425
@@ -117,9 +117,8 @@ class diode:
         self.device.T = T
 
     def __str__(self):
-        T = self._get_T()
         rep = "%s area=%g T=%g" % (
-            self.model.name, self.device.AREA, self.device.T)
+            self.model.name, self.device.AREA, self._get_T())
         if self.ic is not None:
             rep = rep + " ic=" + str(self.ic)
         elif self.off:
@@ -156,9 +155,9 @@ class diode:
         istamp = np.array((i, -i), dtype=np.float64)
         indices = ((self.n1 - 1*reduced, self.n2 - 1*reduced), (0, 0))
         if reduced:
-            delete_i = [pos for pos, i in enumerate(indices[0]) if i == -1]
+            delete_i = [pos for pos, ix in enumerate(indices[0]) if ix == -1]
             istamp = np.delete(istamp, delete_i, axis=0)
-            indices = tuple(zip(*[(i, j) for i, j in zip(*indices) if i != -1]))
+            indices = tuple(zip(*[(ix, j) for ix, j in zip(*indices) if ix != -1]))
         return indices, istamp
 
     def i(self, op_index, ports_v, time=0):  # with gmin added
@@ -201,7 +200,7 @@ class diode:
             stamp_folded = []
             indices_folded = []
             for ix, it in enumerate([(i, y) for i, y in zip(*indices)]):
-                if not it in indices_folded:
+                if it not in indices_folded:
                     indices_folded.append(it)
                     stamp_folded.append(stamp_flat[ix])
                 else:
@@ -365,7 +364,6 @@ class diode_model:
         vth = self.VT
         vd = dev.last_vd if dev.last_vd is not None else 10*vth
         idiode = self._get_i(vd) * dev.AREA
-        i = 0
         while True:
             gm = self.get_gm(0, [vd], 0, dev, rs=False)
             dvd = (vext - idiode * self.RS - vd) / (1.0 + gm * self.RS)
@@ -373,9 +371,12 @@ class diode_model:
             idiode_old = idiode
             idiode = self._get_i(vd) * dev.AREA
             di = idiode - idiode_old
-            if utilities.convergence_check(x=(idiode, vd), dx=(di, dvd), residuum=((vd - vext) / self.RS + idiode, vext - vd - idiode * self.RS), nv_minus_one=1)[0]:
+            if utilities.convergence_check(x=(idiode, vd),
+                                           dx=(di, dvd),
+                                           residuum=((vd - vext)/self.RS + idiode,
+                                           vext - vd - idiode*self.RS),
+                                           nv_minus_one=1)[0]:
                 break
-            i += 1
         dev.last_vd = vd
         return idiode
 
@@ -383,8 +384,8 @@ class diode_model:
         return exp(x) if x < 70 else exp(70) + 10 * x
 
     def _get_i(self, v):
-        i = self.IS * (self._safe_exp(v / (self.N * self.VT)) - 1) \
-            + self.ISR * (self._safe_exp(v / (self.NR * self.VT)) - 1)
+        i = self.IS * (self._safe_exp(v/(self.N * self.VT)) - 1) \
+            + self.ISR * (self._safe_exp(v/(self.NR * self.VT)) - 1)
         return i
 
     def get_gm(self, op_index, ports_v, port_index, dev, rs=True):
@@ -404,9 +405,9 @@ class diode_model:
     def set_temperature(self, T):
         T = float(T)
         self.EG = constants.si.Eg(T)
-        ni = constants.si.ni(T)
-        self.IS = self.IS * (T / self.T) ** (self.XTI / self.N) * math.exp(-constants.e
-                                                                           * constants.si.Eg(300) / (self.N * constants.k * T) * (1 - T / self.T))
-        self.BV = self.BV - self.TBV * (T - self.T)
-        self.RS = self.RS * (1 + self.TRS * (T - self.T))
+        self.IS = self.IS*(T/self.T)**(self.XTI/self.N)*math.exp(-constants.e
+                                                                 *constants.si.Eg(300)/(self.N*constants.k*T)
+                                                                 *(1 - T/self.T))
+        self.BV = self.BV - self.TBV*(T - self.T)
+        self.RS = self.RS*(1 + self.TRS*(T - self.T))
         self.T = T
