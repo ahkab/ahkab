@@ -74,7 +74,10 @@ Patches to implement the above are welcome!
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
+import scipy, scipy.optimize
 import math
+
+from scipy.optimize import newton
 
 from . import constants
 from . import options
@@ -408,7 +411,7 @@ class ekv_mos_model:
 
     def set_device_temperature(self, T):
         """Change the temperature of the device.
-        
+
         Correspondingly, ``VTO``, ``KP`` and ``PHI`` get updated.
         """
         self.TEMP = T
@@ -674,74 +677,37 @@ class ekv_mos_model:
         ..math::
             q = sqrt(.25 + i) - .5
 
-        A damped Newton algorithm is used inside.
+        The Newton Method is used inside.
         """
         # starting guess for Newton's Method.
         if iguess is None:
             iguess = 1.0
         # sanity checks
         if math.isnan(vsmall):
-            raise Exception("Attempted to calculate a current corresponding to a NaN voltage.")
+            raise ValueError("Attempted to calculate a current corresponding to a NaN voltage.")
         if not ip_abs_err > 0:
-            raise Exception("The normalized current absolute error has been set to a negative value.")
-        # if vsmall < 0:
-        #   return 0.0
-
-        check = False
-        ismall = iguess
-        if debug:
-            iter_c = 0
-
-        while True:
-            if debug:
-                iter_c = iter_c + 1
-
-            vsmall_iter, numeric_problem_v = self.get_vsmall(ismall)
-            dvdi, numeric_problem_i = self.get_dvsmall_dismall(ismall)
-            deltai = (vsmall - vsmall_iter) / dvdi
-
-            numeric_problem = numeric_problem_i or numeric_problem_v
-            if debug:
-                print("Numeric problem:", numeric_problem)
-                print("ABS: deltai < ip_abs_err", deltai, "<", ip_abs_err, ":", abs(deltai) < ip_abs_err)
-                print("REL: deltai < ismall*options.ier", deltai, "<", ismall * options.ier, abs(deltai) < ismall * options.ier)
-                print(deltai, ismall)
-            # absolute and relative value convergence checks.
-            if ((abs(deltai) < ip_abs_err or numeric_problem) and abs(deltai) < ismall * options.ier) or \
-                    (abs(deltai) < ip_abs_err * 1e-6 or numeric_problem):
-                # To make the algorithm more robust,
-                # the convergence check has to be passed twice in a row
-                # to reach convergence.
-                if not check:
-                    check = True
-                else:
-                    break
-            else:
-                check = False
-            # convergence was not reached, update ismall
-            if math.isnan(ismall):
-                print("Ismall is NaN!!")
-                exit()
-            if ismall == 0:
-                # this is a sign we went below the machine resolution
-                # it makes no sense to iterate there as quantization errors
-                # prevent reaching a meaningful result.
-                break
-            else:
-                # Damped Newton with domain restriction: ismall >= 0.
-                ratio = deltai / ismall
-                if ratio > self.NR_damp_factor:
-                    # Do not allow a change in ismall bigger than self.NR_damp_factor
-                    # in a single iteration
-                    ismall = self.NR_damp_factor * ismall
-                elif ratio <= -1:
-                    # this would give a negative ismall
-                    ismall = 0.1 * ismall
-                else:
-                    ismall = ismall + deltai
-        if debug:
-            print(str(iter_c) + " iterations.")
+            raise ValueError("The normalized current absolute error has been set to a negative value.")
+        ismall = newton(self._vsmall_obj, iguess, fprime=self._vsmall_obj_prime,
+                        args=(vsmall,), tol=1.48e-8, maxiter=500)
         return ismall
+
+    def _vsmall_obj(self, x, vsmall):
+        """Returns :math:`e` according to the equations:
+            q = sqrt(.25 + i) - .5
+            e = ln(q) + 2q - vsmall
+        """
+        return math.log(math.sqrt(.25 + x) - 0.5) + 2.0 * math.sqrt(.25 + x) - 1.0 - vsmall
+
+    def _vsmall_obj_prime(self, x, vsmall):
+        """The Newton algorithm in get_ismall(...) requires the evaluation of the
+        first derivative of the fixed point function:
+            dv/di = 1.0/(sqrt(.25+i)-.5) * .5/sqrt(.25 + i) + 1/sqrt(.25 + i)
+        This is provided by this module.
+        """
+        if abs(x) < utilities.EPS:
+            ismall = utilities.EPS
+        return 0.5/(math.sqrt(.25 + x) - .5)/math.sqrt(.25 + x) + \
+               1.0/math.sqrt(.25 + x)
 
     def get_vsmall(self, ismall, verbose=3):
         """Returns v according to the equations:
@@ -752,12 +718,9 @@ class ekv_mos_model:
             ismall = utilities.EPS  # otherwise we get log(0)
             if verbose == 6:
                 print("EKV: Machine precision limited the resolution on i. (i<EPS)")
-            numeric_problem = True
-        else:
-                    numeric_problem = False
         vsmall = math.log(math.sqrt(.25 + ismall) - 0.5) + \
-            2.0 * math.sqrt(.25 + ismall) - 1.0
-        return vsmall, numeric_problem
+                 2.0 * math.sqrt(.25 + ismall) - 1.0
+        return vsmall
 
     def get_dvsmall_dismall(self, ismall, verbose=3):
         """The Newton algorithm in get_ismall(...) requires the evaluation of the
@@ -767,14 +730,11 @@ class ekv_mos_model:
         """
         if abs(ismall) < utilities.EPS:
             ismall = utilities.EPS
-            numeric_problem = True
             if verbose == 6:
                 print("EKV: Machine precision limited the resolution on dv/di in the NR iteration. (i<EPS)")
-        else:
-            numeric_problem = False
         dvdi = 1.0 / (math.sqrt(.25 + ismall) - .5) * .5 / \
             math.sqrt(.25 + ismall) + 1.0 / math.sqrt(.25 + ismall)
-        return dvdi, numeric_problem
+        return dvdi
 
     def ismall2qsmall(self, ismall, verbose=0):
         """ i(f,r) -> q(f,r)
