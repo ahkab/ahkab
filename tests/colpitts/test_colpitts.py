@@ -19,6 +19,6 @@ def test():
 test.__doc__ = "Transient simulation of a Colpitts oscillator"
 
 if __name__ == '__main__':
-    nt = NetlistTest('colpitts', sim_opts=myoptions())
+    nt = NetlistTest('colpitts', er=1e-3, ea=5e-4, sim_opts=myoptions())
     nt.setUp()
     nt.test()
