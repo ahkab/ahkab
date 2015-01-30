@@ -21,4 +21,4 @@ ib ns 0 type=idc idc=1.3m
 
 .op
 .tran tstop=25n tstep=.1n method=trap uic=2
-*.plot tran v(nd)
+.plot tran v(nd)
