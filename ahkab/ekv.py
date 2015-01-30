@@ -688,15 +688,20 @@ class ekv_mos_model:
         if not ip_abs_err > 0:
             raise ValueError("The normalized current absolute error has been set to a negative value.")
         ismall = newton(self._vsmall_obj, iguess, fprime=self._vsmall_obj_prime,
-                        args=(vsmall,), tol=1.48e-8, maxiter=500)
-        return ismall
+                        fprime2=self._vsmall_obj_prime2, args=(vsmall,),
+                        tol=1.48e-8, maxiter=500)
+        #print(ismall, max(ismall, 0))
+        return max(ismall, 10*utilities.EPS)
 
     def _vsmall_obj(self, x, vsmall):
         """Returns :math:`e` according to the equations:
-            q = sqrt(.25 + i) - .5
+            q = sqrt(.25 + x) - .5
             e = ln(q) + 2q - vsmall
         """
-        return math.log(math.sqrt(.25 + x) - 0.5) + 2.0 * math.sqrt(.25 + x) - 1.0 - vsmall
+        if x > 0:
+            return math.log(math.sqrt(.25 + x) - 0.5) + 2.0 * math.sqrt(.25 + x) - 1.0 - vsmall
+        else:
+            return x - vsmall
 
     def _vsmall_obj_prime(self, x, vsmall):
         """The Newton algorithm in get_ismall(...) requires the evaluation of the
@@ -704,10 +709,15 @@ class ekv_mos_model:
             dv/di = 1.0/(sqrt(.25+i)-.5) * .5/sqrt(.25 + i) + 1/sqrt(.25 + i)
         This is provided by this module.
         """
-        if abs(x) < utilities.EPS:
-            ismall = utilities.EPS
+        if x < utilities.EPS:
+            x = 10*utilities.EPS
         return 0.5/(math.sqrt(.25 + x) - .5)/math.sqrt(.25 + x) + \
                1.0/math.sqrt(.25 + x)
+
+    def _vsmall_obj_prime2(self, x, vsmall):
+        if x < utilities.EPS:
+            x = 10*utilities.EPS
+        return -1./(4*(x + 0.25)*(math.sqrt(x + 0.25) - 0.5)**2) - 1./(2.*(x + 0.25)**(3./2.)) - 1./(4.*(x + 0.25)**(3./2.)*(math.sqrt(x + 0.25) - 0.5))
 
     def get_vsmall(self, ismall, verbose=3):
         """Returns v according to the equations:
@@ -741,6 +751,7 @@ class ekv_mos_model:
         Convert a source/drain scaled current to the corresponding normalized charge."""
         if verbose == 6:  # ismall is lower than EPS, errors here are usually not important
             print("EKV: Machine precision limited the resolution on q(s,d). (i<EPS)")
+        ismall = max(0, ismall)
         qsmall = math.sqrt(.25 + ismall) - .5
         return qsmall
 
