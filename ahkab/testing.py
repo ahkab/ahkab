@@ -558,21 +558,21 @@ class NetlistTest(unittest.TestCase):
                     refx = ref[ref.x].reshape((-1, ))
                     d1 = InterpolatedUnivariateSpline(x, np.real(res[k]).reshape((-1, )))
                     d2 = InterpolatedUnivariateSpline(refx, np.real(ref[k]).reshape((-1, )))
-                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED (Re)" % self.test_id)
+                    ok(d1(x), d2(x), rtol=self.er, atol=self.ea, msg=("Test %s FAILED (Re)" % self.test_id))
                     d1 = InterpolatedUnivariateSpline(x, np.imag(res[k]).reshape((-1, )))
                     d2 = InterpolatedUnivariateSpline(refx, np.imag(ref[k]).reshape((-1, )))
-                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED (Im)" % self.test_id)
+                    ok(d1(x), d2(x), rtol=self.er, atol=self.ea, msg=("Test %s FAILED (Im)" % self.test_id))
                 else:
                     # Interpolate the results to compare.
                     x = x.reshape((-1, ))
                     refx = ref[ref.x].reshape((-1, ))
                     d1 = InterpolatedUnivariateSpline(x, np.real_if_close(res[k]).reshape((-1, )))
                     d2 = InterpolatedUnivariateSpline(refx, np.real_if_close(ref[k]).reshape((-1, )))
-                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
+                    ok(d1(x), d2(x), rtol=self.er, atol=self.ea, msg=("Test %s FAILED" % self.test_id))
         elif isinstance(res, results.op_solution):
             for k in list(res.keys()):
                 assert k in ref
-                ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
+                ok(res[k], ref[k], rtol=self.er, atol=self.ea, msg=("Test %s FAILED" % self.test_id))
         elif isinstance(res, results.pz_solution):
             # recover the reference signularities from Re/Im data
             ref_sing_keys = list(ref.keys())[:]
@@ -790,21 +790,21 @@ class APITest(unittest.TestCase):
                     refx = ref[ref.x].reshape((-1, ))
                     d1 = InterpolatedUnivariateSpline(x, np.real(res[k]).reshape((-1, )))
                     d2 = InterpolatedUnivariateSpline(refx, np.real(ref[k]).reshape((-1, )))
-                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED (Re)" % self.test_id)
+                    ok(d1(x), d2(x), rtol=self.er, atol=self.ea, msg=("Test %s FAILED (Re)" % self.test_id))
                     d1 = InterpolatedUnivariateSpline(x, np.imag(res[k]).reshape((-1, )))
                     d2 = InterpolatedUnivariateSpline(refx, np.imag(ref[k]).reshape((-1, )))
-                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED (Im)" % self.test_id)
+                    ok(d1(x), d2(x), rtol=self.er, atol=self.ea, msg=("Test %s FAILED (Im)" % self.test_id))
                 else:
                     # Interpolate the results to compare.
                     x = x.reshape((-1, ))
                     refx = ref[ref.x].reshape((-1, ))
                     d1 = InterpolatedUnivariateSpline(x, np.real_if_close(res[k]).reshape((-1, )))
                     d2 = InterpolatedUnivariateSpline(refx, np.real_if_close(ref[k]).reshape((-1, )))
-                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
+                    ok(d1(x), d2(x), rtol=self.er, atol=self.ea, msg=("Test %s FAILED" % self.test_id))
         elif isinstance(res, results.op_solution):
             for k in list(res.keys()):
                 assert k in ref
-                ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
+                ok(res[k], ref[k], rtol=self.er, atol=self.ea, msg=("Test %s FAILED" % self.test_id))
         else:
             if isinstance(res, list) or isinstance(res, tuple):
                 self._check(res[0], ref)
@@ -846,3 +846,11 @@ class APITest(unittest.TestCase):
             for f in self.rmfiles:
                 os.remove(f)
         self._reset_sim_opts()
+
+def ok(x, ref, rtol, atol, msg):
+    try:
+        assert np.allclose(x, ref, rtol=rtol, atol=atol)
+    except AssertionError:
+        print("REL: %g (max %g), ABS: %g (max %g)" % (max(abs(2*(x-ref)/(x+ref))), rtol, max(abs(x-ref)), atol))
+        raise AssertionError(msg)
+
