@@ -624,8 +624,8 @@ def op_analysis(circ, x0=None, guess=True, outfile=None, verbose=3):
 
     printing.print_info_line(
         ("MNA matrix and constant term (complete):", 4), verbose)
-    printing.print_info_line((str(mna), 4), verbose)
-    printing.print_info_line((str(N), 4), verbose)
+    printing.print_info_line((mna, 4), verbose)
+    printing.print_info_line((N, 4), verbose)
 
     # lets trash the unneeded col & row
     printing.print_info_line(

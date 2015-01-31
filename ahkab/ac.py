@@ -243,13 +243,13 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
         J = 0
 
     printing.print_info_line(("MNA (reduced):", 5), verbose)
-    printing.print_info_line((str(mna), 5), verbose)
+    printing.print_info_line((mna, 5), verbose)
     printing.print_info_line(("AC (reduced):", 5), verbose)
-    printing.print_info_line((str(AC), 5), verbose)
+    printing.print_info_line((AC, 5), verbose)
     printing.print_info_line(("J (reduced):", 5), verbose)
-    printing.print_info_line((str(J), 5), verbose)
+    printing.print_info_line((J, 5), verbose)
     printing.print_info_line(("Nac (reduced):", 5), verbose)
-    printing.print_info_line((str(Nac), 5), verbose)
+    printing.print_info_line((Nac, 5), verbose)
 
     sol = results.ac_solution(circ, start=start, stop=stop,
                               points=nsteps+1, stype=sweep_type, op=x0, 
