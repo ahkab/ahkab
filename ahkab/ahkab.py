@@ -367,6 +367,11 @@ def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile=None, verbose
         the number of points to be used the discretize the
         `[start, stop]` interval.
 
+    x0 : string or ndarray, optional
+        The linearization point for the AC analysis. If set to 'op' (default),
+        the latest Operating point analysis will be used. Otherwise, you may
+        supply your own linearization point in ndarray format.
+
     sweep_type : string, optional
         It can be set to either ``options.ac_lin_step`` (linear stepping) or
         ``options.ac_log_step`` (log10 stepping). Defaults to logarithmic
@@ -691,7 +696,7 @@ def new_x0(circ, icdict):
     .. note:: 
         This simulator uses the normal convention, also known as the
         `Passive sign convention
-        <https://en.wikipedia.org/wiki/Passive_sign_convention>`.
+        <https://en.wikipedia.org/wiki/Passive_sign_convention>`_.
 
     **Returns:**
 
