@@ -410,6 +410,15 @@ class op_solution(solution, _mutable_data):
                 v = v + x[elem.n1 - 1] if elem.n1 != 0 else v
                 v = v - x[elem.n2 - 1] if elem.n2 != 0 else v
                 tot_power = tot_power - v * elem.alpha * x[nv_1 + local_i_index, 0]
+            elif isinstance(elem, devices.HVSource):
+                try:
+                    local_i_index = circ.find_vde_index(elem.source_id)
+                except ValueError:
+                    raise RuntimeError("Sensing voltage source %s for %s not found. BUG!" %
+                                       (elem.source_id, elem.part_id))
+                local_i_index2 = circ.find_vde_index(elem.part_id)
+                tot_power = tot_power - elem.alpha*x[nv_1 + local_i_index, 0]* \
+                                        x[nv_1 + local_i_index2, 0]
             elif circuit.is_elem_voltage_defined(elem):
                 i_index = i_index + 1
 

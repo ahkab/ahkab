@@ -812,6 +812,46 @@ class Circuit(list):
         # add it!
         self.append(elem)
 
+    def add_ccvs(self, part_id, n1, n2, source_id, value):
+        """Adds a current-controlled voltage source (CCCS) to the circuit
+
+        This method takes care that its nodes are added as well.
+
+        **Parameters:**
+
+        part_id : string
+            The cccs ID (eg ``'H1'``). The first letter is always ``'H'``.
+        n1, n2 : strings
+            The output port nodes, where the output current is
+            forced. Eg. "outp", "outm" or "out_a", "out_b".
+        source_id : string
+            The voltage source to be used to sense the current that drives
+            the output voltage. Eg. ``'V1'``.
+        value : float
+            The proportionality factor between the sense current :math:`I_s`
+            flowing into the ``source_id`` voltage source (input) and output voltage.
+            Mathematically:
+
+            .. math::
+
+                Vn_1 - Vn_2 = \\alpha I_s
+
+        .. seealso::
+
+            :class:`ahkab.devices.EVSource`,
+            :class:`ahkab.devices.FISource`
+
+        """
+        # Add the nodes, this is SAFE: if a node is already known to the circuit,
+        # the methods will just ignore the request.
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
+        # instantiate the element
+        elem = devices.HVSource(part_id=part_id, n1=n1, n2=n2,
+                                source_id=source_id, value=value)
+        # add it!
+        self.append(elem)
+
     def add_vcvs(self, part_id, n1, n2, sn1, sn2, value):
         """Adds a voltage-controlled voltage source (vcvs) to the circuit
 

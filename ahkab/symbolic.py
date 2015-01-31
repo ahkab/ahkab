@@ -484,6 +484,13 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
                     alpha = elem.alpha
                 mna[index, elem.sn1] = -alpha
                 mna[index, elem.sn2] = +alpha
+            elif isinstance(elem, devices.HVSource):
+                if elem.is_symbolic:
+                    alpha = _symbol_factory(elem.part_id.upper(), real=True)
+                else:
+                    alpha = elem.alpha
+                source_index = circ.find_vde_index(elem.source_id)
+                mna[index, n_of_nodes + source_index] = +alpha
             elif isinstance(elem, devices.Inductor):
                 if ac:
                     if elem.is_symbolic:
@@ -496,10 +503,10 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
                     pass
                     # already so: commented out
                     # N[index,0] = 0
-            elif isinstance(elem, devices.HVSource):
-                printing.print_warning(
-                    "symbolic.py: BUG - hvsources are not implemented yet.")
-                sys.exit(33)
+            else:
+                raise circuit.CircuitError('Element %s is not supported. ' +
+                                           'Please report this bug.' %
+                                           elem.__class__)
 
     for elem in circ:
         if ac and isinstance(elem, devices.Inductor):

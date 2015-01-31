@@ -1047,8 +1047,8 @@ def generate_mna_and_N(circ, verbose=3):
                 # N[index,0] = 0 pass, it's already zero
                 pass
             elif isinstance(elem, devices.HVSource):
-                print("dc_analysis.py: BUG - hvsources are not implemented yet.")
-                sys.exit(33)
+                index_source = circ.find_vde_index(elem.source_id)
+                mna[index, n_of_nodes+index_source] = 1.0 * elem.alpha
             else:
                 print("dc_analysis.py: BUG - found an unknown voltage_def elem.")
                 print(elem)
