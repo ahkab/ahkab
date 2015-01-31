@@ -866,7 +866,10 @@ class EVSource(Component):
         \\end{array}
         \\right.
 
-    Where :math:`I_s` is the current at the source port.
+    Where :math:`I_s` is the current at the source port and the remaining
+    symbols are explained in the Parameters section below.
+
+    **Parameters:**
 
     n1 : int
         *Internal* node to be connected to the anode of the output port.
@@ -936,11 +939,14 @@ class GISource(Component):
 
     Where :math:`I_s` is the current at the source port and :math:`I_o` is the
     current at the output port.
+    The remaining symbols are explained in the Parameters section below.
 
     .. note::
 
         This simulator uses the passive convention: a positive current flows
         into the element through the anode and exits through the cathode.
+
+    **Parameters:**
 
     n1 : int
         *Internal* node to be connected to the anode of the output port.
@@ -1035,11 +1041,14 @@ class FISource(Component):
 
     Where :math:`V_s` is the voltage forced at the source port by the sensing
     element and :math:`I_o` is the current at the output port.
+    The remaining symbols are explained in the Parameters section below.
 
     .. note::
 
         This simulator uses the passive convention: a positive current flows
         into the element through the anode and exits through the cathode.
+
+    **Parameters:**
 
     n1 : int
         *Internal* node to be connected to the anode of the output port.
@@ -1095,25 +1104,19 @@ class pulse:
 
     v1 : float
         Square wave low value.
-
     v2 : float
         Square wave high value.
-
     td : float
         Delay time to the first ramp, in seconds. Negative values are considered
         as zero.
-
     tr : float
         Rise time in seconds, from the low value ``v1`` to the pulse high value
         ``v2``.
-
     tf : float
         Fall time in seconds, from the pulse high value ``v2`` to the low value
         ``v1``.
-
     pw : float
         Pulse width in seconds.
-
     per : float
         Periodicity interval in seconds.
     """
