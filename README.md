@@ -39,9 +39,9 @@ If you need more information about the dependencies, check the [Install notes](h
 
 ##Usage##
 
- * `ahkab` can be run _within Python scripts as a library_. 
+###1. `ahkab` can be run as a Python library##
 
-###Example###
+####Example of library use####
  
 <img src="https://rawgithub.com/ahkab/ahkab/master/doc/images/readme_example/pbf.svg" alt="Example schematic: a 5th order 1kHz band-pass Butterworth filter"/>
 
@@ -80,21 +80,31 @@ plot_results('5th order 1kHz Butterworth filter', [('|Vn8|',"")], res['ac'],
 
 <img src="https://rawgithub.com/ahkab/ahkab/master/doc/images/readme_example/bpf_results.svg" alt="Example: AC simulation resultsr"/>
 
- * or stand-alone with a netlist file, the syntax being:
+####2. `ahkab` can be run from the command line with a netlist file####
+ 
+ The syntax is:
 
     `$ python ahkab -o graph.dat <netlist file>`
 
-See `ahkab --help` for command line switches.
+See `ahkab --help` for command line switches, [also online on the documentation pages.](http://ahkab.readthedocs.org/en/latest/help/Command-Line-Help.html)
 
 ###Documentation###
 
-The [new documentation is available on RTD](http://ahkab.readthedocs.org/en/latest/).
+The [documentation is available on RTD](http://ahkab.readthedocs.org/en/latest/).
 
 There, you can find a [documentation](http://ahkab.readthedocs.org/en/latest/ahkab.html) and [examples](http://ahkab.readthedocs.org/en/latest/examples/Python_API.html) regarding how to simulate from a Python script.
 
-Refer to the [netlist syntax page](http://ahkab.readthedocs.org/en/latest/help/Netlist-Syntax.html) if you prefer  to write netlist files that describe the circuit.
+Refer to the [netlist syntax page](http://ahkab.readthedocs.org/en/latest/help/Netlist-Syntax.html) if you prefer to write netlist files that describe the circuit.
 
-Experience with running SPICE or other commercial simulators can be very useful: this is not for the faint of heart.
+Experience with running SPICE or related commercial simulators can be very useful: this is not for the faint of heart.
+
+### Development model ###
+
+* The development happens on [the `ahkab` github repository](https://github.com/ahkab/ahkab),
+* Mostly on the master branch, with feature branch being created only for special purposes or non-trivial features.
+* Snapshots are released on a (hopefully) regular basis and are available on the [Releases pages, complete with changelog](https://github.com/ahkab/ahkab/releases) and on [PYPI](https://pypi.python.org/pypi/ahkab/)
+
+Patches and pull requests are welcome!
 
 ### How this project was born ###
 
