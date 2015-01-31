@@ -78,6 +78,11 @@ use_gmin_stepping = True
 #: Whether the source-stepping homothopy can be used.
 use_source_stepping = True
 
+#: When printing out to the user, whether we can suppress trailing zeros.
+print_suppress = True
+#: When printing out to the user, how many decimal digits to show at maximum.
+print_precision = 5
+
 # dc
 #: Maximum allowed NR iterations during a DC analysis
 dc_max_nr_iter = 10000

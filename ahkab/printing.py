@@ -26,7 +26,10 @@ Using its functions, the output will be somewhat uniform.
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
+import contextlib
 import sys
+
+import numpy as np
 
 from . import options
 
@@ -106,14 +109,16 @@ def print_warning(description, print_to_stdout=False):
     return None
 
 
-def print_info_line(xxx_todo_changeme, verbose, print_nl=True):
-    (msg, relevance) = xxx_todo_changeme
+def print_info_line(msg_relevance_tuple, verbose, print_nl=True):
+    msg, relevance = msg_relevance_tuple
     if verbose >= relevance:
-        if print_nl:
-            print(msg)
-        else:
-            print(msg, end=' ')
-    # suppressed.
+        with printoptions(precision=options.print_precision,
+                          suppress=options.print_suppress):
+            if print_nl:
+                print(msg)
+            else:
+                print(msg, end=' ')
+    # else: suppressed.
 
 
 def print_parse_error(nline, line, print_to_stdout=False):
@@ -218,3 +223,10 @@ def table_setup(twodarray, separator='  '):
                     (col_width[ci] - elem_width) + separator
         table_string += current_str + "\n"
     return table_string
+
+@contextlib.contextmanager
+def printoptions(*args, **kwargs):
+    original = np.get_printoptions()
+    np.set_printoptions(*args, **kwargs)
+    yield
+    np.set_printoptions(**original)
