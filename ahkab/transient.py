@@ -520,9 +520,7 @@ def generate_D(circ, shape):
     nv = len(circ.nodes_dict)# - 1
     i_eq = 0 #each time we find a vsource or vcvs or ccvs, we'll add one to this.
     for elem in circ:
-        if isinstance(elem, devices.VSource) or isinstance(elem, devices.EVSource) or \
-        isinstance(elem, devices.HVSource):
-            #notice that hvsources aren't yet implemented now!
+        if circuit.is_elem_voltage_defined(elem) and not isinstance(elem, devices.Inductor):
             i_eq = i_eq + 1
         elif isinstance(elem, devices.Capacitor):
             n1 = elem.n1
