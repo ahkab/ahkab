@@ -1595,7 +1595,7 @@ def parse_include_directive(line, netlist_wd, line_elements=None):
 
     path = line_elements[1]
     if not os.path.isabs(path):
-        # the user did not specify the full path. 
+        # the user did not specify the full path.
         # the path is then assumed to be relative to the netlist location
         path = os.path.join(netlist_wd, path)
     if not utilities.check_file(path):
