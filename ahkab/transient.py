@@ -278,9 +278,9 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
         first_iterations_number = 0
 
     printing.print_info_line(("MNA (reduced):", 5), verbose)
-    printing.print_info_line((str(mna), 5), verbose)
+    printing.print_info_line((mna, 5), verbose)
     printing.print_info_line(("D (reduced):", 5), verbose)
-    printing.print_info_line((str(D), 5), verbose)
+    printing.print_info_line((D, 5), verbose)
 
     # setup the initial values to start the iteration:
     x = None
