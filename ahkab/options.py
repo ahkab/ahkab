@@ -26,6 +26,8 @@ from __future__ import (unicode_literals, absolute_import,
 
 import os
 
+import numpy as np
+
 from matplotlib import rcParams as plotting_rcParams
 
 #: Encoding of the netlist files.
@@ -79,9 +81,9 @@ use_gmin_stepping = True
 use_source_stepping = True
 
 #: When printing out to the user, whether we can suppress trailing zeros.
-print_suppress = True
+print_suppress = False
 #: When printing out to the user, how many decimal digits to show at maximum.
-print_precision = 5
+print_precision = np.get_printoptions()['precision']
 
 # dc
 #: Maximum allowed NR iterations during a DC analysis
