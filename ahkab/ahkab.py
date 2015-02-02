@@ -827,8 +827,12 @@ def main(filename, outfile="stdout", verbose=3):
     printing.print_info_line(("  Scipy %s" % (sp.__version__), 6), verbose)
     printing.print_info_line(("  Sympy %s" % (sympy.__version__), 6), verbose)
     if plotting_available:
-        printing.print_info_line(
-            ("  Matplotlib %s" % (matplotlib.__version__), 6), verbose)
+        printing.print_info_line(("  Matplotlib %s" % (matplotlib.__version__),
+                                  6), verbose)
+        printing.print_info_line(("  -> backend: %s" %
+                                 (matplotlib.get_backend()), 6), verbose)
+        printing.print_info_line(("  -> matplotlibrc: %s" %
+                                 (matplotlib.matplotlib_fname()), 6), verbose)
     else:
         printing.print_info_line(
             ("  Matplotlib not found.", 6), verbose)
