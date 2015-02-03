@@ -194,7 +194,8 @@ class Circuit(list):
                 int_node = len(self.nodes_dict) + 1 * (not got_ref)
             self.nodes_dict.update({int_node: name})
         else:
-            raise ValueError
+            raise ValueError('Impossible to create new node %s: node exists!'
+                             % name)
         return name
 
     def add_node(self, ext_name):
