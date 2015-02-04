@@ -148,11 +148,10 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
         ("Performing variable substitutions...", 5), verbose)
     mna, N = apply_substitutions(mna, N, subs)
 
-    # for now, these crash sympy (0.7.5)
-    #printing.print_info_line(("MNA matrix (reduced):", 5), verbose)
-    #printing.print_info_line((sympy.sstr(mna), 5), verbose)
-    #printing.print_info_line(("N matrix (reduced):", 5), verbose)
-    #printing.print_info_line((sympy.sstr(N), 5), verbose)
+    printing.print_info_line(("MNA matrix (reduced):", 5), verbose)
+    printing.print_info_line((sympy.sstr(mna), 5), verbose)
+    printing.print_info_line(("N matrix (reduced):", 5), verbose)
+    printing.print_info_line((sympy.sstr(N), 5), verbose)
 
     printing.print_info_line(("Building equations...", 3), verbose)
     eq = []
