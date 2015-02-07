@@ -137,15 +137,15 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
 
     printing.print_info_line(
         ("Building symbolic MNA, N and x...", 3), verbose, print_nl=False)
-    mna, N, subs_g = generate_mna_and_N(
-        circ, opts={'r0s': r0s}, ac=ac_enable, verbose=verbose)
+    mna, N, subs_g = generate_mna_and_N(circ, opts={'r0s': r0s}, ac=ac_enable,
+                                        verbose=verbose)
     x = get_variables(circ)
     mna = mna[1:, 1:]
     N = N[1:, :]
     printing.print_info_line((" done.", 3), verbose)
 
-    printing.print_info_line(
-        ("Performing variable substitutions...", 5), verbose)
+    printing.print_info_line(("Performing variable substitutions...", 5),
+                             verbose)
     mna, N = apply_substitutions(mna, N, subs)
 
     printing.print_info_line(("MNA matrix (reduced):", 5), verbose)
@@ -336,6 +336,21 @@ def _to_real_list(M):
 def generate_mna_and_N(circ, opts, ac=False, verbose=3):
     """Generate a symbolic Modified Nodal Analysis matrix and N vector.
 
+    Only elements that have an ``is_symbolic`` attribute set to ``True``
+    (the default) are considered symbolically. Simply set the attribute to
+    ``False`` to employ the numeric value. This allows to simplify and speed
+    up the work of the symbolic solver.
+
+    The formulation can be performed using conductances or resistances. The
+    choice is made setting the global ``options.symb_formulate_with_gs`` value
+    to ``True``. A formulation done in terms of resistors, may result in many
+    separate :math:`1/R` terms in the matrices. Historically, ``sympy`` choked
+    on those, because of a long-standing bug in polys. Now the issue seems to
+    have been solved and the two computations should be symbolically equivalent
+    albeit computationally different (as expected). The option value
+    ``options.symb_formulate_with_gs`` is provided to restore the old
+    functionality in case you use an old version of ``sympy``.
+
     **Parameters:**
 
     circ : circuit instance
@@ -356,6 +371,12 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
 
     mna, N : Sympy matrices
         The MNA matrix and the contant term of symbolic type.
+    subs : dict of symbols
+        In case the formulation of the MNA is performed in terms of
+        conducatances, this dictionary is to be used to substitute away the
+        conducatances for the resistor symbols, after the circuit is solved but
+        before the results are shown to the user. ``sympy``'s ``sub()`` can take
+        care of that for you. If not necessary, this dictionary is empty.
 
     .. note::
         
@@ -382,15 +403,18 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             # we use conductances instead of 1/R because there is a significant
             # overhead handling many 1/R terms in sympy.
             if elem.is_symbolic:
-                R = _symbol_factory(
-                    elem.part_id.upper(), real=True, positive=True)
-                G = _symbol_factory('G' + elem.part_id[1:], real=True, positive=True)
-                # but we keep track of which is which and substitute back after
-                # solving.
-                subs_g.update({G: 1 / R})
+                R = _symbol_factory(elem.part_id.upper(), real=True,
+                                    positive=True)
+                if options.symb_formulate_with_gs:
+                    G = _symbol_factory('Gxxx' + elem.part_id[1:], real=True,
+                                        positive=True)
+                    # but we keep track of which is which and substitute back after
+                    # solving.
+                    subs_g.update({G:1/R})
+                else:
+                    G = 1.0/R
             else:
-                R = elem.value
-                G = 1.0 / R
+                    G = 1.0/elem.value
             mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + G
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - G
             mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - G
@@ -455,8 +479,8 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             pass
             # we'll add its lines afterwards
         elif verbose:
-            printing.print_warning(
-                "Skipped elem %s: not implemented." % (elem.part_id.upper(),))
+            printing.print_warning("Skipped elem %s: not implemented." %
+                                   (elem.part_id.upper(),))
 
     pre_vde = mna.shape[0]
     for elem in circ:
@@ -539,7 +563,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             pass
 
     # all done
-    return (mna, N, subs_g)
+    return mna, N, subs_g
 
 
 def _expand_matrix(mat, add_a_row=False, add_a_col=False):

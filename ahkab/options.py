@@ -136,6 +136,10 @@ shooting_max_nr_iter = 10000
 #: Enable the manual solver:
 #: solve the circuit equations one at a time as you might do "manually"
 symb_sympy_manual_solver = False
+#: Formulate the equations with conductances and at the last moment
+#: swap resistor symbols back in. It seems to make sympy play nicer.
+#: Sometimes.
+symb_formulate_with_gs = False
 
 # ac
 ac_log_step = 'LOG'
