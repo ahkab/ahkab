@@ -885,7 +885,7 @@ Run on %s, data filename %s.>" % \
     def get_xlabel(self):
         return self.variables[0]
 
-class symbolic_solution():
+class symbolic_solution(object):
     """Symbolic results
 
     **Parameters:**
@@ -1213,7 +1213,7 @@ class pz_solution(solution, _mutable_data):
         return self.variables[self.iter_index], \
                self.data[self.variables[self.iter_index]]
 
-class case_insensitive_dict():
+class case_insensitive_dict(object):
     """A dictionary that uses case-insensitive strings as keys.
     """
     def __init__(self):
