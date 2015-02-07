@@ -8,4 +8,4 @@ gm 5 0 4 0 0.01
 ro 5 0 10e3
 
 .op
-.symbolic tf=vg
+.symbolic
