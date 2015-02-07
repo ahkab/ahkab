@@ -596,7 +596,7 @@ class NetlistTest(unittest.TestCase):
                     if isinstance(res[k], dict): # hence ref[k] will be a dict too
                         self._check(res[k], ref[k])
                     elif isinstance(ref[k], sympy.Basic) and isinstance(res[k], sympy.Basic):
-                        assert (res[k] == ref[k]) or (sympy.simplify(ref[k]/res[k]) == 1)
+                        assert (res[k] == ref[k]) or (sympy.simplify(ref[k] - res[k]) == 0)
                     else:
                         assert res[k] == ref[k]
 
