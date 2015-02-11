@@ -33,7 +33,9 @@ The results are saved to disk, plotted or printed to stdout and can be read/proc
 
 The program requires:
 * the Python interpreter version 2 or 3 (at least v.2.6 for Python2, v.3.3 for Python3),
-* numpy>=1.7.0, scipy>0.11.1, matplotlib and sympy.
+* numpy>=1.7.0, scipy>=0.14.0 and sympy.
+
+Matplotlib is strongly recommended and no plotting will work without.
 
 If you need more information about the dependencies, check the [Install notes](https://github.com/ahkab/ahkab/wiki/Install:-Notes).
 
