@@ -28,7 +28,10 @@ import os
 
 import numpy as np
 
-from matplotlib import rcParams as plotting_rcParams
+try:
+    from matplotlib import rcParams as plotting_rcParams
+except ImportError:
+    plotting_rcParams = {}
 
 #: Encoding of the netlist files.
 encoding = 'utf8'
