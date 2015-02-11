@@ -466,6 +466,9 @@ class NetlistTest(unittest.TestCase):
         cp = ConfigParser()
         cp.read(os.path.join(self.reference_path, '%s.ini' % self.test_id))
         self.skip = bool(int(cp.get('test', 'skip-on-travis')))
+        if 'TRAVIS' in os.environ and self.skip:
+            # skip even loading the references
+            return
         assert self.test_id == cp.get('test', 'name')
 
         netlist = cp.get('test', 'netlist')
@@ -527,12 +530,12 @@ class NetlistTest(unittest.TestCase):
                 self.ref_data.update({t: res})
 
     def _run_test(self):
-        # no reference runs with nose
-        if sys.argv[0].endswith('nosetests') and self.ref_run:
-            self._reset_sim_opts()
-            raise SkipTest
         # check whether we are on travis or not and skip if needed.
         if 'TRAVIS' in os.environ and self.skip:
+            self._reset_sim_opts()
+            raise SkipTest
+        # no reference runs with nose
+        if sys.argv[0].endswith('nosetests') and self.ref_run:
             self._reset_sim_opts()
             raise SkipTest
         self._set_sim_opts(self._sim_opts)
@@ -701,6 +704,10 @@ class APITest(unittest.TestCase):
             self.reference_path = os.path.join(wd, self.test_id)
         else:
             self.reference_path = os.path.join(wd, 'tests', self.test_id)
+
+        if 'TRAVIS' in os.environ and self.skip:
+            # skip even loading the references
+            return
 
         self.types = [a['type'] for a in self.an_list]
 
