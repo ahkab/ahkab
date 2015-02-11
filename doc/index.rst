@@ -33,6 +33,7 @@ Module reference
    devices
    diode
    ekv
+   implicit_euler
    mosq
    netlist_parser
    options
@@ -64,9 +65,6 @@ Documentation in progress
 -------------------------
 
 .. automodule:: ahkab.gear
-   :members:
-
-.. automodule:: ahkab.implicit_euler
    :members:
 
 
