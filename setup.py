@@ -20,7 +20,7 @@ setup(
     package_data={
       'ahkab': ['test_data/*.dat']
     },
-    install_requires=['numpy', 'scipy>=0.14.0', 'sympy>=0.7.5'],
+    install_requires=['numpy>1.7.0', 'scipy>=0.14.0', 'sympy>=0.7.5'],
     extras_require = {'PLOT':['matplotlib>=1.1.1']},
     zip_safe=False,
     include_package_data=True,
