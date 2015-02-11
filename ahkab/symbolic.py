@@ -50,6 +50,7 @@ from . import ekv
 from . import mosq
 from . import diode
 from . import printing
+from . import py3compat
 from . import results
 from . import options
 
@@ -81,12 +82,26 @@ specs = {'symbolic': {'tokens': ({
                      }
         }
 
-# the s variable
+#: the Laplace variable
 s = sympy.Symbol('s', complex=True)
 
 enabled_assumptions = {'real':False, 'positive':False, 'complex':True}
 
-def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=3):
+# When the MNA analysis is formulated in terms of conductances, we need
+# to:
+# * create a conductance symbol corresponding to the resistor symbol give by the
+#   user,
+# * be able to avoid collisions (distiguish) between these artificial
+#   conductances and a user-defined in-circuit trans-conductance (ie a
+#   VCCS or ISource), as their part_id is ``G<alphanum>``.
+#
+# To do so, we create symbols that are named:
+# ``'G'`` + _COND_POSTFIX + part_id[1:]
+#
+_COND_POSTFIX = 'xxx'
+
+def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None,
+                      outfile=None, verbose=3):
     """Attempt a symbolic, small-signal solution of the circuit.
 
     **Parameters:**
@@ -105,9 +120,8 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
         take transistors' output impedance into consideration (default: False)
 
     subs: dict, optional
-        a dictionary of ``sympy.Symbol`` to be substituted. It makes solving the circuit
-        easier. Eg. ``subs={R1:R2}`` - replace R1 with R2. It can be generated with
-        :func:`parse_substitutions()`
+        a dictionary of part IDs to be substituted. It makes solving the circuit
+        easier. Eg. ``subs={'R1':'R2'}`` - replace the resistor R1 with R2.
 
     outfile : string, optional
         output filename - ``'stdout'`` means print to stdout, the default.
@@ -115,7 +129,7 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
     verbose: int, optional
         verbosity level 0 (silent) to 6 (painful).
 
-    **Returns:** 
+    **Returns:**
 
     sol : symbolic solution
         The solutions.
@@ -127,6 +141,8 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
     """
     if subs is None:
         subs = {}  # no subs by default
+    else:
+        subs = _parse_substitutions(subs)
 
     if not ac_enable:
         printing.print_info_line(
@@ -293,7 +309,7 @@ def get_variables(circ):
         The circuit
 
     **Returns:**
-    
+
     vars : sympy matrix, shape (n, 1)
         The variables in a column vector.
     """
@@ -357,7 +373,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
         The circuit.
     opts : dict
         The options to be used for the generation of the matrices. As of now,
-        the only supported option is ``'r0s'`` which can be set to either 
+        the only supported option is ``'r0s'`` which can be set to either
         ``True`` or ``False``, and selects whether the equivalent output
         resistance of the transistors should be taken into account or not.
     ac : bool, optional
@@ -379,17 +395,17 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
         care of that for you. If not necessary, this dictionary is empty.
 
     .. note::
-        
+
         Setting ``opts['r0s'] = True``, ie considering all the transistors output
         resistances, can significantly slow down -- or even prevent by consuming
         all available memory -- the solution of complex circuits with several
         active elements.
 
         We recommend a combination of the following:
-        
+
         * setting the above option in simple circuits only,
         * inserting explicitely the :math:`r_0` you wish to consider at circuit
-          level, 
+          level,
         * beefing up your machine with extra RAM and extra computing power,
         * being patient.
     """
@@ -583,17 +599,24 @@ def get_roots(expr):
     return sympy.solve(den, s), sympy.solve(num, s)
 
 
-def parse_substitutions(slist):
-    """Generates a substitution dictionary from a substitution lists.
+def _parse_substitutions(sdict):
+    """Generates a symbolic substitution dictionary from a dictionary of
+    substitutions expressed in terms of part IDs.
 
-    The dictionary is typically then passed to :func:`symbolic_analysis`.
+    This method is typically called by :func:`symbolic_analysis`.
+
+    .. note::
+
+        For what regards the resistors, the method will check the value
+        of ``options.symb_formulate_with_gs`` and convert the resistors
+        to conductances as needed, according to the option value.
 
     **Parameters:**
 
-    slist : a list of strings
-        The elements of the list should be according to the syntax
-        ``'<part_id1>=<part_id2>'``, eg ``'R2=R1'``, instructing the simulator
-        to use the value of R1 (R1) instead of R2.
+    sdict : a dict of strings
+        The elements of the dictionary should be according to the syntax
+        ``{'<part_id1>:<part_id2>'}``, eg ``{'R2':'R1'}``, instructing the
+        simulator to substitute ``R1`` in place of ``R2``.
 
     **Returns:**
 
@@ -602,10 +625,13 @@ def parse_substitutions(slist):
 
     """
     subs = {}
-    for l in slist:
-        v1, v2 = l.split("=")
-        letter_id1 = v1[0].upper() if v1[0].upper() != 'R' else 'G'
-        letter_id2 = v2[0].upper() if v2[0].upper() != 'R' else 'G'
+    for v1, v2 in py3compat.iteritems(sdict):
+        if v1[0].upper() == 'R' and options.symb_formulate_with_gs:
+            letter_id1 = 'G' + _COND_POSTFIX
+            letter_id2 = 'G' + _COND_POSTFIX
+        else:
+            letter_id1 = v1[0].upper()
+            letter_id2 = v2[0].upper()
         if letter_id1[0] in ('R', 'G', 'L', 'C', 'M'):
             s1 = _symbol_factory(letter_id1 + v1[1:], real=True, positive=True)
         else:
