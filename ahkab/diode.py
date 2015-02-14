@@ -115,7 +115,11 @@ class diode(object):
     def set_temperature(self, T):
         """Set the operating temperature IN KELVIN degrees
         """
-        self.device.T = T
+        if self.device.T != T:
+            self.device.T = T
+            # reset the old values, different temperature
+            self.device._gm_db = {}
+            self.device._i_db = {}
 
     def __str__(self):
         rep = "%s area=%g T=%g" % (
