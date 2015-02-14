@@ -37,7 +37,6 @@ import numpy as np
 import scipy, scipy.optimize
 
 from scipy.optimize import newton
-from math import exp
 
 from . import constants
 from . import printing
@@ -376,7 +375,7 @@ class diode_model:
         return 1./self.RS + self.get_gm(0, [vext-x], 0, dev, rs=False)
 
     def _safe_exp(self, x):
-        return exp(x) if x < 70 else exp(70) + 10 * x
+        return np.exp(x) if x < 70 else np.exp(70) + 10 * x
 
     def _get_i(self, v):
         i = self.IS * (self._safe_exp(v/(self.N * self.VT)) - 1) \
