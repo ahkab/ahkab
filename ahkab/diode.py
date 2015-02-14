@@ -134,6 +134,9 @@ class diode(object):
         return self.ports
 
     def get_drive_ports(self, op):
+        if not op == 0:
+            raise ValueError('Diode %s has no output port %d' %
+                             (self.part_id, op))
         return self.ports
 
     def istamp(self, ports_v, time=0, reduced=True):
