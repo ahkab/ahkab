@@ -406,9 +406,9 @@ class diode_model:
     def set_temperature(self, T):
         T = float(T)
         self.EG = constants.si.Eg(T)
-        self.IS = self.IS*(T/self.T)**(self.XTI/self.N)*math.exp(-constants.e
-                                                                 *constants.si.Eg(300)/(self.N*constants.k*T)
-                                                                 *(1 - T/self.T))
+        self.IS = self.IS*(T/self.T)**(self.XTI/self.N)* \
+                  np.exp(-constants.e*constants.si.Eg(300)/(self.N*constants.k*T)
+                         *(1 - T/self.T))
         self.BV = self.BV - self.TBV*(T - self.T)
         self.RS = self.RS*(1 + self.TRS*(T - self.T))
         self.T = T
