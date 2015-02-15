@@ -518,11 +518,11 @@ class NetlistTest(unittest.TestCase):
                 if os.path.splitext(file_ref)[1][1:].lower() == 'ac':
                     res.update({headers[0]:data[0, :]})
                     for i, h in enumerate(headers):
-                         if h[0] == h[-1] == '|':
-                             pi = headers.index('arg('+h[1:-1]+')')
-                             res.update({h[1:-1]:data[i, :]*np.exp(1j*data[pi, :])})
-                         else:
-                             continue
+                        if h[0] == h[-1] == '|':
+                            pi = headers.index('arg('+h[1:-1]+')')
+                            res.update({h[1:-1]:data[i, :]*np.exp(1j*data[pi, :])})
+                        else:
+                            continue
                 else:
                     for i, h in enumerate(headers):
                         res.update({h: data[i, :]})
@@ -760,11 +760,11 @@ class APITest(unittest.TestCase):
                 if os.path.splitext(file_ref)[1][1:].lower() == 'ac':
                     res.update({headers[0]:data[0, :]})
                     for i, h in enumerate(headers):
-                         if h[0] == h[-1] == '|':
-                             pi = headers.index('arg('+h[1:-1]+')')
-                             res.update({h[1:-1]:data[i, :]*np.exp(1j*data[pi, :])})
-                         else:
-                             continue
+                        if h[0] == h[-1] == '|':
+                            pi = headers.index('arg('+h[1:-1]+')')
+                            res.update({h[1:-1]:data[i, :]*np.exp(1j*data[pi, :])})
+                        else:
+                            continue
                 else:
                     for i, h in enumerate(headers):
                         res.update({h: data[i, :]})
