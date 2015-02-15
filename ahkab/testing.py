@@ -420,14 +420,14 @@ class NetlistTest(unittest.TestCase):
         higher coverage. Defaults to 6.
     """
 
-    def __init__(self, test_id, er=1e-6, ea=1e-9, sim_opts={}, verbose=6):
+    def __init__(self, test_id, er=1e-6, ea=1e-9, sim_opts=None, verbose=6):
         unittest.TestCase.__init__(self, methodName='test')
         self.test_id = test_id
         self.er = er
         self.ea = ea
         self.test.__func__.__doc__ = "%s simulation" % (test_id, )
         self.ref_data = {} # the reference results will be loaded here
-        self._sim_opts = sim_opts
+        self._sim_opts = sim_opts if sim_opts is not None else {}
         self._reset_opts = {}
         self.verbose=verbose
 
@@ -659,7 +659,7 @@ class APITest(unittest.TestCase):
         Should we skip the test on Travis? Set to ``True`` for long tests
     """
 
-    def __init__(self, test_id, circ, an_list, er=1e-6, ea=1e-9, sim_opts={},
+    def __init__(self, test_id, circ, an_list, er=1e-6, ea=1e-9, sim_opts=None,
                  skip_on_travis=False):
         unittest.TestCase.__init__(self, methodName='test')
         self.test_id = test_id
@@ -670,7 +670,7 @@ class APITest(unittest.TestCase):
         self.skip = skip_on_travis
         self.circ = circ
         self.an_list = an_list
-        self._sim_opts = sim_opts
+        self._sim_opts = sim_opts if sim_opts is not None else {}
         self._reset_opts = {}
         self._set_sim_opts(sim_opts)
         self.res = None
