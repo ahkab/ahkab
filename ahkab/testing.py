@@ -672,7 +672,7 @@ class APITest(unittest.TestCase):
         self.an_list = an_list
         self._sim_opts = sim_opts if sim_opts is not None else {}
         self._reset_opts = {}
-        self._set_sim_opts(sim_opts)
+        self._set_sim_opts(self._sim_opts)
         self.res = None
         for an in an_list:
             if 'outfile' in an and self.test_id not in an['outfile']:
