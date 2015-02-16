@@ -231,22 +231,22 @@ class solution(object):
         self.iter_data, self.iter_headers, _, _ = csvlib.load_csv(self.filename)
         return self
 
-    def __next__(self):
-        return next()
-
     def next(self):
+        return __next__()
+
+    def __next__(self):
         if self.iter_index == len(self.iter_headers):
             self.iter_index = 0
             raise StopIteration
         else:
             next_i = self.iter_headers[self.iter_index]
             if hasattr(self.iter_data, 'shape'):
-                next_d = self.iter_data[self.iter_index,:]
+                next_d = self.iter_data[self.iter_index, :]
             else:
                 next_d = self.iter_data[self.iter_index]
-            next = next_i, next_d
+            nxt = next_i, next_d
             self.iter_index += 1
-        return next
+        return nxt
 
 class op_solution(solution, _mutable_data):
     """OP results
@@ -517,10 +517,11 @@ class op_solution(solution, _mutable_data):
             self.iter_index = 0
             raise StopIteration
         else:
-            next = self.variables[self.iter_index], \
+            nxt = self.variables[self.iter_index], \
                    self.x[self.iter_index]
             self.iter_index += 1
-        return next
+        return nxt
+
 
 class ac_solution(solution, _mutable_data):
     """AC results
@@ -1105,6 +1106,9 @@ class symbolic_solution(object):
             self.iter_index += 1
         return list(self.results.keys())[self.iter_index], \
                self.results[self._symbols[self.iter_index]]
+
+    def next(self):
+        return __next__()
 
 class pz_solution(solution, _mutable_data):
     """PZ results
