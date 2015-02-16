@@ -408,7 +408,7 @@ class op_solution(solution, _mutable_data):
                             local_i_index += 1
                 if not found_source:
                     raise RuntimeError("Sensing voltage source %s for %s not found. BUG!" %
-                                       (e.source_id, e.part_id))
+                                       (elem.source_id, elem.part_id))
                 v = 0.
                 v = v + x[elem.n1 - 1] if elem.n1 != 0 else v
                 v = v - x[elem.n2 - 1] if elem.n2 != 0 else v
