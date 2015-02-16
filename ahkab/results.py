@@ -885,9 +885,10 @@ Run on %s, data filename %s.>" % \
         data = np.concatenate((time, x), axis=0)
         self._add_data(data)
 
-    def asmatrix(self, verbose=3):
-        allvalues = csvlib.load_csv(self.filename, load_headers=[], nsamples=None, skip=0, verbose=verbose)
-        return allvalues[0,:], allvalues[1:,:]
+    def asmatrix(self):
+        allvalues = csvlib.load_csv(self.filename, load_headers=[],
+                                    nsamples=None, skip=0, verbose=0)
+        return allvalues[0, :], allvalues[1:, :]
 
     def get_x(self):
         return self.get(self.variables[0])
