@@ -158,7 +158,7 @@ class solution(object):
         # Please redefine this sol_type in the subclasses
         self.sol_type = None
 
-    def asmatrix(self, verbose=3):
+    def asmatrix(self):
         """Return all data.
 
         .. note:: 
@@ -167,7 +167,7 @@ class solution(object):
 
         """
         data, _, _, _ = csvlib.load_csv(self.filename, load_headers=[], 
-                                        verbose=verbose)
+                                        verbose=0)
         return data
 
     # Access as a dictionary BY VARIABLE NAME:
@@ -177,16 +177,17 @@ class solution(object):
 
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
-        data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[name], 
-                                                  nsamples=None, skip=0, verbose=0)
+        # data, headers, pos, EOF = csvlib.load_csv(...)
+        data, _, _, _ = csvlib.load_csv(self.filename, load_headers=[name],
+                                        nsamples=None, skip=0, verbose=0)
         return data.reshape((-1,))
 
-    def get(self, name, default=None, verbose=3):
+    def get(self, name, default=None):
         """Get a solution by variable name."""
         try:
-            data, headers, pos, EOF = csvlib.load_csv(self.filename, 
-                                                      load_headers=[name], 
-                                                      nsamples=None, skip=0, verbose=verbose)
+            # data, headers, pos, EOF = csvlib.load_csv(...)
+            data, _, _, _ = csvlib.load_csv(self.filename, load_headers=[name],
+                                            nsamples=None, skip=0, verbose=0)
         except KeyError:
             return default
         return data.reshape((-1,))
@@ -203,20 +204,22 @@ class solution(object):
         """Get all of the results set's variables names."""
         return self.variables
 
-    def values(self, verbose=3):
+    def values(self):
         """Get all of the results set's variables values."""
-        data, headers, pos, EOF = csvlib.load_csv(self.filename, 
-                                                  load_headers=self.variables, 
-                                                  nsamples=None, skip=0, verbose=verbose)
+        # data, headers, pos, EOF = csvlib.load_csv(...)
+        data, _, _, _ = csvlib.load_csv(self.filename,
+                                        load_headers=self.variables,
+                                        nsamples=None, skip=0, verbose=0)
         values = []
         for i in range(data.shape[1]):
             values.append(data[:, i])
         return values
 
     def items(self, verbose=3):
-        data, headers, pos, EOF = csvlib.load_csv(self.filename, 
-                                                  load_headers=self.variables, 
-                                                  nsamples=None, skip=0, verbose=verbose)
+        # data, headers, pos, EOF = csvlib.load_csv(...)
+        data, headers, _, _ = csvlib.load_csv(self.filename,
+                                        load_headers=self.variables,
+                                        nsamples=None, skip=0, verbose=verbose)
         vlist = []
         for j in range(data.shape[0]):
             vlist.append(data[j,:].T)
@@ -316,7 +319,7 @@ class op_solution(solution, _mutable_data):
         his = csvlib.get_headers_index(self.variables, [name], verbose=0)
         return self.x[his]
 
-    def get(self, name, default=None, verbose=3):
+    def get(self, name, default=None):
         """Get a solution by variable name."""
         try:
             data = self.__getitem__(name)
@@ -494,7 +497,7 @@ class op_solution(solution, _mutable_data):
                 print("Unrecognized unit... Bug.")
         return check_failed_vars
 
-    def values(self, verbose=3):
+    def values(self):
         """Get all of the results set's variables values."""
         return self.x
 
@@ -595,11 +598,12 @@ class ac_solution(solution, _mutable_data):
 
     def get_xlabel(self):
         return self.variables[0]
-    ##
-    def asmatrix(self, verbose=3):
+
+    def asmatrix(self):
         """Return all data as a (possibly huge) python matrix."""
-        data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=[],
-                                                  nsamples=None, skip=0, verbose=verbose)
+        ## data, headers, pos, EOF = csvlib.load_csv()
+        data, headers, _, _ = csvlib.load_csv(self.filename, load_headers=[],
+                                              nsamples=None, skip=0, verbose=0)
         cplx_data = None
         cplx_headers = []
         re1 = '\\|(.*?)\\|'
@@ -630,16 +634,17 @@ class ac_solution(solution, _mutable_data):
         if name.upper() != 'W':
             headers = ['|%s|' % name, 'arg(%s)' % name]
         else:
-           headers = [name]
-        data, headers, pos, EOF = csvlib.load_csv(self.filename, load_headers=headers,
-                                                  nsamples=None, skip=0, verbose=0)
+            headers = [name]
+        # data, headers, pos, EOF = csvlib.load_csv()
+        data, headers, _, _ = csvlib.load_csv(self.filename, load_headers=headers,
+                                              nsamples=None, skip=0, verbose=0)
         if len(headers) == 2:
             data = data[0, :] * np.exp(1j*data[1, :])
         else:
             data = data.reshape((-1,))
         return data
 
-    def get(self, name, default=None, verbose=3):
+    def get(self, name, default=None):
         """Get a solution by variable name."""
         try:
             data = self.__getitem__(name)
@@ -647,7 +652,7 @@ class ac_solution(solution, _mutable_data):
             return default
         return data
 
-    def values(self, verbose=3):
+    def values(self):
         """Get all of the results set's variables values."""
         data = self.asmatrix()
         values = []
