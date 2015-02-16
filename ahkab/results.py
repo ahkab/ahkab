@@ -290,6 +290,7 @@ class op_solution(solution, _mutable_data):
             if circ.is_int_node_internal_only(index+1):
                 self.skip_nodes_list.append(index)
 
+        index = nv_1 - 1
         for elem in circ:
             if circuit.is_elem_voltage_defined(elem):
                 index = index + 1
