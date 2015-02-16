@@ -232,7 +232,7 @@ class solution(object):
         return self
 
     def next(self):
-        return __next__()
+        return self.__next__()
 
     def __next__(self):
         if self.iter_index == len(self.iter_headers):
@@ -1113,7 +1113,7 @@ class symbolic_solution(object):
                self.results[self._symbols[self.iter_index]]
 
     def next(self):
-        return __next__()
+        return self.__next__()
 
 class pz_solution(solution, _mutable_data):
     """PZ results
