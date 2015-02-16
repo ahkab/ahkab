@@ -625,9 +625,13 @@ class ac_solution(solution, _mutable_data):
                     match_phase = ('arg(%s)' % var).upper()
                     ip = [h.upper() for h in headers].index(match_phase)
                     if cplx_data is None:
-                        cplx_data = np.array(data[i, :]*np.exp(1j*data[ip, :]).reshape((1, -1)), dtype=np.complex_)
+                        cplx_data = np.array(data[i, :]*
+                                             np.exp(1j*data[ip,:]).reshape((1, -1)),
+                                             dtype=np.complex_)
                     else:
-                        cplx_data = np.vstack((cplx_data, (data[i, :]*np.exp(1j*data[ip, :])).reshape((1, -1))))
+                        cplx_data = np.vstack((cplx_data,
+                                               (data[i, :]*
+                                                np.exp(1j*data[ip, :])).reshape((1, -1))))
         return cplx_data
 
     # Access as a dictionary BY VARIABLE NAME:
