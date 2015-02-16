@@ -98,7 +98,6 @@ from __future__ import (unicode_literals, absolute_import,
 
 import sys
 import time
-import copy
 import pickle
 import re
 
