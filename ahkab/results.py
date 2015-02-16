@@ -124,7 +124,7 @@ class _mutable_data:
         self._init_file_done = True
 
 
-class solution:
+class solution(object):
     """Base class storing a set of generic simulation results.
 
     This class is not meant to be accessed directly, rather it is
