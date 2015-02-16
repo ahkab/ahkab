@@ -1132,7 +1132,6 @@ class pz_solution(solution, _mutable_data):
     def __init__(self, circ, poles, zeros, outfile):
         solution.__init__(self, circ, outfile)
         self.sol_type = "PZ"
-        nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         self.poles = np.sort_complex(np.array(poles).reshape((-1,)))
         self.zeros = np.sort_complex(np.array(zeros).reshape((-1,)))
         data = np.vstack((self.poles.reshape((-1, 1)),
