@@ -117,7 +117,7 @@ csvlib.SEPARATOR = "\t"
 
 class _mutable_data:
     def __init__(self):
-        pass
+        self._init_file_done = False
     def _add_data(self, data):
         """Add the data matrix to the results set."""
         csvlib.write_csv(self.filename, data, self.variables, append=self._init_file_done)
