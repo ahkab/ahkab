@@ -1,17 +1,18 @@
  ahkab
 ======
 
+***a SPICE-like electronic circuit simulator written in Python***
+
 The code should be easy to read and modify, the main language is Python
 -- 2 or 3 -- and it is platform-independent.\ |githalytics.com alpha|
 
 News!
 -----
 
--  Happy new year! 2015 was kicked off with a brand new Ahkab release.
-   Ahkab v0.12 was released on Jan 05 2015, including several bugfixes,
-   improvements, a revised documentation and Python3 support. It is
-   recommended to upgrade. Check out `the release
-   notes <https://github.com/ahkab/ahkab/releases/tag/v0.12>`__ for
+-  Ahkab v0.13 was released on Feb 17 2015, including several bugfixes,
+   new features and additional documentation. It is recommended to
+   upgrade. Check out `the release
+   notes <https://github.com/ahkab/ahkab/releases/tag/v0.13>`__ for
    more!
 -  The whole codebase has been going through a (yet incomplete)
    refactoring and documenting effort. The `new documentation is
@@ -22,7 +23,9 @@ proceeding slowly, albeit hopefully steadily. If you are interested and
 you would like to contribute to refactoring or documenting a particular
 feature, it would be very welcome.
 
-|Build Status| |Coverage Status| |PyPi version| |GPLv2 license|
+| |Build Status| |Coverage Status|
+| |PyPi version| |GPLv2 license| |DOI|
+| 
 
 Supported simulations:
 ----------------------
@@ -61,9 +64,11 @@ Install
 
 The program requires:
 
-- the Python interpreter version 2 or 3 (at least v.2.6 for Python2,
-  v.3.3 for Python3), 
-- numpy>=1.7.0, scipy>0.11.1, matplotlib and sympy.
+-  the Python interpreter version 2 or 3 (at least v.2.6 for Python2,
+   v.3.3 for Python3),
+-  numpy>=1.7.0, scipy>=0.14.0 and sympy.
+
+Matplotlib is strongly recommended and no plotting will work without.
 
 If you need more information about the dependencies, check the `Install
 notes <https://github.com/ahkab/ahkab/wiki/Install:-Notes>`__.
@@ -71,10 +76,11 @@ notes <https://github.com/ahkab/ahkab/wiki/Install:-Notes>`__.
 Usage
 -----
 
--  ``ahkab`` can be run *within Python scripts as a library*.
+1. ``ahkab`` can be run as a Python library
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Example
-~~~~~~~
+Example of library use
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -109,16 +115,23 @@ Example
     plot_results('5th order 1kHz Butterworth filter', [('|Vn8|',"")], res['ac'],
                  outfilename='bpf_transfer_fn.png')
 
--  or stand-alone with a netlist file, the syntax being:
+2. ``ahkab`` can be run from the command line with a netlist file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   ``$ python ahkab -o graph.dat <netlist file>``
+The syntax is:
 
-See ``ahkab --help`` for command line switches.
+::
+
+    `$ python ahkab -o graph.dat <netlist file>`
+
+See ``ahkab --help`` for command line switches, `also online on the
+documentation
+pages. <http://ahkab.readthedocs.org/en/latest/help/Command-Line-Help.html>`__
 
 Documentation
 ~~~~~~~~~~~~~
 
-The `new documentation is available on
+The `documentation is available on
 RTD <http://ahkab.readthedocs.org/en/latest/>`__.
 
 There, you can find a
@@ -131,8 +144,22 @@ Refer to the `netlist syntax
 page <http://ahkab.readthedocs.org/en/latest/help/Netlist-Syntax.html>`__
 if you prefer to write netlist files that describe the circuit.
 
-Experience with running SPICE or other commercial simulators can be very
-useful: this is not for the faint of heart.
+Experience with running SPICE or related commercial simulators can be
+very useful: this is not for the faint of heart.
+
+Development model
+~~~~~~~~~~~~~~~~~
+
+-  The development happens on `the ``ahkab`` github
+   repository <https://github.com/ahkab/ahkab>`__,
+-  Mostly on the master branch, with feature branch being created only
+   for special purposes or non-trivial features.
+-  Snapshots are released on a (hopefully) regular basis and are
+   available on the `Releases pages, complete with
+   changelog <https://github.com/ahkab/ahkab/releases>`__ and on
+   `PYPI <https://pypi.python.org/pypi/ahkab/>`__
+
+Patches and pull requests are welcome!
 
 How this project was born
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -146,30 +173,36 @@ Polytechnic University of Milan.
 I am grateful to prof. Brambilla for teaching one of the most
 interesting courses of my university years. -GV
 
-Credits
-~~~~~~~
-
-**Contributors:** `Giuseppe
-Venturini <https://github.com/ggventurini>`__, `Ian
-Daniher <https://github.com/itdaniher>`__, `Rob
-Crowther <https://github.com/weilawei>`__.
-
-**Code:** the module ``py3compat.py`` is (c) 2013 - the Jinja team.
-
-**Deps:** many thanks to the authors of ``numpy``, ``scipy``,
-and ``matplotlib`` and ``sympy``!
-
 Bugs and patches
 ~~~~~~~~~~~~~~~~
-
-Note that *I often add new functionality at the expense of breaking
-stuff*. Most likely I will introduce a new feature even if that means
-breaking a couple of others. It should get fixed soon, but if you have a
-bit of time to spare, you can send me a pull request or a patch. :)
 
 Does it work? Bugs? Do you have patches? Did you run some noteworthy
 simulation? Let me know! Feedback is very welcome, my `email
 address <http://tinymailto.com/5310>`__ is available after a captcha.
+
+Support the development with a donation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you wish to support the development of ``ahkab``, ***please donate to
+cancer research:***
+
+-  **`Association for International Cancer Research
+   *(eng)* <http://www.aicr.org.uk/donate.aspx>`__**,
+    or
+-  **`Fond. IRCCS Istituto Nazionale dei Tumori
+   *(it)* <http://www.istitutotumori.mi.it/modules.php?name=Content&pa=showpage&pid=24>`__**.
+
+Credits
+~~~~~~~
+
+**Authors:** `Giuseppe Venturini <https://github.com/ggventurini>`__,
+with contributions from `Ian Daniher <https://github.com/itdaniher>`__
+and `Rob Crowther <https://github.com/weilawei>`__.
+
+**Code:** the module ``py3compat.py`` is (c) 2013 - the Jinja team.
+
+**Dependencies:** many thanks to the authors of ``numpy``, ``scipy`` and
+``sympy``!
 
 .. |githalytics.com alpha| image:: https://cruel-carlota.pagodabox.com/3f4b146d6a15f66802f1906e5cf4f68c
    :target: http://githalytics.com/ahkab/ahkab
@@ -177,7 +210,9 @@ address <http://tinymailto.com/5310>`__ is available after a captcha.
    :target: https://travis-ci.org/ahkab/ahkab
 .. |Coverage Status| image:: https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master
    :target: https://coveralls.io/r/ahkab/ahkab?branch=master
-.. |PyPi version| image:: http://img.shields.io/badge/version-0.12-brightgreen.png
+.. |PyPi version| image:: http://img.shields.io/badge/version-0.13-brightgreen.png
    :target: https://pypi.python.org/pypi/ahkab/
 .. |GPLv2 license| image:: http://img.shields.io/badge/license-GPL%20v2-brightgreen.png
    :target: https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.13774.svg
+   :target: http://dx.doi.org/10.5281/zenodo.13774
