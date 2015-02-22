@@ -842,11 +842,13 @@ def main(filename, outfile="stdout", verbose=3):
     (circ, directives, postproc_direct) = netlist_parser.parse_circuit(
         filename, read_netlist_from_stdin)
 
+    printing.print_info_line(("Checking circuit for common mistakes...", 6),
+                             verbose, print_nl=False)
     check, reason = utilities.check_circuit(circ)
     if not check:
         printing.print_general_error(reason)
-        print(circ)
         sys.exit(3)
+    printing.print_info_line(("done.", 6), verbose)
 
     if verbose > 3 or _print:
         print("Parsed circuit:")
