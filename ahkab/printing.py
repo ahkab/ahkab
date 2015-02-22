@@ -118,6 +118,7 @@ def print_info_line(msg_relevance_tuple, verbose, print_nl=True):
                 print(msg)
             else:
                 print(msg, end=' ')
+                sys.stdout.flush()
     # else: suppressed.
 
 
