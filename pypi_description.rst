@@ -1,7 +1,7 @@
- ahkab
-======
+ahkab
+=====
 
-***a SPICE-like electronic circuit simulator written in Python***
+**a SPICE-like electronic circuit simulator written in Python**
 
 The code should be easy to read and modify, the main language is Python
 -- 2 or 3 -- and it is platform-independent.\ |githalytics.com alpha|
@@ -23,9 +23,7 @@ proceeding slowly, albeit hopefully steadily. If you are interested and
 you would like to contribute to refactoring or documenting a particular
 feature, it would be very welcome.
 
-| |Build Status| |Coverage Status|
-| |PyPi version| |GPLv2 license| |DOI|
-| 
+| |Build Status| |Coverage Status| |PyPi version| |GPLv2 license| |DOI|
 
 Supported simulations:
 ----------------------
@@ -150,7 +148,7 @@ very useful: this is not for the faint of heart.
 Development model
 ~~~~~~~~~~~~~~~~~
 
--  The development happens on `the ``ahkab`` github
+-  The development happens on the `github
    repository <https://github.com/ahkab/ahkab>`__,
 -  Mostly on the master branch, with feature branch being created only
    for special purposes or non-trivial features.
@@ -186,11 +184,13 @@ Support the development with a donation
 If you wish to support the development of ``ahkab``, ***please donate to
 cancer research:***
 
--  **`Association for International Cancer Research
-   *(eng)* <http://www.aicr.org.uk/donate.aspx>`__**,
-    or
--  **`Fond. IRCCS Istituto Nazionale dei Tumori
-   *(it)* <http://www.istitutotumori.mi.it/modules.php?name=Content&pa=showpage&pid=24>`__**.
+-  `Association for International Cancer Research
+   (eng) <http://www.aicr.org.uk/donate.aspx>`_,
+
+or
+
+-  `Fond. IRCCS Istituto Nazionale dei Tumori
+   (it) <http://www.istitutotumori.mi.it/modules.php?name=Content&pa=showpage&pid=24>`_.
 
 Credits
 ~~~~~~~
