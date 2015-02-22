@@ -388,11 +388,8 @@ class Circuit(list):
         chk : boolean
             The result of the check.
         """
-        for index1 in range(len(self)):
-            for index2 in range(index1 + 1, len(self)):
-                if self[index1].part_id == self[index2].part_id:
-                    return True
-        return False
+        all_ids = tuple(map(lambda e: e.part_id, self))
+        return len(set(all_ids)) != len(all_ids)
 
     def get_ground_node(self):
         """Returns the reference node, AKA GND."""
