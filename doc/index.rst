@@ -61,6 +61,7 @@ Example simulations
    examples/Python_API
    examples/OP_simulation
    examples/Symbolic-simulation
+   examples/Transient-Example
 
 Indices and tables
 ==================
