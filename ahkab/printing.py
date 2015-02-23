@@ -34,6 +34,9 @@ import numpy as np
 
 from . import options
 
+import codecs
+UTF8Writer = codecs.getwriter('utf8')
+sys.stdout = UTF8Writer(sys.stdout)
 
 def print_analysis(an):
     """Prints a analysis to stdout, with the netlist syntax
