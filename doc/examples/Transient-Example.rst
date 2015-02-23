@@ -14,7 +14,7 @@ Bias:
 
 Passives:
 
-:math:`L_1 = 5 nH`, :math:`R_0`=3.14 k\Omega` (:math:`Q_L=33` @ 3 GHz)
+:math:`L_1 = 5 nH`, :math:`R_0=3.14 k\Omega` (:math:`Q_L=33` @ 3 GHz)
 
 :math:`C_1 = C_2 = 1.012 pF` (resulting in :math:`n = C_1/(C_1 + C_2) = 0.5`)
 
