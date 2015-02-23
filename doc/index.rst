@@ -33,6 +33,7 @@ Module reference
    devices
    diode
    ekv
+   gear
    implicit_euler
    mosq
    netlist_parser
@@ -60,14 +61,6 @@ Example simulations
    examples/Python_API
    examples/OP_simulation
    examples/Symbolic-simulation
-
-Documentation in progress
--------------------------
-
-.. automodule:: ahkab.gear
-   :members:
-
-
 
 Indices and tables
 ==================
