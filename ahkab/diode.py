@@ -230,17 +230,29 @@ class diode(object):
         return gm
 
     def get_op_info(self, ports_v_v):
+        """Information regarding the Operating Point (OP)
+
+        **Parameters:**
+
+        ports_v : list of lists
+            The parameter is to be set to ``[[v]]``, where ``v`` is the voltage
+            applied to the diode terminals.
+
+        **Returns:**
+
+        op_keys : list of strings
+            The labels corresponding to the numeric values in ``op_info``.
+        op_info : list of floats
+            The values corresponding to ``op_keys``.
+        """
         vn1n2 = float(ports_v_v[0][0])
         idiode = self.i(0, (vn1n2,))
         gmdiode = self.g(0, (vn1n2,), 0)
-        info = ["V(n1-n2): ", vn1n2, "[V]", "I(n1-n2):", idiode, "[A]", "P:",
-                vn1n2 * idiode, "g:", gmdiode, "[A/V]", "T:", self._get_T(), "K"]
-        arr = [[self.part_id.upper()] + info]
-        strarr = printing.table_setup(arr)
-        return strarr
-
-    def print_op_info(self, ports_v):
-        print(self.get_op_info(ports_v), end=' ')
+        op_keys = ["Part ID", "V(n1-n2) [V]", "I(n1-n2) [A]", "P [W]",
+                "gm [A/V]", u"T [\u00b0K]"]
+        op_info = [self.part_id.upper(), vn1n2, idiode, vn1n2*idiode, gmdiode,
+                   self._get_T()]
+        return op_keys, op_info
 
     def get_netlist_elem_line(self, nodes_dict):
         ext_n1, ext_n2 = nodes_dict[self.n1], nodes_dict[self.n2]

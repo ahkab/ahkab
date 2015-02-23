@@ -33,7 +33,7 @@ The results are saved to disk, plotted or printed to stdout and can be read/proc
 
 The program requires:
 * the Python interpreter version 2 or 3 (at least v.2.6 for Python2, v.3.3 for Python3),
-* numpy>=1.7.0, scipy>=0.14.0 and sympy.
+* numpy>=1.7.0, scipy>=0.14.0, sympy>=0.7.5 and tabulate>=0.7.3.
 
 Matplotlib is strongly recommended and no plotting will work without.
 
@@ -131,5 +131,5 @@ If you wish to support the development of `ahkab`, ***please donate to cancer re
 
 **Code:** the module `py3compat.py` is (c) 2013 - the Jinja team.
 
-**Dependencies:** many thanks to the authors of `numpy`, `scipy` and `sympy`!
+**Dependencies:** many thanks to the authors of `numpy`, `scipy`, `sympy`, ``matplotlib`` and ``tabulate``!
 

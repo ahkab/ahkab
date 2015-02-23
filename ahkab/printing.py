@@ -29,6 +29,7 @@ from __future__ import (unicode_literals, absolute_import,
 import contextlib
 import sys
 
+import tabulate
 import numpy as np
 
 from . import options
@@ -194,35 +195,11 @@ def print_result_check(badvars, verbose=2):
     return None
 
 
+def table(data, *args, **argsd):
+    return tabulate.tabulate(data, *args, **argsd)
+
 def table_print(twodarray, separator='  '):
-    print(table_setup(twodarray, separator=separator))
-
-
-def table_setup(twodarray, separator='  '):
-    table_string = ""
-    col_width = []
-    if len(twodarray) == 0 or len(twodarray[0]) == 0:
-        return
-    for ci in range(len(twodarray[0])):
-        current_width = 0
-        for ri in range(len(twodarray)):
-            elem_width = len(str(twodarray[ri][ci]))
-            if elem_width > current_width:
-                current_width = elem_width
-        col_width.append(current_width)
-    for ri in range(len(twodarray)):
-        current_str = ""
-        for ci in range(len(twodarray[ri])):
-            elem = str(twodarray[ri][ci])
-            elem_width = len(elem)
-            if not ci + 1 % 3 == 1:
-                current_str = current_str + " " * \
-                    (col_width[ci] - elem_width) + elem + separator
-            else:
-                current_str = current_str + elem + " " * \
-                    (col_width[ci] - elem_width) + separator
-        table_string += current_str + "\n"
-    return table_string
+    print(tabulate.tabulate(twodarray))
 
 @contextlib.contextmanager
 def printoptions(*args, **kwargs):

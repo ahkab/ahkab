@@ -59,7 +59,7 @@ Iterate over the results::
 
     >>> for var in ac_sol:
     ...     # do something with ac_sol[var]
-    ...     pass 
+    ...     pass
 
 Convenience methods are available to identify and access the independent,
 swept variable, when it is available::
@@ -161,12 +161,12 @@ class solution(object):
     def asmatrix(self):
         """Return all data.
 
-        .. note:: 
+        .. note::
 
             This method loads to memory a possibly huge data matrix.
 
         """
-        data, _, _, _ = csvlib.load_csv(self.filename, load_headers=[], 
+        data, _, _, _ = csvlib.load_csv(self.filename, load_headers=[],
                                         verbose=0)
         return data
 
@@ -260,7 +260,7 @@ class op_solution(solution, _mutable_data):
     circ : circuit instance
         the circuit instance of the simulated circuit
     outfile: str
-        the file to write the results to. 
+        the file to write the results to.
         Use "stdout" to write to std output.
     iterations, int, optional
         The number of iterations needed for convergence, if known.
@@ -271,16 +271,16 @@ class op_solution(solution, _mutable_data):
         self.iterations = iterations
 
         # We have mixed current and voltage results
-        # per primi vengono tanti valori di tensioni quanti sono i nodi del circuito meno 
+        # per primi vengono tanti valori di tensioni quanti sono i nodi del circuito meno
         # uno, quindi tante correnti quanti sono gli elementi definiti in tensione presenti
-        # (per questo, per misurare una corrente, si può fare uso di generatori di tensione 
+        # (per questo, per misurare una corrente, si può fare uso di generatori di tensione
         # da 0V)
-    
+
         nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         self.results = case_insensitive_dict()
         self.errors = case_insensitive_dict()
         self.x = x
-    
+
         for index in range(nv_1):
             varname = ("V" + str(circ.nodes_dict[index + 1])).upper()
             self.variables += [varname]
@@ -300,7 +300,7 @@ class op_solution(solution, _mutable_data):
                 self.errors.update({varname: error[index, 0]})
                 self.units.update({varname: "A"})
 
-        self.op_info = self.get_elements_op(circ, x)
+        self._op_keys, self._op_info, self.tot_power = self._get_elements_op(circ, x)
 
     def __str__(self):
         str_repr = \
@@ -333,34 +333,37 @@ class op_solution(solution, _mutable_data):
         return self.x
 
     def get_table_array(self):
-        table = [("Variable", "Value", "", "Error")]
+        headers = ("Variable", "Value", "Error", "(%)", "Units")
+        table = []
         for v in self.variables:
             if self.results[v] != 0:
                 relerror = self.errors[v]/self.results[v]*100.0
             else:
                 relerror = 0.0
-            line = (v, self.results[v], self.units[v],\
-                "(% .2g %s, %.0f %%)" % (self.errors[v], 
-                self.units[v], relerror))
+            line = (v, self.results[v], self.errors[v], '(%.2f)'%relerror,
+                    self.units[v])
             line = list(map(str, line))
             table.append(line)
-        return table
+        return printing.table(table, headers=headers)
 
-    def get_elements_op(self, circ, x):
+    def _get_elements_op(self, circ, x):
+        """Returns"""
         tot_power = 0
         i_index = 0
         nv_1 = len(circ.nodes_dict) - 1
-        op_info = []
+        op_info = {}
+        op_keys = {}
         for elem in circ:
             ports_v_v = []
             if hasattr(elem, "get_op_info"):
                 if elem.is_nonlinear:
+                    # build the drive ports vector
                     oports = elem.get_output_ports()
                     for index in range(len(oports)):
                         dports = elem.get_drive_ports(index)
-                        ports_v = []                
-                        for port in dports:                 
-                            tempv = 0                       
+                        ports_v = []
+                        for port in dports:
+                            tempv = 0
                             if port[0]:
                                 tempv = x[port[0]-1]
                             if port[1]:
@@ -368,14 +371,31 @@ class op_solution(solution, _mutable_data):
                             ports_v.append(tempv)
                     ports_v_v.append(ports_v)
                 else:
-                    port = (elem.n1, elem.n2)   
-                    tempv = 0                       
+                    port = (elem.n1, elem.n2)
+                    tempv = 0
                     if port[0]:
                         tempv = x[port[0]-1]
                     if port[1]:
-                        tempv = tempv - x[port[1]-1]                
+                        tempv = tempv - x[port[1]-1]
                     ports_v_v = ((tempv,),)
-                op_info += [elem.get_op_info(ports_v_v)]
+                if circuit.is_elem_voltage_defined(elem):
+                    i = circ.find_vde_index(elem.part_id)
+                    nv_1 = len(circ.nodes_dict) - 1
+                    opk, opi = elem.get_op_info(ports_v_v, x[nv_1 + i])
+                else:
+                    opk, opi = elem.get_op_info(ports_v_v)
+                if elem.part_id[0].upper() != 'M':
+                    if elem.part_id[0].upper() in op_info:
+                        op_info.update({elem.part_id[0].upper():op_info[elem.part_id[0].upper()]
+                                                                + [opi]})
+                        #assert set(opk) == set(op_keys[elem.part_id[0].upper()])
+                    else:
+                        op_info.update({elem.part_id[0].upper():[opi]})
+                        op_keys.update({elem.part_id[0].upper():[opk]})
+                else:
+                        op_info.update({elem.part_id.upper():opi})
+                        op_keys.update({elem.part_id.upper():[[]]})
+
             if isinstance(elem, devices.GISource):
                 v = 0
                 v = v + x[elem.n1-1] if elem.n1 != 0 else v
@@ -425,8 +445,8 @@ class op_solution(solution, _mutable_data):
             elif circuit.is_elem_voltage_defined(elem):
                 i_index = i_index + 1
 
-        op_info.append("TOTAL POWER: %e W\n" % (tot_power,))
-        return op_info
+        #op_info.append("TOTAL POWER: %e W\n" % (tot_power,))
+        return op_keys, op_info, tot_power
 
     def write_to_file(self, filename=None):
         if filename is None and self.filename is None:
@@ -446,13 +466,20 @@ class op_solution(solution, _mutable_data):
         fp.write("Options:\n\tvea = %e\n\tver = %f\n\tiea = %e\n\tier = %f\n\tgmin = %e\n" \
                  % (self.vea, self.ver, self.iea, self.ier, self.gmin))
         fp.write("\nConvergence reached in %d iterations.\n" % (self.iterations,))
-        fp.write("\nResults:\n")
+        fp.write("\n========\n")
+        fp.write("RESULTS:\n")
+        fp.write("========\n\n")
         vtable = self.get_table_array()
-        fp.write(printing.table_setup(vtable))
-        fp.write("\nELEMENTS OP INFORMATION:\n")
-        for opi in self.op_info:    
-            fp.write(opi)
-            fp.write("-------------------\n")
+        fp.write(vtable+'\n')
+        fp.write("\n========================\n")
+        fp.write("ELEMENTS OP INFORMATION:\n")
+        fp.write("========================\n\n")
+        for k in sorted(self._op_info.keys()):
+            print(printing.table(self._op_info[k], headers=self._op_keys[k][0]))
+            print()
+        #for opi in self.op_info:
+        #    fp.write(opi)
+        #    fp.write("-------------------\n")
         fp.flush()
         if filename != 'stdout':
             fp.close()
@@ -475,23 +502,23 @@ class op_solution(solution, _mutable_data):
 
         op1, op2: op_solution instances
             the results vectors, interchangeable
-        
+
         **Returns:**
 
         test_fail_variables : list
-            The list of the variables that did not pass the test. They are extracted from 
+            The list of the variables that did not pass the test. They are extracted from
             the op_solution objects. If the check was passed, this is an empty list.
         """
-    
+
         check_failed_vars = []
         for v in op1.variables:
             abserr = abs(op2.results[v] - op1.results[v])
             if op1.units[v] == 'V':
-                if abserr > options.ver*max(abs(op1.results[v]), 
+                if abserr > options.ver*max(abs(op1.results[v]),
                                             abs(op2.results[v])) + options.vea:
                     check_failed_vars.append(v)
             elif op1.units[v] == 'A':
-                if abserr > options.ier*max(abs(op1.results[v]), 
+                if abserr > options.ier*max(abs(op1.results[v]),
                                             abs(op2.results[v])) + options.iea:
                     check_failed_vars.append(v)
             else:
@@ -551,11 +578,11 @@ class ac_solution(solution, _mutable_data):
         self.linearization_op = op
         self.stype = stype
         self.ostart, self.ostop, self.opoints = start, stop, points
-    
+
         self.variables += ["w"]
         self.units.update({"w": "rad/s"})
         self.csv_headers = [self.variables[0]]
-    
+
         nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         for index in range(nv_1):
             varname = "V%s" % str(circ.nodes_dict[index + 1])
@@ -564,7 +591,7 @@ class ac_solution(solution, _mutable_data):
             if circ.is_int_node_internal_only(index+1):
                 self.skip_nodes_list.append(index)
 
-        for elem in circ: 
+        for elem in circ:
             if circuit.is_elem_voltage_defined(elem):
                 varname = "I(%s)" % elem.part_id.upper()
                 self.variables += [varname]
@@ -591,10 +618,10 @@ class ac_solution(solution, _mutable_data):
         for i in range(x.shape[0]):
             xsplit[2*i, 0] = np.abs(x[i, 0])
             xsplit[2*i+1, 0] = np.angle(x[i, 0], deg=options.ac_phase_in_deg)
-             
+
         data = np.concatenate((omega, xsplit), axis=0)
         self._add_data(data)
-        
+
     def get_x(self):
         return self[self.variables[0]]
 
@@ -701,15 +728,15 @@ class dc_solution(solution, _mutable_data):
         self.sol_type = "DC"
         self.start, self.stop = start, stop
         self.stype = stype
-    
+
         nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         self.variables = [sweepvar]
-        self.units = case_insensitive_dict()        
+        self.units = case_insensitive_dict()
         if self.variables[0][0] == 'V':
             self.units.update({self.variables[0]:'V'})
         if self.variables[0][0] == 'I':
             self.units.update({self.variables[0]:'A'})
-    
+
         for index in range(nv_1):
             varname = "V%s" % (str(circ.nodes_dict[index + 1]),)
             self.variables += [varname]
@@ -717,7 +744,7 @@ class dc_solution(solution, _mutable_data):
             if circ.is_int_node_internal_only(index+1):
                 self.skip_nodes_list.append(index)
 
-        for elem in circ: 
+        for elem in circ:
             if circuit.is_elem_voltage_defined(elem):
                 varname = "I(%s)" % (elem.part_id.upper(),)
                 self.variables += [varname]
@@ -728,14 +755,14 @@ class dc_solution(solution, _mutable_data):
 %g %s. Run on %s, data filename %s.>" % \
         (
          self.netlist_title, self.netlist_file, self.stype, self.variables[0].upper(), \
-         self.start, self.units[self.variables[0]], self.stop, self.units[self.variables[0]], 
+         self.start, self.units[self.variables[0]], self.stop, self.units[self.variables[0]],
          self.timestamp, self.filename
         )
 
     def add_op(self, sweepvalue, op):
         """A DC sweep is made of a set of OP points.
 
-        This method adds an OP solution and 
+        This method adds an OP solution and
         its corresponding sweep value to the results set.
         """
         sweepvalue = np.mat(np.array([sweepvalue]))
@@ -776,11 +803,11 @@ class tran_solution(solution, _mutable_data):
         self.method = method
 
         self._lock = False
-    
+
         nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         self.variables = ["T"]
         self.units.update({"T":"s"})
-    
+
         for index in range(nv_1):
             varname = ("V%s" % (str(circ.nodes_dict[index + 1]),)).upper()
             self.variables += [varname]
@@ -788,7 +815,7 @@ class tran_solution(solution, _mutable_data):
             if circ.is_int_node_internal_only(index+1):
                 self.skip_nodes_list.append(index)
 
-        for elem in circ: 
+        for elem in circ:
             if circuit.is_elem_voltage_defined(elem):
                 varname = ("I(%s)" % (elem.part_id.upper(),)).upper()
                 self.variables += [varname]
@@ -798,7 +825,7 @@ class tran_solution(solution, _mutable_data):
         return "<TRAN simulation results for %s (netlist %s), from %g s to %g s. Diff. \
 method %s. Run on %s, data filename %s.>" % \
         (
-         self.netlist_title, self.netlist_file, self.tstart, self.tstop, self.method, 
+         self.netlist_title, self.netlist_file, self.tstart, self.tstop, self.method,
          self.timestamp, self.filename
         )
 
@@ -854,7 +881,7 @@ class pss_solution(solution, _mutable_data):
         nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
         self.variables = ["T"]
         self.units.update({"T":"s"})
-    
+
         for index in range(nv_1):
             varname = "V%s" % (str(circ.nodes_dict[index + 1]),)
             self.variables += [varname]
@@ -862,7 +889,7 @@ class pss_solution(solution, _mutable_data):
             if circ.is_int_node_internal_only(index+1):
                 self.skip_nodes_list.append(index)
 
-        for elem in circ: 
+        for elem in circ:
             if circuit.is_elem_voltage_defined(elem):
                 varname = "I(%s)" % (elem.part_id.upper(),)
                 self.variables += [varname]
@@ -874,8 +901,8 @@ class pss_solution(solution, _mutable_data):
     def __str__(self):
         return "<PSS simulation results for %s (netlist %s), period %g s. Method: %s. \
 Run on %s, data filename %s.>" % \
-        ( 
-         self.netlist_title, self.netlist_file, self.period, self.method, self.timestamp, 
+        (
+         self.netlist_title, self.netlist_file, self.period, self.method, self.timestamp,
          self.filename
         )
 
@@ -926,7 +953,7 @@ class symbolic_solution(object):
         self.results = case_insensitive_dict()
         for symbol, result in results_dict.items():
             self.results.update({str(symbol):result})
-        
+
         self._symbols = list(results_dict.keys()) # keep them, they're useful
         for expr in list(results_dict.values()):
             if tf:
@@ -968,7 +995,7 @@ class symbolic_solution(object):
             raise ValueError("No symbol %s in the results set."%(variable,))
         else:
             return symbs[0]
-            
+
     def as_symbols(self, spacedstr):
         """Convenience function to call :func:`as_symbol` multiple times.
 
@@ -990,15 +1017,15 @@ class symbolic_solution(object):
             In case any corresponding symbol is not found.
         """
         return list(map(self.as_symbol, spacedstr.split()))
-        
+
     def save(self):
         """Write the results to disk.
-        
+
         It is necessary first to set the ``filename`` attribute, indicating
         which file to write to.
 
         **Raises:**
-        
+
         RuntimeError : exception
             If the `filename` attribute is not set.
         """
@@ -1007,7 +1034,7 @@ class symbolic_solution(object):
                               'filename' attribute")
         with open(self.filename, 'wb') as fp:
             pickle.dump(self, fp, protocol=2)
-    
+
     @staticmethod
     def load(filename):
         """Static method to load a symbolic solution from disk.
@@ -1038,10 +1065,10 @@ class symbolic_solution(object):
 
     def __str__(self):
         str_repr = "Symbolic %s results for %s (netlist %s).\nRun on %s.\n" % \
-                   ('simulation'*(not self.tf) + 'transfer function'*self.tf, 
+                   ('simulation'*(not self.tf) + 'transfer function'*self.tf,
                     self.netlist_title, self.netlist_file, self.timestamp)
         keys = list(self.results.keys())
-        keys.sort(lambda x, y: cmp(str(x), str(y))) 
+        keys.sort(lambda x, y: cmp(str(x), str(y)))
         if not self.tf:
             for key in keys:
                 str_repr +=  str(key) + "\t = " + str(self.results[key]) + "\n"
@@ -1166,13 +1193,13 @@ class pz_solution(solution, _mutable_data):
 
     def __repr__(self):
         return ("%s PZ solution, poles: %s, zeros: %s") % \
-               (self.netlist_file, list(self.poles), 
+               (self.netlist_file, list(self.poles),
                 list(self.zeros))
 
     def __str__(self):
         return ("PZ simulation results for %s (netlist %s).\n" + \
                "Poles: %s\nZeros: %s") % \
-               (self.netlist_title, self.netlist_file, list(self.poles), 
+               (self.netlist_title, self.netlist_file, list(self.poles),
                 list(self.zeros))
 
     # Access as a dictionary BY VARIABLE NAME:
@@ -1284,7 +1311,7 @@ class case_insensitive_dict(object):
     def items(self):
         """Get all keys and values pairs"""
         return list(self._dict.items())
-        
+
     def update(self, adict):
         """Update the dictionary contents with the mapping in the dictionary ``adict``.
         """
