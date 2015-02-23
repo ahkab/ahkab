@@ -446,17 +446,27 @@ class Resistor(Component):
         return 0
 
     def get_op_info(self, ports_v):
+        """Information regarding the Operating Point (OP)
+
+        **Parameters:**
+
+        ports_v : list of lists
+            The parameter is to be set to ``[[v]]``, where ``v`` is the voltage
+            applied to the resistor terminals.
+
+        **Returns:**
+
+        op_keys : list of strings
+            The labels corresponding to the numeric values in ``op_info``.
+        op_info : list of floats
+            The values corresponding to ``op_keys``.
+        """
         vn1n2 = float(ports_v[0][0])
-        in1n2 = float(ports_v[0][0] / self.value)
+        in1n2 = float(ports_v[0][0]/self.value)
         power = float(ports_v[0][0] ** 2 / self.value)
-        arr = [
-            [self.part_id.upper(), "V(n1-n2):", vn1n2, "[V]", "I(n2-n1):", in1n2, "[A]", "P:", power, "[W]"]]
-        strarr = printing.table_setup(arr)
-        return strarr
-
-    def print_op_info(self, ports_v):
-        print(self.get_op_info(ports_v))
-
+        op_keys = ['Part ID', u"R [\u2126]", "V(n1,n2) [V]", "I(n1->n2) [A]", "P [W]"]
+        op_info = [self.part_id.upper(), self.value, vn1n2, in1n2, power]
+        return op_keys, op_info
 
 class Capacitor(Component):
     """A capacitor.
@@ -505,17 +515,27 @@ class Capacitor(Component):
         return self.value
 
     def get_op_info(self, ports_v):
+        """Information regarding the Operating Point (OP)
+
+        **Parameters:**
+
+        ports_v : list of lists
+            The parameter is to be set to ``[[v]]``, where ``v`` is the voltage
+            applied to the capacitor terminals.
+
+        **Returns:**
+
+        op_keys : list of strings
+            The labels corresponding to the numeric values in ``op_info``.
+        op_info : list of floats
+            The values corresponding to ``op_keys``.
+        """
         vn1n2 = float(ports_v[0][0])
         qn1n2 = float(ports_v[0][0] * self.value)
         energy = float(.5 * ports_v[0][0] ** 2 * self.value)
-        arr = [
-            [self.part_id.upper(), "V(n1-n2):", vn1n2, "[V]", "Q:", qn1n2, "[C]", "E:", energy, "[J]"]]
-        strarr = printing.table_setup(arr)
-        return strarr
-
-    def print_op_info(self, ports_v):
-        print(self.get_op_info(ports_v))
-
+        op_keys = ['Part ID', "V(n1-n2) [V]", "Q [C]", "E [J]"]
+        op_info = [self.part_id.upper(), vn1n2, qn1n2, energy]
+        return op_keys, op_info
 
 class Inductor(Component):
     """An inductor.
@@ -552,6 +572,31 @@ class Inductor(Component):
         self.coupling_devices = []
         self.is_nonlinear = False
         self.is_symbolic = True
+
+    def get_op_info(self, ports_v, current):
+        """Information regarding the Operating Point (OP)
+
+        **Parameters:**
+
+        ports_v : list of lists
+            The parameter is to be set to ``[[v]]``, where ``v`` is the voltage
+            applied to the inductor terminals.
+        current : float
+            The current flowing in the inductor, positive currents flow in ``n1``
+            and out of ``n2``.
+
+        **Returns:**
+
+        op_keys : list of strings
+            The labels corresponding to the numeric values in ``op_info``.
+        op_info : list of floats
+            The values corresponding to ``op_keys``.
+        """
+        vn1n2 = float(ports_v[0][0])
+        energy = .5 * self.value * current**2
+        op_keys = ['Part ID', u"\u03d5(n1,n2) [Wb]", "I(n1->n2) [A]", "E [J]"]
+        op_info = [self.part_id.upper(), self.value*current, current, energy]
+        return op_keys, op_info
 
 
 class InductorCoupling(Component):
@@ -739,6 +784,27 @@ class ISource(Component):
             rep = rep + str(self._time_function)
         return rep
 
+    def get_op_info(self, ports_v):
+        """Information regarding the Operating Point (OP)
+
+        **Parameters:**
+
+        ports_v : list of lists
+            The parameter is to be set to ``[[v]]``, where ``v`` is the voltage
+            applied to the current source terminals.
+
+        **Returns:**
+
+        op_keys : list of strings
+            The labels corresponding to the numeric values in ``op_info``.
+        op_info : list of floats
+            The values corresponding to ``op_keys``.
+        """
+        vn1n2 = float(ports_v[0][0])
+        power = float(ports_v[0][0] * self.I())
+        op_keys = ['Part ID', "V(n1-n2) [V]", "I [A]", "P [W]"]
+        op_info = [self.part_id.upper(), vn1n2, self.I(), power]
+        return op_keys, op_info
 
 class VSource(Component):
     """An ideal voltage source.
@@ -845,6 +911,31 @@ class VSource(Component):
         if self.is_timedependent:
             rep = rep + str(self._time_function)
         return rep
+
+    def get_op_info(self, ports_v, current):
+        """Information regarding the Operating Point (OP)
+
+        **Parameters:**
+
+        ports_v : list of lists
+            The parameter is to be set to ``[[v]]``, where ``v`` is the voltage
+            applied to the source terminals.
+        current : float
+            The current flowing in the voltage source, positive currents flow in
+            ``n1`` and out of ``n2``.
+
+        **Returns:**
+
+        op_keys : list of strings
+            The labels corresponding to the numeric values in ``op_info``.
+        op_info : list of floats
+            The values corresponding to ``op_keys``.
+        """
+        vn1n2 = float(ports_v[0][0])
+        power = self.V() * current
+        op_keys = ['Part ID', "V(n1,n2) [V]", "I(n1->n2) [A]", "P [W]"]
+        op_info = [self.part_id.upper(), self.V(), current, power]
+        return op_keys, op_info
 
 
 class EVSource(Component):

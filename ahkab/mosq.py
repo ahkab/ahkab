@@ -220,12 +220,44 @@ class mosq_device:
             self.opdict['gmb'] = gstamp[0, 3]
             self.opdict['Ids'] = self.istamp(ports_v[0], reduced=False)[1][0]
 
-    def print_op_info(self, ports_v):
-        arr = self.get_op_info(ports_v)
-        print(arr, end=' ')
-
     def get_op_info(self, ports_v):
-        """Operating point info, for design/verification. """
+        """Information regarding the Operating Point (OP)
+
+        **Parameters:**
+
+        ports_v : list of lists
+            The voltages applied to all the driving ports, grouped by output
+            port.
+
+        i.e.
+
+        ::
+
+            [<list of voltages for the drive ports of output port 0>,
+             <list of voltages for the drive ports of output port 1>,
+             ...,
+             <list of voltages for the drive ports of output port N>]
+
+        Usually, this method returns ``op_keys`` and the corresponding
+        ``op_info``, two lists, one holding the labels, the other the
+        corresponding values.
+
+        In the case of MOSFETs, the values are way too many to be shown in a
+        linear table. For this reason, we return ``None`` as ``op_keys``, and we
+        return for ``op_info`` a list which holds both labels and values in a
+        table-like manner, spanning the vertical and horizontal dimension.
+
+        For this reason, each MOSFET has to have its OP info printed alone, not
+        grouped as it happens with most other elements.
+
+        **Returns:**
+
+        op_keys : ``None``
+            See above for why this value is always ``None``.
+        op_info : list of floats
+            The OP information ready to be passed to :func:`printing.table` for
+            arranging it in a pretty table to display.
+        """
         self.update_status_dictionary(ports_v)
         sat_status = "SATURATION" if self.opdict['SAT'] else "LINEAR"
         if not self.opdict["ON"]:
@@ -245,9 +277,9 @@ class mosq_device:
         arr.append(
             ["Ids", "[A]:", self.opdict['Ids'], "", "", "", "", "", "", "", "", ''])
         arr.append(["gm", "[S]:", self.opdict['gm'], "gmb", "[S]:",
-                   self.opdict['gmb'], "ro", "[Ohm]:", 1 / self.opdict['gmd'], "", "", ""])
+                   self.opdict['gmb'], "ro", u"[\u2126]:", 1./self.opdict['gmd'], "", "", ""])
 
-        return printing.table_setup(arr)
+        return None, arr
 
     def gstamp(self, ports_v, time=0, reduced=True):
         """Returns the differential (trans)conductance rs the port specified by port_index

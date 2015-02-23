@@ -234,12 +234,44 @@ class ekv_device:
             TEF = abs(gms * constants.Vth() / ids)
         self.opdict['TEF'] = TEF
 
-    def print_op_info(self, ports_v):
-        arr = self.get_op_info(ports_v)
-        print(arr, end=' ')
-
     def get_op_info(self, ports_v):
-        """Operating point info, for design/verification. """
+        """Information regarding the Operating Point (OP)
+
+        **Parameters:**
+
+        ports_v : list of lists
+            The voltages applied to all the driving ports, grouped by output
+            port.
+
+        i.e.
+
+        ::
+
+            [<list of voltages for the drive ports of output port 0>,
+             <list of voltages for the drive ports of output port 1>,
+             ...,
+             <list of voltages for the drive ports of output port N>]
+
+        Usually, this method returns ``op_keys`` and the corresponding
+        ``op_info``, two lists, one holding the labels, the other the
+        corresponding values.
+
+        In the case of MOSFETs, the values are way too many to be shown in a
+        linear table. For this reason, we return ``None`` as ``op_keys``, and we
+        return for ``op_info`` a list which holds both labels and values in a
+        table-like manner, spanning the vertical and horizontal dimension.
+
+        For this reason, each MOSFET has to have its OP info printed alone, not
+        grouped as it happens with most other elements.
+
+        **Returns:**
+
+        op_keys : ``None``
+            See above for why this value is always ``None``.
+        op_info : list of floats
+            The OP information ready to be passed to :func:`printing.table` for
+            arranging it in a pretty table to display.
+        """
         mos_type = self._get_mos_type()
 
         self.update_status_dictionary(ports_v)
@@ -267,13 +299,13 @@ class ekv_device:
             ["Ids", "[A]:", self.opdict['Ids'], "nv: ", "", self.opdict['nv'],
              "Ispec", "[A]:", self.opdict["Ispec"], "TEF:", "", str(self.opdict['TEF']), ])
         arr.append(["gmg", "[S]:", self.opdict['gmg'], "gms", "[S]:",
-                   self.opdict['gms'], "rob", "[Ohm]:", 1 / self.opdict['gmd'], "", "", ""])
+                   self.opdict['gms'], "rob", u"[\u2126]:", 1 / self.opdict['gmd'], "", "", ""])
         arr.append(
             ["if:", "", self.opdict['ifn'], "ir:", "", self.opdict['irn'],
              "Qf", "[C/m^2]:", self.opdict["qf"], "Qr", "[C/m^2]:", self.opdict["qr"], ])
         # arr.append([  "", "", "", "", "", ""])
 
-        return printing.table_setup(arr)
+        return None, arr
 
     def g(self, op_index, ports_v, port_index, time=0):
         """Returns the differential (trans)conductance rs the port specified by port_index
@@ -788,46 +820,3 @@ class ekv_mos_model:
             ret = (True, "")
         return ret
 
-if __name__ == '__main__':
-    # Tests
-    import matplotlib.pyplot as plt
-
-    ekv_m = ekv_mos_model(TYPE='n', KP=50e-6, VTO=.4)
-    ma = ekv_device('M1', 1, 2, 3, 4, W=10e-6, L=1e-6, model=ekv_m)
-
-    # OP test
-    vd = 0.0
-    vg = 1.0
-    vs = 0.0
-    ma.print_op_info(((vd, vg, vs),))
-    ekv_m.print_model()
-
-    # gmUt/Ids test
-    from . import mosq
-    msq = mosq.mosq(1, 2, 3, kp=50e-6, w=10e-6,
-                    l=1e-6, vt=.4, lambd=0.0, mos_type='n')
-    data0 = []
-    data1 = []
-    data2 = []
-    data3 = []
-    vd = 2.5
-    if True:
-        vs = 1
-        for Vhel in range(1, 2500):
-            print(".", end=' ')
-            vg = Vhel / 1000.0
-            ma.update_status_dictionary(((vd, vg, 0),))
-            data0.append(ma.opdict['Ids'])
-            # print "Current for vd", vd, "vg", vg, "vs", vs
-            data1.append(ma.opdict['TEF'])
-            isq = msq.i((vd, vg, vs),)
-            gmsq = msq.g((vd, vg, vs), 0)
-            if isq > 0:
-                data2.append(gmsq / isq * constants.Vth())
-            else:
-                data2.append(float('nan'))
-            data3.append(isq)
-    plt.semilogx(data0, data1, data3, data2)
-    plt.title('Transconductance efficiency factor')
-    plt.legend(['(GM*UT)/ID'])
-    plt.show()
