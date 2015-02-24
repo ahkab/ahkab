@@ -62,7 +62,7 @@ print_int_nodes = True
 # global: solving
 #: Dense matrix limit: if the dimensions of the square MNA matrix are bigger,
 #: use sparse matrices
-dense_matrix_limit = 400 
+dense_matrix_limit = 400
 #: Should we damp artificially the first NR iterations? See also
 #: :func:`ahkab.dc_analysis.get_td`.
 nr_damp_first_iters = False
@@ -70,11 +70,11 @@ nr_damp_first_iters = False
 #: also :func:`ahkab.dc_analysis.get_td`.
 nl_voltages_lock = True     # Apply damping - slows down solution.
 #: Non-linear nodes lock factor:
-#: if we allow the voltage on controlling ports to change too much,
-#: we may have current overflows. Think about a diode (exp).
-#: So we allow them to change of :math:`{nl_voltages_lock_factor}\\cdot V_{th}`
-#: at most and damp all variables accordingly.
-nl_voltages_lock_factor = 4     
+#: if we allow the voltage on controlling ports to change too much, we may
+#: have current/voltage overflows. Think about the diode characteristic.
+#: So we allow them to change of ``nl_voltages_lock_factor``
+#: :math:`{\\cdot V_{th}` at most and damp all variables accordingly.
+nl_voltages_lock_factor = 4
 
 #: Whether the standard solving method can be used.
 use_standard_solve_method = True
@@ -159,7 +159,7 @@ pz_max = 1e12
 # plotting
 # Set to None to disable writing plots to disk
 #: Should plots be shown to the user? This variable is set to ``True``
-#: automatically if a screen is detected in Unix systems. 
+#: automatically if a screen is detected in Unix systems.
 #:
 #: Notice that by default ahkab both shows plots *and* saves them to disk.
 plotting_show_plots = ('DISPLAY' in os.environ)
