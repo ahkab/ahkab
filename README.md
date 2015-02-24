@@ -3,7 +3,7 @@
 
 **a SPICE-like electronic circuit simulator written in Python**
 
-The code should be easy to read and modify, the main language is Python -- 2 or 3 -- and it is platform-independent.[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/3f4b146d6a15f66802f1906e5cf4f68c)](http://githalytics.com/ahkab/ahkab)
+The code should be easy to read and modify, the main language is Python -- 2 or 3 -- and it is platform-independent.[![githalytics.com alpha](https://cruel-carlota.gopagoda.com/3f4b146d6a15f66802f1906e5cf4f68c)](http://githalytics.com/ahkab/ahkab)
 
 News!
 -----
