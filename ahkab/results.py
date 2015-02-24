@@ -475,8 +475,8 @@ class op_solution(solution, _mutable_data):
         fp.write("ELEMENTS OP INFORMATION:\n")
         fp.write("========================\n\n")
         for k in sorted(self._op_info.keys()):
-            print(printing.table(self._op_info[k], headers=self._op_keys[k][0]))
-            print()
+            fp.write(printing.table(self._op_info[k], headers=self._op_keys[k][0]))
+            fp.write('\n\n')
         #for opi in self.op_info:
         #    fp.write(opi)
         #    fp.write("-------------------\n")
