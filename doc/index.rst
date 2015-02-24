@@ -59,9 +59,9 @@ Example simulations
    :maxdepth: 1
 
    examples/Python_API
+   examples/Transient-Example
    examples/OP_simulation
    examples/Symbolic-simulation
-   examples/Transient-Example
 
 Indices and tables
 ==================

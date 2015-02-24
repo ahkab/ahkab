@@ -2,7 +2,7 @@ Transient simulation example
 ============================
 
 Introduction
-------------
+""""""""""""
 
 This is an example of transient simulation, featuring the well-known `Colpitts oscillator <http://en.wikipedia.org/wiki/Colpitts_oscillator>`_.
 
@@ -29,6 +29,9 @@ presence of the MOS has to be taken into account when evaluating the overall
 Under such hypothesis: :math:`g_{m,min} = 1/(n(1-n)R0)`,
 :math:`I_{b,min} = 1.27` mA. In the following we use :math:`I_b` = 1.3mA.
 
+Netlist-based simulation
+""""""""""""""""""""""""
+
 Netlist
 -------
 
@@ -40,7 +43,7 @@ Netlist
 
     * Ql = 33 at 3GHz
     l1 dd nd 5n ic=-1n
-    r0 nd dd 3.5k 
+    r0 nd dd 3.5k
 
     * n = 0.5, f0 = 3GHz
     c1 nd ns 1.12p ic=2.5
@@ -166,28 +169,128 @@ The oscillation builds up quickly, as shown in this plot of :math:`V_{nd}`:
 From inspection, the circuit oscillates at 3.002 GHz with an oscillation
 amplitude of roughly 4V.
 
-The following graph is the drain current of the mos transistor. M1 is on only
-for a fraction of each period, this happens if :math:`I_b` is greater than
-approx. :math:`1.5I_{b,min}`.
-
-It can be shown that an increase in :math:`I_b` increases the oscillation
-amplitude. When The oscillation amplitude (at ``nd``) approaches :math:`V_{dd}`,
-a damping will appear at the middle of the current peak, because
-:math:`V_{ds} = V_{nd}` - :math:`V_{ns}` will be near to zero. If the
-oscillation amplitude increases further :math:`V_{ds}` crosses 0V and becomes
-negative for a small period of time.  Accordingly, :math:`I_d` crosses 0A and
-becomes negative for such period. This does not happen in this case, but it can
-be tested changing the neltist.
-
-Of course, in any case, the average current through M1 has to be equal
-to :math:`I_b`.
-
-
-During a period, M1 is always on, switching from saturation region
-(:math:`Vgs > Vt`, :math:`Vgd < Vt`) to ohmic operation (channel at both source and
-drain). The latter happens when :math:`I_d` is maximum.
-
 The next plot shows the oscillation starting off from the very beginning
 in a phase plane:
 
 .. image:: ../images/transient-example-1/colpitts_phase_plane.png
+
+API-based simulation
+""""""""""""""""""""
+
+As an exercise, we will show here also how to perform a similar simulation
+taking advantage of the Python API.
+
+Python script
+-------------
+
+::
+
+    import ahkab
+    import pylab
+
+    osc = ahkab.Circuit('MOS COLPITTS OSCILLATOR')
+
+    # models need to be defined before the devices that use them
+    osc.add_model('ekv', 'nmos', dict(TYPE='n', VTO=.4, KP=10e-6))
+
+    osc.add_vsource('vdd', n1='dd', n2=osc.gnd, dc_value=3.3)
+
+    # Ql = 33 at 3GHz
+    osc.add_inductor('l1', n1='dd', n2='nd', value=5e-9, ic=-1e-9)
+    osc.add_resistor('r0', n1='nd', n2='dd', value=3.5e3)
+
+    # n = 0.5, f0 = 3GHz
+    osc.add_capacitor('c1', n1='nd', n2='ns', value=1.12e-12)
+    osc.add_capacitor('c2', n1='ns', n2=osc.gnd, value=1.12e-12)
+
+    osc.add_mos('m1', nd='nd1', ng='bias', ns='ns', nb='ns',
+                model_label='nmos', w=600e-6, l=100e-9)
+    # voltage source as a current probe
+    osc.add_vsource('vtest', n1='nd', n2='nd1', dc_value=0)
+
+    # Bias
+    osc.add_vsource('vbias', n1='bias', n2=osc.gnd, dc_value=2.)
+    osc.add_isource('ib', n1='ns', n2=osc.gnd, dc_value=1.3e-3)
+
+    # calculate an Operating Point (OP) to initialize the transient
+    # analysis
+    op = ahkab.new_op()
+    res = ahkab.run(osc, op)
+
+    # modify the OP to give the circuit a little kick to start the
+    # oscillation
+    x0 = res['op'].asmatrix()
+    l1vdei = osc.find_vde_index('l1')
+    l1i = len(osc.nodes_dict) - 1 + l1vdei
+    x0[l1i, 0] += -1e-9
+
+    # Setup and run a transient analysis with the modified x0 as start point
+    tran = ahkab.new_tran(tstart=0., tstop=20e-9, tstep=.01e-9, method='trap',
+                          x0=x0)
+    res = ahkab.run(osc, tran)['tran']
+
+    # plot the results!
+    pylab.subplot(211)
+    pylab.hold(True)
+    pylab.plot(res.get_x(), res['vnd'], label='ND')
+    pylab.plot(res.get_x(), res['vns'], label='NS')
+    pylab.plot(res.get_x(), res['vbias'], label='BIAS')
+    pylab.legend()
+    pylab.subplot(212)
+    pylab.plot(res.get_x(), res['i(vtest)'], label='I(VTEST)')
+    pylab.legend()
+    pylab.show()
+
+As we have increased in the above the ``W`` of M1 and therefore its :math:`g_m`,
+the oscillation will build up faster and to a higher top amplitude.
+
+Running the simulation
+----------------------
+
+To run the simulation, just save the above code to a file, for example
+``colp.py`` and run:
+
+::
+
+    python colp.py
+
+
+If ``matplotlib`` is available and set up correctly, a graph should pop up in a
+little while.
+
+Results
+-------
+
+The OP is not shown here, it can be printed with
+``res['op'].write_to_file('stdout')``, but more interesting is manipulating the
+raw data with ``res['op'].asmatrix()``.
+
+The following graph shows the gate, drain and source voltages of the MOS
+transistor, along with its drain current. M1 is on only for a fraction of each
+period, this happens if :math:`I_b` is greater than approx.
+:math:`1.5I_{b,min}`.
+
+.. image:: ../images/transient-example-1/colp-detail.png
+
+It can be shown that an increase in :math:`I_b` increases the oscillation
+amplitude. When the oscillation amplitude (at ``nd``) approaches :math:`V_{dd}`,
+a damping will appear at the middle of the current peak, because
+:math:`V_{ds} = V_{nd}` - :math:`V_{ns}` will be near to zero. If the
+oscillation amplitude increases further :math:`V_{ds}` crosses 0V and becomes
+negative for a small period of time.  Accordingly, :math:`I_d` crosses 0A and
+becomes negative for such period.
+
+Of course, in any case, the average current through M1 has to be equal
+to :math:`I_b`. In fact:
+
+::
+
+    >> print(res['i(vtest)'].mean())
+    0.00119411417458
+
+Which is close enough counting that it is calculated over a fractional number of
+periods.
+
+During a period, M1 is always on, switching from saturation region
+(:math:`Vgs > Vt`, :math:`Vgd < Vt`) to ohmic operation (channel at both source and
+drain). The latter happens when :math:`I_d` is maximum.
