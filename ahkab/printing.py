@@ -28,6 +28,7 @@ from __future__ import (unicode_literals, absolute_import,
 
 import contextlib
 import sys
+import os
 
 import tabulate
 import numpy as np
@@ -213,3 +214,10 @@ def printoptions(*args, **kwargs):
     np.set_printoptions(*args, **kwargs)
     yield
     np.set_printoptions(**original)
+
+locale = os.getenv('LANG')
+if not locale:
+    print_warning('Locale appears not set! please export LANG="en_US.UTF-8" or'
+                  ' equivalent, ')
+    print_warning('or ahkab\'s unicode support is broken.')
+
