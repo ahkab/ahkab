@@ -41,6 +41,31 @@ if py3compat.PY2:
     UTF8Writer = codecs.getwriter('utf8')
     sys.stdout = UTF8Writer(sys.stdout)
 
+def open_utf8(filename):
+    """Get a file handle wrapped in a UTF-8 writer
+
+    The file is opened in ``w`` mode.
+
+    Unicode allows us to write fancy symbols but its handling across different
+    major Python version can be pretty painful. /rant
+
+    **Parameters:**
+
+    filename : string
+        The file name, just like you would pass to Python's built-in ``open()``
+        method.
+
+    **Returns:**
+
+    fp : codecs.UTF8Writer object
+        The wrapped file pointer.
+    """
+    fp = open(filename, 'w')
+    if py3compat.PY2:
+        UTF8Writer = codecs.getwriter('utf8')
+        fp = UTF8Writer(fp)
+    return fp
+
 def print_analysis(an):
     """Prints a analysis to stdout, with the netlist syntax
 

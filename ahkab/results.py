@@ -455,7 +455,7 @@ class op_solution(solution, _mutable_data):
         if filename is None:
             filename = self.filename
         if filename != 'stdout':
-            fp = open(filename+"info", "w")
+            fp = printing.open_utf8(filename+"info")
         else:
             fp = sys.stdout
         fp.write(self.timestamp+"\n")
