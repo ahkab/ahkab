@@ -13,7 +13,8 @@ News!
 
 My resources are limited these days, so the much-needed work is proceeding slowly, albeit hopefully steadily. If you are interested and you would like to contribute to refactoring or documenting a particular feature, it would be very welcome.
 
-[![Build Status](https://travis-ci.org/ahkab/ahkab.png?branch=master)](https://travis-ci.org/ahkab/ahkab) [![Coverage Status](https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master)](https://coveralls.io/r/ahkab/ahkab?branch=master) [![PyPi version](http://img.shields.io/badge/version-0.13-brightgreen.png)](https://pypi.python.org/pypi/ahkab/) [![GPLv2 license](http://img.shields.io/badge/license-GPL%20v2-brightgreen.png)](https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE) [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.13774.svg)](http://dx.doi.org/10.5281/zenodo.13774)
+[![Build Status](https://travis-ci.org/ahkab/ahkab.png?branch=master)](https://travis-ci.org/ahkab/ahkab) [![Coverage Status](https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master)](https://coveralls.io/r/ahkab/ahkab?branch=master) [![PyPi version](http://img.shields.io/badge/version-0.13-brightgreen.png)](https://pypi.python.org/pypi/ahkab/) [![GPLv2 license](http://img.shields.io/badge/license-GPL%20v2-brightgreen.png)](https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE)
+[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.15462.svg)](http://dx.doi.org/10.5281/zenodo.15462)
 
 Supported simulations:
 ----------------------
