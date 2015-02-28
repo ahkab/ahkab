@@ -1,33 +1,31 @@
 Netlist Syntax
 ~~~~~~~~~~~~~~
 
-This document describes the syntax to be used to describe a circuit and
-its relative analyses.
+This document describes the syntax to be used to describe a circuit and its
+relative analyses.
 
 .. contents:: Table of Contents
 
 The netlist file
 """"""""""""""""
 
-Circuits are described in text files called *netlists* (or sometimes
-'decks').
+Circuits are described in text files called *netlists* (or sometimes 'decks').
 
-Each line in a netlist file falls in one of these categories: 
+Each line in a netlist file falls in one of these categories:
 
     * The title.
     * A element declaration.
     * A analysis declaration.
-    * A directive declaration (eg. ``.ic`` or ``.end``). 
-    * A comment. Comments start with ``*``. 
-    * A continuation line. Continuation lines start with ``+``. 
+    * A directive declaration (e.g. ``.ic`` or ``.end``).
+    * A comment. Comments start with ``*``.
+    * A continuation line. Continuation lines start with ``+``.
     * Blank line (ignored).
 
 Title
 """""
 
-The title is a special type of comment and it is **always the first line
-in the file**. *Do not put any other directive here, it will be silently
-ignored.*
+The title is a special type of comment and it is **always the first line in the
+file**. *Do not put any other directive here, it will be silently ignored.*
 
 Elements
 """"""""
@@ -40,7 +38,7 @@ Where:
 
 * ``<K>`` is a character, a unique identifier for each type of element (e.g. R
   for resistor).
-* ``<description_string>`` is a string without spaces (e.g ``1``).
+* ``<description_string>`` is a string without spaces (e.g. ``1``).
 * ``<n1>``, a string, is the node of the circuit to which the anode of the
   element is connected.
 * ``<n2>``, a string, is the node of the circuit to which the cathode of the
@@ -64,9 +62,9 @@ Resistors
 
 ``R<string> n1 n2 <value>``
 
--  ``n1`` and ``n2`` are the element nodes.
--  ``value`` is the element resistance. It may any non-zero value
-   (negative values are supported too).
+- ``n1`` and ``n2`` are the element nodes.
+- ``value`` is the element resistance. It may any non-zero value (negative
+  values are supported too).
 
 **Example:**
 
@@ -86,9 +84,9 @@ Capacitors
 
 -  ``n1`` and ``n2`` are the element nodes.
 -  ``value`` is the capacitance in Farads.
--  ``ic=<value>`` is an optional attribute that can be set to provide an
-   initial value voltage value for a transient simulation.
-   See also the discussion of the ``UIC`` parameter in TRAN simulations.
+-  ``ic=<value>`` is an optional attribute that can be set to provide an initial
+   value voltage value for a transient simulation.  See also the discussion of
+   the ``UIC`` parameter in TRAN simulations.
 
 **Example:**
 
@@ -108,9 +106,9 @@ Inductors
 
 -  ``n1`` and ``n2`` are the element nodes.
 -  ``value`` is the inductance in Henry.
--  ``ic=<value>`` is an optional attribute that can be set to provide an
-   initial value for a transient simulation. See also the discussion of
-   the ``UIC`` parameter in TRAN simulations.
+-  ``ic=<value>`` is an optional attribute that can be set to provide an initial
+   value for a transient simulation. See also the discussion of the ``UIC``
+   parameter in TRAN simulations.
 
 **Example:**
 
@@ -134,10 +132,9 @@ or
 
 ``K<string> <inductor1> <inductor2> k=<value>``
 
--  ``<inductor1>`` and ``<inductor2>`` are the coupled inductors. They
-   need to be specified before the coupling can be inserted.
--  ``value`` is the coupling factor, ``k``. It is a needs to be less
-   than 1.
+-  ``<inductor1>`` and ``<inductor2>`` are the coupled inductors. They need to
+   be specified before the coupling can be inserted.
+-  ``value`` is the coupling factor, ``k``. It is a needs to be less than 1.
 
 **Example:**
 
@@ -158,11 +155,11 @@ Voltage-controlled switch
 
 - ``n1`` and ``n2`` are the nodes corresponding to the output port, where the
   switch opens and closes the connection.
-- ``ns1`` and ``ns2`` are the nodes corresponding to the driving port, where
-  the voltage setting the switch status is read.
-- ``model_id`` is the model describing the switch operation. Notice that even
-  if an ideal switch is a (piece-wise) linear element, its model implementation
-  may not be, depending on the implementation details of the transition region.
+- ``ns1`` and ``ns2`` are the nodes corresponding to the driving port, where the
+  voltage setting the switch status is read.
+- ``model_id`` is the model describing the switch operation. Notice that even if
+  an ideal switch is a (piece-wise) linear element, its model implementation may
+  not be, depending on the implementation details of the transition region.
 
 Independent sources
 ^^^^^^^^^^^^^^^^^^^
@@ -187,9 +184,8 @@ Current source
 
 ``i<string> n1 n2 [type=idc idc=float] [type=iac iac=float] [type=....]``
 
-The declaration of the time variant part is the same as for
-voltage sources, except that ``vo`` becomes ``io``, ``va`` becomes
-``ia`` and so on.
+The declaration of the time variant part is the same as for voltage sources,
+except that ``vo`` becomes ``io``, ``va`` becomes ``ia`` and so on.
 
 Dependent sources
 ^^^^^^^^^^^^^^^^^
@@ -207,7 +203,7 @@ Voltage-Controlled Voltage Source (VCVS)
   voltage is forced.
 - ``ns+`` and ``ns-`` are the nodes corresponding to the driving port, where
   the voltage is read.
-- ``value`` is the proportionality factor, ie:
+- ``value`` is the proportionality factor, i.e.:
   ``V(n+) - V(n-) = value*[V(sn+) - V(sn-)]``.
 
 Voltage-Controlled Current Source (VCCS)
@@ -223,7 +219,7 @@ Voltage-Controlled Current Source (VCCS)
   current is forced.
 - ``ns+`` and ``ns-`` are the nodes corresponding to the driving port, where
   the voltage is read.
-- ``value`` is the proportionality factor, ie:
+- ``value`` is the proportionality factor, i.e.:
   ``I(n+,n-) = value*[V(sn+) - V(sn-)]``.
 
 Current-Controlled Current Source (CCCS)
@@ -237,19 +233,19 @@ Current-Controlled Current Source (CCCS)
 
 - ``n+`` and ``n-`` are the nodes corresponding to the output port, where the
   current is forced.
-- ``voltage_source`` is the ID of a voltage source whose current controls the 
-  dependent current source. It must exist in the circuit. Note that netlists
-  are case-insensitive, ie ``Va`` is the same as ``vA``.
-- ``value`` is the proportionality factor, ie:
+- ``voltage_source`` is the ID of a voltage source whose current controls the
+  dependent current source. It must exist in the circuit. Note that netlists are
+  case-insensitive, i.e. ``Va`` is the same as ``vA``.
+- ``value`` is the proportionality factor, i.e.:
   :math:`I(n+,n-) = value*I[<voltage_source>]`.
 
 Non-linear elements
 ^^^^^^^^^^^^^^^^^^^
 
-The simulator has a few non-linear components built-in. Others may
-easily be added as external modules.
+The simulator has a few non-linear components built-in. Others may easily be
+added as external modules.
 
-Diode 
+Diode
 '''''
 
 .. image:: ../images/elem/diode.svg
@@ -283,13 +279,11 @@ A MOS device declaration requires:
 * ``nd``: the drain node,
 * ``ng``: the gate node,
 * ``ns``: the source node,
-* ``nb``: the bulk node 
-
-* ``<model_id>``: is a string that links this device to a ``.model``
-  declaration in the netlist. The model is actually responsible of the
-  operation of the device. 
-
-* ``w``: gate width, in meters
+* ``nb``: the bulk node.
+* ``<model_id>``: is a string that links this device to a ``.model`` declaration
+  in the netlist. The model is actually responsible of the operation of the
+  device.
+* ``w``: gate width, in meters.
 * ``l``: gate length, in meters.
 
 User-defined elements
@@ -299,13 +293,12 @@ User-defined elements
 
 ``Y<X> <n1> <n2> module=<module_name> type=<type> [<param1>=<value1> ...]``
 
-Ahkab can parse user-defined elements. In order for this to work, you
-should write a Python module that supplies the element class. The
-simulator will attempt to load the module ``<module_name>`` and it will
-then look for a class named ``<type>`` within.
+Ahkab can parse user-defined elements. In order for this to work, you should
+write a Python module that supplies the element class. The simulator will
+attempt to load the module ``<module_name>`` and it will then look for a class
+named ``<type>`` within.
 
-See :func:`netlist_parser.parse_elem_user_defined` for further
-information.
+See :func:`netlist_parser.parse_elem_user_defined` for further information.
 
 Subcircuit calls
 ^^^^^^^^^^^^^^^^
@@ -316,17 +309,16 @@ Subcircuit calls
 
 Insert a subcircuit, connected as specified.
 
-All nodes in the subcircuit specification must be connected to a circuit
-node. The call can be placed before or after the corresponding .subckt
-directive.
+All nodes in the subcircuit specification must be connected to a circuit node.
+The call can be placed before or after the corresponding .subckt directive.
 
 Time functions
 """"""""""""""
 
-Time functions may be used in conjuction with an independent source
-to define its time-dependent behaviour.
+Time functions may be used in conjunction with an independent source
+to define its time-dependent behavior.
 
-This is typically done adding a ``type=...`` section in the element decalration,
+This is typically done adding a ``type=...`` section in the element declaration,
 such as:
 
 ::
@@ -392,7 +384,7 @@ An exponential waveform may be described with one of the following syntaxes:
 
 ::
 
-    type=exp v1=<float> v2=float td1=float tau1=<float> td2=<float> tau2=<float> 
+    type=exp v1=<float> v2=float td1=float tau1=<float> td2=<float> tau2=<float>
 
 
 Example:
@@ -436,7 +428,7 @@ TAU2       fall time constant  Infinity       s
 =========  ==================  =============  =======
 
 
-Pulsed source 
+Pulsed source
 ^^^^^^^^^^^^^
 
 A square wave.
@@ -463,7 +455,7 @@ Christian Enz, Fabien Théodoloz, François Krummenacher at the
 Electronics Laboratories, Swiss Federal Institute of Technology (EPFL),
 Lausanne, Switzerland.
 
-It is described here: 
+It is described here:
 
 - rev. 2.6 - http://legwww.epfl.ch/ekv/pdf/ekv\_v262.pdf
 - rev. 3.0 - http://www.nsti.org/publications/MSM/2002/pdf/346.pdf
@@ -474,8 +466,8 @@ present in my implementation. :)
 The model is missing:
 
 - channel length modulation,
-- complex mobility reduction, 
-- RSCE transcapacitances, 
+- complex mobility reduction,
+- RSCE transcapacitances,
 - the quasistatic modeling.
 
 It does identify weak, moderate and strong inversion zones, it is fully
@@ -518,7 +510,7 @@ The most important parameters are:
 | RS            | 0.0 ohm           | Series resistance per unit area   |
 +---------------+-------------------+-----------------------------------+
 
-please refer to the SPICE documentation and the ``diode.py`` file for
+Please refer to the SPICE documentation and the ``diode.py`` file for
 the others.
 
 TANH(x)-shaped switch model
@@ -533,7 +525,7 @@ There are two possible syntax:
 ``.model SW <model_id> VON=<float> VOFF=<float> RON=<float> ROFF=<float>``
 
 This model implements a voltage-controlled switch where the transition
-is modeled with tanh(x).
+is modeled with :math:`tanh(x)`.
 
 Hysteresis is supported through the parameter ``VH``. When set, the two
 thresholds become ``VT+VH`` and ``VT-VH`` (distance ``2*VH``!).
@@ -561,15 +553,15 @@ the latter two are set from the former according to the relationships:
 Analyses
 """"""""
 
-Operating point (OP)
-^^^^^^^^^^^^^^^^^^^^
+Operating point (.OP)
+^^^^^^^^^^^^^^^^^^^^^
 
 **General syntax:**
 
 ``.op [guess=<ic_label>]``
 
-This analysis tries to find a DC solution through a pseudo Newthon
-Rahpson (NR) iteration method. Notice that a non-linear circuit may have
+This analysis tries to find a DC solution through a pseudo Newton
+Rhapson (NR) iteration method. Notice that a non-linear circuit may have
 zero, a discrete number or infinite OPs.
 
 Which one is found depends on the circuit and on the initial guess
@@ -583,44 +575,39 @@ The user may supply a better guess, if known. This can be done adding a
 ``guess=<ic_label>`` where ``<ic_label>`` matches the .ic's
 ``name=<ic_label>``.
 
-The ``t = 0`` value is automatically added as dc value to every
-time-variant independent source without a explicit dc value.
+The ``t = 0`` value is automatically added as DC value to every
+time-variant independent source without a explicit DC value.
 
-DC sweep
-^^^^^^^^
+DC analysis (.DC)
+^^^^^^^^^^^^^^^^^
 
 **General syntax:**
 
-``.DC src=<src_name> start=<float> stop=<float> step=<float> type=<linear/log>``
+``.DC src=<src_name> start=<float> stop=<float> step=<float> type=<lin/log>``
 
 Performs a DC sweep (repeated OP analysis with the value of a voltage or
 current source changing at every iteration).
 
-Parameters: 
+Parameters:
 
 - ``src``: the id of the source to be swept (V12, Ibias...).
     Only independent current and voltage sources.
-
 - ``start`` and ``stop``: sweep start and stop values.
-
-- type: either ``linear`` or ``log``
-
-- step: sets the value of the source from an iteration :math:`(k)` to the next :math:`(k+1)`: 
-
+- type: either ``lin`` or ``log``
+- step: sets the value of the source from an iteration :math:`(k)` to the next :math:`(k+1)`:
    - if ``type=log``, :math:`S(k+1) = S(k) \cdot step`
+   - if ``type=lin``, :math:`S(k+1) = S(k) + step`
 
-   - if ``type=linear``, :math:`S(k+1) = S(k) + step`
-
-Transient analysis
-^^^^^^^^^^^^^^^^^^
+Transient analysis (.TRAN)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **General syntax:**
 
 ``.TRAN TSTEP=<float> TSTOP=<float> [TSTART=<float>  UIC=0/1/2/3 [IC_LABEL=<string>] METHOD=<string>]``
 
-Performs a transient analysis from tstart (which defaults to 0) to
-tstop, using the step provided as initial step and the method specified
-(if any, otherwise defaults to implicit\_euler).
+Performs a transient analysis from ``tstart`` (which defaults to 0) to
+``tstop``, using the step provided as initial step and the method specified
+(if any, otherwise defaults to implicit Euler).
 
 Parameters:
 
@@ -656,12 +643,12 @@ If a transient analysis stops because of a step size too small, use a
 low order method (ie/trap) and set ``--t-max-nr`` to a high value (eg
 1000).
 
-AC
-^^
+AC analysis (.AC)
+^^^^^^^^^^^^^^^^^
 
 **General syntax:**
 
-``.AC start=<float> stop=<float> nsteps=<integer>``
+``.AC start=<float> stop=<float> nsteps=<integer> sweep_type=<lin/log>``
 
 Performs an AC analysis.
 
@@ -670,35 +657,41 @@ needed to linearize the circuit.
 
 The sweep type is by default (and currently unchangeable) logarithmic.
 
-Parameters: \* start: the starting *angular* *frequency* of the sweep.
-\* stop: the final angular frequency \* nsteps: the number of steps to
-be executed
+Parameters:
 
-Periodic Steady State (PSS)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* ``start``: the starting *angular* *frequency* of the sweep.
+* ``stop``: the final angular frequency.
+* ``nsteps``: the number of steps to be executed.
+* ``sweep_type``: a parameter that can be set to ``LOG`` or ``LIN``
+  (the default), selecting a logarithmic or a linear frequency sweep.
+
+Periodic Steady State (.PSS)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``.PSS period=<float> [points=<int> step=<float> method=<string> autonomous=<bool>]``
 
 This analysis tries to find the periodic steady state (PSS) solution of
 the circuit.
 
-Parameters: 
+Parameters:
 
 - ``period``: the period of the solution. To be specified only
-  in not autonomous circuits (which are somehow clocked). 
-- ``points``: How many time points to use to discretize the solution. If ``step`` is set, this
-  is automatically computed.
+  in not autonomous circuits (which are somehow clocked).
+- ``points``: How many time points to use to discretize the solution. If
+  ``step`` is set, this is automatically computed.
 - ``step``: Time step on the period. If ``points`` is set, this is
-  automatically computed. 
-- ``method``: the PSS algorithm to be employed. Options are: ``shooting`` 
+  automatically computed.
+- ``method``: the PSS algorithm to be employed. Options are: ``shooting``
   (default) and ``brute-force``.
 - ``autonomous``: self-explanatory boolean. If set to ``True``, currently the
   simulator halts, because autonomous circuits are not supported, yet.
 
-Pole-Zero analysis (PZ)
-^^^^^^^^^^^^^^^^^^^^^^^
+Pole-Zero analysis (.PZ)
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 The PZ analysis computes the poles (and optionally the zeros) of a circuit.
+
+**General syntax:**
 
 It can be specified with any of the following equivalent syntaxes:
 
@@ -709,7 +702,7 @@ or
 ```.PZ [V(<node1>,<node2>) <SOURCE> <ZEROS=1> <SHIFT=0>]```
 
 Internally, it is implemented through the modification-decomposition
-(MD) method, which is based on finding the eigenvalues of the 
+(MD) method, which is based on finding the eigenvalues of the
 Time Constant Matrix (TCM).
 
 All the following parameters are optional and only needed for zero calculation.
@@ -725,8 +718,10 @@ Parameters:
   In a network that has zeros in the origin, this may be set to some non-zero
   value since the beginning.
 
-Symbolic small-signal and transfer function
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Symbolic small-signal (.SYMBOLIC)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**General syntax:**
 
 ``.symbolic [tf=<source_name> ac=bool]``
 
@@ -751,6 +746,8 @@ Other directives
 End
 ^^^
 
+**General syntax:**
+
 ``.end``
 
 Force the parser to stop reading the netlist. Everything after this line
@@ -758,6 +755,8 @@ is disregarded.
 
 Ends
 ^^^^
+
+**General syntax:**
 
 ``.ends``
 
@@ -767,6 +766,8 @@ Ic
 ^^
 
 Set an Initial Condition for circuit analysis.
+
+**General syntax:**
 
 ``.ic name=<ic_label> [v(<node>)=<value> i(<element_name>)=<value> ... ]``
 
@@ -787,6 +788,8 @@ To use an IC directive in a transient analysis, set '``UIC=3``' and
 Include
 ^^^^^^^
 
+**General syntax:**
+
 ``.include <filename>``
 
 Include a file. It's equivalent to copy & paste the contents of the file
@@ -795,35 +798,38 @@ to the bottom of the netlist.
 Subckt
 ^^^^^^
 
+**General syntax:**
+
 ``.subckt <subckt_label> [node1 node2 ... ]``
 
-Subcircuits are netlist block that may be called anywhere in the circuit
-using a subckt call. They can have other subckt calls within - but
-beware of recursively calling the same subcircuit!
+Subcircuits are netlist block that may be called anywhere in the circuit using a
+subckt call. They can have other ``.subckt`` calls within - but beware of
+recursively calling the same subcircuit!
 
-They can hold other directives, but the placement of the directive
-doesn't change its meaning (ie if you add a .op line in the subcircuit
-or outside of it it's the same).
+They can hold other directives, but the placement of the directive doesn't
+change its meaning (i.e. if you add an ``.op`` line in the subcircuit or outside
+of it it's the same).
 
 They can't be nested and have to be ended by a ``.ends`` directive.
 
 Plot
 ^^^^
 
+**General syntax:**
+
 ``.plot <simulation_type> [variable1 variable2 ... ]``
 
-Parameters: 
+Parameters:
 
-- ``simulation_type``: which simulation will have the data
-  plotted. Currently the available options are ``tran``, ``shooting`` and ``dc``. 
-
+- ``simulation_type``: which simulation will have the data plotted. Currently
+  the available options are ``tran``, ``shooting`` and ``dc``.
 - ``variable1``, ``variable2``: the signals to be plotted.
 
 They may be:
 
 - a voltage, syntax ``V(<node>)``, to plot the voltage at the specified node,
-    or ``V(<node2>, <node1>)``, to plot the difference of the node
-    voltages. Eg ``V(in)`` or ``V(2,1)``. 
-- a current, syntax ``I(<source name>)``, eg. ``I(V2)`` or ``I(Vsupply)``
+  or ``V(<node2>, <node1>)``, to plot the difference of the node
+  voltages. E.g. ``V(in)`` or ``V(2,1)``.
+- a current, syntax ``I(<source name>)``, e.g. ``I(V2)`` or ``I(Vsupply)``
 
-Plotting is possible only if matplotlib is available.
+Plotting is possible only if ``matplotlib`` is available.
