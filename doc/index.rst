@@ -64,6 +64,14 @@ Example simulations
    examples/OP_simulation
    examples/Symbolic-simulation
 
+License
+-------
+
+.. toctree::
+   :maxdepth: 1
+
+   misc/COPYING
+
 Indices and tables
 ==================
 
