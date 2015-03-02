@@ -138,6 +138,7 @@ from optparse import OptionParser
 import numpy as np
 import scipy as sp
 import sympy
+import tabulate
 try:
     import matplotlib
     plotting_available = True
@@ -826,6 +827,7 @@ def main(filename, outfile="stdout", verbose=3):
     printing.print_info_line(("  Numpy %s" % (np.__version__), 6), verbose)
     printing.print_info_line(("  Scipy %s" % (sp.__version__), 6), verbose)
     printing.print_info_line(("  Sympy %s" % (sympy.__version__), 6), verbose)
+    printing.print_info_line(("  Tabulate %s" % (tabulate.__version__), 6), verbose)
     if plotting_available:
         printing.print_info_line(("  Matplotlib %s" % (matplotlib.__version__),
                                   6), verbose)
