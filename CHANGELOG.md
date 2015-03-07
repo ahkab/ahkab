@@ -1,6 +1,39 @@
 <!-- Name: Changelog -->
 #Changelog
 
+## Changelog for v 0.13
+
+Version 0.13 represents the culmination of efforts dating back to January and contains 135 commits.
+
+This release features current-controlled current sources and voltage sources and new options to select the format of numbers printed for user display and how the MNA matrix is built in Symbolic Analysis. 
+
+Moreover, as in the previous releases, many commits were devoted to improving the documentation: you can find the new, improved documentation at http://ahkab.readthedocs.org/en/latest/
+
+### Features added:
+
+* Implement CCCS, fixes #22
+* Implement CCVS, fixes #21
+* Add option to formulate the MNA and N matrices with resistors for symbolic analysis.
+* Add options to suppress zeros and select printing precision.
+
+### Changes from contributors and pull requests merged:
+
+*None.* 
+
+### Bugs fixed, short list:
+
+* BUGFIX: fix printing of missing elements.
+* BUGFIX: fix missing import
+* BUGFIX: reset look-up table when the temperature changes
+* BUGFIX: catch missing matplotlib
+* BUGFIX: remove early test It masks more detailed tests below.
+* BUGFIX: fix get_netlist_elem_line()Pass the element nodes through nodes_dict
+* BUGFIX: correct the netlist label for tran start time (tstart)
+* BUGFIX: fix parsing of capacitors wrt comments.
+* BUGFIX: fix all Symbols to be uppercase
+* BUGFIX power by VCCS
+* BUGFIX: Fix total power computation for GIsources.
+
 ## Changelog for v 0.12
 
 Version 0.12 represents the culmination of efforts dating back to May and contains 142 commits.
