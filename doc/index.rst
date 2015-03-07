@@ -60,15 +60,22 @@ Module reference
    trap
    utilities
 
+Python API
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   examples/Python_API
+
 Example simulations
 -------------------
 
 .. toctree::
    :maxdepth: 1
 
-   examples/Python_API
-   examples/Transient-Example
    examples/OP_simulation
+   examples/Transient-Example
    examples/Symbolic-simulation
 
 License

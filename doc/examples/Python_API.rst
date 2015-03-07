@@ -1,15 +1,14 @@
-Python API
-~~~~~~~~~~
+Python scripting tutorial
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*Simulating The Python Way*: interacting with ahkab inside a Python
-program gives the user the ability to employ the extreme flexibility and
-power of Python.
+Interacting with the simulator inside a Python program gives the user the
+ability to employ all the extreme flexibility and power of the Python language.
 
-This page gives an (incomplete) example to show how. More can
+This page gives an (incomplete) tutorial showing how. More can
 be found in :mod:`ahkab` and :mod:`ahkab.circuit`.
 
-Example
-"""""""
+Tutorial
+""""""""
 
 Let's say we would like to simulate the AC characteristics and the step
 response of a Butterworth low pass filter, such as this:
