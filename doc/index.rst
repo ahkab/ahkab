@@ -16,6 +16,13 @@ Command line interface and netlist syntax
    help/Command-Line-Help
    help/Netlist-Syntax
 
+Help pages on particular elements
+---------------------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   help/Mutual-Inductors
 
 Module reference
 ----------------
