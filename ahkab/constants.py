@@ -28,22 +28,34 @@ import math
 
 #: e - electron charge
 e = 1.60217646e-19
-#: Simulation tmperature
+#: Simulation temperature in Kelvin degrees
 T = 300
-#: reference temperature
+#: reference temperature in Kelvin degrees
 Tref = 300
 #: Boltzmann constant
 k = 1.3806503e-23
 
 
 def Vth(T=Tref):
-    """The thermal voltage: :math:`kT/q`."""
+    """The thermal voltage: :math:`kT/q`.
+
+    **Parameters:**
+
+    T : float, optional
+        The temperature at which the thermal voltage is to be evaluated.
+        If not specified, it defaults to ``constants.Tref``.
+
+    **Returns:**
+
+    vth : float
+        The thermal voltage, :math:`kT/q`.
+    """
     return k * T / e
 
 
 class silicon:
     """Silicon class
-    
+
     Access this class as ``utilities.si``.
 
     **Attributes**
@@ -58,11 +70,37 @@ class silicon:
         self.eox = 34.5 * 10 ** -12  # F/m
 
     def Eg(self, T=Tref):
-        """Energy gap of silicon at temperature ``T``"""
+        """Energy gap of silicon at temperature ``T``
+
+        **Parameters:**
+
+        T : float, optional
+            The temperature at which the thermal voltage is to be evaluated.
+            If not specified, it defaults to ``constants.Tref``.
+
+        **Returns:**
+
+        Eg : float
+            The energy gap.
+        """
+
         return (1.16 - 0.000702 * T ** 2 / (1108 + T))  # eV
 
     def ni(self, T=Tref):
-        """Intrinsic carriet concentration at temperature ``T``"""
+        """Intrinsic Silicon carrier concentration at temperature ``T``
+
+        **Parameters:**
+
+        T : float, optional
+            The temperature at which the thermal voltage is to be evaluated.
+            If not specified, it defaults to ``constants.Tref``.
+
+        **Returns:**
+
+        ni : float
+            The intrinsec carrier concentration.
+        """
+
         return 1.45 * 10 ** 16 * (T / Tref) * math.exp(self.Eg(Tref) / (2 * Vth(Tref)) - self.Eg(T) / (2 * Vth(T)))
 
 #: Silicon class instantiated.
