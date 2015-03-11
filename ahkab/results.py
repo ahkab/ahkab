@@ -304,8 +304,10 @@ class op_solution(solution, _mutable_data):
 
     def __str__(self):
         str_repr = \
-            "OP simulation results for %s (netlist %s).\nRun on %s, data filename %s.\n" % \
-            (self.netlist_title, self.netlist_file, self.timestamp, self.filename)
+            (("OP simulation results for '%s'" % (self.netlist_title,)) +
+            ('(netlist %s)'%(self.netlist_file,) if self.netlist_file else '') +
+            ('.\nRun on %s, data filename %s.\n' % \
+             (self.timestamp, self.filename)))
         for v in self.variables:
             str_repr += "%s:\t%e\t%s\t(%e %s, %f %%)\n" % \
                 (v, self.results[v], self.units[v], \
