@@ -26,13 +26,13 @@ from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 import math
 
-#: e - electron charge
+#: The electron charge :math:`e`.
 e = 1.60217646e-19
-#: Simulation temperature in Kelvin degrees
+#: Simulation temperature in Kelvin degrees.
 T = 300
-#: reference temperature in Kelvin degrees
+#: Reference temperature in Kelvin degrees.
 Tref = 300
-#: Boltzmann constant
+#: The Boltzmann constant
 k = 1.3806503e-23
 
 
@@ -56,7 +56,7 @@ def Vth(T=Tref):
 class silicon:
     """Silicon class
 
-    Access this class as ``utilities.si``.
+    Access this class as ``constants.si``.
 
     **Attributes**
 
@@ -81,7 +81,7 @@ class silicon:
         **Returns:**
 
         Eg : float
-            The energy gap.
+            The energy gap, expressed in electron-volt (eV).
         """
 
         return (1.16 - 0.000702 * T ** 2 / (1108 + T))  # eV
