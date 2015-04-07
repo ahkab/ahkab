@@ -1140,7 +1140,7 @@ def is_elem_voltage_defined(elem):
     **Parameters:**
 
     elem : Component
-        The element to be cechekd.
+        The element to be checked.
 
     **Returns:**
 
