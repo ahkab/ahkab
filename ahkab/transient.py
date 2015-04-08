@@ -285,7 +285,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
     # setup the initial values to start the iteration:
     x = None
     time = tstart
-    nv = len(circ.nodes_dict)
+    nv = circ.get_nodes_number()
 
     Gmin_matrix = dc_analysis.build_gmin_matrix(circ, options.gmin, mna.shape[0], verbose)
 
@@ -517,7 +517,7 @@ def generate_D(circ, shape):
         The *unreduced* D matrix.
     """
     D = np.zeros((shape[0]+1, shape[1]+1))
-    nv = len(circ.nodes_dict)# - 1
+    nv = circ.get_nodes_number()# - 1
     i_eq = 0 #each time we find a vsource or vcvs or ccvs, we'll add one to this.
     for elem in circ:
         if circuit.is_elem_voltage_defined(elem) and not isinstance(elem, devices.Inductor):

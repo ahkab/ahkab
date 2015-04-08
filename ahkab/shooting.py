@@ -255,7 +255,7 @@ def _build_static_MAass_and_MBass(mna, D, step):
 
 def _build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3):
     Tass_vector = []
-    nv = len(circ.nodes_dict)
+    nv = circ.get_nodes_number()
     printing.print_info_line(("Building Tass...", 5), verbose, print_nl=False)
 
     tick.reset()

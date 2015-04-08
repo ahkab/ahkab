@@ -75,7 +75,7 @@ def get_dc_guess(circ, verbose=3):
     if verbose > 3:
         print("")
 
-    nv = len(circ.nodes_dict)
+    nv = circ.get_nodes_number()
     M = np.zeros((1, nv))
     T = np.zeros((1, 1))
     index = 0
@@ -217,9 +217,6 @@ def get_dc_guess(circ, verbose=3):
     # elements (we have no guess for those...)
     if v_eq > 0:
         Rp = np.concatenate((Rp, np.zeros((v_eq, 1))), axis=0)
-
-    if verbose == 5:
-        print(circ.nodes_dict)
 
     if verbose and verbose < 4:
         print("done.")

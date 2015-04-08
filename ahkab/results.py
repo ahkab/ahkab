@@ -276,7 +276,7 @@ class op_solution(solution, _mutable_data):
         # (per questo, per misurare una corrente, si può fare uso di generatori di tensione
         # da 0V)
 
-        nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
+        nv_1 = circ.get_nodes_number() - 1 # numero di soluzioni di tensione (al netto del ref)
         self.results = case_insensitive_dict()
         self.errors = case_insensitive_dict()
         self.x = x
@@ -352,7 +352,7 @@ class op_solution(solution, _mutable_data):
         """Returns"""
         tot_power = 0
         i_index = 0
-        nv_1 = len(circ.nodes_dict) - 1
+        nv_1 = circ.get_nodes_number() - 1
         op_info = {}
         op_keys = {}
         for elem in circ:
@@ -382,7 +382,7 @@ class op_solution(solution, _mutable_data):
                     ports_v_v = ((tempv,),)
                 if circuit.is_elem_voltage_defined(elem):
                     i = circ.find_vde_index(elem.part_id)
-                    nv_1 = len(circ.nodes_dict) - 1
+                    nv_1 = circ.get_nodes_number() - 1
                     opk, opi = elem.get_op_info(ports_v_v, x[nv_1 + i])
                 else:
                     opk, opi = elem.get_op_info(ports_v_v)
@@ -585,7 +585,7 @@ class ac_solution(solution, _mutable_data):
         self.units.update({"w": "rad/s"})
         self.csv_headers = [self.variables[0]]
 
-        nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
+        nv_1 = circ.get_nodes_number() - 1 # numero di soluzioni di tensione (al netto del ref)
         for index in range(nv_1):
             varname = "V%s" % str(circ.nodes_dict[index + 1])
             self.variables += [varname]
@@ -731,7 +731,7 @@ class dc_solution(solution, _mutable_data):
         self.start, self.stop = start, stop
         self.stype = stype
 
-        nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
+        nv_1 = circ.get_nodes_number() - 1 # numero di soluzioni di tensione (al netto del ref)
         self.variables = [sweepvar]
         self.units = case_insensitive_dict()
         if self.variables[0][0] == 'V':
@@ -806,7 +806,7 @@ class tran_solution(solution, _mutable_data):
 
         self._lock = False
 
-        nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
+        nv_1 = circ.get_nodes_number() - 1 # numero di soluzioni di tensione (al netto del ref)
         self.variables = ["T"]
         self.units.update({"T":"s"})
 
@@ -880,7 +880,7 @@ class pss_solution(solution, _mutable_data):
         self.method = method
 
         # We have mixed current and voltage results
-        nv_1 = len(circ.nodes_dict) - 1 # numero di soluzioni di tensione (al netto del ref)
+        nv_1 = circ.get_nodes_number() - 1 # numero di soluzioni di tensione (al netto del ref)
         self.variables = ["T"]
         self.units.update({"T":"s"})
 

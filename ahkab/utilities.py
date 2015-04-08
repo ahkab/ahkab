@@ -35,6 +35,7 @@ import operator
 import numpy as np
 
 from . import printing
+from . import py3compat
 from . import options
 
 #: The machine epsilon, the upper bound on the relative error due to rounding in
@@ -591,7 +592,7 @@ def check_circuit(circ):
         A message describing the error, if any.
     """
 
-    if len(circ.nodes_dict) < 2:
+    if circ.get_nodes_number() < 2:
         test_passed = False
         reason = "the circuit has less than two nodes."
     elif not 0 in circ.nodes_dict:
@@ -642,7 +643,11 @@ def check_ground_paths(mna, circ, reduced_mna=True, verbose=3):
         if node == 0:
             continue
             # ground
-        if mna[node - r_c, node - r_c] == 0 and not mna[node - r_c, len(circ.nodes_dict) - r_c:].any():
+        if type(node) != int:
+            # an ext handle
+            continue
+        if mna[node - r_c, node - r_c] == 0 and \
+           not mna[node - r_c, circ.get_nodes_number() - r_c:].any():
             to_be_checked_for_nonlinear_paths.append(node)
     for node in to_be_checked_for_nonlinear_paths:
         node_is_nl_op = False

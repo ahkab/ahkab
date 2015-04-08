@@ -211,7 +211,7 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
             MNA[1:, 1:] += J
     D = transient.generate_D(mc, MNA[1:, 1:].shape)
     MNAinv = np.linalg.inv(MNA[1:, 1:] + shift*D[1:, 1:])
-    nodes_m1 = len(mc.nodes_dict) - 1
+    nodes_m1 = mc.get_nodes_number() - 1
     vde1 = -1
     MC = np.zeros((MNA.shape[0] - 1, 1))
     TCM = None

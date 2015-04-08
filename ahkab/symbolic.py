@@ -314,7 +314,7 @@ def get_variables(circ):
         The variables in a column vector.
     """
     # numero di soluzioni di tensione (al netto del ref)
-    nv_1 = len(circ.nodes_dict) - 1
+    nv_1 = circ.get_nodes_number() - 1
 
     # descrizioni dei componenti non definibili in tensione
     idescr = [elem.part_id.upper()
@@ -409,7 +409,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
         * beefing up your machine with extra RAM and extra computing power,
         * being patient.
     """
-    n_of_nodes = len(circ.nodes_dict)
+    n_of_nodes = circ.get_nodes_number()
     mna = smzeros(n_of_nodes)
     N = smzeros(n_of_nodes, 1)
     subs_g = {}

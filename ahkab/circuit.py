@@ -151,7 +151,7 @@ class Circuit(list):
     def __init__(self, title, filename=None):
         self.title = title
         self.filename = filename
-        self.nodes_dict = {}  # {int_node:ext_node}
+        self.nodes_dict = {}  # {int_node:ext_node, int_node:ext_node}
         self.internal_nodes = 0
         self.models = {}
         self.gnd = '0'
@@ -187,12 +187,13 @@ class Circuit(list):
 
         """
         got_ref = 0 in self.nodes_dict
-        if not name in list(self.nodes_dict.values()):
+        if not name in self.nodes_dict:
             if name == '0':
                 int_node = 0
             else:
-                int_node = len(self.nodes_dict) + 1 * (not got_ref)
-            self.nodes_dict.update({int_node: name})
+                int_node = int(len(self.nodes_dict)/2) + 1*(not got_ref)
+            self.nodes_dict.update({int_node:name})
+            self.nodes_dict.update({name:int_node})
         else:
             raise ValueError('Impossible to create new node %s: node exists!'
                              % name)
@@ -226,21 +227,17 @@ class Circuit(list):
             the internal node id assigned to the node.
 
         """
-        got_ref = 0 in self.nodes_dict
-
         # test: do we already have it in the dictionary?
-        try:
-            list(self.nodes_dict.values()).index(ext_name)
-        except ValueError:
+        if ext_name not in self.nodes_dict:
             if ext_name == '0':
                 int_node = 0
             else:
-                int_node = len(self.nodes_dict) + 1 * (not got_ref)
-            self.nodes_dict.update({int_node: ext_name})
+                got_ref = 0 in self.nodes_dict
+                int_node = int(len(self.nodes_dict)/2) + 1*(not got_ref)
+            self.nodes_dict.update({int_node:ext_name})
+            self.nodes_dict.update({ext_name:int_node})
         else:
-            for (key, value) in self.nodes_dict.items():
-                if value == ext_name:
-                    int_node = key
+            int_node = self.nodes_dict[ext_name]
         return int_node
 
     def generate_internal_only_node_label(self):
@@ -266,6 +263,10 @@ class Circuit(list):
         ext_node = "INT" + str(self.internal_nodes)
         self.internal_nodes = self.internal_nodes + 1
         return ext_node
+
+    def get_nodes_number(self):
+        """Returns the number of nodes in the circuit"""
+        return int(len(self.nodes_dict)/2)
 
     def is_int_node_internal_only(self, int_node):
         """Check whether an internal node is an "internal only node" or not.
@@ -325,27 +326,13 @@ class Circuit(list):
         ext_node : string
             The external node id to be converted.
 
-        .. note::
-
-            This method is slow, because it has to look through ``Circuit.nodes_dict``.
-
-        :raises NodeNotFoundError: when the node doesn't exist in the circuit.
-
         **Returns:**
 
         int_node : int
             The internal node associated.
 
         """
-        items = list(self.nodes_dict.items())
-        values = [value for key, value in items]
-
-        try:
-            index = values.index(ext_node)
-        except ValueError:
-            raise NodeNotFoundError("Node %s not found in the circuit." % ext_node)
-
-        return items[index][0]
+        return self.nodes_dict[ext_node]
 
     def int_node_to_ext(self, int_node):
         """This function returns the string id associated with the integer internal node id
@@ -356,26 +343,12 @@ class Circuit(list):
         int_node : int
             The internal node id to be converted.
 
-        .. note::
-
-            Accessing this function is the same as referencing ``circuit_inst.nodes_dict[int_node]``,
-            except a ``NodeNotFoundError`` exception is thrown instead of a ``KeyError``.
-
-        .. note::
-
-            This method is fast much faster than :func:`Circuit.ext_node_to_int`.
-
         **Returns:**
 
         ext_node : string
             the string id associated with ``int_node``.
         """
-        try:
-            ret = self.nodes_dict[int_node]
-        except KeyError:
-            raise NodeNotFoundError("")
-
-        return ret
+        return self.nodes_dict[int_node]
 
     def has_duplicate_elem(self):
         """Self-check for duplicate elements.
@@ -1060,6 +1033,7 @@ class Circuit(list):
                         if n1 == n or n2 == n:
                             remove_list.remove(n)
         for n in remove_list:
+            self.nodes_dict.pop(self.nodes_dict[n])
             self.nodes_dict.pop(n)
         return True
 

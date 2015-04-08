@@ -208,7 +208,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None,
     if locked_nodes is None:
         locked_nodes = circ.get_locked_nodes()
     mna_size = mna.shape[0]
-    nv = len(circ.nodes_dict)
+    nv = circ.get_nodes_number()
     tot_iterations = 0
 
     if Gmin is None:
@@ -342,7 +342,7 @@ def build_gmin_matrix(circ, gmin, mna_size, verbose):
     """
     printing.print_info_line(("Building Gmin matrix...", 5), verbose)
     Gmin_matrix = np.zeros((mna_size, mna_size))
-    for index in range(len(circ.nodes_dict) - 1):
+    for index in range(circ.get_nodes_number() - 1):
         Gmin_matrix[index, index] = gmin
         # the three missing terms of the stample matrix go on [index,0] [0,0] [0, index] but since
         # we discarded the 0 row and 0 column, we simply don't need to add them
@@ -785,9 +785,10 @@ def mdn_solver(x, mna, circ, T, MAXIT, nv, locked_nodes, time=None,
         # if no guess was specified, its all zeros
         x = np.zeros((mna_size, 1))
     else:
-        if not x.shape[0] == mna_size:
-            raise ValueError("x0s size is different from expected: " + \
-                str(x.shape[0]) + " " + str(mna_size))
+        if x.shape[0] != mna_size:
+            raise ValueError("x0s size is different from expected: got "
+                             "%d-elements x0 with an MNA of size %d" %
+                             (x.shape[0], mna_size))
     if T is None:
         printing.print_warning(
             "dc_analysis.mdn_solver called with T==None, setting T=0. BUG or no sources in circuit?")
@@ -983,7 +984,7 @@ def generate_mna_and_N(circ, verbose=3):
         The MNA matrix and constant term vector computed as per above.
 
     """
-    n_of_nodes = len(circ.nodes_dict)
+    n_of_nodes = circ.get_nodes_number()
     mna = np.zeros((n_of_nodes, n_of_nodes))
     N = np.zeros((n_of_nodes, 1))
     for elem in circ:
@@ -1102,7 +1103,7 @@ def build_x0_from_user_supplied_ic(circ, icdict):
     """
     Vregex = re.compile("V\s*\(\s*([a-z0-9]+)\s*\)", re.IGNORECASE | re.DOTALL)
     Iregex = re.compile("I\s*\(\s*([a-z0-9]+)\s*\)", re.IGNORECASE | re.DOTALL)
-    nv = len(circ.nodes_dict)  # number of voltage variables
+    nv = circ.get_nodes_number()  # number of voltage variables
     voltage_defined_elem_names = \
         [elem.part_id.lower() for elem in circ
          if circuit.is_elem_voltage_defined(elem)]
@@ -1164,7 +1165,7 @@ def modify_x0_for_ic(circ, x0):
     else:
         return_obj = False
 
-    nv = len(circ.nodes_dict)  # number of voltage variables
+    nv = circ.get_nodes_number()  # number of voltage variables
     voltage_defined_elements = [
         x for x in circ if circuit.is_elem_voltage_defined(x)]
 

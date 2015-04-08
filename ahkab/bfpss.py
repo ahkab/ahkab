@@ -155,7 +155,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
     # convergence check
     nv_indices = []
     ni_indices = []
-    nv_1 = len(circ.nodes_dict) - 1
+    nv_1 = circ.get_nodes_number() - 1
     ni = n_of_var - nv_1
     for i in range(points):
         nv_indices += (i * mna.shape[0] * np.ones(nv_1) + \
@@ -373,7 +373,7 @@ def _build_Tf(sTf, points, tick, n_of_var, verbose=3):
 
 
 def _build_Tt(circ, points, step, tick, n_of_var, verbose=3):
-    nv = len(circ.nodes_dict)
+    nv = circ.get_nodes_number()
     printing.print_info_line(("Building Tt...", 5), verbose, print_nl=False)
     tick.reset()
     tick.display(verbose > 2)
