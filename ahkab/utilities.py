@@ -124,7 +124,7 @@ def remove_row_and_col(matrix, rrow=0, rcol=0):
                           ))
     elif rrow is not None:
         return np.vstack((matrix[:rrow, :], matrix[rrow+1:, :]))
-    elif rrow is not None:
+    elif rcol is not None:
         return np.hstack((matrix[:, :rcol], matrix[:, rcol+1:]))
 
 
