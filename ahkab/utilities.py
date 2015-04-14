@@ -163,19 +163,22 @@ def check_file(filename):
 
     chk : boolean
         A value of ``True`` if ``filename`` is found and it is a file.
-        ``False``, otherwise.
+
+    :raises IOError: if no such file exists or if the supplied file is a directory.
     """
     filename = os.path.abspath(filename)
     if not os.path.exists(filename):
-        printing.print_general_error(filename + " not found.")
-        ret = False
+        raise IOError(filename + " not found.")
     elif not os.path.isfile(filename):
-        printing.print_general_error(filename + " is not a file.")
-        ret = False
-    else:
-        ret = True
-    return ret
+        raise IOError(filename + " is not a file.")
+    return True
 
+def tuplinator(alist):
+    """Convert a list of lists (of lists...) to tuples"""
+    if type(alist) is list:
+        return tuple([tuplinator(i) for i in alist])
+    else:
+        return alist
 
 class combinations:
 
