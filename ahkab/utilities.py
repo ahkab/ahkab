@@ -551,7 +551,7 @@ def check_step_and_points(step=None, points=None, period=None,
         printing.print_warning("Neither step nor n. of points set. Using %d points." % default_points)
         points = default_points
     elif step is not None and points is not None:
-        printing.print_warning("Both step and n. of points set. Using step (%f)." % step)
+        printing.print_warning("Both step and # of points set. Using step = %f." % step)
         points = None
 
     if points:
