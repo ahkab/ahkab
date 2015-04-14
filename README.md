@@ -3,17 +3,17 @@
 
 **a SPICE-like electronic circuit simulator written in Python**
 
-The code should be easy to read and modify, the main language is Python -- 2 or 3 -- and it is platform-independent.[![githalytics.com alpha](https://cruel-carlota.gopagoda.com/3f4b146d6a15f66802f1906e5cf4f68c)](http://githalytics.com/ahkab/ahkab)
+The code should be easy to read and modify, the main language is Python -- 2 or 3 -- and it is platform-independent.
 
 News!
 -----
 
--   Ahkab v0.13 was released on Feb 17 2015, including several bugfixes, new features and additional documentation. It is recommended to upgrade. Check out [the release notes](https://github.com/ahkab/ahkab/releases/tag/v0.13) for more!
+-   Ahkab v0.14 was released on Apr 14 2015, including new features, bugfixes and additional documentation. It is recommended to upgrade. Check out [the release notes](https://github.com/ahkab/ahkab/releases/tag/v0.14) for more!
 -   The whole codebase has been going through a (yet incomplete) refactoring and documenting effort. The [new documentation is available on RTD](http://ahkab.readthedocs.org/en/latest/).
 
 My resources are limited these days, so the much-needed work is proceeding slowly, albeit hopefully steadily. If you are interested and you would like to contribute to refactoring or documenting a particular feature, it would be very welcome.
 
-[![Build Status](https://travis-ci.org/ahkab/ahkab.png?branch=master)](https://travis-ci.org/ahkab/ahkab) [![Coverage Status](https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master)](https://coveralls.io/r/ahkab/ahkab?branch=master) [![PyPi version](http://img.shields.io/badge/version-0.13-brightgreen.png)](https://pypi.python.org/pypi/ahkab/) [![GPLv2 license](http://img.shields.io/badge/license-GPL%20v2-brightgreen.png)](https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE)
+[![Build Status](https://travis-ci.org/ahkab/ahkab.png?branch=master)](https://travis-ci.org/ahkab/ahkab) [![Coverage Status](https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master)](https://coveralls.io/r/ahkab/ahkab?branch=master) [![PyPi version](http://img.shields.io/badge/version-0.14-brightgreen.png)](https://pypi.python.org/pypi/ahkab/) [![GPLv2 license](http://img.shields.io/badge/license-GPL%20v2-brightgreen.png)](https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE)
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.15462.svg)](http://dx.doi.org/10.5281/zenodo.15462)
 
 Supported simulations:

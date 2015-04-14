@@ -1,18 +1,18 @@
 ahkab
-=====
+======
 
 **a SPICE-like electronic circuit simulator written in Python**
 
 The code should be easy to read and modify, the main language is Python
--- 2 or 3 -- and it is platform-independent.\ |githalytics.com alpha|
+-- 2 or 3 -- and it is platform-independent.
 
 News!
 -----
 
--  Ahkab v0.13 was released on Feb 17 2015, including several bugfixes,
-   new features and additional documentation. It is recommended to
-   upgrade. Check out `the release
-   notes <https://github.com/ahkab/ahkab/releases/tag/v0.13>`__ for
+-  Ahkab v0.14 was released on Apr 14 2015, including new features,
+   bugfixes and additional documentation. It is recommended to upgrade.
+   Check out `the release
+   notes <https://github.com/ahkab/ahkab/releases/tag/v0.14>`__ for
    more!
 -  The whole codebase has been going through a (yet incomplete)
    refactoring and documenting effort. The `new documentation is
@@ -23,7 +23,7 @@ proceeding slowly, albeit hopefully steadily. If you are interested and
 you would like to contribute to refactoring or documenting a particular
 feature, it would be very welcome.
 
-| |Build Status| |Coverage Status| |PyPi version| |GPLv2 license| |DOI|
+|Build Status| |Coverage Status| |PyPi version| |GPLv2 license| |DOI|
 
 Supported simulations:
 ----------------------
@@ -76,9 +76,6 @@ Usage
 
 1. ``ahkab`` can be run as a Python library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Example of library use
-^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -185,12 +182,12 @@ If you wish to support the development of ``ahkab``, ***please donate to
 cancer research:***
 
 -  `Association for International Cancer Research
-   (eng) <http://www.aicr.org.uk/donate.aspx>`_,
+   (eng) <http://www.aicr.org.uk/donate.aspx>`__,
 
 or
 
 -  `Fond. IRCCS Istituto Nazionale dei Tumori
-   (it) <http://www.istitutotumori.mi.it/modules.php?name=Content&pa=showpage&pid=24>`_.
+   (it) <http://www.istitutotumori.mi.it/modules.php?name=Content&pa=showpage&pid=24>`__.
 
 Credits
 ~~~~~~~
@@ -204,15 +201,13 @@ and `Rob Crowther <https://github.com/weilawei>`__.
 **Dependencies:** many thanks to the authors of ``numpy``, ``scipy``,
 ``sympy``, ``matplotlib`` and ``tabulate``!
 
-.. |githalytics.com alpha| image:: https://cruel-carlota.pagodabox.com/3f4b146d6a15f66802f1906e5cf4f68c
-   :target: http://githalytics.com/ahkab/ahkab
 .. |Build Status| image:: https://travis-ci.org/ahkab/ahkab.png?branch=master
    :target: https://travis-ci.org/ahkab/ahkab
 .. |Coverage Status| image:: https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master
    :target: https://coveralls.io/r/ahkab/ahkab?branch=master
-.. |PyPi version| image:: http://img.shields.io/badge/version-0.13-brightgreen.png
+.. |PyPi version| image:: http://img.shields.io/badge/version-0.14-brightgreen.png
    :target: https://pypi.python.org/pypi/ahkab/
 .. |GPLv2 license| image:: http://img.shields.io/badge/license-GPL%20v2-brightgreen.png
    :target: https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE
-.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.13774.svg
-   :target: http://dx.doi.org/10.5281/zenodo.13774
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.15462.svg
+   :target: http://dx.doi.org/10.5281/zenodo.15462
