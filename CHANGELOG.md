@@ -1,6 +1,33 @@
 <!-- Name: Changelog -->
 #Changelog
 
+## Changelog for v 0.14
+
+Version 0.14 represents the culmination of three months of efforts, yet another step in the current time-based release scheme.
+
+This release features much improved tabular print-outs, thanks to ``tabulate``, faster circuit checking and reverse node look-ups.
+
+Moreover, as in the previous releases, many commits were devoted to improving the documentation: you can find the new, improved documentation online at http://ahkab.readthedocs.org/en/latest/
+
+### Features added:
+
+* Use ``tabulate`` to print out pretty tables. *They are pretty, oh so pretty tables.*
+* Add and use ``circuit.get_nodes_number()``.
+* Change ``nodes_dict`` to speed up reverse lookups.
+* Faster duplicate IDs check.
+
+### Changes from contributors and pull requests merged:
+
+*None.* 
+
+### Bugs fixed, short list:
+
+* BUGFIX: row/col reference,
+* BUGFIX: Suppress printing of the netlist file if there is None.
+* BUGFIX: Add a wrapper around stdout to fix encoding errors on *UNIX, when no locale is set (PY2 only).
+* BUGFIX: Print warning if the locale is not set.
+
+
 ## Changelog for v 0.13
 
 Version 0.13 represents the culmination of efforts dating back to January and contains 135 commits.
