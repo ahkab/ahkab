@@ -73,6 +73,9 @@ Module reference
 
 """
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import sys
 
 import numpy as np
@@ -240,20 +243,20 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
         J = 0
 
     printing.print_info_line(("MNA (reduced):", 5), verbose)
-    printing.print_info_line((str(mna), 5), verbose)
+    printing.print_info_line((mna, 5), verbose)
     printing.print_info_line(("AC (reduced):", 5), verbose)
-    printing.print_info_line((str(AC), 5), verbose)
+    printing.print_info_line((AC, 5), verbose)
     printing.print_info_line(("J (reduced):", 5), verbose)
-    printing.print_info_line((str(J), 5), verbose)
+    printing.print_info_line((J, 5), verbose)
     printing.print_info_line(("Nac (reduced):", 5), verbose)
-    printing.print_info_line((str(Nac), 5), verbose)
+    printing.print_info_line((Nac, 5), verbose)
 
     sol = results.ac_solution(circ, start=start, stop=stop,
                               points=nsteps+1, stype=sweep_type, op=x0, 
                               outfile=outfile)
 
     # setup the initial values to start the iteration:
-    nv = len(circ.nodes_dict)
+    nv = circ.get_nodes_number()
     j = np.complex('j')
 
     Gmin_matrix = dc_analysis.build_gmin_matrix(
@@ -312,12 +315,10 @@ def _generate_AC(circ, shape):
 
     """
     AC = np.matrix(np.zeros((shape[0] + 1, shape[1] + 1)))
-    nv = len(circ.nodes_dict)  # - 1
+    nv = circ.get_nodes_number()  # - 1
     i_eq = 0  # each time we find a vsource or vcvs or ccvs, we'll add one to this.
     for elem in circ:
-        if isinstance(elem, devices.VSource) or isinstance(elem, devices.EVSource) or \
-                isinstance(elem, devices.HVSource):
-            # notice that hvsources aren't yet implemented now!
+        if circuit.is_elem_voltage_defined(elem) and not isinstance(elem, devices.Inductor):
             i_eq = i_eq + 1
         elif isinstance(elem, devices.Capacitor):
             n1 = elem.n1
@@ -361,7 +362,7 @@ def _generate_Nac(circ):
     circ : Circuit instance
         The circuit instance for which the matrix will be generated.
     """
-    n_of_nodes = len(circ.nodes_dict)
+    n_of_nodes = circ.get_nodes_number()
     Nac = np.mat(np.zeros((n_of_nodes, 1)), dtype=complex)
     j = np.complex('j')
     # process `ISource`s

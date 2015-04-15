@@ -30,11 +30,18 @@ This module contains a diode element and its model class.
 #         |/|
 #
 
-from __future__ import division
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
 
 import numpy as np
 
-from math import exp
+try:
+    import scipy, scipy.optimize
+    from scipy.optimize import newton
+except ImportError:
+    pass
+    # pypy run. If the user will try numeric stuff we'll fail
+    # ungracefully. After all, this is an experiment!
 
 from . import constants
 from . import printing
@@ -43,7 +50,7 @@ from . import options
 
 damping_factor = 4.
 
-class diode:
+class diode(object):
     """A diode element.
 
     **Parameters:**
@@ -79,9 +86,9 @@ class diode:
         self.is_nonlinear = True
         self.is_symbolic = True
         self.dc_guess = [0.425]
-        class dev_class:
+        class _dev_class(object):
             pass
-        self.device = dev_class()
+        self.device = _dev_class()
         self.device.AREA = AREA if AREA is not None else 1.0
         self.device.T = T
         self.device.last_vd = .425
@@ -95,7 +102,7 @@ class diode:
             self.device.T = constants.T
 
         if ic is not None:  # fixme
-            print "(W): ic support in diodes is very experimental."
+            print("(W): ic support in diodes is very experimental.")
             self.dc_guess = ic
         self.ic = ic
         self.off = off
@@ -103,9 +110,9 @@ class diode:
             if self.ic is None:
                 self.ic = 0
             else:
-                print "(W): IC statement in diodes takes precedence over OFF."
-                print "(W): If you are performing a transient simulation with uic=2,"
-                print "(W): you may want to check the initial value."
+                print("(W): IC statement in diodes takes precedence over OFF.")
+                print("(W): If you are performing a transient simulation with uic=2,")
+                print("(W): you may want to check the initial value.")
 
     def _get_T(self):
         return self.device.T
@@ -113,12 +120,15 @@ class diode:
     def set_temperature(self, T):
         """Set the operating temperature IN KELVIN degrees
         """
-        self.device.T = T
+        if self.device.T != T:
+            self.device.T = T
+            # reset the old values, different temperature
+            self.device._gm_db = {}
+            self.device._i_db = {}
 
     def __str__(self):
-        T = self._get_T()
         rep = "%s area=%g T=%g" % (
-            self.model.name, self.device.AREA, self.device.T)
+            self.model.name, self.device.AREA, self._get_T())
         if self.ic is not None:
             rep = rep + " ic=" + str(self.ic)
         elif self.off:
@@ -129,6 +139,9 @@ class diode:
         return self.ports
 
     def get_drive_ports(self, op):
+        if not op == 0:
+            raise ValueError('Diode %s has no output port %d' %
+                             (self.part_id, op))
         return self.ports
 
     def istamp(self, ports_v, time=0, reduced=True):
@@ -155,9 +168,9 @@ class diode:
         istamp = np.array((i, -i), dtype=np.float64)
         indices = ((self.n1 - 1*reduced, self.n2 - 1*reduced), (0, 0))
         if reduced:
-            delete_i = [pos for pos, i in enumerate(indices[0]) if i == -1]
+            delete_i = [pos for pos, ix in enumerate(indices[0]) if ix == -1]
             istamp = np.delete(istamp, delete_i, axis=0)
-            indices = zip(*[(i, j) for i, j in zip(*indices) if i != -1])
+            indices = tuple(zip(*[(ix, j) for ix, j in zip(*indices) if ix != -1]))
         return indices, istamp
 
     def i(self, op_index, ports_v, time=0):  # with gmin added
@@ -195,24 +208,24 @@ class diode:
             zap_rc = [pos for pos, i in enumerate(indices[1][:2]) if i == -1]
             stamp = np.delete(stamp, zap_rc, axis=0)
             stamp = np.delete(stamp, zap_rc, axis=1)
-            indices = zip(*[(i, y) for i, y in zip(*indices) if (i != -1 and y != -1)])
+            indices = tuple(zip(*[(i, y) for i, y in zip(*indices) if (i != -1 and y != -1)]))
             stamp_flat = stamp.reshape(-1)
             stamp_folded = []
             indices_folded = []
             for ix, it in enumerate([(i, y) for i, y in zip(*indices)]):
-                if not it in indices_folded:
+                if it not in indices_folded:
                     indices_folded.append(it)
                     stamp_folded.append(stamp_flat[ix])
                 else:
                     w = indices_folded.index(it)
                     stamp_folded[w] += stamp_flat[ix]
-            indices = zip(*indices_folded)
+            indices = tuple(zip(*indices_folded))
             stamp = np.array(stamp_folded)
         return indices, stamp
 
     def g(self, op_index, ports_v, port_index, time=0):
         if not port_index == 0:
-            raise Exception, "Attepted to evaluate a diode's gm on an unknown port."
+            raise Exception("Attepted to evaluate a diode's gm on an unknown port.")
         v = ports_v[0]
         if v in self.device._gm_db:
             gm = self.device._gm_db[v]
@@ -222,20 +235,33 @@ class diode:
         return gm
 
     def get_op_info(self, ports_v_v):
+        """Information regarding the Operating Point (OP)
+
+        **Parameters:**
+
+        ports_v : list of lists
+            The parameter is to be set to ``[[v]]``, where ``v`` is the voltage
+            applied to the diode terminals.
+
+        **Returns:**
+
+        op_keys : list of strings
+            The labels corresponding to the numeric values in ``op_info``.
+        op_info : list of floats
+            The values corresponding to ``op_keys``.
+        """
         vn1n2 = float(ports_v_v[0][0])
         idiode = self.i(0, (vn1n2,))
         gmdiode = self.g(0, (vn1n2,), 0)
-        info = ["V(n1-n2): ", vn1n2, "[V]", "I(n1-n2):", idiode, "[A]", "P:",
-                vn1n2 * idiode, "g:", gmdiode, "[A/V]", "T:", self._get_T(), "K"]
-        arr = [[self.part_id.upper()] + info]
-        strarr = printing.table_setup(arr)
-        return strarr
-
-    def print_op_info(self, ports_v):
-        print self.get_op_info(ports_v),
+        op_keys = ["Part ID", "V(n1-n2) [V]", "I(n1-n2) [A]", "P [W]",
+                "gm [A/V]", u"T [\u00b0K]"]
+        op_info = [self.part_id.upper(), vn1n2, idiode, vn1n2*idiode, gmdiode,
+                   self._get_T()]
+        return op_keys, op_info
 
     def get_netlist_elem_line(self, nodes_dict):
-        ret = "%s %s %s %s" % (self.part_id, self.n1, self.n2, self.model.name)
+        ext_n1, ext_n2 = nodes_dict[self.n1], nodes_dict[self.n2]
+        ret = "%s %s %s %s" % (self.part_id, ext_n1, ext_n2, self.model.name)
         # append the optional part:
         # [<AREA=float> <T=float> <IC=float> <OFF=boolean>]
         ret += " AREA=%g" % self.device.AREA
@@ -344,11 +370,11 @@ class diode_model:
                "VJ=%g FC=%g CP=%g TT=%g BV=%g IBV=%g KF=%g AF=%g FFE=%g " + \
                "TEMP=%g XTI=%g EG=%g TBV=%g TRS=%g TTT1=%g TTT2=%g TM1=%g " + \
                "TM2=%g" 
-        print strm % (self.name, self.IS, self.N, self.ISR, self.NR, self.RS,
+        print(strm % (self.name, self.IS, self.N, self.ISR, self.NR, self.RS,
                       self.CJ0, self.M, self.VJ, self.FC, self.CP, self.TT,
                       self.BV, self.IBV, self.KF, self.AF, self.FFE, self.TEMP,
                       self.XTI, self.EG, self.TBV, self.TRS, self.TTT1,
-                      self.TTT2, self. TM1, self. TM2)
+                      self.TTT2, self. TM1, self. TM2))
 
     def get_i(self, vext, dev):
         if dev.T != self.T:
@@ -357,33 +383,27 @@ class diode_model:
             i = self._get_i(vext) * dev.AREA
             dev.last_vd = vext
         else:
-            i = self._get_irs(vext, dev)
+            vd = dev.last_vd if dev.last_vd is not None else 10*self.VT
+            vd = newton(self._obj_irs, vd, fprime=self._obj_irs_prime,
+                        args=(vext, dev), tol=options.vea, maxiter=500)
+            i = self._get_i(vext-vd)
+            dev.last_vd = vd
         return i
 
-    def _get_irs(self, vext, dev):
-        vth = self.VT
-        vd = dev.last_vd if dev.last_vd is not None else 10*vth
-        idiode = self._get_i(vd) * dev.AREA
-        i = 0
-        while True:
-            gm = self.get_gm(0, [vd], 0, dev, rs=False)
-            dvd = (vext - idiode * self.RS - vd) / (1.0 + gm * self.RS)
-            vd = vd + min(damping_factor*self.VT, abs(dvd)) * np.sign(dvd)
-            idiode_old = idiode
-            idiode = self._get_i(vd) * dev.AREA
-            di = idiode - idiode_old
-            if utilities.convergence_check(x=(idiode, vd), dx=(di, dvd), residuum=((vd - vext) / self.RS + idiode, vext - vd - idiode * self.RS), nv_minus_one=1)[0]:
-                break
-            i += 1
-        dev.last_vd = vd
-        return idiode
+    def _obj_irs(self, x, vext, dev):
+        # obj fn for newton
+        return x/self.RS-self._get_i(vext-x)*dev.AREA
+
+    def _obj_irs_prime(self, x, vext, dev):
+        # obj fn derivative for newton
+        return 1./self.RS + self.get_gm(0, [vext-x], 0, dev, rs=False)
 
     def _safe_exp(self, x):
-        return exp(x) if x < 70 else exp(70) + 10 * x
+        return np.exp(x) if x < 70 else np.exp(70) + 10 * x
 
     def _get_i(self, v):
-        i = self.IS * (self._safe_exp(v / (self.N * self.VT)) - 1) \
-            + self.ISR * (self._safe_exp(v / (self.NR * self.VT)) - 1)
+        i = self.IS * (self._safe_exp(v/(self.N * self.VT)) - 1) \
+            + self.ISR * (self._safe_exp(v/(self.NR * self.VT)) - 1)
         return i
 
     def get_gm(self, op_index, ports_v, port_index, dev, rs=True):
@@ -403,9 +423,9 @@ class diode_model:
     def set_temperature(self, T):
         T = float(T)
         self.EG = constants.si.Eg(T)
-        ni = constants.si.ni(T)
-        self.IS = self.IS * (T / self.T) ** (self.XTI / self.N) * math.exp(-constants.e
-                                                                           * constants.si.Eg(300) / (self.N * constants.k * T) * (1 - T / self.T))
-        self.BV = self.BV - self.TBV * (T - self.T)
-        self.RS = self.RS * (1 + self.TRS * (T - self.T))
+        self.IS = self.IS*(T/self.T)**(self.XTI/self.N)* \
+                  np.exp(-constants.e*constants.si.Eg(300)/(self.N*constants.k*T)
+                         *(1 - T/self.T))
+        self.BV = self.BV - self.TBV*(T - self.T)
+        self.RS = self.RS*(1 + self.TRS*(T - self.T))
         self.T = T

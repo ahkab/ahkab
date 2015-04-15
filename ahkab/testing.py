@@ -361,6 +361,9 @@ Module reference
 
 """
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import time
 import os
 import sys
@@ -368,12 +371,19 @@ import pickle
 import unittest
 from warnings import warn
 
-from ConfigParser import ConfigParser
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import ConfigParser
 
 import numpy as np
 import sympy
 
-from scipy.interpolate import InterpolatedUnivariateSpline
+try:
+    from scipy.interpolate import InterpolatedUnivariateSpline
+except ImportError:
+    pass
+    # pypy run!
 
 from nose.tools import ok_, nottest
 from nose.plugins.skip import SkipTest
@@ -407,17 +417,23 @@ class NetlistTest(unittest.TestCase):
 
     sim_opts : dict, optional
         A dictionary containing the options to be used for the test.
+
+    verbose : int
+        The verbosity level to be used in the test. From 0 (silent) to
+        6 (verbose). Notice higher verbosity values usually result in
+        higher coverage. Defaults to 6.
     """
 
-    def __init__(self, test_id, er=1e-6, ea=1e-9, sim_opts={}):
+    def __init__(self, test_id, er=1e-6, ea=1e-9, sim_opts=None, verbose=6):
         unittest.TestCase.__init__(self, methodName='test')
         self.test_id = test_id
         self.er = er
         self.ea = ea
         self.test.__func__.__doc__ = "%s simulation" % (test_id, )
         self.ref_data = {} # the reference results will be loaded here
-        self._sim_opts = sim_opts
+        self._sim_opts = sim_opts if sim_opts is not None else {}
         self._reset_opts = {}
+        self.verbose=verbose
 
     def _set_sim_opts(self, sim_opts):
         for opt in sim_opts.keys():
@@ -454,6 +470,9 @@ class NetlistTest(unittest.TestCase):
         cp = ConfigParser()
         cp.read(os.path.join(self.reference_path, '%s.ini' % self.test_id))
         self.skip = bool(int(cp.get('test', 'skip-on-travis')))
+        if 'TRAVIS' in os.environ and self.skip:
+            # skip even loading the references
+            return
         assert self.test_id == cp.get('test', 'name')
 
         netlist = cp.get('test', 'netlist')
@@ -484,30 +503,30 @@ class NetlistTest(unittest.TestCase):
 
         # Are we in a reference run?
         self.ref_run = False
-        for i in self.refs.values():
+        for i in list(self.refs.values()):
             self.ref_run = not os.path.isfile(i)
             if self.ref_run:
-                print "RUNNING REFERENCE RUN - INVALID TEST!"
+                print("RUNNING REFERENCE RUN - INVALID TEST!")
                 break
         if not self.ref_run:
             self._load_references()
 
     def _load_references(self):
-        for t, file_ref in self.refs.items():
+        for t, file_ref in list(self.refs.items()):
             if 'pickle' in file_ref:
-                with open(file_ref, 'r') as fp:
+                with open(file_ref, 'rb') as fp:
                     self.ref_data.update({t: pickle.load(fp)})
             else:
-                data, headers, _, _ = csvlib.load_csv(file_ref, [], None, 0L, verbose=0)
+                data, headers, _, _ = csvlib.load_csv(file_ref, [], None, 0, verbose=0)
                 res = _MyDict()
                 if os.path.splitext(file_ref)[1][1:].lower() == 'ac':
                     res.update({headers[0]:data[0, :]})
                     for i, h in enumerate(headers):
-                         if h[0] == h[-1] == '|':
-                             pi = headers.index('arg('+h[1:-1]+')')
-                             res.update({h[1:-1]:data[i, :]*np.exp(1j*data[pi, :])})
-                         else:
-                             continue
+                        if h[0] == h[-1] == '|':
+                            pi = headers.index('arg('+h[1:-1]+')')
+                            res.update({h[1:-1]:data[i, :]*np.exp(1j*data[pi, :])})
+                        else:
+                            continue
                 else:
                     for i, h in enumerate(headers):
                         res.update({h: data[i, :]})
@@ -515,29 +534,29 @@ class NetlistTest(unittest.TestCase):
                 self.ref_data.update({t: res})
 
     def _run_test(self):
-        # no reference runs with nose
-        if sys.argv[0].endswith('nosetests') and self.ref_run:
-            self._reset_sim_opts()
-            raise SkipTest
         # check whether we are on travis or not and skip if needed.
         if 'TRAVIS' in os.environ and self.skip:
             self._reset_sim_opts()
             raise SkipTest
+        # no reference runs with nose
+        if sys.argv[0].endswith('nosetests') and self.ref_run:
+            self._reset_sim_opts()
+            raise SkipTest
         self._set_sim_opts(self._sim_opts)
-        print "Running test... ",
+        print("Running test... ", end="")
         start = time.time()
         res = main(filename=self.netlist,
                    outfile=os.path.join(self.reference_path, self.test_id),
-                   verbose=0)
+                   verbose=self.verbose)
         stop = time.time()
         times = stop - start
-        print "done.\nThe test took %f s" % times
+        print("done.\nThe test took %f s" % times)
         return res
 
     def _check(self, res, ref):
         if hasattr(res, 'get_x'):
             x = res.get_x()
-            for k in res.keys():
+            for k in list(res.keys()):
                 if np.all(res[k] == x):
                     continue
                 elif np.any(np.iscomplex(res[k])) or np.any(np.iscomplex(ref[k])):
@@ -546,24 +565,24 @@ class NetlistTest(unittest.TestCase):
                     refx = ref[ref.x].reshape((-1, ))
                     d1 = InterpolatedUnivariateSpline(x, np.real(res[k]).reshape((-1, )))
                     d2 = InterpolatedUnivariateSpline(refx, np.real(ref[k]).reshape((-1, )))
-                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED (Re)" % self.test_id)
+                    ok(d1(x), d2(x), rtol=self.er, atol=self.ea, msg=("Test %s FAILED (Re)" % self.test_id))
                     d1 = InterpolatedUnivariateSpline(x, np.imag(res[k]).reshape((-1, )))
                     d2 = InterpolatedUnivariateSpline(refx, np.imag(ref[k]).reshape((-1, )))
-                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED (Im)" % self.test_id)
+                    ok(d1(x), d2(x), rtol=self.er, atol=self.ea, msg=("Test %s FAILED (Im)" % self.test_id))
                 else:
                     # Interpolate the results to compare.
                     x = x.reshape((-1, ))
                     refx = ref[ref.x].reshape((-1, ))
                     d1 = InterpolatedUnivariateSpline(x, np.real_if_close(res[k]).reshape((-1, )))
                     d2 = InterpolatedUnivariateSpline(refx, np.real_if_close(ref[k]).reshape((-1, )))
-                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
+                    ok(d1(x), d2(x), rtol=self.er, atol=self.ea, msg=("Test %s FAILED" % self.test_id))
         elif isinstance(res, results.op_solution):
-            for k in ref.keys():
-                assert k in res
-                ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
+            for k in list(res.keys()):
+                assert k in ref
+                ok(res[k], ref[k], rtol=self.er, atol=self.ea, msg=("Test %s FAILED" % self.test_id))
         elif isinstance(res, results.pz_solution):
             # recover the reference signularities from Re/Im data
-            ref_sing_keys = ref.keys()[:]
+            ref_sing_keys = list(ref.keys())[:]
             ref_sing_keys.sort()
             assert len(ref_sing_keys) % 2 == 0
             ref_sing = [ref[ref_sing_keys[int(len(ref_sing_keys)/2) + k]] + ref[ref_sing_keys[k]]*1j \
@@ -579,12 +598,12 @@ class NetlistTest(unittest.TestCase):
                 for i, j in zip(res, ref):
                     self._check(i, j)
             elif res is not None:
-                for k in ref.keys():
-                    assert k in res
+                for k in list(res.keys()):
+                    assert k in ref
                     if isinstance(res[k], dict): # hence ref[k] will be a dict too
                         self._check(res[k], ref[k])
                     elif isinstance(ref[k], sympy.Basic) and isinstance(res[k], sympy.Basic):
-                        assert (res[k] == ref[k]) or (sympy.simplify(ref[k]/res[k]) == 1)
+                        assert (res[k] == ref[k]) or (sympy.simplify(ref[k] - res[k]) == 0)
                     else:
                         assert res[k] == ref[k]
 
@@ -597,9 +616,9 @@ class NetlistTest(unittest.TestCase):
                 print("Checking results for %s analysis..." % t)
                 self._check(res[t], self.ref_data[t])
         else:
-            for t, ref_file in self.refs.items():
+            for t, ref_file in list(self.refs.items()):
                 if '.pickle' in ref_file:
-                    with open(ref_file, 'w') as fp:
+                    with open(ref_file, 'wb') as fp:
                         pickle.dump(res[t], fp, protocol=2)
                 else:
                     res_file = os.path.join(self.reference_path,
@@ -644,7 +663,8 @@ class APITest(unittest.TestCase):
         Should we skip the test on Travis? Set to ``True`` for long tests
     """
 
-    def __init__(self, test_id, circ, an_list, er=1e-6, ea=1e-9, sim_opts={}, skip_on_travis=False):
+    def __init__(self, test_id, circ, an_list, er=1e-6, ea=1e-9, sim_opts=None,
+                 skip_on_travis=False):
         unittest.TestCase.__init__(self, methodName='test')
         self.test_id = test_id
         self.er = er
@@ -654,9 +674,9 @@ class APITest(unittest.TestCase):
         self.skip = skip_on_travis
         self.circ = circ
         self.an_list = an_list
-        self._sim_opts = sim_opts
+        self._sim_opts = sim_opts if sim_opts is not None else {}
         self._reset_opts = {}
-        self._set_sim_opts(sim_opts)
+        self._set_sim_opts(self._sim_opts)
         self.res = None
         for an in an_list:
             if 'outfile' in an and self.test_id not in an['outfile']:
@@ -688,6 +708,10 @@ class APITest(unittest.TestCase):
             self.reference_path = os.path.join(wd, self.test_id)
         else:
             self.reference_path = os.path.join(wd, 'tests', self.test_id)
+
+        if 'TRAVIS' in os.environ and self.skip:
+            # skip even loading the references
+            return
 
         self.types = [a['type'] for a in self.an_list]
 
@@ -721,30 +745,30 @@ class APITest(unittest.TestCase):
 
         # Are we in a reference run?
         self.ref_run = False
-        for i in self.refs.values():
+        for i in list(self.refs.values()):
             self.ref_run = not os.path.isfile(i)
             if self.ref_run:
-                print "RUNNING REFERENCE RUN - INVALID TEST!"
+                print("RUNNING REFERENCE RUN - INVALID TEST!")
                 break
         if not self.ref_run:
             self._load_references()
 
     def _load_references(self):
-        for t, file_ref in self.refs.items():
+        for t, file_ref in list(self.refs.items()):
             if '.symbolic' in file_ref:
                 with open(file_ref, 'rb') as fp:
                     self.ref_data.update({t: pickle.load(fp)})
             else:
-                data, headers, _, _ = csvlib.load_csv(file_ref, [], None, 0L, verbose=0)
+                data, headers, _, _ = csvlib.load_csv(file_ref, [], None, 0, verbose=0)
                 res = _MyDict()
                 if os.path.splitext(file_ref)[1][1:].lower() == 'ac':
                     res.update({headers[0]:data[0, :]})
                     for i, h in enumerate(headers):
-                         if h[0] == h[-1] == '|':
-                             pi = headers.index('arg('+h[1:-1]+')')
-                             res.update({h[1:-1]:data[i, :]*np.exp(1j*data[pi, :])})
-                         else:
-                             continue
+                        if h[0] == h[-1] == '|':
+                            pi = headers.index('arg('+h[1:-1]+')')
+                            res.update({h[1:-1]:data[i, :]*np.exp(1j*data[pi, :])})
+                        else:
+                            continue
                 else:
                     for i, h in enumerate(headers):
                         res.update({h: data[i, :]})
@@ -755,18 +779,18 @@ class APITest(unittest.TestCase):
         if 'TRAVIS' in os.environ and self.skip:
             self._reset_sim_opts()
             raise SkipTest
-        print "Running test... ",
+        print("Running test... ", end=' ')
         start = time.time()
         res = run(self.circ, self.an_list)
         stop = time.time()
         times = stop - start
-        print "done.\nThe test took %f s" % times
+        print("done.\nThe test took %f s" % times)
         return res
 
     def _check(self, res, ref):
         if hasattr(res, 'get_x'):
             x = res.get_x()
-            for k in res.keys():
+            for k in list(res.keys()):
                 if np.all(res[k] == x):
                     continue
                 elif np.any(np.iscomplex(res[k])) or np.any(np.iscomplex(ref[k])):
@@ -775,21 +799,21 @@ class APITest(unittest.TestCase):
                     refx = ref[ref.x].reshape((-1, ))
                     d1 = InterpolatedUnivariateSpline(x, np.real(res[k]).reshape((-1, )))
                     d2 = InterpolatedUnivariateSpline(refx, np.real(ref[k]).reshape((-1, )))
-                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED (Re)" % self.test_id)
+                    ok(d1(x), d2(x), rtol=self.er, atol=self.ea, msg=("Test %s FAILED (Re)" % self.test_id))
                     d1 = InterpolatedUnivariateSpline(x, np.imag(res[k]).reshape((-1, )))
                     d2 = InterpolatedUnivariateSpline(refx, np.imag(ref[k]).reshape((-1, )))
-                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED (Im)" % self.test_id)
+                    ok(d1(x), d2(x), rtol=self.er, atol=self.ea, msg=("Test %s FAILED (Im)" % self.test_id))
                 else:
                     # Interpolate the results to compare.
                     x = x.reshape((-1, ))
                     refx = ref[ref.x].reshape((-1, ))
                     d1 = InterpolatedUnivariateSpline(x, np.real_if_close(res[k]).reshape((-1, )))
                     d2 = InterpolatedUnivariateSpline(refx, np.real_if_close(ref[k]).reshape((-1, )))
-                    ok_(np.allclose(d1(x), d2(x), rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
+                    ok(d1(x), d2(x), rtol=self.er, atol=self.ea, msg=("Test %s FAILED" % self.test_id))
         elif isinstance(res, results.op_solution):
-            for k in res.keys():
+            for k in list(res.keys()):
                 assert k in ref
-                ok_(np.allclose(res[k], ref[k], rtol=self.er, atol=self.ea), "Test %s FAILED" % self.test_id)
+                ok(res[k], ref[k], rtol=self.er, atol=self.ea, msg=("Test %s FAILED" % self.test_id))
         else:
             if isinstance(res, list) or isinstance(res, tuple):
                 self._check(res[0], ref)
@@ -808,7 +832,7 @@ class APITest(unittest.TestCase):
         res = self._run_test()
         if not self.ref_run:
             for t in list(res.keys()):
-                ok_(t in self.ref_data, 'simulation %s not in the reference data' % t)
+                ok_(t in self.ref_data, 'simulation %s not in the reference data')
                 print("Checking results for %s analysis..." % t)
                 self._check(res[t], self.ref_data[t])
         else:
@@ -829,3 +853,11 @@ class APITest(unittest.TestCase):
             for f in self.rmfiles:
                 os.remove(f)
         self._reset_sim_opts()
+
+def ok(x, ref, rtol, atol, msg):
+    try:
+        assert np.allclose(x, ref, rtol=rtol, atol=atol)
+    except AssertionError:
+        print("REL: %g (max %g), ABS: %g (max %g)" % (max(abs(2*(x-ref)/(x+ref))), rtol, max(abs(x-ref)), atol))
+        raise AssertionError(msg)
+

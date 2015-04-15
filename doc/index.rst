@@ -12,8 +12,17 @@ Command line interface and netlist syntax
 .. toctree::
    :maxdepth: 1
 
+   help/Install-Notes
+   help/Command-Line-Help
    help/Netlist-Syntax
 
+Help pages on particular elements
+---------------------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   help/Mutual-Inductors
 
 Module reference
 ----------------
@@ -28,10 +37,15 @@ Module reference
    constants
    csvlib
    dc_analysis
+   dc_guess
    devices
    diode
    ekv
+   gear
+   implicit_euler
    mosq
+   netlist_parser
+   options
    plotting
    printing
    pss
@@ -42,8 +56,17 @@ Module reference
    symbolic
    testing 
    ticker
+   transient
    trap
    utilities
+
+Python API
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   examples/Python_API
 
 Example simulations
 -------------------
@@ -51,32 +74,17 @@ Example simulations
 .. toctree::
    :maxdepth: 1
 
-   examples/Python_API
    examples/OP_simulation
+   examples/Transient-Example
    examples/Symbolic-simulation
 
-Documentation in progress
--------------------------
+License
+-------
 
-.. automodule:: ahkab.gear
-   :members:
+.. toctree::
+   :maxdepth: 1
 
-.. automodule:: ahkab.netlist_parser
-   :members:
-
-.. automodule:: ahkab.transient
-   :members:
-
-.. automodule:: ahkab.dc_guess
-   :members:
-
-.. automodule:: ahkab.implicit_euler
-   :members:
-
-.. automodule:: ahkab.options
-   :members:
-
-
+   misc/COPYING
 
 Indices and tables
 ==================

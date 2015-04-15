@@ -55,7 +55,8 @@ Reference
 ~~~~~~~~~
 
 """
-from __future__ import unicode_literals
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
 
 import copy
 
@@ -67,6 +68,7 @@ from . import devices
 from . import transient
 from . import plotting
 from . import printing
+from . import py3compat
 from . import options
 from . import results
 
@@ -180,7 +182,7 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
         if np.isscalar(output_port):
             output_port = (output_port, mc.gnd)
         if (type(output_port) == tuple or type(output_port) == list) \
-           and (type(output_port[0]) == str or type(output_port[0]) == unicode):
+           and type(output_port[0]) in py3compat.string_types:
             output_port = [mc.ext_node_to_int(o) for o in output_port]
         we_got_source = False
         for e in mc:
@@ -209,7 +211,7 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
             MNA[1:, 1:] += J
     D = transient.generate_D(mc, MNA[1:, 1:].shape)
     MNAinv = np.linalg.inv(MNA[1:, 1:] + shift*D[1:, 1:])
-    nodes_m1 = len(mc.nodes_dict) - 1
+    nodes_m1 = mc.get_nodes_number() - 1
     vde1 = -1
     MC = np.zeros((MNA.shape[0] - 1, 1))
     TCM = None
@@ -232,7 +234,7 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
                 raise Exception("Unknown input source type %s" % input_source)
         else:
             continue
-        TV = -1. * MNAinv * MC
+        TV = -1. * np.dot(MNAinv, MC)
         dei_victim = 0
         vde2 = -1
         for e2 in mc:
@@ -290,7 +292,7 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
                 MC[nodes_m1 + vde1, 0] += -1.
             else:
                 continue
-            TV = -1. * MNAinv * MC
+            TV = -1.*np.dot(MNAinv, MC)
             v = 0
             o1, o2 = output_port
             if o1:
@@ -330,8 +332,8 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
             zeros = []
     else:
         zeros = []
-    poles = np.array(filter(lambda a: np.abs(a) < options.pz_max, poles), dtype=np.complex_)
-    zeros = np.array(filter(lambda a: np.abs(a) < options.pz_max, zeros), dtype=np.complex_)
+    poles = np.array([a for a in poles if np.abs(a) < options.pz_max], dtype=np.complex_)
+    zeros = np.array([a for a in zeros if np.abs(a) < options.pz_max], dtype=np.complex_)
     poles = np.sort_complex(poles)
     zeros = np.sort_complex(zeros)
     res = results.pz_solution(mc, poles, zeros, outfile)

@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import numpy as np
 import sympy
 import ahkab
@@ -38,11 +38,10 @@ def test():
     mycircuit.add_vsource(part_id="V1", n1="in", n2=gnd, dc_value=5, ac_value=1)
 
     if cli:
-        printing.print_circuit(mycircuit)
+        print(mycircuit)
 
-    subs = symbolic.parse_substitutions(('E2=E1', 'E3=E1', 'R01=R00', 'R02=R00',
-                                         'R11=R00', 'R10=R00', 'C11=C10', 'Rf2=Rf1',
-                                         'Rin=R00'))
+    subs = {'E2':'E1', 'E3':'E1', 'R01':'R00', 'R02':'R00', 'R11':'R00',
+            'R10':'R00', 'C11':'C10', 'Rf2':'Rf1', 'Rin':'R00'}
 
     symbolic_sim = ahkab.new_symbolic(ac_enable=True, subs=subs, outfile='svf_biquad')
     ac_sim = ahkab.new_ac(start=0.1, stop=100e6, points=1000, x0=None, outfile='svf_biquad')
@@ -81,9 +80,9 @@ def test():
                               r['symbolic'][0].as_symbol('V1'):1,
                               r['symbolic'][0].as_symbol('s'):1j*w,
                               })
-        out_lp = sympy.lambdify((w,), out_lp, modules='numpy')
-        out_bp = sympy.lambdify((w,), out_bp, modules='numpy')
-        out_hp = sympy.lambdify((w,), out_hp, modules='numpy')
+        out_lp = sympy.lambdify((w,), out_lp)
+        out_bp = sympy.lambdify((w,), out_bp)
+        out_hp = sympy.lambdify((w,), out_hp)
         ws = r['ac']['w'][::30]
         fig = plt.figure()
         plt.title(mycircuit.title)

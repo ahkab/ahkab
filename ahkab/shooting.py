@@ -19,6 +19,8 @@
 
 """Periodic steady state analysis based on the shooting method."""
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
 
 import sys
 import numpy as np
@@ -109,7 +111,7 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
     if isinstance(x0, results.op_solution):
         x0 = x0.asmatrix()
     if mna is None or Tf is None:
-        (mna, Tf) = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
+        mna, Tf = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
         mna = utilities.remove_row_and_col(mna)
         Tf = utilities.remove_row(Tf, rrow=0)
     elif not mna.shape[0] == Tf.shape[0]:
@@ -136,7 +138,7 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
         circ=circ, tstart=0, tstep=step, tstop=10 * points * step, method="TRAP", x0=None, mna=mna, N=Tf,
         D=D, use_step_control=False, outfile=outfile + ".tran", return_req_dict={"points": points}, verbose=0)
     if xtran is None:
-        print "failed."
+        print("failed.")
         return None
     printing.print_info_line(("done.", 3), verbose)
 
@@ -148,12 +150,13 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
 
     MAass_static, MBass = _build_static_MAass_and_MBass(mna, D, step)
 
-    # This contains
-    # the time invariant part, Tf
-    # time variable component: Tt this is always the same, since the time interval is the same
-    # this holds all time-dependent sources (both V/I).
-    Tass_static_vector = _build_Tass_static_vector(
-        circ, Tf, points, step, tick, n_of_var, verbose)
+    # This contains the time invariant part, Tf. The time variable component,
+    # Tt, is always the same, since the time interval is the same this holds all
+    # time-dependent sources (both V/I).
+    Tf = Tf.squeeze() # silly numpy sum array of size 6,1 with array of size 6
+                      # get array of size 6,6
+    Tass_static_vector = _build_Tass_static_vector(circ, Tf, points, step, tick,
+                                                   n_of_var, verbose)
 
     converged = False
     printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
@@ -172,15 +175,15 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
                 xn_minus_1 = x[points - 1]
             else:
                 xn_minus_1 = x[index - 1]
-            MAass_variable, Tass_variable = _get_variable_MAass_and_Tass(
-                circ, x[index], xn_minus_1, mna, D, step, n_of_var)
+            MAass_variable, Tass_variable = _get_variable_MAass_and_Tass(circ,
+                    x[index], xn_minus_1, mna, D, step, n_of_var)
             MAass_variable_vector.append(MAass_variable + MAass_static)
             Tass_variable_vector.append(
                 Tass_variable + Tass_static_vector[index])
 
         dxN = _compute_dxN(circ, MAass_variable_vector, MBass,
                           Tass_variable_vector, n_of_var, points, verbose=verbose)
-        td = dc_analysis.get_td(dxN, locked_nodes, n=-1)
+        td = dc_analysis.get_td(dxN.reshape(-1, 1), locked_nodes, n=-1)
         x[points - 1] = td * dxN + x[points - 1]
 
         for index in range(points - 1):
@@ -190,7 +193,7 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
                 dxi_minus_1 = dx[index - 1]
             dx.append(
                 _compute_dx(MAass_variable_vector[index], MBass, Tass_variable_vector[index], dxi_minus_1))
-            td = dc_analysis.get_td(dx[index], locked_nodes, n=-1)
+            td = dc_analysis.get_td(dx[index].reshape(-1, 1), locked_nodes, n=-1)
             x[index] = td * dx[index] + x[index]
         dx.append(dxN)
 
@@ -220,16 +223,16 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
     tick.hide(verbose > 2)
     if converged:
         printing.print_info_line(("done.", 3), verbose)
-        t = np.mat(np.arange(points) * step)
+        t = np.arange(points) * step
         t = t.reshape((1, points))
-        xmat = x[0]
-        for index in xrange(1, points):
-            xmat = np.concatenate((xmat, x[index]), axis=1)
-        sol = results.pss_solution(
-            circ=circ, method="shooting", period=period, outfile=outfile, t_array=t, x_array=xmat)
+        xmat = x[0].reshape(-1, 1)
+        for index in range(1, points):
+            xmat = numpy.concatenate((xmat, x[index].reshape(-1, 1)), axis=1)
+        sol = results.pss_solution(circ=circ, method="shooting", period=period,
+                                   outfile=outfile, t_array=t, x_array=xmat)
         # print_results(circ, x, fdata, points, step)
     else:
-        print "failed."
+        print("failed.")
         sol = None
     return sol
 
@@ -246,32 +249,32 @@ def _vector_norm_wrapper(vector, norm_fun):
 def _build_static_MAass_and_MBass(mna, D, step):
     (C1, C0) = implicit_euler.get_df_coeff(step)
     MAass = mna + D * C1
-    MBass = D * C0
+    MBass = np.dot(D, C0)
     return (MAass, MBass)
 
 
 def _build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3):
     Tass_vector = []
-    nv = len(circ.nodes_dict)
+    nv = circ.get_nodes_number()
     printing.print_info_line(("Building Tass...", 5), verbose, print_nl=False)
 
     tick.reset()
     tick.display(verbose > 2)
-    for index in xrange(0, points):
-            Tt = np.zeros((n_of_var, 1))
+    for index in range(0, points):
+            Tt = numpy.zeros((n_of_var,))
             v_eq = 0
             time = index * step
             for elem in circ:
                     if (isinstance(elem, devices.VSource) or isinstance(elem, devices.ISource)) and elem.is_timedependent:
                         if isinstance(elem, devices.VSource):
-                                Tt[nv - 1 + v_eq, 0] = -1.0 * elem.V(time)
+                                Tt[nv - 1 + v_eq] = -1.0 * elem.V(time)
                         elif isinstance(elem, devices.ISource):
                                 if elem.n1:
-                                        Tt[elem.n1 - 1, 0] = \
-                                            Tt[elem.n1 - 1, 0] + elem.I(time)
+                                        Tt[elem.n1 - 1] = \
+                                            Tt[elem.n1 - 1] + elem.I(time)
                                 if elem.n2:
-                                        Tt[elem.n2 - 1, 0] = \
-                                            Tt[elem.n2 - 1, 0] - elem.I(time)
+                                        Tt[elem.n2 - 1] = \
+                                            Tt[elem.n2 - 1] - elem.I(time)
                     if circuit.is_elem_voltage_defined(elem):
                             v_eq = v_eq + 1
             tick.step()
@@ -283,7 +286,7 @@ def _build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3)
 
 
 def _get_variable_MAass_and_Tass(circ, xi, xi_minus_1, M, D, step, n_of_var):
-    Tass = np.zeros((n_of_var, 1))
+    Tass = np.zeros((n_of_var,))
     J = np.zeros((n_of_var, n_of_var))
     (C1, C0) = implicit_euler.get_df_coeff(step)
 
@@ -298,15 +301,15 @@ def _get_variable_MAass_and_Tass(circ, xi, xi_minus_1, M, D, step, n_of_var):
                 for port in ports:
                     v = 0  # build v: remember we trashed the 0 row and 0 col of mna -> -1
                     if port[0]:
-                        v = v + xi[port[0] - 1, 0]
+                        v = v + xi[port[0] - 1]
                     if port[1]:
-                        v = v - xi[port[1] - 1, 0]
+                        v = v - xi[port[1] - 1]
                     v_ports.append(v)
                 if n1:
-                    Tass[n1 - 1, 0] = Tass[n1 - 1, 0] + elem.i(index, v_ports)
+                    Tass[n1 - 1] = Tass[n1 - 1] + elem.i(index, v_ports)
                 if n2:
-                    Tass[n2 - 1, 0] = Tass[n2 - 1, 0] - elem.i(index, v_ports)
-                for pindex in xrange(len(ports)):
+                    Tass[n2 - 1] = Tass[n2 - 1] - elem.i(index, v_ports)
+                for pindex in range(len(ports)):
                     if n1:
                         if ports[pindex][0]:
                             J[n1 - 1, ports[pindex][0] - 1] = \
@@ -326,29 +329,28 @@ def _get_variable_MAass_and_Tass(circ, xi, xi_minus_1, M, D, step, n_of_var):
                                 J[n2 - 1, ports[pindex][1] - 1] + elem.g(
                                     index, v_ports, pindex)
 
-    Tass = Tass + D * C1 * xi + M * xi + D * C0 * xi_minus_1
+    Tass = Tass + np.dot(D*C1, xi) + np.dot(M, xi) + np.dot(D * C0, xi_minus_1)
 
     return (J, Tass)
 
 
 def _compute_dxN(circ, MAass_vector, MBass, Tass_vector, n_of_var, points, verbose=3):
-    temp_mat1 = np.mat(np.eye(n_of_var))
+    temp_mat1 = np.eye(n_of_var)
     for index in range(points):
-        temp_mat1 = -np.linalg.solve(MAass_vector[index], MBass*temp_mat1)
-    temp_mat2 = np.mat(np.zeros((n_of_var, 1)))
+        temp_mat1 = -np.linalg.solve(MAass_vector[index], np.dot(MBass, temp_mat1))
+    temp_mat2 = np.zeros((n_of_var,))
     for index in range(points):
         temp_mat3 = -np.linalg.solve(MAass_vector[index], Tass_vector[index])
         for index2 in range(index + 1, points):
-            temp_mat3 = -np.linalg.solve(MAass_vector[index2], MBass*temp_mat3)
+            temp_mat3 = -np.linalg.solve(MAass_vector[index2], np.dot(MBass, temp_mat3))
         temp_mat2 = temp_mat2 + temp_mat3
 
-    dxN = np.linalg.inv(
-        np.mat(np.eye(n_of_var)) - temp_mat1) * temp_mat2
+    dxN = np.dot(np.linalg.inv(np.eye(n_of_var) - temp_mat1), temp_mat2)
 
     return dxN
 
 
 def _compute_dx(MAass, MBass, Tass, dxi_minus_1):
-    dxi = -np.linalg.solve(MAass, MBass*dxi_minus_1 + Tass)
+    dxi = -np.linalg.solve(MAass, np.dot(MBass, dxi_minus_1) + Tass)
     # dxi = -1 * np.linalg.inv(MAass) * (MBass * dxi_minus_1 + Tass)
     return dxi

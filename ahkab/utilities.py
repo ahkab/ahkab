@@ -18,9 +18,15 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This file holds miscellaneous utility functions needed by the simulator.
+This module holds miscellaneous utility functions.
+
+Module reference
+################
+
 """
-from __future__ import unicode_literals, absolute_import
+
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
 
 import os
 import os.path
@@ -29,35 +35,53 @@ import operator
 import numpy as np
 
 from . import printing
+from . import py3compat
 from . import options
 
+#: The machine epsilon, the upper bound on the relative error due to rounding in
+#: floating point arithmetic.
 EPS = np.finfo(float).eps
 
 
-def expand_matrix(matrix, add_a_row, add_a_col):
-    """Adds a  row and/or a column to the given matrix.
-    Args:
-    matrix - the matrix to be manipulated
-    add_a_row - boolean, if set to true adds a row
-    add_a_col - boolean, if set to true adds a column
+def expand_matrix(matrix, add_a_row=False, add_a_col=False):
+    """Append a row and/or a column to the given matrix
 
-    Returns the new matrix"""
-    (n_row, n_col) = matrix.shape
+    **Parameters:**
+
+    matrix : ndarray
+        The matrix to be manipulated.
+    add_a_row : boolean, optional
+        If set to ``True`` a row is appended to the supplied matrix.
+    add_a_col : boolean
+        If set to ``True`` a column is appended.
+
+    **Returns:**
+
+    matrix : ndarray
+        A reference to the same matrix supplied.
+
+    """
+    n_row, n_col = matrix.shape
     if add_a_col:
-        col = np.mat(np.zeros((n_row, 1)))
+        col = np.zeros((n_row, 1))
         matrix = np.concatenate((matrix, col), axis=1)
     if add_a_row:
         if add_a_col:
             n_col = n_col + 1
-        row = np.mat(np.zeros((1, n_col)))
+        row = np.zeros((1, n_col))
         matrix = np.concatenate((matrix, row), axis=0)
     return matrix
 
 def set_submatrix(row, col, dest_matrix, source_matrix):
-    """Copies the ``source_matrix`` in ``dest_matrix``
+    """Copies a source matrix into another matrix
 
-    The coordinates of the upper left corner in the destination matrix where the
-    source matrix will be copied are ``(row, col)``.
+    row, col : ints
+        The coordinates of the upper left corner in the destination matrix where
+        the source matrix will be copied.
+    dest_matrix : ndarray
+        The matrix to be copied to.
+    source_matrix : ndarray
+        The matrix to be copied from.
 
     **Returns:**
 
@@ -70,60 +94,91 @@ def set_submatrix(row, col, dest_matrix, source_matrix):
     return dest_matrix
 
 def remove_row_and_col(matrix, rrow=0, rcol=0):
-    """Removes a row and a column from the matrix.
-    rrow and rcol must be positive, or None is returned
-    By default the first row and the first column are removed
-    If you don't wish to remove one of them, supply a index that is greater
-    than the matrix size.
-    eg. matrix is 3x3, you want to remove just the second row of matrix, supply:
-    rrow=1 and rcol=10 (or any number bigger than 2)
+    """Removes a row and/or a column from a matrix
+
+    **Parameters:**
+
+    matrix : ndarray
+        The matrix to be modified.
+    rrow : int or None, optional
+        The index of the row to be removed. If set to ``None``, no row
+        will be removed. By default the first row is removed.
+    rcol : int or None, optional
+        The index of the row to be removed. If set to ``None``, no row
+        will be removed. By default the first column is removed.
+
+    .. note::
+
+        No size checking is done.
+
+    **Returns:**
+
+    matrix : ndarray
+        A reference to the modified matrix.
     """
-    if rrow < 0 or rcol < 0:
-        return_matrix = None
-    else:
-        return_matrix = np.vstack(
-            (np.hstack((matrix[0:rrow, 0:rcol], matrix[0:rrow, rcol + 1:])), np.hstack((matrix[rrow + 1:, 0:rcol], matrix[rrow + 1:, rcol + 1:]))))
-    return return_matrix
+    if rrow is not None and rcol is not None:
+        return np.vstack((np.hstack((matrix[0:rrow, 0:rcol],
+                                     matrix[0:rrow, rcol+1:])),
+                          np.hstack((matrix[rrow+1:, 0:rcol],
+                                     matrix[rrow+1:, rcol+1:]))
+                          ))
+    elif rrow is not None:
+        return np.vstack((matrix[:rrow, :], matrix[rrow+1:, :]))
+    elif rcol is not None:
+        return np.hstack((matrix[:, :rcol], matrix[:, rcol+1:]))
 
 
 def remove_row(matrix, rrow=0):
-    """Removes a row from a matrix.
-    rrow is the index of the row to be removed.
+    """Removes a row from a matrix
 
-    Returns: the matrix without the row, or none if rrow is invalid."""
-    if rrow < 0 or rrow > matrix.shape[0] - 1:
-        return_matrix = None
-    else:
-        return_matrix = np.vstack((matrix[:rrow, :], matrix[rrow + 1:, :]))
-    return return_matrix
+    **Parameters:**
+
+    matrix : ndarray
+        The matrix to be modified.
+    rrow : int or None, optional
+        The index of the row to be removed. If set to ``None``, no row
+        will be removed. By default the first row is removed.
+
+    .. note::
+
+        No size checking is done.
+
+    **Returns:**
+
+    matrix : ndarray
+        A reference to the modified matrix.
+    """
+    return np.vstack((matrix[:rrow, :], matrix[rrow+1:, :]))
 
 
 def check_file(filename):
     """Checks whether the supplied path refers to a valid file.
-    Returns:
-    True if it's found (and is a file)
-    False, otherwise.
+
+    **Parameters:**
+
+    filename : string
+        The file name.
+
+    **Returns:**
+
+    chk : boolean
+        A value of ``True`` if ``filename`` is found and it is a file.
+
+    :raises IOError: if no such file exists or if the supplied file is a directory.
     """
     filename = os.path.abspath(filename)
     if not os.path.exists(filename):
-        printing.print_general_error(filename + " not found.")
-        ret = False
+        raise IOError(filename + " not found.")
     elif not os.path.isfile(filename):
-        printing.print_general_error(filename + " is not a file.")
-        ret = False
+        raise IOError(filename + " is not a file.")
+    return True
+
+def tuplinator(alist):
+    """Convert a list of lists (of lists...) to tuples"""
+    if type(alist) is list:
+        return tuple([tuplinator(i) for i in alist])
     else:
-        ret = True
-    return ret
-
-# Use scipy.factorial
-
-
-def fact(num):
-    """Returns: num!"""
-    if num == 1:
-        return 1
-    return reduce(operator.mul, xrange(2, num + 1))
-
+        return alist
 
 class combinations:
 
@@ -132,42 +187,46 @@ class combinations:
 
     Each combination is made of a subset of the list, consisting of k
     elements.
+
+    **Parameters:**
+
+    L : list
+        The set from which the elements are taken.
+    k : int
+        The size of the subset, the number of elements to be taken
     """
 
     def __init__(self, L, k):
-        """This method initializes the class.
-        L is the set from which the elements are taken.
-        k is the size of the subset, the number of elements to be taken
-        """
         self.L = L
         self.k = k
         self._sub_iter = None
         self._i = 0
         if len(self.L) < k:
-            raise Exception, "The set has to be bigger than the subset."
+            raise ValueError("The set has to be bigger than the subset.")
         if k <= 0:
-            raise Exception, "The size of the subset has to be positive."
+            raise ValueError("The size of the subset has to be strictly " +
+                             "positive.")
 
     def __iter__(self):
         return self
 
     def next(self):
-        """Get the next combination.
-        Returns a list.
-        """
+        return self.__next__()
+
+    def __next__(self):
         # It's recursive
         if self.k > 1:
             if self._sub_iter == None:
                 self._sub_iter = combinations(self.L[self._i + 1:], self.k - 1)
             try:
-                nxt = self._sub_iter.next()
+                nxt = self._sub_iter.__next__()
                 cur = self.L[self._i]
             except StopIteration:
                 if self._i < len(self.L) - self.k:
                     self._i = self._i + 1
                     self._sub_iter = combinations(
                         self.L[self._i + 1:], self.k - 1)
-                    return self.next()
+                    return self.__next__()
                 else:
                     raise StopIteration
         else:
@@ -183,7 +242,21 @@ class combinations:
 
 class log_axis_iterator:
 
-    """This iterator provides the values for a logarithmic sweep.
+    """This iterator provides the values for a base-10 logarithmic sweep.
+
+    **Parameters:**
+
+    max : float
+        The maximum value, also the end point of the axis.
+    min : float
+        The minimum value, also the start point of the axis.
+    nsteps : int
+        The number of intervals in which the ``max`` - ``min``
+        interval will be divided.
+
+    Notice that, differently from numpy's ``logspace()``, the
+    values are only computed at access time, and hence the
+    memory footprint of the iterator is low.
     """
 
     def __init__(self, max, min, nsteps):
@@ -195,6 +268,9 @@ class log_axis_iterator:
         self.nsteps = nsteps
 
     def next(self):
+        return self.__next__()
+
+    def __next__(self):
         """Iterator method: get the next value
         """
         if self.index < self.nsteps:
@@ -225,6 +301,20 @@ class log_axis_iterator:
 class lin_axis_iterator:
 
     """This iterator provides the values for a linear sweep.
+
+    **Parameters:**
+
+    max : float
+        The maximum value, also the end point of the axis.
+    min : float
+        The minimum value, also the start point of the axis.
+    nsteps : int
+        The number of intervals in which the ``max`` - ``min``
+        interval will be divided.
+
+    Notice that, differently from numpy's ``linspace()``, the
+    values are only computed at access time, and hence the
+    memory footprint of the iterator is low.
     """
 
     def __init__(self, max, min, nsteps):
@@ -236,6 +326,9 @@ class lin_axis_iterator:
         self.nsteps = nsteps
 
     def next(self):
+        return self.__next__()
+
+    def __next__(self):
         """Iterator method: get the next value
         """
         if self.index == 0:
@@ -264,46 +357,158 @@ class lin_axis_iterator:
 
 
 def Celsius2Kelvin(cel):
+    """Convert Celsius degrees to Kelvin
+    """
     return cel + 273.15
 
 
 def Kelvin2Celsius(kel):
+    """Convert Kelvin degrees to Celsius
+    """
     return kel - 273.15
 
 def convergence_check(x, dx, residuum, nv_minus_one, debug=False):
+    """Perform a convergence check
+
+    **Parameters:**
+
+    x : array-like
+        The results to be checked.
+    dx : array-like
+        The last increment from a Newton-Rhapson iteration, solving
+        ``F(x) = 0``.
+    residuum : array-like
+        The remaining error, ie ``F(x) = residdum``
+    nv_minus_one : int
+        Number of voltage variables in x. If ``nv_minus_one`` is equal to
+        ``n``, it means ``x[:n]`` are all voltage variables.
+    debug : boolean, optional
+        Whether extra information is needed for debug purposes. Defaults to
+        ``False``.
+
+    **Returns:**
+
+    chk : boolean
+        Whether the check was passed or not. ``True`` means 'convergence!'.
+    rbn : ndarray
+        The convergence check results by node, if ``debug`` was set to ``True``,
+        else ``None``.
+    """
     if not hasattr(x, 'shape'):
         x = np.mat(np.array(x))
         dx = np.mat(np.array(dx))
         residuum = np.mat(np.array(residuum))
-    vcheck, vresults = voltage_convergence_check(
-        x[:nv_minus_one, 0], dx[:nv_minus_one, 0], residuum[:nv_minus_one, 0])
-    icheck, iresults = current_convergence_check(
-        x[nv_minus_one:], dx[nv_minus_one:], residuum[nv_minus_one:])
+    vcheck, vresults = voltage_convergence_check(x[:nv_minus_one, 0],
+                                                 dx[:nv_minus_one, 0],
+                                                 residuum[:nv_minus_one, 0])
+    icheck, iresults = current_convergence_check(x[nv_minus_one:],
+                                                 dx[nv_minus_one:],
+                                                 residuum[nv_minus_one:])
     return vcheck and icheck, vresults + iresults
 
 
 def voltage_convergence_check(x, dx, residuum, debug=False):
-    return custom_convergence_check(x, dx, residuum, er=options.ver, ea=options.vea, eresiduum=options.iea, debug=debug)
+    """Perform a convergence check for voltage variables
+
+    **Parameters:**
+
+    x : array-like
+        The results to be checked.
+    dx : array-like
+        The last increment from a Newton-Rhapson iteration, solving
+        ``F(x) = 0``.
+    residuum : array-like
+        The remaining error, ie ``F(x) = residdum``
+    debug : boolean, optional
+        Whether extra information is needed for debug purposes. Defaults to
+        ``False``.
+
+    **Returns:**
+
+    chk : boolean
+        Whether the check was passed or not. ``True`` means 'convergence!'.
+    rbn : ndarray
+        The convergence check results by node, if ``debug`` was set to ``True``,
+        else ``None``.
+    """
+    return custom_convergence_check(x, dx, residuum, er=options.ver,
+                                    ea=options.vea, eresiduum=options.iea,
+                                    debug=debug)
 
 
 def current_convergence_check(x, dx, residuum, debug=False):
-    return custom_convergence_check(x, dx, residuum, er=options.ier, ea=options.iea, eresiduum=options.vea, debug=debug)
+    """Perform a convergence check for current variables
+
+    **Parameters:**
+
+    x : array-like
+        The results to be checked.
+    dx : array-like
+        The last increment from a Newton-Rhapson iteration, solving
+        ``F(x) = 0``.
+    residuum : array-like
+        The remaining error, ie ``F(x) = residdum``
+    debug : boolean, optional
+        Whether extra information is needed for debug purposes. Defaults to
+        ``False``.
+
+    **Returns:**
+
+    chk : boolean
+        Whether the check was passed or not. ``True`` means 'convergence!'.
+    rbn : ndarray
+        The convergence check results by node, if ``debug`` was set to ``True``,
+        else ``None``.
+    """
+    return custom_convergence_check(x, dx, residuum, er=options.ier,
+                                    ea=options.iea, eresiduum=options.vea,
+                                    debug=debug)
 
 
-def custom_convergence_check(x, dx, residuum, er, ea, eresiduum, vector_norm=lambda v: abs(v), debug=False):
+def custom_convergence_check(x, dx, residuum, er, ea, eresiduum, debug=False):
+    """Perform a custom convergence check
+
+    **Parameters:**
+
+    x : array-like
+        The results to be checked.
+    dx : array-like
+        The last increment from a Newton-Rhapson iteration, solving
+        ``F(x) = 0``.
+    residuum : array-like
+        The remaining error, ie ``F(x) = residdum``
+    ea : float
+        The value to be employed for the absolute error.
+    er : float
+        The value for the relative error to be employed.
+    eresiduum : float
+        The maximum allowed error for the residuum (left over error).
+    debug : boolean, optional
+        Whether extra information is needed for debug purposes. Defaults to
+        ``False``.
+
+    **Returns:**
+
+    chk : boolean
+        Whether the check was passed or not. ``True`` means 'convergence!'.
+    rbn : ndarray
+        The convergence check results by node, if ``debug`` was set to ``True``,
+        else ``None``.
+    """
     all_check_results = []
     if not hasattr(x, 'shape'):
-        x = np.mat(np.array(x))
-        dx = np.mat(np.array(dx))
-        residuum = np.mat(np.array(residuum))
+        x = np.array(x)
+        dx = np.array(dx)
+        residuum = np.array(residuum)
     if x.shape[0]:
         if not debug:
             ret = np.allclose(x, x + dx, rtol=er, atol=ea) and \
-                np.allclose(residuum, np.zeros(
-                               residuum.shape), atol=eresiduum, rtol=0)
+                  np.allclose(residuum, np.zeros(residuum.shape),
+                              atol=eresiduum, rtol=0)
         else:
             for i in range(x.shape[0]):
-                if vector_norm(dx[i, 0]) < er * vector_norm(x[i, 0]) + ea and vector_norm(residuum[i, 0]) < eresiduum:
+                if np.abs(dx[i, 0]) < er*np.abs(x[i, 0]) + ea and \
+                   np.abs(residuum[i, 0]) < eresiduum:
                     all_check_results.append(True)
                 else:
                     all_check_results.append(False)
@@ -312,11 +517,11 @@ def custom_convergence_check(x, dx, residuum, er, ea, eresiduum, vector_norm=lam
 
             ret = not (False in all_check_results)
     else:
-        # We get here when there's no variable to be checked. This is because there aren't variables
-        # of this type.
-        # Eg. the circuit has no voltage sources nor voltage defined elements. In this case, the actual check is done
-        # only by current_convergence_check, voltage_convergence_check always
-        # returns True.
+        # We get here when there's no variable to be checked. This is because
+        # there aren't variables of this type.  Eg. the circuit has no voltage
+        # sources nor voltage defined elements. In this case, the actual check
+        # is done only by current_convergence_check, voltage_convergence_check
+        # always returns True.
         ret = True
 
     return ret, all_check_results
@@ -349,7 +554,7 @@ def check_step_and_points(step=None, points=None, period=None,
         printing.print_warning("Neither step nor n. of points set. Using %d points." % default_points)
         points = default_points
     elif step is not None and points is not None:
-        printing.print_warning("Both step and n. of points set. Using step (%f)." % step)
+        printing.print_warning("Both step and # of points set. Using step = %f." % step)
         points = None
 
     if points:
@@ -370,14 +575,30 @@ def check_step_and_points(step=None, points=None, period=None,
 def check_circuit(circ):
     """Performs some easy sanity checks.
 
-    Returns: a tuple consisting of a boolean (test was passed or not)
-    and a string describing the error, if any.
+    Checks performed:
+
+    * Has the circuit more than one node?
+    * Has the circuit a connection to ground?
+    * Has the circuit more than two elements?
+    * Are there no two elements with the same ``part_id``?
+
+    **Parameters:**
+
+    circ : circuit instance
+        The circuit to be checked.
+
+    **Returns:**
+
+    chk : boolean
+        The logical ``and()`` of the answer to the above questions.
+    msg : string
+        A message describing the error, if any.
     """
 
-    if len(circ.nodes_dict) < 2:
+    if circ.get_nodes_number() < 2:
         test_passed = False
         reason = "the circuit has less than two nodes."
-    elif not circ.nodes_dict.has_key(0):
+    elif not 0 in circ.nodes_dict:
         test_passed = False
         reason = "the circuit has no ref. Quitting."
     elif len(circ) < 2:
@@ -394,15 +615,25 @@ def check_circuit(circ):
 
 
 def check_ground_paths(mna, circ, reduced_mna=True, verbose=3):
-    """Checks that every node has a DC path to ground, wheather through
-    nonlinear or linear elements.
-    - This does not ensure that the circuit will have a DC solution.
-    - A node without DC path to ground would be rescued (likely) by GMIN
-      so (for the time being at least) we do *not* halt the execution.
-    - Also, two series capacitors always fail this check (GMIN saves us)
+    """Checks that every node has a DC path to ground
+
+    The path to ground might be through non-linear elements.
+
+    .. note::
+
+        * This does not ensure that the circuit will have a DC solution.
+        * A node without DC path to ground would be rescued (likely) by GMIN so
+          (for the time being at least) we do *not* halt the execution.
+        * Also, two series capacitors always fail this check (GMIN saves us)
 
     Bottom line: if there is no DC path to ground, there is probably a
     mistake in the netlist. Print a warning.
+
+    **Returns:**
+
+    chk : boolean
+        A boolean set to true if there is a DC path to ground from all nodes
+        in the circuit.
     """
     test_passed = True
     if reduced_mna:
@@ -411,11 +642,15 @@ def check_ground_paths(mna, circ, reduced_mna=True, verbose=3):
     else:
         r_c = 0
     to_be_checked_for_nonlinear_paths = []
-    for node in circ.nodes_dict.iterkeys():
+    for node in iter(circ.nodes_dict.keys()):
         if node == 0:
             continue
             # ground
-        if mna[node - r_c, node - r_c] == 0 and not mna[node - r_c, len(circ.nodes_dict) - r_c:].any():
+        if type(node) != int:
+            # an ext handle
+            continue
+        if mna[node - r_c, node - r_c] == 0 and \
+           not mna[node - r_c, circ.get_nodes_number() - r_c:].any():
             to_be_checked_for_nonlinear_paths.append(node)
     for node in to_be_checked_for_nonlinear_paths:
         node_is_nl_op = False

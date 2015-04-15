@@ -17,6 +17,9 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 from . import shooting
 from . import bfpss
 from . import options
@@ -103,5 +106,5 @@ def pss_analysis(*largs, **args):
     elif m == options.BFPSS:
         r = bfpss.bfpss(*largs, **args)
     else:
-        raise Exception, "Unknown PSS method %s" % m
+        raise Exception("Unknown PSS method %s" % m)
     return r

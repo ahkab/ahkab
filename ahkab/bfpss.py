@@ -19,6 +19,9 @@
 
 """Brute-force periodic steady state analysis module"""
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import sys
 import numpy as np
 import numpy.linalg
@@ -152,7 +155,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
     # convergence check
     nv_indices = []
     ni_indices = []
-    nv_1 = len(circ.nodes_dict) - 1
+    nv_1 = circ.get_nodes_number() - 1
     ni = n_of_var - nv_1
     for i in range(points):
         nv_indices += (i * mna.shape[0] * np.ones(nv_1) + \
@@ -182,7 +185,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
                 J[:, :] = 0
             T[:, 0] = 0
             td[:, 0] = 0
-        for index in xrange(1, points):
+        for index in range(1, points):
             for elem in circ:
                 # build all dT(xn)/dxn (stored in J) and T(x)
                 if elem.is_nonlinear:
@@ -238,7 +241,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
         else:
             dx = np.linalg.solve(J, -residuo)
         # td
-        for index in xrange(points):
+        for index in range(points):
             td[index, 0] = dc_analysis.get_td(
                 dx[index*n_of_var:(index + 1)*n_of_var, 0], locked_nodes, n=-1)
         x = x + min(abs(td))[0] * dx
@@ -266,7 +269,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
         sol = results.pss_solution(
             circ=circ, method="brute-force", period=period, outfile=outfile, t_array=t, x_array=x.T)
     else:
-        print "failed."
+        print("failed.")
         sol = None
     return sol
 
@@ -301,8 +304,8 @@ def _build_CMAT(mna, D, step, points, tick, n_of_var=None, sparse=False, verbose
         CMAT = scipy.sparse.lil_matrix((n_of_var*points, n_of_var*points))
     else:
         CMAT = np.zeros((n_of_var*points, n_of_var*points))
-    for li in xrange(points):  # li = line index
-        for ci in xrange(points):
+    for li in range(points):  # li = line index
+        for ci in range(points):
             if li == 0:
                 if ci == 0:
                     temp = I
@@ -339,9 +342,9 @@ def _build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
         if isinstance(x0, results.op_solution):
             x0 = x0.asmatrix()
         if x0.shape[0] != n_of_var:
-            print "Warning x0 has the wrong dimensions. Using all 0s."
+            print("Warning x0 has the wrong dimensions. Using all 0s.")
         else:
-            for index in xrange(points):
+            for index in range(points):
                 x = utilities.set_submatrix(row=index*n_of_var, col=0,
                                             dest_matrix=x, source_matrix=x0)
                 tick.step()
@@ -358,7 +361,7 @@ def _build_Tf(sTf, points, tick, n_of_var, verbose=3):
     tick.display(verbose > 2)
     Tf = np.mat(np.zeros((points * n_of_var, 1)))
 
-    for index in xrange(1, points):
+    for index in range(1, points):
         Tf = utilities.set_submatrix(row=index*n_of_var, col=0, dest_matrix=Tf,
                                      source_matrix=sTf)
         tick.step()
@@ -370,12 +373,12 @@ def _build_Tf(sTf, points, tick, n_of_var, verbose=3):
 
 
 def _build_Tt(circ, points, step, tick, n_of_var, verbose=3):
-    nv = len(circ.nodes_dict)
+    nv = circ.get_nodes_number()
     printing.print_info_line(("Building Tt...", 5), verbose, print_nl=False)
     tick.reset()
     tick.display(verbose > 2)
     Tt = np.zeros((points * n_of_var, 1))
-    for index in xrange(1, points):
+    for index in range(1, points):
         v_eq = 0
         time = index * step
         for elem in circ:

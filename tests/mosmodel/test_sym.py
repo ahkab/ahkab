@@ -10,8 +10,7 @@ def test_switch_nmos():
     mos_test_params = [dict(TYPE='n', KP=50e-6, VTO=.4)]
     mp = mos_test_params[0]
     m = mosq_mos_model(**mp)
-    ma = mosq_device(1, 2, 3, 4, W=10e-6, L=1e-6, model=m)
-    ma.part_id = "M1"
+    ma = mosq_device('M1', 1, 2, 3, 4, W=10e-6, L=1e-6, model=m)
 
     for i in range(10):
         vds = np.random.rand()*8 - 4
@@ -29,8 +28,7 @@ def test_switch_pmos():
     mos_test_params = [dict(TYPE='p', KP=50e-6, VTO=-.4)]
     mp = mos_test_params[0]
     m = mosq_mos_model(**mp)
-    ma = mosq_device(1, 2, 3, 4, W=10e-6, L=1e-6, model=m)
-    ma.part_id = "M1"
+    ma = mosq_device("M1", 1, 2, 3, 4, W=10e-6, L=1e-6, model=m)
 
     for i in range(10):
         vds = np.random.rand()*8 - 4
@@ -48,8 +46,7 @@ def test_symm_nmos():
     mos_test_params = [dict(TYPE='n', KP=50e-6, VTO=.4)]
     mp = mos_test_params[0]
     m = mosq_mos_model(**mp)
-    ma = mosq_device(1, 2, 3, 4, W=10e-6, L=1e-6, model=m)
-    ma.part_id = "M1"
+    ma = mosq_device("M1", 1, 2, 3, 4, W=10e-6, L=1e-6, model=m)
     for i in range(100):
         vds = np.random.rand()*8 - 4
         vgs = np.random.rand()*8 - 4
@@ -63,8 +60,7 @@ def test_symm_pmos():
     mos_test_params = [dict(TYPE='p', KP=50e-6, VTO=-.4)]
     mp = mos_test_params[0]
     m = mosq_mos_model(**mp)
-    ma = mosq_device(1, 2, 3, 4, W=10e-6, L=1e-6, model=m)
-    ma.part_id = "M1"
+    ma = mosq_device("M1", 1, 2, 3, 4, W=10e-6, L=1e-6, model=m)
     for i in range(100):
         vds = np.random.rand()*8 - 4
         vgs = np.random.rand()*8 - 4
@@ -81,10 +77,8 @@ def test_symm_pn():
     mpn = mos_test_params[1]
     mp = mosq_mos_model(**mpp)
     mn = mosq_mos_model(**mpn)
-    mpa = mosq_device(1, 2, 3, 4, W=10e-6, L=1e-6, model=mp)
-    mpa.part_id = "M1"
-    mna = mosq_device(1, 2, 3, 4, W=10e-6, L=1e-6, model=mn)
-    mna.part_id = "M2"
+    mpa = mosq_device("M1", 1, 2, 3, 4, W=10e-6, L=1e-6, model=mp)
+    mna = mosq_device("M2", 1, 2, 3, 4, W=10e-6, L=1e-6, model=mn)
     for i in range(100):
         vds = np.random.rand()*8 - 4
         vgs = np.random.rand()*8 - 4

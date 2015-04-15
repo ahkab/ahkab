@@ -1,3 +1,6 @@
+from __future__ import (unicode_literals, absolute_import, division,
+                        print_function)
+
 import copy
 import sys
 import os
@@ -95,3 +98,12 @@ def test_pz_spice4():
     zeros_ref = [6.366198e+08+0j]
     _check_singularities(zeros, zeros_ref, atol=1e2, rtol=1e-3)
 
+if __name__ == '__main__':
+    print(test_pz_spice1.__doc__, "...")
+    test_pz_spice1()
+    print(test_pz_spice2.__doc__, "...")
+    test_pz_spice2()
+    print(test_pz_spice3.__doc__, "...")
+    test_pz_spice3()
+    print(test_pz_spice4.__doc__, "...")
+    test_pz_spice4()

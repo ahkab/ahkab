@@ -38,7 +38,7 @@ def assemble():
     cir.add_resistor('R4d', 'int3', 'int1', 1e5)
 
     if cli:
-        printing.print_circuit(cir)
+        print(cir)
 
     return cir
 
@@ -80,8 +80,8 @@ def test():
         cir = assemble()
         res = ahkab.run(cir, an_list=[op1, tran1])
         # print-out for good measure
-        print "OP Results:"
-        print list(res['op'].items())
+        print("OP Results:")
+        print(list(res['op'].items()))
         ## plot and save interesting data
         fig = plt.figure()
         plt.title(cir.title + " inputs")

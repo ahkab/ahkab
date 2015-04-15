@@ -6,7 +6,7 @@
 
 \begin{circuitikz}[scale=1., transform shape, american currents]
 \draw (0,2) node[transformer core] (T) {}
-(T.base) node{K};
+(T.base) node{\scalebox{.65}{$N_1 : N_2$}};
 \draw (T.A1) to[open, *-*] (T.A2);
 \draw (T.B1) to[open, *-*] (T.B2);
 \node[draw=none] at (-1.5,1) {inductor1};

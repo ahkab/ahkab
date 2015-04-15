@@ -1,6 +1,94 @@
 <!-- Name: Changelog -->
 #Changelog
 
+## Changelog for v 0.14
+
+Version 0.14 represents the culmination of three months of efforts, yet another step in the current time-based release scheme.
+
+This release features much improved tabular print-outs, thanks to ``tabulate``, faster circuit checking and reverse node look-ups.
+
+Moreover, as in the previous releases, many commits were devoted to improving the documentation: you can find the new, improved documentation online at http://ahkab.readthedocs.org/en/latest/
+
+### Features added:
+
+* Use ``tabulate`` to print out pretty tables. *They are pretty, oh so pretty tables.*
+* Add and use ``circuit.get_nodes_number()``.
+* Change ``nodes_dict`` to speed up reverse lookups.
+* Faster duplicate IDs check.
+
+### Changes from contributors and pull requests merged:
+
+*None.* 
+
+### Bugs fixed, short list:
+
+* BUGFIX: row/col reference,
+* BUGFIX: Suppress printing of the netlist file if there is None.
+* BUGFIX: Add a wrapper around stdout to fix encoding errors on *UNIX, when no locale is set (PY2 only).
+* BUGFIX: Print warning if the locale is not set.
+
+
+## Changelog for v 0.13
+
+Version 0.13 represents the culmination of efforts dating back to January and contains 135 commits.
+
+This release features current-controlled current sources and voltage sources and new options to select the format of numbers printed for user display and how the MNA matrix is built in Symbolic Analysis. 
+
+Moreover, as in the previous releases, many commits were devoted to improving the documentation: you can find the new, improved documentation at http://ahkab.readthedocs.org/en/latest/
+
+### Features added:
+
+* Implement CCCS, fixes #22
+* Implement CCVS, fixes #21
+* Add option to formulate the MNA and N matrices with resistors for symbolic analysis.
+* Add options to suppress zeros and select printing precision.
+
+### Changes from contributors and pull requests merged:
+
+*None.* 
+
+### Bugs fixed, short list:
+
+* BUGFIX: fix printing of missing elements.
+* BUGFIX: fix missing import
+* BUGFIX: reset look-up table when the temperature changes
+* BUGFIX: catch missing matplotlib
+* BUGFIX: remove early test It masks more detailed tests below.
+* BUGFIX: fix get_netlist_elem_line()Pass the element nodes through nodes_dict
+* BUGFIX: correct the netlist label for tran start time (tstart)
+* BUGFIX: fix parsing of capacitors wrt comments.
+* BUGFIX: fix all Symbols to be uppercase
+* BUGFIX power by VCCS
+* BUGFIX: Fix total power computation for GIsources.
+
+## Changelog for v 0.12
+
+Version 0.12 represents the culmination of efforts dating back to May and contains 142 commits.
+
+This release has no new features, but it has several bug fixes and it introduces Python3 support (!).
+
+Moreover, many commits were devoted to improving the documentation: you can find the new, improved documentation at http://ahkab.readthedocs.org/en/latest/
+
+### Features added:
+
+*None.*
+
+### Changes from contributors and pull requests merged:
+
+*None.* 
+
+### Bugs fixed, short list:
+
+* BUGFIX: Respect the user config when saving to file.
+* BUGFIX: Respect CLI-specified transient DFs.
+* BUGFIX: use the warning interface.
+* BUGFIX: always set the simulation options before running tests.
+* BUGFIX: fix detection of wd
+* BUGFIX: .include now recovers the path relative to the netlist
+* BUGFIX: fix printing of .DC statements.
+* BUGFIX: fix comparison of int and NoneType (new Python behaviour)
+
+
 ## Changelog for v 0.11
 
 Version 0.11 represent the culmination of four months of efforts.

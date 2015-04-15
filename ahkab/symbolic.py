@@ -38,6 +38,9 @@ Reference
 
 """
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import sympy
 from sympy.matrices import zeros as smzeros
 
@@ -47,6 +50,7 @@ from . import ekv
 from . import mosq
 from . import diode
 from . import printing
+from . import py3compat
 from . import results
 from . import options
 
@@ -78,12 +82,26 @@ specs = {'symbolic': {'tokens': ({
                      }
         }
 
-# the s variable
+#: the Laplace variable
 s = sympy.Symbol('s', complex=True)
 
 enabled_assumptions = {'real':False, 'positive':False, 'complex':True}
 
-def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, outfile=None, verbose=3):
+# When the MNA analysis is formulated in terms of conductances, we need
+# to:
+# * create a conductance symbol corresponding to the resistor symbol give by the
+#   user,
+# * be able to avoid collisions (distiguish) between these artificial
+#   conductances and a user-defined in-circuit trans-conductance (ie a
+#   VCCS or ISource), as their part_id is ``G<alphanum>``.
+#
+# To do so, we create symbols that are named:
+# ``'G'`` + _COND_POSTFIX + part_id[1:]
+#
+_COND_POSTFIX = 'xxx'
+
+def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None,
+                      outfile=None, verbose=3):
     """Attempt a symbolic, small-signal solution of the circuit.
 
     **Parameters:**
@@ -102,9 +120,8 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
         take transistors' output impedance into consideration (default: False)
 
     subs: dict, optional
-        a dictionary of ``sympy.Symbol`` to be substituted. It makes solving the circuit
-        easier. Eg. ``subs={R1:R2}`` - replace R1 with R2. It can be generated with
-        :func:`parse_substitutions()`
+        a dictionary of part IDs to be substituted. It makes solving the circuit
+        easier. Eg. ``subs={'R1':'R2'}`` - replace the resistor R1 with R2.
 
     outfile : string, optional
         output filename - ``'stdout'`` means print to stdout, the default.
@@ -112,7 +129,7 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
     verbose: int, optional
         verbosity level 0 (silent) to 6 (painful).
 
-    **Returns:** 
+    **Returns:**
 
     sol : symbolic solution
         The solutions.
@@ -124,6 +141,8 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
     """
     if subs is None:
         subs = {}  # no subs by default
+    else:
+        subs = _parse_substitutions(subs)
 
     if not ac_enable:
         printing.print_info_line(
@@ -134,15 +153,15 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
 
     printing.print_info_line(
         ("Building symbolic MNA, N and x...", 3), verbose, print_nl=False)
-    mna, N, subs_g = generate_mna_and_N(
-        circ, opts={'r0s': r0s}, ac=ac_enable, verbose=verbose)
+    mna, N, subs_g = generate_mna_and_N(circ, opts={'r0s': r0s}, ac=ac_enable,
+                                        verbose=verbose)
     x = get_variables(circ)
     mna = mna[1:, 1:]
     N = N[1:, :]
     printing.print_info_line((" done.", 3), verbose)
 
-    printing.print_info_line(
-        ("Performing variable substitutions...", 5), verbose)
+    printing.print_info_line(("Performing variable substitutions...", 5),
+                             verbose)
     mna, N = apply_substitutions(mna, N, subs)
 
     printing.print_info_line(("MNA matrix (reduced):", 5), verbose)
@@ -166,7 +185,7 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None, o
     sol = sympy.solve(
             eq, x, manual=options.symb_sympy_manual_solver, simplify=True)
 
-    for ks in sol.keys():
+    for ks in list(sol.keys()):
         sol.update({ks: sol[ks].subs(subs_g)})
 
     if sol == {}:
@@ -222,7 +241,7 @@ def calculate_gains(sol, xin, optimize=True):
 
     """
     gains = {}
-    for key, value in sol.iteritems():
+    for key, value in sol.items():
         tf = {}
         gain = sympy.together(value.diff(xin)) if optimize else value.diff(xin)
         (ps, zs) = get_roots(gain)
@@ -290,12 +309,12 @@ def get_variables(circ):
         The circuit
 
     **Returns:**
-    
+
     vars : sympy matrix, shape (n, 1)
         The variables in a column vector.
     """
     # numero di soluzioni di tensione (al netto del ref)
-    nv_1 = len(circ.nodes_dict) - 1
+    nv_1 = circ.get_nodes_number() - 1
 
     # descrizioni dei componenti non definibili in tensione
     idescr = [elem.part_id.upper()
@@ -333,13 +352,28 @@ def _to_real_list(M):
 def generate_mna_and_N(circ, opts, ac=False, verbose=3):
     """Generate a symbolic Modified Nodal Analysis matrix and N vector.
 
+    Only elements that have an ``is_symbolic`` attribute set to ``True``
+    (the default) are considered symbolically. Simply set the attribute to
+    ``False`` to employ the numeric value. This allows to simplify and speed
+    up the work of the symbolic solver.
+
+    The formulation can be performed using conductances or resistances. The
+    choice is made setting the global ``options.symb_formulate_with_gs`` value
+    to ``True``. A formulation done in terms of resistors, may result in many
+    separate :math:`1/R` terms in the matrices. Historically, ``sympy`` choked
+    on those, because of a long-standing bug in polys. Now the issue seems to
+    have been solved and the two computations should be symbolically equivalent
+    albeit computationally different (as expected). The option value
+    ``options.symb_formulate_with_gs`` is provided to restore the old
+    functionality in case you use an old version of ``sympy``.
+
     **Parameters:**
 
     circ : circuit instance
         The circuit.
     opts : dict
         The options to be used for the generation of the matrices. As of now,
-        the only supported option is ``'r0s'`` which can be set to either 
+        the only supported option is ``'r0s'`` which can be set to either
         ``True`` or ``False``, and selects whether the equivalent output
         resistance of the transistors should be taken into account or not.
     ac : bool, optional
@@ -353,23 +387,29 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
 
     mna, N : Sympy matrices
         The MNA matrix and the contant term of symbolic type.
+    subs : dict of symbols
+        In case the formulation of the MNA is performed in terms of
+        conducatances, this dictionary is to be used to substitute away the
+        conducatances for the resistor symbols, after the circuit is solved but
+        before the results are shown to the user. ``sympy``'s ``sub()`` can take
+        care of that for you. If not necessary, this dictionary is empty.
 
     .. note::
-        
+
         Setting ``opts['r0s'] = True``, ie considering all the transistors output
         resistances, can significantly slow down -- or even prevent by consuming
         all available memory -- the solution of complex circuits with several
         active elements.
 
         We recommend a combination of the following:
-        
+
         * setting the above option in simple circuits only,
         * inserting explicitely the :math:`r_0` you wish to consider at circuit
-          level, 
+          level,
         * beefing up your machine with extra RAM and extra computing power,
         * being patient.
     """
-    n_of_nodes = len(circ.nodes_dict)
+    n_of_nodes = circ.get_nodes_number()
     mna = smzeros(n_of_nodes)
     N = smzeros(n_of_nodes, 1)
     subs_g = {}
@@ -379,15 +419,18 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             # we use conductances instead of 1/R because there is a significant
             # overhead handling many 1/R terms in sympy.
             if elem.is_symbolic:
-                R = _symbol_factory(
-                    elem.part_id.upper(), real=True, positive=True)
-                G = _symbol_factory('G' + elem.part_id[1:], real=True, positive=True)
-                # but we keep track of which is which and substitute back after
-                # solving.
-                subs_g.update({G: 1 / R})
+                R = _symbol_factory(elem.part_id.upper(), real=True,
+                                    positive=True)
+                if options.symb_formulate_with_gs:
+                    G = _symbol_factory('Gxxx' + elem.part_id[1:], real=True,
+                                        positive=True)
+                    # but we keep track of which is which and substitute back after
+                    # solving.
+                    subs_g.update({G:1/R})
+                else:
+                    G = 1.0/R
             else:
-                R = elem.value
-                G = 1.0 / R
+                    G = 1.0/elem.value
             mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + G
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - G
             mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - G
@@ -442,6 +485,9 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gd
             mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - gd
             mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + gd
+        elif isinstance(elem, devices.FISource):
+            # These are added after all VDEs have been accounted for
+            pass
         elif isinstance(elem, devices.InductorCoupling):
             pass
             # this is taken care of within the inductors
@@ -449,8 +495,8 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             pass
             # we'll add its lines afterwards
         elif verbose:
-            printing.print_warning(
-                "Skipped elem %s: not implemented." % (elem.part_id.upper(),))
+            printing.print_warning("Skipped elem %s: not implemented." %
+                                   (elem.part_id.upper(),))
 
     pre_vde = mna.shape[0]
     for elem in circ:
@@ -477,6 +523,13 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
                     alpha = elem.alpha
                 mna[index, elem.sn1] = -alpha
                 mna[index, elem.sn2] = +alpha
+            elif isinstance(elem, devices.HVSource):
+                if elem.is_symbolic:
+                    alpha = _symbol_factory(elem.part_id.upper(), real=True)
+                else:
+                    alpha = elem.alpha
+                source_index = circ.find_vde_index(elem.source_id)
+                mna[index, n_of_nodes + source_index] = +alpha
             elif isinstance(elem, devices.Inductor):
                 if ac:
                     if elem.is_symbolic:
@@ -489,38 +542,44 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
                     pass
                     # already so: commented out
                     # N[index,0] = 0
-            elif isinstance(elem, devices.HVSource):
-                printing.print_warning(
-                    "symbolic.py: BUG - hvsources are not implemented yet.")
-                sys.exit(33)
+            else:
+                raise circuit.CircuitError('Element %s is not supported. ' +
+                                           'Please report this bug.' %
+                                           elem.__class__)
 
     for elem in circ:
-        if circuit.is_elem_voltage_defined(elem):
-            if isinstance(elem, devices.Inductor):
-                if ac:
-                    # find its index to know which column corresponds to its
-                    # current
-                    this_index = circ.find_vde_index(elem.part_id, verbose=0)
-                    for cd in elem.coupling_devices:
-                        if cd.is_symbolic:
-                            M = _symbol_factory(
-                                cd.part_id, real=True, positive=True)
-                        else:
-                            M = cd.K
-                        # get `part_id` of the other inductor (eg. "L32")
-                        other_id_wdescr = cd.get_other_inductor(elem.part_id)
-                        # find its index to know which column corresponds to
-                        # its current
-                        other_index = circ.find_vde_index(
-                            other_id_wdescr, verbose=0)
-                        # add the term.
-                        mna[pre_vde + this_index,
-                            pre_vde + other_index] += -s * M
+        if ac and isinstance(elem, devices.Inductor):
+            # find its index to know which column corresponds to its
+            # current
+            this_index = circ.find_vde_index(elem.part_id, verbose=0)
+            for cd in elem.coupling_devices:
+                if cd.is_symbolic:
+                    M = _symbol_factory(
+                        cd.part_id, real=True, positive=True)
                 else:
-                    pass
+                    M = cd.K
+                # get `part_id` of the other inductor (eg. "L32")
+                other_id_wdescr = cd.get_other_inductor(elem.part_id)
+                # find its index to know which column corresponds to
+                # its current
+                other_index = circ.find_vde_index(
+                    other_id_wdescr, verbose=0)
+                # add the term.
+                mna[pre_vde + this_index,
+                    pre_vde + other_index] += -s * M
+        elif isinstance(elem, devices.FISource):
+            source_current_index = circ.find_vde_index(elem.source_id, verbose=0)
+            if elem.is_symbolic:
+                F = _symbol_factory(elem.part_id, real=True)
+            else:
+                F = elem.alpha
+            mna[elem.n1, pre_vde + source_current_index] += +F
+            mna[elem.n2, pre_vde + source_current_index] += -F
+        else:
+            pass
 
     # all done
-    return (mna, N, subs_g)
+    return mna, N, subs_g
 
 
 def _expand_matrix(mat, add_a_row=False, add_a_col=False):
@@ -540,17 +599,24 @@ def get_roots(expr):
     return sympy.solve(den, s), sympy.solve(num, s)
 
 
-def parse_substitutions(slist):
-    """Generates a substitution dictionary from a substitution lists.
+def _parse_substitutions(sdict):
+    """Generates a symbolic substitution dictionary from a dictionary of
+    substitutions expressed in terms of part IDs.
 
-    The dictionary is typically then passed to :func:`symbolic_analysis`.
+    This method is typically called by :func:`symbolic_analysis`.
+
+    .. note::
+
+        For what regards the resistors, the method will check the value
+        of ``options.symb_formulate_with_gs`` and convert the resistors
+        to conductances as needed, according to the option value.
 
     **Parameters:**
 
-    slist : a list of strings
-        The elements of the list should be according to the syntax
-        ``'<part_id1>=<part_id2>'``, eg ``'R2=R1'``, instructing the simulator
-        to use the value of R1 (R1) instead of R2.
+    sdict : a dict of strings
+        The elements of the dictionary should be according to the syntax
+        ``{'<part_id1>:<part_id2>'}``, eg ``{'R2':'R1'}``, instructing the
+        simulator to substitute ``R1`` in place of ``R2``.
 
     **Returns:**
 
@@ -559,10 +625,13 @@ def parse_substitutions(slist):
 
     """
     subs = {}
-    for l in slist:
-        v1, v2 = l.split("=")
-        letter_id1 = v1[0].upper() if v1[0].upper() != 'R' else 'G'
-        letter_id2 = v2[0].upper() if v2[0].upper() != 'R' else 'G'
+    for v1, v2 in py3compat.iteritems(sdict):
+        if v1[0].upper() == 'R' and options.symb_formulate_with_gs:
+            letter_id1 = 'G' + _COND_POSTFIX
+            letter_id2 = 'G' + _COND_POSTFIX
+        else:
+            letter_id1 = v1[0].upper()
+            letter_id2 = v2[0].upper()
         if letter_id1[0] in ('R', 'G', 'L', 'C', 'M'):
             s1 = _symbol_factory(letter_id1 + v1[1:], real=True, positive=True)
         else:
@@ -581,4 +650,4 @@ def _symbol_factory(name, **options):
             filtered_options.update({i:options[i]})
         else:
             pass # discarded
-    return sympy.Symbol(name, **filtered_options)
+    return sympy.Symbol(name.upper(), **filtered_options)

@@ -32,6 +32,8 @@ This module defines two classes: switch_device, switch_model
 #        |         |
 # sn2 o--+         +--o n2
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
 
 import math
 
@@ -47,7 +49,7 @@ class switch_device:
 
     .. image:: images/elem/switch1.svg
 
-    |    
+    |
 
     In ASCII for those who are consulting the documentation from the
     Python command line:
@@ -125,7 +127,7 @@ class switch_device:
             The OP where the drive ports are used.
 
         **Returns:**
-        
+
         pts : tuple of tuples of ports nodes, as: ``(port0, port1, port2 ... )``
 
         Where each port is in the form: ``port0 = (nplus, nminus)``
@@ -134,11 +136,11 @@ class switch_device:
 
     def get_output_ports(self):
         """Get the output port.
-        
+
         The output port is ``(n1, n2)`` for the voltage-controlled switch case.
 
         **Returns:**
-        
+
         pts : tuple of tuples of ports nodes
             Such as: ``(port0, port1, port2 ... )``.
             Where each port is in the form: ``port0 = (nplus, nminus)``
@@ -151,7 +153,7 @@ class switch_device:
 
     def i(self, op_index, ports_v, time=0):
         """Returns the current flowing in the element.
-        
+
         The element is assumed to be biased with the voltages
         applied as specified in the ``ports_v`` vector.
 
@@ -181,10 +183,7 @@ class switch_device:
         """Updates an internal dictionary that can then be used to provide
         information to the user regarding the status of the element.
 
-        Normally, one would call either:
-
-        * :func:`get_op_info`
-        * :func:`print_op_info`
+        Normally, one would call :func:`get_op_info`.
 
         **Returns:**
 
@@ -192,36 +191,40 @@ class switch_device:
         """
         if self.opdict is None:
             self.opdict = {}
-        if not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('R')):
+        if not (self.opdict['state'] == ports_v[0] and 'R' in self.opdict):
             self.opdict['state'] = ports_v[0]
             self.opdict['R'] = float(1.0 / self.g(0, ports_v[0], 0))
             self.opdict['I'] = float(self.i(0, ports_v[0]))
             self.opdict['STATUS'] = self.device.is_on
 
-    def print_op_info(self, ports_v):
-        """Prints out the information regarding the OP status.
-        """
-        arr = self.get_op_info(ports_v)
-        print arr,
-
     def get_op_info(self, ports_v):
-        """Operating point info, for design/verification. """
+        """Information regarding the Operating Point (OP)
+
+        **Parameters:**
+
+        ports_v : list of lists
+            The parameter is to be set to ``[[v]]``, where ``v`` is the voltage
+            applied to the switch terminals.
+
+        **Returns:**
+
+        op_keys : list of strings
+            The labels corresponding to the numeric values in ``op_info``.
+        op_info : list of floats
+            The values corresponding to ``op_keys``.
+        """
         self.update_status_dictionary(ports_v)
-
-        arr = [[self.part_id, 'STATUS:',
-                "ON" * self.opdict['STATUS'] + "OFF" * (
-                not self.opdict['STATUS']),
-                "VO [V]:", float(self.opdict['state'][0]),
-                "VS [V]:", float(self.opdict['state'][1]),
-                "R [ohm]:", self.opdict["R"],
-                "I [A]:", self.opdict['I'], "", ""], ]
-        # arr.append([  "", "", "", "", "", ""])
-
-        return printing.table_setup(arr)
+        status = "ON" if self.opdict['STATUS'] else "OFF"
+        op_keys = ['Part ID', 'STATUS', "VO [V]", "VS [V]", u"R [\u2126]",
+                   "I [A]"]
+        op_info = [self.part_id, status, float(self.opdict['state'][0]),
+                   float(self.opdict['state'][1]), self.opdict["R"],
+                   self.opdict['I']]
+        return op_keys, op_info
 
     def g(self, op_index, ports_v, port_index, time=0):
         """Returns the differential (trans)conductance.
-        
+
         The transconductance is computed wrt the port specified by
         ``port_index`` when the element has the voltages specified in
         ``ports_v`` across its ports, at (simulation) ``time``.
@@ -251,7 +254,7 @@ class switch_device:
         if port_index == 1:
             return self.model.get_gm(ports_v, self.device)
         else:
-            raise Exception, "Unknown port index passed to switch: bug"
+            raise Exception("Unknown port index passed to switch: bug")
 
     def get_value_function(self, identifier):
         def get_value(self):
@@ -346,12 +349,12 @@ class vswitch_model:
         self._set_status(dev.is_on)
         if vin > self.V and not dev.is_on and R1 - R2 == 0.0:
             if debug:
-                print "Switching ON: %g" % (vin,)
+                print("Switching ON: %g" % (vin,))
             dev.is_on = True
             self._set_status(dev.is_on)
         if vin < self.V and dev.is_on and R1 - R2 == 0.0:
             if debug:
-                print "Switching OFF: %g" % (vin,)
+                print("Switching OFF: %g" % (vin,))
             dev.is_on = False
             self._set_status(dev.is_on)
         self.is_on = dev.is_on
@@ -372,21 +375,24 @@ class vswitch_model:
                    "RON", "[ohm]", self.RON, "ROFF", "[ohm]", self.ROFF])
         printing.table_print(arr)
 
-    def get_i(self, (vout, vin), dev, debug=False):
+    def get_i(self, xxx_todo_changeme, dev, debug=False):
         """Returns the output current.
         """
+        (vout, vin) = xxx_todo_changeme
         self._update_status(vin, dev)
         R = self.A * math.tanh((vin - self.V) * self.SLOPE) + self.B
         return vout / R
 
-    def get_go(self, (vout, vin), dev, debug=False):
+    def get_go(self, xxx_todo_changeme1, dev, debug=False):
         """Returns the output conductance d(I)/d(Vn1-Vn2)."""
+        (vout, vin) = xxx_todo_changeme1
         self._update_status(vin, dev)
         R = self.A * math.tanh((vin - self.V) * self.SLOPE) + self.B
         return 1. / R
 
-    def get_gm(self, (vout, vin), dev, debug=False):
+    def get_gm(self, xxx_todo_changeme2, dev, debug=False):
         """Returns the source to output transconductance or d(I)/d(Vsn1-Vsn2)."""
+        (vout, vin) = xxx_todo_changeme2
         self._update_status(vin, dev)
         gm = self.A * self.SLOPE * (math.tanh(self.SLOPE * (self.V - vin)) ** 2 - 1) / (
             self.A * math.tanh(self.SLOPE * (self.V - vin)) - self.B) ** 2
@@ -402,8 +408,8 @@ if __name__ == '__main__':
     RON = abs(1e3 * np.random.randn())
     ROFF = abs(1e4 * np.random.randn())
     # VT = 0.; VH=1.; RON=100;
-    print "Testing a switch with:"
-    print "VT: %g\tVH: %g\tRON:%g\tROFF:%g" % (VT, VH, RON, ROFF)
+    print("Testing a switch with:")
+    print("VT: %g\tVH: %g\tRON:%g\tROFF:%g" % (VT, VH, RON, ROFF))
     m = vswitch_model(name='test', VT=VT, VH=VH, RON=RON, ROFF=ROFF)
     VOs = [-12.5, -7.5, -2.5, 2.5, 7.5, 12.5]
     VIs = [-12.5, -7.5, -2.5, 2.5, 7.5, 12.5]

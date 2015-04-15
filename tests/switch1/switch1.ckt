@@ -1,0 +1,17 @@
+PWM switch test
+
+.model SW HIGH_SW VON=0.5 VOFF=0.5 RON=10 ROFF=10E6
+.model SW LOW_SW VON=0.5 VOFF=.5 RON=10 ROFF=10E6
+
+S1 dd  out dd in HIGH_SW
+S2 out 0  in  0 LOW_SW
+
+C1 out 0 10n ic=2.5
+R1 out 0 1k
+
+v1 in 0 type=vdc vdc=0 type=pulse v1=0 v2=5 td=25n tr=1n tf=1n pw=50n per=100n
+vsupply dd 0 type=vdc vdc=5
+
+.op guess=0
+.tran 1n .25u uic=2
+.plot tran v(in) v(out)

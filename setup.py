@@ -13,6 +13,8 @@ if not is_pypy:
     install_requires_platform.append('scipy>0.7.2')
 # Sympy
 install_requires_platform.append('sympy>=0.7.5')
+# tabulate
+install_requires_platform.append('tabulate>=0.7.3')
 
 with open('ahkab/__version__.py') as version_file:
     __version__ = re.findall("__version__ = '([^']*)'", version_file.read())[0]
@@ -28,9 +30,7 @@ setup(
     name='ahkab',
     version=__version__,
     packages=find_packages(),
-    package_data={
-      'ahkab': ['test_data/*.dat']
-    },
+    package_data={'ahkab': ['test_data/*.dat']},
     install_requires=install_requires_platform,
     extras_require = {'PLOT':['matplotlib>=1.1.1']},
     zip_safe=False,
@@ -55,6 +55,8 @@ setup(
         "Operating System :: MacOS",
         "Natural Language :: English",
         "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7"]
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.4"]
 )
 

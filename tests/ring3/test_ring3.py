@@ -11,6 +11,6 @@ def test():
 test.__doc__ = "Transient simulation of a 3-stages ring oscillator"
 
 if __name__ == '__main__':
-    nt = NetlistTest('ring3')
+    nt = NetlistTest('ring3', er=1e-1, ea=1e-2)
     nt.setUp()
     nt.test()

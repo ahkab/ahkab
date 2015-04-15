@@ -1,0 +1,10 @@
+test for transconductors
+va 1 2 type=vdc vdc=.1
+r1 1 0 .5k
+r2 2 0 .5k
+f1 3 4 va 5
+r3 3 0 1k
+r4 4 0 1k
+
+.op
+.symbolic

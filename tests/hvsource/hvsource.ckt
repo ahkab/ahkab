@@ -1,0 +1,14 @@
+test for transresitances
+va 1 2 type=vdc vdc=.1 vac=1
+r1 1 0 .5k
+r2 2 0 .5k
+h1 3 4 va 5000
+r3 3 0 1k
+r4 4 5 1k
+l1 5 0 10u
+c1 5 0 10u
+
+.op
+.ac start=50k stop=5e5 nsteps=1000
+.symbolic
+.plot ac |v(5)|

@@ -21,6 +21,9 @@
 This file implements the TRAP DF and a second order prediction formula.
 """
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import numpy as np
 from numpy.linalg import inv
 

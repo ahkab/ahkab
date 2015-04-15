@@ -29,19 +29,52 @@ you the need to call directly the functions in most submodules.
 Do you have a circuit?
 ======================
 
-To run a simulation, you'll need a circuit first: a circuit can be described with a
-simulation deck or with a circuit object.
+To run a simulation, you'll need a circuit first: a circuit can be described
+with a simulation deck or with a circuit object.
 
-In case you have a netlist (simulation deck) available, you may call
-:func:`main` directly. The netlist should be described according to the rules in
-:doc:`help/Netlist-Syntax`. Running the simulation through the :func:`main`
-method allows to process the result in Python.
+Define your circuit by means of a Circuit object
+------------------------------------------------
 
 In a Python script, describing the circuit through the
-:class:`ahkab.circuit.Circuit` interface is arguably more versatile a choice.
+:class:`ahkab.circuit.Circuit` interface is a very versatile a choice.
 
-Create a simulation object
-==========================
+Refer to :class:`ahkab.circuit.Circuit` for a complete description of the
+process and the documentation of several helper functions to assist you in this
+task.
+
+You may then jump to :ref:`create-simulation-object`.
+
+Define your circuit by means of a netlist file
+----------------------------------------------
+
+The circuit description can also be provided as a text file, also known as
+netlist deck, for historical reason. This file will also typically include
+simulation and post-processing directives, such as plotting.
+
+The netlist should be described according to the rules in
+:doc:`help/Netlist-Syntax`.
+
+If you have a netlist (simulation deck) available, you have several possibilities.
+
+The first, assuming your netlist defines some simulation would be to run it:
+
+* you may call ``ahkab`` from the command line. The command line interface is
+  described in :doc:`help/Command-Line-Help`.
+* you may call :func:`main` directly from Python. Running the simulation through
+  :func:`main` method allows to process the result in Python.
+
+Alternatively, you may parse the netlist through
+:func:`ahkab.netlist_parser.parse_circuit`, which will return the circuit
+instance, all the simulations defined in the deck and all the post-processing
+directives as well.
+
+You may now modify the circuit and simulation objects as you please, or create
+new ones, as well as run them as described in the :ref:`run-it` section.
+
+.. _create-simulation-object:
+
+How to create a simulation object
+=================================
 
 Next, you need to have a simulation object you would like to run.
 
@@ -58,6 +91,8 @@ The following methods are available to quickly create a simulation object:
 
 Click on one of the above hyperlinks to be taken to the corresponding
 documentation section.
+
+.. _run-it:
 
 Run it!
 =======
@@ -92,6 +127,9 @@ All methods in alphabetical order
 
 """
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import sys
 import tempfile
 import copy
@@ -109,6 +147,7 @@ except ImportError:
 import sympy
 
 # no matplotlib -> no plotting
+import tabulate
 try:
     import matplotlib
     plotting_available = True
@@ -136,6 +175,9 @@ from . import utilities
 # data display
 from . import plotting
 from . import printing
+
+#py3 compat
+from .py3compat import text_type
 
 from .__version__ import __version__
 
@@ -336,6 +378,11 @@ def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile=None, verbose
     points : float
         the number of points to be used the discretize the
         `[start, stop]` interval.
+
+    x0 : string or ndarray, optional
+        The linearization point for the AC analysis. If set to 'op' (default),
+        the latest Operating point analysis will be used. Otherwise, you may
+        supply your own linearization point in ndarray format.
 
     sweep_type : string, optional
         It can be set to either ``options.ac_lin_step`` (linear stepping) or
@@ -616,7 +663,7 @@ def run(circ, an_list=None):
     while len(an_list):
         an_item = an_list.pop(0)
         an_type = an_item.pop('type')
-        if 'x0' in an_item and isinstance(an_item['x0'], str):
+        if 'x0' in an_item and isinstance(an_item['x0'], text_type):
             printing.print_warning("%s has x0 set to %s, unavailable. Using 'None'." %
                                    (an_type.upper(), an_item['x0']))
             an_item['x0'] = None
@@ -661,7 +708,7 @@ def new_x0(circ, icdict):
     .. note:: 
         This simulator uses the normal convention, also known as the
         `Passive sign convention
-        <https://en.wikipedia.org/wiki/Passive_sign_convention>`.
+        <https://en.wikipedia.org/wiki/Passive_sign_convention>`_.
 
     **Returns:**
 
@@ -708,7 +755,7 @@ def set_temperature(T):
     """Set the simulation temperature, in Celsius."""
     T = float(T)
     if T > 300:
-        printing.print_warning(u"The temperature will be set to %f \xB0 C.")
+        printing.print_warning("The temperature will be set to %f \xB0 C.")
     constants.T = utilities.Celsius2Kelvin(T)
 
 
@@ -802,9 +849,14 @@ def main(filename, outfile="stdout", verbose=3):
         printing.print_info_line(
                 ("  Scipy not found: functionality will be reduced.", 6), verbose)
     printing.print_info_line(("  Sympy %s" % (sympy.__version__), 6), verbose)
+    printing.print_info_line(("  Tabulate %s" % (tabulate.__version__), 6), verbose)
     if plotting_available:
-        printing.print_info_line(
-            ("  Matplotlib %s" % (matplotlib.__version__), 6), verbose)
+        printing.print_info_line(("  Matplotlib %s" % (matplotlib.__version__),
+                                  6), verbose)
+        printing.print_info_line(("  -> backend: %s" %
+                                 (matplotlib.get_backend()), 6), verbose)
+        printing.print_info_line(("  -> matplotlibrc: %s" %
+                                 (matplotlib.matplotlib_fname()), 6), verbose)
     else:
         printing.print_info_line(
             ("  Matplotlib not found, plotting disabled.", 6), verbose)
@@ -814,14 +866,16 @@ def main(filename, outfile="stdout", verbose=3):
     (circ, directives, postproc_direct) = netlist_parser.parse_circuit(
         filename, read_netlist_from_stdin)
 
+    printing.print_info_line(("Checking circuit for common mistakes...", 6),
+                             verbose, print_nl=False)
     check, reason = utilities.check_circuit(circ)
     if not check:
         printing.print_general_error(reason)
-        print(circ)
         sys.exit(3)
+    printing.print_info_line(("done.", 6), verbose)
 
     if verbose > 3 or _print:
-        print "Parsed circuit:"
+        print("Parsed circuit:")
         print(circ)
         print("Models:")
         for m in circ.models:
@@ -832,11 +886,11 @@ def main(filename, outfile="stdout", verbose=3):
     _handle_netlist_ics(circ, an_list=[], ic_list=ic_list)
     results = {}
     for an in netlist_parser.parse_analysis(circ, directives):
-        if 'outfile' not in an.keys() or not an['outfile']:
+        if 'outfile' not in list(an.keys()) or not an['outfile']:
             an.update(
                 {'outfile': outfile + ("." + an['type']) * (outfile != 'stdout')})
-        if 'verbose' in an.keys() and (an['verbose'] is None or an['verbose'] < verbose) \
-           or 'verbose' not in an.keys():
+        if 'verbose' in list(an.keys()) and (an['verbose'] is None or an['verbose'] < verbose) \
+           or not 'verbose' in list(an.keys()):
             an.update({'verbose': verbose})
         _handle_netlist_ics(circ, [an], ic_list=[])
         if verbose >= 4:
@@ -853,12 +907,12 @@ def main(filename, outfile="stdout", verbose=3):
 
 def _handle_netlist_ics(circ, an_list, ic_list):
     for ic in ic_list:
-        ic_label = ic.keys()[0]
+        ic_label = list(ic.keys())[0]
         icdict = ic[ic_label]
         _x0s.update({ic_label: new_x0(circ, icdict)})
     for an in an_list:
-        if 'x0' in an and isinstance(an['x0'], str):
-            if an['x0'] in _x0s.keys():
+        if 'x0' in an and isinstance(an['x0'], text_type):
+            if an['x0'] in list(_x0s.keys()):
                 an['x0'] = _x0s[an['x0']]
             elif an_list.index(an) == 0:
                 raise ValueError(("The x0 '%s' is not available." % an["x0"]) +\

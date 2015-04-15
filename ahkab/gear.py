@@ -79,10 +79,14 @@
     Anyway, from a theorical point of view, the above applies.
       """
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import numpy as np
 import sys
 
-from . import utilities
+from scipy.misc import factorial
+
 from . import printing
 
 order = None
@@ -185,14 +189,14 @@ def get_df(pv_array, suggested_step, predict=False):
             (s[k_index] ** (order + 1)) * \
             (-1.0 * gamma[0, k_index] / gamma[0, 0])
     x_lte_coeff = ((-1.0) ** (order + 1)) * \
-        (1.0 / utilities.fact(order + 1)) * x_lte_coeff
+        (1.0/factorial(order + 1)) * x_lte_coeff
 
     if predict:
         predict_x = np.mat(np.zeros(pv_array[0][1].shape))
         for index in range(1, order + 2):  # order
             predict_x = predict_x + alpha[0, index] * pv_array[index - 1][1]
 
-        predict_lte_coeff = -1.0 / (utilities.fact(order + 1))
+        predict_lte_coeff = -1.0/factorial(order + 1)
         for index in range(1, order + 2):
             predict_lte_coeff = predict_lte_coeff * s[index]
         # print predict_lte_coeff

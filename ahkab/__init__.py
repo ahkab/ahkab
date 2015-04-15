@@ -25,6 +25,7 @@
 # matplotlib fail (and, sometimes, the test as well).
 # If we check for $DISPLAY, that makes us probably lose in portability,
 # because does Windows have the DISPLAY env variable defined?
+from __future__ import print_function
 import os
 
 try:
@@ -43,5 +44,5 @@ from .__version__ import __version__
 from .circuit import Circuit
 
 __all__ = ['new_op', 'new_dc', 'new_tran', 'new_ac', 'new_pss',
-           'new_symbolic', 'queue', 'run', 'new_x0', 
+           'new_symbolic', 'new_pz', 'queue', 'run', 'new_x0',
            'get_op_x0', 'set_temperature', 'main', 'Circuit']

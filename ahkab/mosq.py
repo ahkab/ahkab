@@ -42,6 +42,9 @@ following, we have the following regions implemented:
 """
 from __future__ import division
 
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
+
 import math
 import numpy as np
 
@@ -67,11 +70,14 @@ ISMALL_GUESS_MIN = 1e-10
 
 
 class mosq_device:
-    def __init__(self, nd, ng, ns, nb, W, L, model, M=1, N=1, part_id='M'):
+    def __init__(self, part_id, nd, ng, ns, nb, W, L, model, M=1, N=1):
         """Quadratic Law MOSFET device
 
         **Parameters:**
 
+        part_id : string
+            The part ID of the model. Eg. ``'M1'`` or ``'Mlow'``, the first
+            letter should always be ``'M'``.
         nd : int
             drain node
         ng : int
@@ -84,12 +90,12 @@ class mosq_device:
             element width [m]
         W : float
             element length [m]
-        M : int
-            shunt multiplier (n. of shunt devices)
-        N : int
-            series multiplier (n. of series devices)
         model : mosq_mos_model instance
             the model for the device
+        M : int, optional
+            shunt multiplier (n. of shunt devices)
+        N : int, optional
+            series multiplier (n. of series devices)
 
         Selected methods:
         - get_output_ports() -> (nd, ns)
@@ -195,16 +201,16 @@ class mosq_device:
         if reduced:
             delete_i = [pos for pos, i in enumerate(indices[0]) if i == -1]
             istamp = np.delete(istamp, delete_i, axis=0)
-            indices = zip(*[(i, j) for i, j in zip(*indices) if i != -1])
+            indices = tuple(zip(*[(i, j) for i, j in zip(*indices) if i != -1]))
         return indices, istamp
 
     def update_status_dictionary(self, ports_v):
         if self.opdict is None:
             self.opdict = {}
-        if not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gmd')) or \
-            not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gm')) or \
-            not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('gmb')) or \
-                not (self.opdict['state'] == ports_v[0] and self.opdict.has_key('Ids')):
+        if not (self.opdict['state'] == ports_v[0] and 'gmd' in self.opdict) or \
+            not (self.opdict['state'] == ports_v[0] and 'gm' in self.opdict) or \
+            not (self.opdict['state'] == ports_v[0] and 'gmb' in self.opdict) or \
+                not (self.opdict['state'] == ports_v[0] and 'Ids' in self.opdict):
 
             swapped, CS = self.mosq_model.get_voltages(*ports_v[0])
             self.opdict['state'] == ports_v[0]
@@ -214,12 +220,44 @@ class mosq_device:
             self.opdict['gmb'] = gstamp[0, 3]
             self.opdict['Ids'] = self.istamp(ports_v[0], reduced=False)[1][0]
 
-    def print_op_info(self, ports_v):
-        arr = self.get_op_info(ports_v)
-        print arr,
-
     def get_op_info(self, ports_v):
-        """Operating point info, for design/verification. """
+        """Information regarding the Operating Point (OP)
+
+        **Parameters:**
+
+        ports_v : list of lists
+            The voltages applied to all the driving ports, grouped by output
+            port.
+
+        i.e.
+
+        ::
+
+            [<list of voltages for the drive ports of output port 0>,
+             <list of voltages for the drive ports of output port 1>,
+             ...,
+             <list of voltages for the drive ports of output port N>]
+
+        Usually, this method returns ``op_keys`` and the corresponding
+        ``op_info``, two lists, one holding the labels, the other the
+        corresponding values.
+
+        In the case of MOSFETs, the values are way too many to be shown in a
+        linear table. For this reason, we return ``None`` as ``op_keys``, and we
+        return for ``op_info`` a list which holds both labels and values in a
+        table-like manner, spanning the vertical and horizontal dimension.
+
+        For this reason, each MOSFET has to have its OP info printed alone, not
+        grouped as it happens with most other elements.
+
+        **Returns:**
+
+        op_keys : ``None``
+            See above for why this value is always ``None``.
+        op_info : list of floats
+            The OP information ready to be passed to :func:`printing.table` for
+            arranging it in a pretty table to display.
+        """
         self.update_status_dictionary(ports_v)
         sat_status = "SATURATION" if self.opdict['SAT'] else "LINEAR"
         if not self.opdict["ON"]:
@@ -239,9 +277,9 @@ class mosq_device:
         arr.append(
             ["Ids", "[A]:", self.opdict['Ids'], "", "", "", "", "", "", "", "", ''])
         arr.append(["gm", "[S]:", self.opdict['gm'], "gmb", "[S]:",
-                   self.opdict['gmb'], "ro", "[Ohm]:", 1 / self.opdict['gmd'], "", "", ""])
+                   self.opdict['gmb'], "ro", u"[\u2126]:", 1./self.opdict['gmd'], "", "", ""])
 
-        return printing.table_setup(arr)
+        return None, arr
 
     def gstamp(self, ports_v, time=0, reduced=True):
         """Returns the differential (trans)conductance rs the port specified by port_index
@@ -281,7 +319,7 @@ class mosq_device:
             zap_rc = [pos for pos, i in enumerate(indices[1][:4]) if i == -1]
             stamp = np.delete(stamp, zap_rc, axis=0)
             stamp = np.delete(stamp, zap_rc, axis=1)
-            indices = zip(*[(i, y) for i, y in zip(*indices) if (i != -1 and y != -1)])
+            indices = tuple(zip(*[(i, y) for i, y in zip(*indices) if (i != -1 and y != -1)]))
             stamp_flat = stamp.reshape(-1)
             stamp_folded = []
             indices_folded = []
@@ -292,7 +330,7 @@ class mosq_device:
                 else:
                     w = indices_folded.index(it)
                     stamp_folded[w] += stamp_flat[ix]
-            indices = zip(*indices_folded)
+            indices = tuple(zip(*indices_folded))
             stamp = np.array(stamp_folded)
         return indices, stamp
 
@@ -369,7 +407,7 @@ class mosq_mos_model:
         if VTO is not None:
             self.VTO = self.NPMOS * float(VTO)
             if self.VTO < 0:
-                print "(W): model %s has internal negative VTO (%f V)." % (self.name, self.VTO)
+                print("(W): model %s has internal negative VTO (%f V)." % (self.name, self.VTO))
         elif VFB is not None:
             self.VTO = VFB + PHI + GAMMA * PHI  # inv here??
         else:
@@ -396,7 +434,7 @@ class mosq_mos_model:
 
         sc, sc_reason = self._self_check()
         if not sc:
-            raise Exception, sc_reason + " out of range"
+            raise Exception(sc_reason + " out of range")
         self.T1 = np.array(((0, 0, 1, 0),
                             (0, 1, 0, 0),
                             (1, 0, 0, 0),
@@ -469,7 +507,7 @@ class mosq_mos_model:
 
     def get_svt_skp(self, device, debug=False):
         if device.mckey and debug:
-            print "Monte carlo enabled. key:", device.mckey
+            print("Monte carlo enabled. key:", device.mckey)
         if device.mckey:
             svt = device.mckey[0] * self.AVT / math.sqrt(
                 2 * device.W * device.L)
@@ -479,38 +517,44 @@ class mosq_mos_model:
             svt, skp = 0, 0
         return svt, skp
 
-    def get_ids(self, device, (vds, vgs, vbs), opdict=None, debug=False):
+    def get_ids(self, device, xxx_todo_changeme, opdict=None, debug=False):
         """Returns:
             IDS, the drain-to-source current (de-normalized),
             qs, the (scaled) charge at the source,
             qr, the (scaled) charge at the drain.
         """
+        (vds, vgs, vbs) = xxx_todo_changeme
         if debug:
-            print "=== %s (%sch) current for vds: %g, vgs: %g, vbs: %g" % (device.part_id, 'n'*(self.NPMOS == 1) +
-                                                                         'p'*(self.NPMOS == -1), vds, vgs, vbs)
+            print("=== %s (%sch) current for vds: %g, vgs: %g, vbs: %g" \
+                  % (device.part_id, 'n'*(self.NPMOS == 1) +
+                  'p'*(self.NPMOS == -1), vds, vgs, vbs))
 
         # monte carlo support
         svt, skp = self.get_svt_skp(device, debug=debug)
 
+        if debug:
+            print("PHI:", self.PHI, "vbs:", vbs)
+
         vsqrt1 = max(-vbs + 2*self.PHI, 0.)
         vsqrt2 = max(2*self.PHI, 0.)
+
         VT = self.VTO + svt + self.GAMMA * \
             (math.sqrt(vsqrt1) - math.sqrt(vsqrt2))
         if vgs < VT:
             ids = options.iea * (vgs / VT + vds / VT) / 100
             if debug:
-                print "OFF: %g" % ids
+                print("OFF: %g" % ids)
         else:
             if vds < vgs - VT -0.5*self.LAMBDA*(VT - vgs)**2:
                 ids = (skp + 1) * self.KP * device.W / \
                       device.L * ((vgs - VT) * vds - .5 * vds ** 2)
                 if debug:
-                    print "OHMIC: %g" % ids
+                    print("OHMIC: %g" % ids)
             else:
                 ids = (skp + 1) * .5 * self.KP * device.W / device.L * (
                       vgs - VT) ** 2 * (1 + self.LAMBDA * (vds - vgs + VT + 0.25*self.LAMBDA*(VT - vgs)**2))
                 if debug:
-                    print "SAT: %g" % ids
+                    print("SAT: %g" % ids)
         Ids = self.NPMOS * device.M / device.N * ids
 
         opdict.update(
@@ -523,8 +567,19 @@ class mosq_mos_model:
 
         return Ids
 
-    def get_gmb(self, device, (vds, vgs, vbs), opdict=None, debug=False):
+        if debug:
+            print("vd:", vd, "vg:", VG / self.scaling.Ut, "vs:", vs, "vds:", vd - vs)
+            print("v_ifn:", v_ifn, "v_irn:", v_irn)
+            print("ifn:", ifn, "irn:", irn)
+            print("ip_abs_err:", ip_abs_err)
+            print("Vth:", self.scaling.Ut)
+            print("nv", nv, "Is", self.scaling.Is)
+            print("Weff:", device.W, "Leff:", Leff)
+            print("NPMOS:", self.NPMOS, "CS_FACTOR", CS_FACTOR)
+
+    def get_gmb(self, device, xxx_todo_changeme1, opdict=None, debug=False):
         """Returns the source-bulk transconductance or d(IDS)/d(VS-VB)."""
+        (vds, vgs, vbs) = xxx_todo_changeme1
         svt, skp = self.get_svt_skp(device, debug=False)
         assert vds >= 0
         vsqrt1 = max(-vbs + 2*self.PHI, 0.)
@@ -550,11 +605,12 @@ class mosq_mos_model:
                             + vgs - self.VTO) / (device.L * vsqrt1**.5)
         gmb = self.NPMOS * (1 + skp) * gmb * device.M / device.N
         if debug:
-            print "gmb %g" % gmb
+            print("gmb %g" % gmb)
         return gmb
 
-    def get_gmd(self, device, (vds, vgs, vbs), opdict=None, debug=False):
+    def get_gmd(self, device, xxx_todo_changeme2, opdict=None, debug=False):
         """Returns the drain-bulk transconductance or d(IDS)/d(VD-VB)."""
+        (vds, vgs, vbs) = xxx_todo_changeme2
         svt, skp = self.get_svt_skp(device, debug=False)
         assert vds >= 0
         vsqrt1 = max(-vbs + 2*self.PHI, 0.)
@@ -571,11 +627,12 @@ class mosq_mos_model:
                       (vgs - VT)**2
         gmd = (1 + skp) * gmd * device.M / device.N
         if debug:
-            print "gmd %g" % gmd
+            print("gmd %g" % gmd)
         return gmd
 
-    def get_gm(self, device, (vds, vgs, vbs), opdict=None, debug=False):
+    def get_gm(self, device, xxx_todo_changeme3, opdict=None, debug=False):
         """Returns the gate-bulk transconductance or d(IDS)/d(VG-VB)."""
+        (vds, vgs, vbs) = xxx_todo_changeme3
         svt, skp = self.get_svt_skp(device, debug=False)
         assert vds >= 0
         vsqrt1 = max(-vbs + 2*self.PHI, 0.)
@@ -593,7 +650,7 @@ class mosq_mos_model:
                     (-2 * self.GAMMA * (-vsqrt2**.5 + vsqrt1**.5) + 2*vgs - 2*self.VTO)
         gm = (1 + skp) * gm * device.M / device.N
         if debug:
-            print "gmg %g" % gm
+            print("gmg %g" % gm)
         return gm
 
     def _self_check(self):

@@ -21,13 +21,16 @@
 This module offers the functions needed to plot the results
 of a simulation.
 
-It is only functional if matplotlib is installed.
+It is only functional if `matplotlib <http://matplotlib.org/>`_
+is installed.
 
 Module reference
 ''''''''''''''''
 
 """
-from __future__ import print_function, division, unicode_literals
+
+from __future__ import (unicode_literals, absolute_import,
+                        division, print_function)
 
 import re
 import numpy as np
