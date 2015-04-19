@@ -10,7 +10,7 @@ The program requires:
    Python2, at least v.3.3 for Python3),
 -  **numpy>=1.7.0**,
 -  **scipy>=0.14.0**,
--  **sympy>=0.7.5**,
+-  **sympy>=0.7.6**,
 -  and **tabulate>0.7.3**.
 
 Strongly recommended:
@@ -39,7 +39,7 @@ installed running:
 The symbolic analysis capabilities rely on the amazing
 `sympy <http://www.sympy.org/>`__. Any version of sympy will do if you
 are interested only in numeric simulations, but, if you run symbolic
-simulations, *sympy version 0.7.5 or higher* is needed.
+simulations, *sympy version 0.7.6 or higher* is needed.
 
 ``# aptitude install python-sympy``
 
