@@ -695,11 +695,11 @@ The PZ analysis computes the poles (and optionally the zeros) of a circuit.
 
 It can be specified with any of the following equivalent syntaxes:
 
-```.PZ [OUTPUT=<V(node1,node2)> SOURCE=<string> ZEROS=<bool> SHIFT=<float>]```
+``.PZ [OUTPUT=<V(node1,node2)> SOURCE=<string> ZEROS=<bool> SHIFT=<float>]``
 
 or
 
-```.PZ [V(<node1>,<node2>) <SOURCE> <ZEROS=1> <SHIFT=0>]```
+``.PZ [V(<node1>,<node2>) <SOURCE> <ZEROS=1> <SHIFT=0>]``
 
 Internally, it is implemented through the modification-decomposition
 (MD) method, which is based on finding the eigenvalues of the
