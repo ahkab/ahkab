@@ -158,6 +158,12 @@ They are as follows:
 
     - A no stdout activity time of 10 minutes.
 
+  - ``skip-on-pypy``, set to either ``0`` or ``1``, to flag whether the test
+    should be skipped if useing a PYPY Python implemetntation or not. In
+    general, as PYPY supports neither ``scipy`` nor ``matplotlib``, only
+    symbolic-oriented tests make sense with PYPY (where it really excels!).
+
+
 The contents of an example test configuration file ``rtest1.ini``
 follow, as an example.
 
@@ -170,6 +176,7 @@ follow, as an example.
     dc_ref = rtest1-ref.dc
     op_ref = rtest1-ref.op
     skip-on-travis = 0
+    skip-on-pypy = 1
 
 
 Script file
@@ -298,7 +305,7 @@ Below is a typical test script file:
         ## create a testbench
         testbench = testing.APITest('<test_id>', mycircuit,
                                     [op_analysis, ac_analysis],
-                                    skip_on_travis=True)
+                                    skip_on_travis=True, skip_on_pypy=True)
 
         ## setup and test
         testbench.setUp()
@@ -372,9 +379,9 @@ import unittest
 from warnings import warn
 
 try:
-    from configparser import ConfigParser
+    from configparser import ConfigParser, NoOptionError
 except ImportError:
-    from ConfigParser import ConfigParser
+    from ConfigParser import ConfigParser, NoOptionError
 
 import numpy as np
 import sympy
@@ -389,9 +396,10 @@ from nose.tools import ok_, nottest
 from nose.plugins.skip import SkipTest
 
 from . import csvlib
-from . import results
 from . import options
+from . import py3compat
 from . import pz
+from . import results
 from .ahkab import main, run
 
 
@@ -469,10 +477,22 @@ class NetlistTest(unittest.TestCase):
         # read the test config from <test_id>.ini
         cp = ConfigParser()
         cp.read(os.path.join(self.reference_path, '%s.ini' % self.test_id))
+        # skipping on TRAVIS-CI option for time-consuming tests
         self.skip = bool(int(cp.get('test', 'skip-on-travis')))
         if 'TRAVIS' in os.environ and self.skip:
             # skip even loading the references
             return
+        # skipping on PYPY option for numeric tests
+        # Do we have the optional skip-on-pypy entry?
+        try:
+            self.skip_on_pypy = bool(int(cp.get('test', 'skip-on-pypy')))
+        except NoOptionError:
+            # Default to skipping on PYPY
+            self.skip_on_pypy = True
+        if py3compat.PYPY and self.skip_on_pypy:
+            # once again, skip even loading the references
+            return
+
         assert self.test_id == cp.get('test', 'name')
 
         netlist = cp.get('test', 'netlist')
@@ -535,7 +555,9 @@ class NetlistTest(unittest.TestCase):
 
     def _run_test(self):
         # check whether we are on travis or not and skip if needed.
-        if 'TRAVIS' in os.environ and self.skip:
+        # check whether we are running PYPY or not and skip if needed.
+        if ('TRAVIS' in os.environ and self.skip) or (py3compat.PYPY and
+            self.skip_on_pypy):
             self._reset_sim_opts()
             raise SkipTest
         # no reference runs with nose
@@ -660,11 +682,17 @@ class APITest(unittest.TestCase):
         A dictionary containing the options to be used for the test.
 
     skip_on_travis : bool, optional
-        Should we skip the test on Travis? Set to ``True`` for long tests
+        Should we skip the test on Travis? Set to ``True`` for long tests.
+        Defaults to ``False``.
+
+    skip_on_pypy : bool, optional
+        Should we skip the test on PYPY? Set to ``True`` for tests requiring
+        libraries not supported by PYPY (eg. ``scipy``, ``matplotlib``).
+        Defaults to ``True``, as most numeric tests will fail.
     """
 
     def __init__(self, test_id, circ, an_list, er=1e-6, ea=1e-9, sim_opts=None,
-                 skip_on_travis=False):
+                 skip_on_travis=False, skip_on_pypy=True):
         unittest.TestCase.__init__(self, methodName='test')
         self.test_id = test_id
         self.er = er
@@ -672,6 +700,7 @@ class APITest(unittest.TestCase):
         self.test.__func__.__doc__ = "%s simulation" % (test_id, )
         self.ref_data = {} # the reference results will be loaded here
         self.skip = skip_on_travis
+        self.skip_on_pypy = skip_on_pypy
         self.circ = circ
         self.an_list = an_list
         self._sim_opts = sim_opts if sim_opts is not None else {}
@@ -709,7 +738,8 @@ class APITest(unittest.TestCase):
         else:
             self.reference_path = os.path.join(wd, 'tests', self.test_id)
 
-        if 'TRAVIS' in os.environ and self.skip:
+        if ('TRAVIS' in os.environ and self.skip) or (py3compat.PYPY and
+            self.skip_on_pypy):
             # skip even loading the references
             return
 
@@ -776,7 +806,8 @@ class APITest(unittest.TestCase):
                 self.ref_data.update({t: res})
 
     def _run_test(self):
-        if 'TRAVIS' in os.environ and self.skip:
+        if ('TRAVIS' in os.environ and self.skip) or (py3compat.PYPY and
+            self.skip_on_pypy):
             self._reset_sim_opts()
             raise SkipTest
         print("Running test... ", end=' ')
