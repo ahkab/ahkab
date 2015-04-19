@@ -37,12 +37,14 @@ import numpy as np
 
 from . import printing
 from . import options
+from . import py3compat
 
 try:
     import pylab
 except ImportError:
-    # no matplotlib
-    printing.print_warning('Matplotlib not found.')
+    # no matplotlib on a platform that supports it
+    if not py3compat.PYPY:
+        printing.print_warning('Matplotlib not found.')
 
 def _split_netlist_label(labels_string):
     labels_string = labels_string.strip().upper()

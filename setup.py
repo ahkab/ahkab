@@ -12,7 +12,7 @@ install_requires_platform = ['numpy']
 if not is_pypy:
     install_requires_platform.append('scipy>0.7.2')
 # Sympy
-install_requires_platform.append('sympy>=0.7.5')
+install_requires_platform.append('sympy>=0.7.6')
 # tabulate
 install_requires_platform.append('tabulate>=0.7.3')
 
