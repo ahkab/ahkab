@@ -294,7 +294,7 @@ def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP,
     """Assembles a TRAN analysis and returns the analysis object.
 
     The analysis itself can be run with ``ahkab.run(...)``
-    or queued with ``ahakab.queue(...)`` and then run subsequently.
+    or queued with ``ahkab.queue(...)`` and then run subsequently.
 
     **Parameters:**
 
@@ -353,7 +353,7 @@ def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile=None, verbose
     """Assembles an AC analysis and returns the analysis object.
 
     The analysis itself can be run with ``ahkab.run(...)``
-    or queued with ``ahakab.queue(...)`` and then run subsequently.
+    or queued with ``ahkab.queue(...)`` and then run subsequently.
 
     **Parameters:**
 
@@ -413,7 +413,7 @@ def new_pss(period, x0=None, points=None, method=options.BFPSS, autonomous=False
     """Assembles a Periodic Steady State (PSS) analysis and returns the analysis object.
 
     The analysis itself can be run with: ``ahkab.run(...)`` or queued with
-    ``ahakab.queue(...)`` and then run subsequently.
+    ``ahkab.queue(...)`` and then run subsequently.
 
     **Parameters:**
 
@@ -474,7 +474,7 @@ def new_pz(input_source=None, output_port=None, shift=0.0, MNA=None, outfile=Non
     """Assembles a Pole-Zero analysis and returns the analysis object.
 
     The analysis itself can be run with: ``ahkab.run(...)`` or queued with
-    ``ahakab.queue(...)`` and then run subsequently.
+    ``ahkab.queue(...)`` and then run subsequently.
 
     **Parameters:**
 
@@ -528,7 +528,7 @@ def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None
     """Assembles a Symbolic analysis and returns the analysis object.
 
     The analysis itself can be run with ``ahkab.run(...)``
-    or queued with ``ahakab.queue(...)`` and then run subsequently.
+    or queued with ``ahkab.queue(...)`` and then run subsequently.
 
     **Parameters:**
 
