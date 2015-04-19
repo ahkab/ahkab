@@ -721,24 +721,26 @@ Parameters:
 Symbolic small-signal (.SYMBOLIC)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Performs a small-signal analysis of the circuit, optionally including AC
+elements.
+
 **General syntax:**
 
-``.symbolic [tf=<source_name> ac=bool]``
+``.symbolic [tf=<source_id> ac=<boolean>]``
 
--  tf: If the source is specified, all results are differentiated with
-   respect to the source value (transfer functions).
--  ac: If set to True, capacitors and inductors will be included.
-   Defaults to False.
+- ``tf``: If the source ID is specified, the transfer functions from the source
+  to each of the variables in the circuit are calculated. From them,
+  low-frequency gain, poles and zeros are extracted.
+- ``ac``: If set to ``True``, capacitors and inductors will be included.
+  Defaults to ``False``, to speed up the solutions.
 
-Performs a small-signal analysis of the circuit, optionally including AC
-elements (slows down the solution). In the results, the imaginary unit
-is shown as ``I``, the angular frequency as ``w``.
+In the results, the imaginary unit is shown as ``I``, the angular frequency as
+``w``.
 
-Results are printed to stdout.
-
-We rely on the sympy library for symbolic computations. The library is
-under development and might have trouble (or take a long time) with
-medium-big netlists. Improvements are on their way.
+We rely on the ``Sympy`` library for the low-level symbolic computations. The
+library is under active development and might have trouble (or take a long time)
+with medium-big or tricky netlists. Improvements are on their way, in the
+meanwhile, consider simplifying complex netlists, if solving is an issue.
 
 Other directives
 """"""""""""""""
