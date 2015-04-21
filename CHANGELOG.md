@@ -1,6 +1,10 @@
 <!-- Name: Changelog -->
 #Changelog
 
+## Changelog for v 0.15
+
+Version 0.15 is just a bugfix release addressing the fact that the minimum version of the ``sympy`` release that is needed is 0.7.6.
+
 ## Changelog for v 0.14
 
 Version 0.14 represents the culmination of three months of efforts, yet another step in the current time-based release scheme.
