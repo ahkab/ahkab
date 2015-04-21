@@ -146,7 +146,7 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None,
 
     if not ac_enable:
         printing.print_info_line(
-            ("Starting symbolic DC analysis...", 1), verbose)
+            ("Starting symbolic small-signal DC analysis...", 1), verbose)
     else:
         printing.print_info_line(
             ("Starting symbolic AC analysis...", 1), verbose)
@@ -154,15 +154,11 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None,
     printing.print_info_line(
         ("Building symbolic MNA, N and x...", 3), verbose, print_nl=False)
     mna, N, subs_g = generate_mna_and_N(circ, opts={'r0s': r0s}, ac=ac_enable,
-                                        verbose=verbose)
+                                        subs=subs, verbose=verbose)
     x = get_variables(circ)
     mna = mna[1:, 1:]
     N = N[1:, :]
     printing.print_info_line((" done.", 3), verbose)
-
-    printing.print_info_line(("Performing variable substitutions...", 5),
-                             verbose)
-    mna, N = apply_substitutions(mna, N, subs)
 
     printing.print_info_line(("MNA matrix (reduced):", 5), verbose)
     printing.print_info_line((sympy.sstr(mna), 5), verbose)
@@ -253,53 +249,6 @@ def calculate_gains(sol, xin, optimize=True):
     return gains
 
 
-# not used anymore. Superseeded by results.py
-#def sol_to_dict(sol, x, optimize=True):
-#    ret = {}
-#    for index in range(x.shape[0]):
-#        sol_current = sympy.together(sol[index]) if optimize else sol[index]
-#        ret.update({str(x[index]): sol_current})
-#    return ret
-
-
-def apply_substitutions(mna, N, subs):
-    """Apply the given a dictionary of substitutions.
-
-    The actual sustitution is performed calling Sympy's
-    ``subs()``.
-
-    Example of substitution:
-
-    ::
-
-        R1 = 5*R2
-
-
-    The above example can be carried out supplying the dictionary::
-
-        subs = {R1:5*R2}
-
-
-    **Parameters:**
-
-    mna : Sympy matrix
-        The MNA matrix.
-    N : Sympy matrix
-        The constant term N.
-    subs : dict
-        The dictionary of symbols substitutions.
-
-    **Returns:**
-
-    mna, N : ndarrays
-        The same matrices with the substitutions applied.
-
-    """
-    mna = mna.subs(subs)
-    N = N.subs(subs)
-    return mna, N
-
-
 def get_variables(circ):
     """Get a sympy matrix containing the circuit variables to be solved for.
 
@@ -349,7 +298,7 @@ def _to_real_list(M):
     return reallist
 
 
-def generate_mna_and_N(circ, opts, ac=False, verbose=3):
+def generate_mna_and_N(circ, opts, ac=False, subs=None, verbose=3):
     """Generate a symbolic Modified Nodal Analysis matrix and N vector.
 
     Only elements that have an ``is_symbolic`` attribute set to ``True``
@@ -379,6 +328,9 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
     ac : bool, optional
         Flag to trigger the inclusion of frequency-dependent elements. Defaults
         to ``False`` currently (but may change).
+    subs : dict, optional
+        The substitution dictionary, composed by mappings of
+        ``<symbol>``:``<sympy expression>``.
     verbose : int, optional
         Verbosity flag, from ``0`` (silent) to ``6`` (very logorrhoic). Defaults
         to ``3``.
@@ -387,7 +339,7 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
 
     mna, N : Sympy matrices
         The MNA matrix and the contant term of symbolic type.
-    subs : dict of symbols
+    subs_gs : dict of symbols
         In case the formulation of the MNA is performed in terms of
         conducatances, this dictionary is to be used to substitute away the
         conducatances for the resistor symbols, after the circuit is solved but
@@ -421,8 +373,10 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             if elem.is_symbolic:
                 R = _symbol_factory(elem.part_id.upper(), real=True,
                                     positive=True)
+                if R in subs:  # instant substitution
+                    R = subs[R]
                 if options.symb_formulate_with_gs:
-                    G = _symbol_factory('Gxxx' + elem.part_id[1:], real=True,
+                    G = _symbol_factory('Gxxx' + str(R)[1:], real=True,
                                         positive=True)
                     # but we keep track of which is which and substitute back after
                     # solving.
@@ -440,6 +394,8 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
                 if elem.is_symbolic:
                     capa = _symbol_factory(
                         elem.part_id.upper(), real=True, positive=True)
+                    if capa in subs:  # instant substitution
+                        capa = subs[capa]
                 else:
                     capa = elem.value
                 mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + s * capa
@@ -453,6 +409,8 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
         elif isinstance(elem, devices.GISource):
             if elem.is_symbolic:
                 alpha = _symbol_factory(elem.part_id.upper(), real=True)
+                if alpha in subs:  # instant substitution
+                    alpha = subs[alpha]
             else:
                 alpha = elem.value
             mna[elem.n1, elem.sn1] = mna[elem.n1, elem.sn1] + alpha
@@ -462,12 +420,16 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
         elif isinstance(elem, devices.ISource):
             if elem.is_symbolic:
                 IDC = _symbol_factory(elem.part_id.upper())
+                if IDC in subs:  # instant substitution
+                    IDC = subs[IDC]
             else:
                 IDC = elem.dc_value
             N[elem.n1, 0] = N[elem.n1, 0] + IDC
             N[elem.n2, 0] = N[elem.n2, 0] - IDC
         elif isinstance(elem, mosq.mosq_device) or isinstance(elem, ekv.ekv_device):
             gm = _symbol_factory('gm_' + elem.part_id, real=True, positive=True)
+            if gm in subs:  # instant substitution
+                gm = subs[gm]
             mna[elem.n1, elem.ng] = mna[elem.n1, elem.ng] + gm
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gm
             mna[elem.n2, elem.ng] = mna[elem.n2, elem.ng] - gm
@@ -475,12 +437,16 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             if opts['r0s']:
                 r0 = _symbol_factory(
                     'r0_' + elem.part_id, real=True, positive=True)
+                if r0 in subs:  # instant substitution
+                    r0 = subs[r0]
                 mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + 1 / r0
                 mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - 1 / r0
                 mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - 1 / r0
                 mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + 1 / r0
         elif isinstance(elem, diode.diode):
             gd = _symbol_factory("g" + elem.part_id, positive=True)
+            if gd in subs:  # instant substitution
+                gd = subs[gd]
             mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + gd
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gd
             mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - gd
@@ -513,12 +479,16 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             if isinstance(elem, devices.VSource):
                 if elem.is_symbolic:
                     VDC = _symbol_factory(elem.part_id.upper())
+                    if VDC in subs:  # instant substitution
+                        VDC = subs[VDC]
                 else:
                     VDC = elem.dc_value
                 N[index, 0] = -VDC
             elif isinstance(elem, devices.EVSource):
                 if elem.is_symbolic:
                     alpha = _symbol_factory(elem.part_id.upper(), real=True)
+                    if alpha in subs:  # instant substitution
+                        alpha = subs[alpha]
                 else:
                     alpha = elem.alpha
                 mna[index, elem.sn1] = -alpha
@@ -526,6 +496,8 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             elif isinstance(elem, devices.HVSource):
                 if elem.is_symbolic:
                     alpha = _symbol_factory(elem.part_id.upper(), real=True)
+                    if alpha in subs:  # instant substitution
+                        alpha = subs[alpha]
                 else:
                     alpha = elem.alpha
                 source_index = circ.find_vde_index(elem.source_id)
@@ -535,6 +507,8 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
                     if elem.is_symbolic:
                         L = _symbol_factory(
                             elem.part_id.upper(), real=True, positive=True)
+                        if L in subs:  # instant substitution
+                            L = subs[L]
                     else:
                         L = elem.L
                     mna[index, index] = -s * L
@@ -556,6 +530,8 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
                 if cd.is_symbolic:
                     M = _symbol_factory(
                         cd.part_id, real=True, positive=True)
+                    if M in subs:  # instant substitution
+                        M = subs[M]
                 else:
                     M = cd.K
                 # get `part_id` of the other inductor (eg. "L32")
@@ -571,6 +547,8 @@ def generate_mna_and_N(circ, opts, ac=False, verbose=3):
             source_current_index = circ.find_vde_index(elem.source_id, verbose=0)
             if elem.is_symbolic:
                 F = _symbol_factory(elem.part_id, real=True)
+                if F in subs:  # instant substitution
+                    F = subs[F]
             else:
                 F = elem.alpha
             mna[elem.n1, pre_vde + source_current_index] += +F
