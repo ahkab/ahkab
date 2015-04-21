@@ -27,9 +27,6 @@ import base64
 import scipy
 import scipy.optimize
 import numpy
-import matplotlib
-matplotlib.use('Agg')
-import pylab
 
 from nose.plugins.skip import SkipTest
 
@@ -128,10 +125,8 @@ def test():
     """R-2R ladder symbolic speed test"""
 
     # we do not want to execute this on Travis.
-    if 'TRAVIS' in os.environ or py3compat.PYPY: 
+    if 'TRAVIS' in os.environ:
         # we skip the test. Travis builders are awfully slow
-        # also no execution on PYPY for now, we need scipy for the
-        # .mat-files interface 
         raise SkipTest
 
     mat_file = os.path.join(reference_path, 'r2r_symbolic.mat')
@@ -152,26 +147,60 @@ def test():
         print("RUNNING REFERENCE TEST - RESULTS INVALID!")
 
     if stand_alone_exec:
-        image_file = os.path.join(reference_path, "r2r_symbolic.png")
-        pylab.figure()
-        pylab.hold(True)
-        pylab.title("Total times vs number of equations")
-        pylab.plot(x, times, 'ko', label='Measured - REF')
-        p = fit(times, x)
-        xf = numpy.arange(2, x[-1] + 1)
-        pylab.plot(xf, fitfunc(p, xf), 'k-',
-                   label=('Fit: $y = %.3e\ x^3 + %.3e\ x^2 + %.1f$' % tuple(p.tolist())))
+        image_file = os.path.join(reference_path, "r2r_symbolic.txt")
+        image_file_obj = open(image_file, 'w')
         if not ref_run:
-            pylab.plot(x_new, times_new, 'go', label='Measured - NEW')
-            p_new = fit(times_new, x_new)
-            xf_new = numpy.arange(2, x_new[-1] + 1)
-            pylab.plot(xf_new, fitfunc(p_new, xf_new), 'k-',
-                       label=('Fit: $y = %.3e\ x^3 + %.3e\ x^2 + %.1f$ - NEW' % tuple(p_new.tolist())))
-        pylab.xlabel("Number of equations []")
-        pylab.ylabel("Time to convergence [s]")
-        pylab.grid(True)
-        pylab.legend(loc=0)
-        pylab.savefig(image_file, dpi=90, format='png')
+            plot_comparison(x, times, times_new, label1='Measured - REF',
+                            label2='Measured - NEW', fileobj=image_file_obj)
+        else:
+            plot_comparison(x, times, [], label1='Measured - REF',
+                            label2='Measured - NEW', fileobj=image_file_obj)
+        image_file_obj.flush()
+        image_file_obj.close()
+
+
+def plot_comparison(x, y1, y2, label1=None, label2=None, fileobj=None):
+    if fileobj is None:
+        fileobj = sys.stdout
+    maxv = float(max(1, max(max(y1), max(y2))))
+    scale = lambda x: int(x/maxv*80)
+    unscale = lambda x: x*maxv/80
+    # top x
+    print('         ', end=' ', file=fileobj)
+    for i in range(9):
+        print('%5.3f   ' % unscale(i*10), end=' ', file=fileobj)
+    print(file=fileobj)
+    print('          |        ', end=' ', file=fileobj)
+    for i in range(1, 9):
+        print('|        ', end=' ', file=fileobj)
+    print(file=fileobj)
+    print('          +'+'-'*81+'>', file=fileobj)
+    # data
+    print(('          |'), file=fileobj)
+    if len(y2):
+        for xi, y1i, y2i in zip(x, y1, y2):
+            print(('% 9.3f +' % xi) + '-'*(scale(y1i)-1)+'o', file=fileobj)
+            print(('          |') + '='*(scale(y2i)-1)+'*', file=fileobj)
+            print(('          |'), file=fileobj)
+    else:
+        for xi, y1i in zip(x, y1):
+            print(('% 9.3f +' % xi) + '-'*(scale(y1i)-1)+'o', file=fileobj)
+            print(('          |'), file=fileobj)
+    # bottom x
+    print('          +'+'-'*81+'>', file=fileobj)
+    print('          |        ', end=' ', file=fileobj)
+    for i in range(1, 9):
+        print('|        ', end=' ', file=fileobj)
+    print(file=fileobj)
+    print('         ', end=' ', file=fileobj)
+    for i in range(9):
+        print('%5.3f   ' % unscale(i*10), end=' ', file=fileobj)
+    if label1 or label2:
+        print('\n\n   LEGEND:', file=fileobj)
+    if label1:
+        print('   --o %s' % label1, file=fileobj)
+    if label2 and len(y2):
+        print('   ==* %s' % label2, file=fileobj)
 
 if __name__ == '__main__':
     stand_alone_exec = True
