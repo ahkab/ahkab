@@ -137,8 +137,6 @@ def test():
         x, times = d['x'].reshape((-1,)), d['times'].reshape((-1,))
         x = numpy.array(x, dtype='int64')
         x_new, times_new = _run_test(ref_run)
-        assert numpy.max(times_new - times) < REGRESSION_TIME
-        assert numpy.sum(times_new) > 3 # if we're that fast, something's off
     elif ref_run:
         if sys.argv[0].endswith('nosetests'):
             raise SkipTest
@@ -166,6 +164,10 @@ def test():
         pylab.grid(True)
         pylab.legend(loc=0, fontsize=10)
         pylab.savefig(image_file, dpi=100, format='png')
+
+    if not ref_run:
+        assert numpy.max(times_new - times) < REGRESSION_TIME
+        assert numpy.sum(times_new) > 3 # if we're that fast, something's off
 
 if __name__ == '__main__':
     stand_alone_exec = True
