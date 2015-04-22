@@ -22,10 +22,7 @@ import os
 import sys
 import hashlib
 import uuid
-import scipy.io
 import base64
-import scipy
-import scipy.optimize
 import numpy
 
 from nose.plugins.skip import SkipTest
@@ -53,38 +50,38 @@ else:
 
 
 def get_boxid():
-    mac = hex(uuid.getnode())
-    return base64.b64encode(hashlib.sha512(mac).hexdigest())
+    mac = hex(uuid.getnode()).encode('ascii')
+    #return base64.b64encode(hashlib.sha512(mac).hexdigest())
+    hashlib.sha512(mac)
+    hashlib.sha512(mac).hexdigest()
+    hashlib.sha512(mac).hexdigest()#.decode('ascii')
+    return base64.b64encode(hashlib.sha512(mac).hexdigest().encode('ascii'))
 
+def load_boxid(filename):
+    fp = open(filename, 'r')
+    boxid = fp.read()
+    fp.close()
+    return boxid
 
-def check_boxid(mat_file):
-    return get_boxid() == scipy.io.loadmat(mat_file)['boxid']
+def save_boxid(filename):
+    fp = open(filename, 'w')
+    boxid = get_boxid()
+    fp.write(boxid.decode('ascii'))
+    fp.flush()
+    fp.close()
 
-# fit the data
-fitfunc = lambda p, x: p[0] * x**3 + p[1] * x**2 + p[2]  # Target function
-# Distance to the target function
-errfunc = lambda p, x, y: (fitfunc(p, x) - y)
-
-
-def fit(y, x):
-    fit = [3.1, 1.1, .2]
-    fit, success = scipy.optimize.leastsq(
-        errfunc, fit, args=(x, y), maxfev=100000)
-    print(fit, success)
-    return fit
-
+def check_boxid(filename):
+    return get_boxid() == load_boxid(filename)
 
 def _run_test(ref_run=False):
     MAXNODES = 14
-    STEP = 1
-
-    filename = "r2r_symbolic_%(nodes)s.ckt"
+    STEP = 2
     times = []
 
     for circuit_nodes in range(2, MAXNODES, STEP):
         # build the circuit
-        mycir = ahkab.Circuit(
-            'R2R symbolic test with %d nodes' % circuit_nodes)
+        mycir = ahkab.Circuit('R2R symbolic test with %d nodes' %
+                              circuit_nodes)
         n1 = '1'
         gnd = mycir.gnd
         mycir.add_vsource('VS', n1, gnd, dc_value=10e3)
@@ -109,15 +106,18 @@ def _run_test(ref_run=False):
         # check the values too
         VS = r.as_symbol('VS')
         out_test = r['V' + str(circuit_nodes)] / VS
-        out_th = 1. / (2**(circuit_nodes - 1))
-        assert .5 * abs(out_th - out_test) / (out_th + out_test) < 1e-3
+        out_th = 1./(2**(circuit_nodes - 1))
+        assert .5*abs(out_th - out_test)/(out_th + out_test) < 1e-3
 
     x = list(range(2, MAXNODES, STEP))
-    x = numpy.array(x, dtype='int64')
-    times = numpy.array(times, dtype='float64')
+    x = numpy.array(x, dtype=numpy.int64)
+    times = numpy.array(times, dtype=numpy.float64)
     if ref_run:
-        scipy.io.savemat(os.path.join(reference_path, 'r2r_symbolic.mat'),
-                         {'x': x, 'times': times, 'boxid': get_boxid()})
+        numpy.savetxt(os.path.join(reference_path, 'r2r_symbolic_ref.csv'),
+                      numpy.concatenate((x.reshape((-1, 1)),
+                                         times.reshape((-1, 1))),
+                                        axis=1), delimiter=',')
+        save_boxid(os.path.join(reference_path, 'r2r_symbolic_ref.boxid'))
     return x, times
 
 
@@ -125,20 +125,19 @@ def test():
     """R-2R ladder symbolic speed test"""
 
     # we do not want to execute this on Travis.
-    if 'TRAVIS' in os.environ:
-        # we skip the test. Travis builders are awfully slow
-        raise SkipTest
+    #if 'TRAVIS' in os.environ:
+    #    # we skip the test. Travis builders are awfully slow
+    #    raise SkipTest
 
-    mat_file = os.path.join(reference_path, 'r2r_symbolic.mat')
-    ref_run = not (os.path.isfile(mat_file) and check_boxid(mat_file))
+    csv_file = os.path.join(reference_path, 'r2r_symbolic_ref.csv')
+    boxid_file = os.path.join(reference_path, 'r2r_symbolic_ref.boxid')
+    ref_run = not (os.path.isfile(csv_file) and check_boxid(boxid_file))
     if not ref_run:
         print("Running test...")
-        d = scipy.io.loadmat(mat_file)
-        x, times = d['x'].reshape((-1,)), d['times'].reshape((-1,))
-        x = numpy.array(x, dtype='int64')
+        d = numpy.loadtxt(csv_file, delimiter=',')
+        x, times = d[:, 0].reshape((-1,)), d[:, 1].reshape((-1,))
+        x = numpy.array(x, dtype=numpy.int64)
         x_new, times_new = _run_test(ref_run)
-        assert numpy.max(times_new - times) < REGRESSION_TIME
-        assert numpy.sum(times_new) > 3  # if we're that fast, something's off
     elif ref_run:
         if sys.argv[0].endswith('nosetests'):
             raise SkipTest
@@ -158,17 +157,43 @@ def test():
         image_file_obj.flush()
         image_file_obj.close()
 
+    # last thing we do is we check for timing issues.
+    if not ref_run:
+        assert numpy.max(times_new - times) < REGRESSION_TIME
+        assert numpy.sum(times_new) > 3  # if we're that fast, something's off
 
 def plot_comparison(x, y1, y2, label1=None, label2=None, fileobj=None):
+    """Plot by printing histograms to screen
+    
+    **Parameters:**
+    
+    x : array-like
+        The abscissa values for ``y1`` and ``y2``.
+    y1 : array-like
+        The ordinata values for the first histogram.
+    y2 : array-like
+        The ordinata values for the second data set. It may be set to a
+        zero-length array if only one data set is to be plotted.
+    label1 : str, optional
+        The label for the first data set.
+    label2 : str, optional
+        The label for the second data set.
+    fileobj : file object, optional
+        If you wish to redirect the output to a special file, you may.
+        Otherwise, ``sys.stdout`` will be employed.
+
+    """
     if fileobj is None:
         fileobj = sys.stdout
-    maxv = float(max(1, max(max(y1), max(y2))))
+    maxy2 = max(y2) if len(y2) else 1.
+    maxy1 = max(y1) if len(y1) else 1.
+    maxv = float(max([1., maxy1, maxy2]))
     scale = lambda x: int(x/maxv*80)
     unscale = lambda x: x*maxv/80
     # top x
     print('         ', end=' ', file=fileobj)
     for i in range(9):
-        print('%5.3f   ' % unscale(i*10), end=' ', file=fileobj)
+        print('%5.3f    ' % unscale(i*10), end=' ', file=fileobj)
     print(file=fileobj)
     print('          |        ', end=' ', file=fileobj)
     for i in range(1, 9):
@@ -194,7 +219,7 @@ def plot_comparison(x, y1, y2, label1=None, label2=None, fileobj=None):
     print(file=fileobj)
     print('         ', end=' ', file=fileobj)
     for i in range(9):
-        print('%5.3f   ' % unscale(i*10), end=' ', file=fileobj)
+        print('%5.3f    ' % unscale(i*10), end=' ', file=fileobj)
     if label1 or label2:
         print('\n\n   LEGEND:', file=fileobj)
     if label1:
