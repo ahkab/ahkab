@@ -20,6 +20,7 @@ very quickly on this alternative Python implementation.
 Take a look at Pypy running 5x faster than CPython with no speed optimization on our side:
 
 ```
+      Runtime [s]
       0.000     1.505     3.009     4.514     6.018     7.523     9.028     10.532     12.037     
       |         |         |         |         |         |         |         |         |         
       +--------------------------------------------------------------------------------->
@@ -44,7 +45,9 @@ Take a look at Pypy running 5x faster than CPython with no speed optimization on
       |
       +--------------------------------------------------------------------------------->
       |         |         |         |         |         |         |         |         |         
-      0.000     1.505     3.009     4.514     6.018     7.523     9.028     10.532     12.037     
+      0.000     1.505     3.009     4.514     6.018     7.523     9.028     10.532     12.037
+      Runtime [s]
+
 
 LEGEND:
 --o Ahkab 0.15-pypy, running on Pypy2, R2R ladder DAC
