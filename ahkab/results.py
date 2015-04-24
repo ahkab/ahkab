@@ -1238,7 +1238,9 @@ class pz_solution(solution, _mutable_data):
 
     # iterator methods
     def __iter__(self):
-        self.iter_index = 0
+        # take into account that we increment first, then return
+        # the value
+        self.iter_index = -1
         return self
 
     def next(self):
