@@ -1189,7 +1189,7 @@ class pz_solution(solution, _mutable_data):
                 self.data.update({self.variables[i]: data[i, 0]})
 
     def _add_data(self, data):
-        """Remember to call this method with REAL data - already split in ABS and PHASE."""
+        """Remember to call this method with REAL data - already split in RE and IM."""
         csvlib.write_csv(self.filename, data, self.csv_headers, append=self._init_file_done)
         self._init_file_done = True
 
