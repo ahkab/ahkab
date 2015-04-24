@@ -1204,11 +1204,6 @@ class pz_solution(solution, _mutable_data):
         """Get a specific variable, as from a dictionary."""
         if name in self.data:
             return self.data[name]
-        elif len(name) > 4 and name[3:-1] in self.data:
-            if name[:2].upper() == 'RE':
-                return np.real(self.data[name[3:-1]])
-            if name[:2].upper() == 'IM':
-                return np.imag(self.data[name[3:-1]])
         raise KeyError
 
     def get(self, name, default=None):
@@ -1223,7 +1218,7 @@ class pz_solution(solution, _mutable_data):
 
     def __contains__(self, name):
         """Determine whether the result set contains a variable."""
-        return name in self.data or (len(name) > 4 and name[3:-1] in self.data)
+        return name in self.data
 
     def keys(self):
         """Get all of the results set's variable's names."""
