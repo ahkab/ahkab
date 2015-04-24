@@ -1193,11 +1193,6 @@ class pz_solution(solution, _mutable_data):
         csvlib.write_csv(self.filename, data, self.csv_headers, append=self._init_file_done)
         self._init_file_done = True
 
-    def __repr__(self):
-        return ("%s PZ solution, poles: %s, zeros: %s") % \
-               (self.netlist_file, list(self.poles),
-                list(self.zeros))
-
     def __str__(self):
         return ("PZ simulation results for %s (netlist %s).\n" + \
                "Poles: %s\nZeros: %s") % \
