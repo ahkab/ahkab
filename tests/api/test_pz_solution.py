@@ -27,6 +27,7 @@ def test_pz_solution():
     np.allclose(r['z0'], 0, rtol=1.)
 
     assert set(r.keys()) == {u'p0', u'p1', u'z0'}
+    assert r['p0'] == r.get('p0')
 
     for i in {u'p0', u'p1', u'z0'}:
         assert i in r
