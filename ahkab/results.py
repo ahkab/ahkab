@@ -1243,6 +1243,12 @@ class pz_solution(solution, _mutable_data):
         self.iter_index = -1
         return self
 
+    def __next__(self):
+        # redefine this or the superclass method will be used on
+        # PY3, calling the superclass' next() and not *our* next
+        # method below.
+        return self.next()
+
     def next(self):
         if self.iter_index == len(self.variables)-1:
             self.iter_index = 0
