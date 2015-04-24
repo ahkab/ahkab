@@ -32,8 +32,8 @@ def test_pz_solution():
         assert i in r
         assert r.has_key(i)
 
-    set(zip(*r.items())[0]) == {u'p0', u'p1', u'z0'}
-    set(zip(*r.items())[1]) == set(r.values())
+    set(list(zip(*r.items()))[0]) == {u'p0', u'p1', u'z0'}
+    set(list(zip(*r.items()))[1]) == set(r.values())
 
     i = 0
     for k, v in r:
