@@ -308,12 +308,7 @@ class op_solution(solution, _mutable_data):
             ('(netlist %s)'%(self.netlist_file,) if self.netlist_file else '') +
             ('.\nRun on %s, data filename %s.\n' % \
              (self.timestamp, self.filename)))
-        for v in self.variables:
-            str_repr += "%s:\t%e\t%s\t(%e %s, %f %%)\n" % \
-                (v, self.results[v], self.units[v], \
-                self.errors[v], self.units[v], \
-                self.errors[v]/self.results[v]*100.0)
-        return str_repr
+        return str_repr + self.get_table_array()
 
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
