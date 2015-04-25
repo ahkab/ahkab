@@ -308,12 +308,7 @@ class op_solution(solution, _mutable_data):
             ('(netlist %s)'%(self.netlist_file,) if self.netlist_file else '') +
             ('.\nRun on %s, data filename %s.\n' % \
              (self.timestamp, self.filename)))
-        for v in self.variables:
-            str_repr += "%s:\t%e\t%s\t(%e %s, %f %%)\n" % \
-                (v, self.results[v], self.units[v], \
-                self.errors[v], self.units[v], \
-                self.errors[v]/self.results[v]*100.0)
-        return str_repr
+        return str_repr + self.get_table_array()
 
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
@@ -335,16 +330,15 @@ class op_solution(solution, _mutable_data):
         return self.x
 
     def get_table_array(self):
-        headers = ("Variable", "Value", "Error", "(%)", "Units")
+        headers = ("Variable", "Units", "Value", "Error", "%")
         table = []
         for v in self.variables:
             if self.results[v] != 0:
                 relerror = self.errors[v]/self.results[v]*100.0
             else:
                 relerror = 0.0
-            line = (v, self.results[v], self.errors[v], '(%.2f)'%relerror,
-                    self.units[v])
-            line = list(map(str, line))
+            line = (v, self.units[v], self.results[v], self.errors[v], '%d' %
+                    relerror)
             table.append(line)
         return printing.table(table, headers=headers)
 
@@ -488,11 +482,19 @@ class op_solution(solution, _mutable_data):
         self._add_data(self.x)
 
     def print_short(self):
-        str_repr = ""
+        """Print a short, essential representation of the OP results"""
+        table = []
+        line = []
         for v in self.variables:
-            str_repr += "%s: %e %s,\t" % \
-                (v, self.results[v], self.units[v])
-        print(str_repr[:-2])
+            line.append("%s: %g %s" % \
+                        (v, self.results[v], self.units[v]))
+            if len(line) == 5:
+                table.append(line)
+                line = []
+        if len(line) > 0: # add the last line
+            line += [""]*(5 - len(line))
+            table.append(line)
+        printing.table_print(table)
 
     @staticmethod
     def gmin_check(op2, op1):
@@ -529,28 +531,31 @@ class op_solution(solution, _mutable_data):
 
     def values(self):
         """Get all of the results set's variables values."""
-        return self.x
+        return np.squeeze(self.x).tolist()
 
     def items(self, verbose=3):
         vlist = []
         for j in range(self.x.shape[0]):
-            vlist.append(self.x[j])
+            vlist.append(self.x[j, 0])
         return list(zip(self.variables, vlist))
 
     # iterator methods
     def __iter__(self):
-        self.iter_index = 0
+        self._iter_index = 0
         return self
 
-    def __next__(self):
-        if self.iter_index == len(self.variables):
-            self.iter_index = 0
+    def next(self):
+        if self._iter_index == len(self.variables):
+            self._iter_index = 0
             raise StopIteration
         else:
-            nxt = self.variables[self.iter_index], \
-                   self.x[self.iter_index]
-            self.iter_index += 1
+            nxt = self.variables[self._iter_index], \
+                   self.x[self._iter_index]
+            self._iter_index += 1
         return nxt
+
+    def __next__(self):
+        return self.next()
 
 
 class ac_solution(solution, _mutable_data):
