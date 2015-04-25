@@ -30,7 +30,7 @@ import contextlib
 import sys
 import os
 
-import tabulate
+import tabulate as _tabulate
 import numpy as np
 
 from . import options
@@ -228,10 +228,25 @@ def print_result_check(badvars, verbose=2):
 
 
 def table(data, *args, **argsd):
-    return tabulate.tabulate(data, *args, **argsd)
+    return _tabulate.tabulate(data, *args, **argsd)
+table.__doc__ == _tabulate.tabulate.__doc__
 
-def table_print(twodarray, separator='  '):
-    print(tabulate.tabulate(twodarray))
+def table_print(twodarray):
+    """Print a 2D array as a table.
+
+    **Parameters:**
+
+    twodarray : array-like or sequence
+        A 2D sequence to be printed in a table. Each element is a cell.
+
+    .. note::
+
+        Inside this method calls and prints ``tabulate.tabulate(...)``.
+        Similarly, also :func:`table_print` also relies on the same external
+        library.
+
+    """
+    print(_tabulate.tabulate(twodarray))
 
 @contextlib.contextmanager
 def printoptions(*args, **kwargs):
