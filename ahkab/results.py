@@ -536,7 +536,7 @@ class op_solution(solution, _mutable_data):
     def items(self, verbose=3):
         vlist = []
         for j in range(self.x.shape[0]):
-            vlist.append(self.x[j])
+            vlist.append(self.x[j, 0])
         return list(zip(self.variables, vlist))
 
     # iterator methods
