@@ -482,11 +482,19 @@ class op_solution(solution, _mutable_data):
         self._add_data(self.x)
 
     def print_short(self):
-        str_repr = ""
+        """Print a short, essential representation of the OP results"""
+        table = []
+        line = []
         for v in self.variables:
-            str_repr += "%s: %e %s,\t" % \
-                (v, self.results[v], self.units[v])
-        print(str_repr[:-2])
+            line.append("%s: %g %s" % \
+                        (v, self.results[v], self.units[v]))
+            if len(line) == 5:
+                table.append(line)
+                line = []
+        if len(line) > 0: # add the last line
+            line += [""]*(5 - len(line))
+            table.append(line)
+        printing.table_print(table)
 
     @staticmethod
     def gmin_check(op2, op1):
