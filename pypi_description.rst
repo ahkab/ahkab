@@ -209,5 +209,5 @@ and `Rob Crowther <https://github.com/weilawei>`__.
    :target: https://pypi.python.org/pypi/ahkab/
 .. |GPLv2 license| image:: http://img.shields.io/badge/license-GPL%20v2-brightgreen.png
    :target: https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE
-.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.15462.svg
-   :target: http://dx.doi.org/10.5281/zenodo.15462
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.16971.svg
+   :target: http://dx.doi.org/10.5281/zenodo.169710
