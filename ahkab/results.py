@@ -531,7 +531,7 @@ class op_solution(solution, _mutable_data):
 
     def values(self):
         """Get all of the results set's variables values."""
-        return self.x
+        return np.squeeze(self.x).tolist()
 
     def items(self, verbose=3):
         vlist = []
