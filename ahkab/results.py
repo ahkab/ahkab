@@ -541,18 +541,21 @@ class op_solution(solution, _mutable_data):
 
     # iterator methods
     def __iter__(self):
-        self.iter_index = 0
+        self._iter_index = 0
         return self
 
-    def __next__(self):
-        if self.iter_index == len(self.variables):
-            self.iter_index = 0
+    def next(self):
+        if self._iter_index == len(self.variables):
+            self._iter_index = 0
             raise StopIteration
         else:
-            nxt = self.variables[self.iter_index], \
-                   self.x[self.iter_index]
-            self.iter_index += 1
+            nxt = self.variables[self._iter_index], \
+                   self.x[self._iter_index]
+            self._iter_index += 1
         return nxt
+
+    def __next__(self):
+        return self.next()
 
 
 class ac_solution(solution, _mutable_data):
