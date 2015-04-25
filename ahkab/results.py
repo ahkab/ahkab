@@ -330,16 +330,15 @@ class op_solution(solution, _mutable_data):
         return self.x
 
     def get_table_array(self):
-        headers = ("Variable", "Value", "Error", "(%)", "Units")
+        headers = ("Variable", "Units", "Value", "Error", "%")
         table = []
         for v in self.variables:
             if self.results[v] != 0:
                 relerror = self.errors[v]/self.results[v]*100.0
             else:
                 relerror = 0.0
-            line = (v, self.results[v], self.errors[v], '(%.2f)'%relerror,
-                    self.units[v])
-            line = list(map(str, line))
+            line = (v, self.units[v], self.results[v], self.errors[v], '%d' %
+                    relerror)
             table.append(line)
         return printing.table(table, headers=headers)
 
