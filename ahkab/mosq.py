@@ -475,7 +475,7 @@ class mosq_mos_model:
                    "NSUB", "[cm^-3]", self.NSUB,  "VFB", "[V]:", self.VFB])
         arr.append(
             ["U0", "[cm^2/(V*s)]:", self.U0, "TCV", "[V/K]", self.TCV, "BEX", "", self.BEX,  "", "", ""])
-        printing.table_print(arr)
+        print(printing.table(arr))
 
     def get_voltages(self, vds, vgs, vbs):
         """Performs the D <-> S swap if needed.

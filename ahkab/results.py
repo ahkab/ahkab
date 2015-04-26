@@ -494,7 +494,7 @@ class op_solution(solution, _mutable_data):
         if len(line) > 0: # add the last line
             line += [""]*(5 - len(line))
             table.append(line)
-        printing.table_print(table)
+        print(printing.table(table))
 
     @staticmethod
     def gmin_check(op2, op1):

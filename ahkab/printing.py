@@ -379,23 +379,6 @@ def table(data, *args, **argsd):
     """
     return _tabulate.tabulate(data, *args, **argsd)
 
-def table_print(twodarray):
-    """Print a 2D array as a table
-
-    **Parameters:**
-
-    twodarray : 2D array-like, list-of-lists or sequence
-        A 2D sequence to be printed in a table. Each element is a cell.
-
-    .. note::
-
-        Inside this method calls and prints ``tabulate.tabulate(...)``.
-        Similarly, also :func:`table` also relies on the same external
-        library.
-
-    """
-    print(_tabulate.tabulate(twodarray))
-
 @contextlib.contextmanager
 def printoptions(*args, **kwargs):
     """A context manager for ``numpy.set_printoptions``"""

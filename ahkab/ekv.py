@@ -476,7 +476,7 @@ class ekv_mos_model:
             ["U0", "[cm^2/(V*s)]:", self.U0, "TCV", "[V/K]", self.TCV, "BEX", "", self.BEX,  "", "", ""])
         arr.append(["INTERNAL", "", "", "SAT LIMIT", "", self.SATLIM,
                    "W/M/S INV FACTOR", "", self.WMSI_factor,  "", "", ""])
-        printing.table_print(arr)
+        print(printing.table(arr))
 
     def get_voltages(self, vd, vg, vs):
         """Performs the VD <-> VS swap if needed.
