@@ -675,9 +675,15 @@ class ac_solution(solution, _mutable_data):
             headers = ['|%s|' % name, 'arg(%s)' % name]
         else:
             headers = [name]
-        # data, headers, pos, EOF = csvlib.load_csv()
-        data, headers, _, _ = csvlib.load_csv(self.filename, load_headers=headers,
-                                              nsamples=None, skip=0, verbose=0)
+        try:
+            # data, headers, pos, EOF = csvlib.load_csv()
+            data, headers, _, _ = csvlib.load_csv(self.filename,
+                                                  load_headers=headers,
+                                                  nsamples=None, skip=0,
+                                                  verbose=0)
+        except ValueError:
+            # raise the correct exception
+            raise KeyError(name)
         if len(headers) == 2:
             data = data[0, :] * np.exp(1j*data[1, :])
         else:
