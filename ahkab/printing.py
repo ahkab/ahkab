@@ -98,7 +98,7 @@ import numpy as np
 from . import options
 from . import py3compat
 
-if py3compat.PY2:
+if py3compat.PY2 and not py3compat.IPYTHON:
     import codecs
     UTF8Writer = codecs.getwriter('utf8')
     sys.stdout = UTF8Writer(sys.stdout)
