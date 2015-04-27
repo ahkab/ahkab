@@ -566,18 +566,18 @@ class ac_solution(solution, _mutable_data):
     circ : circuit instance
         the circuit instance of the simulated circuit
     start : float
-       the AC sweep start value.
+       the AC sweep angular frequency start value, in rad/sec.
     stop : float
-       the AC sweep stop value.
+       the AC sweep angular frequency stop value, in rad/sec.
     points : int
        the AC sweep total points.
     stype : str
        the type of sweep, ``"LOG"``, ``"LIN"`` or arb. ``"POINTS"``.
     op : op_solution
-       the linearization op used to compute the results
+       the linearization Operating Point used to compute the results.
     outfile: str
-        the file to write the results to.
-        Use "stdout" to write to std output.
+        the file to write the results to.  Use ``"stdout"`` to write to the
+        standard output.
     """
     def __init__(self, circ, start, stop, points, stype, op, outfile):
         solution.__init__(self, circ, outfile)
