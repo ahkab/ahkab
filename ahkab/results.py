@@ -703,8 +703,8 @@ class ac_solution(solution, _mutable_data):
     def values(self):
         """Get all of the results set's variables values."""
         data = self.asmatrix()
-        values = []
-        for i in range(data.shape[0]):
+        values = [np.real_if_close(data[0, :])]
+        for i in range(1, data.shape[0]):
             values.append(data[i, :])
         return values
 
