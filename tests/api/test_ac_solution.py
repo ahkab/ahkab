@@ -55,5 +55,5 @@ class Test_AC_solution:
             else:
                 assert False
         # items, values, keys etc
-        assert set(list(zip(*r.items())[0])) == set(r.keys())
+        assert set(list(zip(*r.items()))[0]) == set(r.keys())
 
