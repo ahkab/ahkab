@@ -614,9 +614,11 @@ class ac_solution(solution, _mutable_data):
         self._init_file_done = True
 
     def __str__(self):
-        return "<AC simulation results for %s (netlist %s). %s sweep, from %g Hz to %g Hz, \
-%d points. Run on %s, data filename %s.>" % \
-        (self.netlist_title, self.netlist_file, self.stype, self.ostart, self.ostop, self.opoints, self.timestamp, self.filename)
+        return ("<AC simulation results for '%s' (netlist %s). %s sweep, " +
+                "from %g to %g rad/sec, %d points. Run on %s, data filename " +
+                "%s>") % (self.netlist_title, self.netlist_file, self.stype,
+                          self.ostart, self.ostop, self.opoints, self.timestamp,
+                          self.filename)
 
     def add_line(self, omega, x):
         omega = np.mat(np.array([omega]))
