@@ -241,31 +241,32 @@ class combinations:
 
 
 class log_axis_iterator:
-
     """This iterator provides the values for a base-10 logarithmic sweep.
 
     **Parameters:**
 
-    max : float
-        The maximum value, also the end point of the axis.
     min : float
         The minimum value, also the start point of the axis.
-    nsteps : int
-        The number of intervals in which the ``max`` - ``min``
-        interval will be divided.
+    max : float
+        The maximum value, also the end point of the axis.
+    points : int
+        The number of points which will be used to discretize the ``max`` -
+        ``min`` interval.
 
     Notice that, differently from numpy's ``logspace()``, the
     values are only computed at access time, and hence the
     memory footprint of the iterator is low.
+
+    Start and end values are always included.
     """
 
-    def __init__(self, max, min, nsteps):
-        self.inc = 10 ** ((np.log10(max) - np.log10(min)) / nsteps)
+    def __init__(self, min, max, points):
+        self.inc = 10.**((np.log10(max) - np.log10(min))/(points - 1))
         self.max = max
         self.min = min
         self.index = 0
         self.current = min
-        self.nsteps = nsteps
+        self.points = points
 
     def next(self):
         return self.__next__()
@@ -273,7 +274,9 @@ class log_axis_iterator:
     def __next__(self):
         """Iterator method: get the next value
         """
-        if self.index < self.nsteps:
+        if self.index == 0:
+            ret = self.current
+        elif self.index < self.points:
             self.current = self.current * self.inc
             ret = self.current
         else:
@@ -286,8 +289,8 @@ class log_axis_iterator:
         """
         if i == 0:
             ret = self.min
-        elif i < self.nsteps:
-            ret = self.min * self.inc ** i
+        elif i < self.points:
+            ret = self.min * self.inc**i
         else:
             ret = None
         return ret
@@ -299,31 +302,31 @@ class log_axis_iterator:
 
 
 class lin_axis_iterator:
-
     """This iterator provides the values for a linear sweep.
 
     **Parameters:**
 
-    max : float
-        The maximum value, also the end point of the axis.
     min : float
         The minimum value, also the start point of the axis.
-    nsteps : int
-        The number of intervals in which the ``max`` - ``min``
-        interval will be divided.
+    max : float
+        The maximum value, also the end point of the axis.
+    num : int
+        The number of samples to generate.
+
+    Start and end points are always included.
 
     Notice that, differently from numpy's ``linspace()``, the
     values are only computed at access time, and hence the
     memory footprint of the iterator is low.
     """
 
-    def __init__(self, max, min, nsteps):
-        self.inc = (max - min) / nsteps
+    def __init__(self, min, max, points):
+        self.inc = (max - min) / (points - 1)
         self.max = max
         self.min = min
         self.index = 0
         self.current = min
-        self.nsteps = nsteps
+        self.points = points
 
     def next(self):
         return self.__next__()
@@ -333,7 +336,7 @@ class lin_axis_iterator:
         """
         if self.index == 0:
             pass  # return min
-        elif self.index < self.nsteps:
+        elif self.index < self.points:
             self.current = self.current + self.inc
         else:
             raise StopIteration
@@ -344,7 +347,7 @@ class lin_axis_iterator:
     def __getitem__(self, i):
         """Iterator method: get a particular value (n. i)
         """
-        if i < self.nsteps:
+        if i < self.points:
             ret = self.min + self.inc * i
         else:
             ret = None

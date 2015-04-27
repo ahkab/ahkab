@@ -513,9 +513,9 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
     sweep_type = sweep_type.upper()[:3]
 
     if sweep_type == options.dc_log_step:
-        dc_iter = utilities.log_axis_iterator(stop, start, nsteps=points)
+        dc_iter = utilities.log_axis_iterator(start, stop, points=points)
     elif sweep_type == options.dc_lin_step:
-        dc_iter = utilities.lin_axis_iterator(stop, start, nsteps=points)
+        dc_iter = utilities.lin_axis_iterator(start, stop, points=points)
     else:
         printing.print_general_error("Unknown sweep type: %s" % (sweep_type,))
         sys.exit(1)

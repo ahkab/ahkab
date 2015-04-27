@@ -170,20 +170,19 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
         verbose = 0
 
     # check step/start/stop parameters
-    nsteps = points - 1
     if start == 0:
         printing.print_general_error("AC analysis has start frequency = 0")
         sys.exit(5)
     if start > stop:
         printing.print_general_error("AC analysis has start > stop")
         sys.exit(1)
-    if nsteps < 1:
-        printing.print_general_error("AC analysis has number of steps <= 1")
+    if points < 2:
+        printing.print_general_error("AC analysis has number of points < 2")
         sys.exit(1)
     if sweep_type == options.ac_log_step or sweep_type is None:
-        omega_iter = utilities.log_axis_iterator(stop, start, nsteps)
+        omega_iter = utilities.log_axis_iterator(start, stop, points)
     elif sweep_type == options.ac_lin_step:
-        omega_iter = utilities.lin_axis_iterator(stop, start, nsteps)
+        omega_iter = utilities.lin_axis_iterator(start, stop, points)
     else:
         printing.print_general_error("Unknown sweep type.")
         sys.exit(1)
@@ -194,7 +193,7 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
     del tmpstr
 
     printing.print_info_line(("Starting AC analysis: ", 1), verbose)
-    tmpstr = "w: start = %g Hz, stop = %g Hz, %d steps" % (start, stop, nsteps)
+    tmpstr = "w: start = %g Hz, stop = %g Hz, %d points" % (start, stop, points)
     printing.print_info_line((tmpstr, 3), verbose)
     del tmpstr
 
@@ -251,9 +250,8 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
     printing.print_info_line(("Nac (reduced):", 5), verbose)
     printing.print_info_line((Nac, 5), verbose)
 
-    sol = results.ac_solution(circ, start=start, stop=stop,
-                              points=nsteps+1, stype=sweep_type, op=x0, 
-                              outfile=outfile)
+    sol = results.ac_solution(circ, start=start, stop=stop, points=points,
+                              stype=sweep_type, op=x0, outfile=outfile)
 
     # setup the initial values to start the iteration:
     nv = circ.get_nodes_number()
