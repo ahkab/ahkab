@@ -1,5 +1,5 @@
-<img src="http://raw.github.com/wiki/ahkab/ahkab/images/logo_small.png" alt="Monkeying around" style="width: 80px;"/> ahkab
-===========================================================================================================================
+<img src="https://rawgithub.com/ahkab/ahkab/master/doc/images/logo_small.png" alt="Monkeying around" style="width: 80px;"/> ahkab
+=================================================================================================================================
 
 **a SPICE-like electronic circuit simulator written in Python**
 
@@ -20,14 +20,14 @@ Supported simulations:
 ----------------------
 
 -   Numeric:
-    -   **Operating point**, with guess computation to speed up the solution. See example: [Downscaling current mirror](https://github.com/ahkab/ahkab/wiki/Example:-OP-simulation)
+    -   **Operating point**, with guess computation to speed up the solution. See example: [Downscaling current mirror](https://ahkab.readthedocs.org/en/latest/examples/OP_simulation.html)
     -   **DC sweep**
-    -   **Transient analysis**, available differentiation formulas: implicit Euler, trapezoidal, gear orders from 2 to 5. See for example the [simulation of a Colpitts Oscillator](https://github.com/ahkab/ahkab/wiki/Example:-Transient-simulation-1).
+    -   **Transient analysis**, available differentiation formulas: implicit Euler, trapezoidal, gear orders from 2 to 5. See for example the [simulation of a Colpitts Oscillator](https://ahkab.readthedocs.org/en/latest/examples/Transient-Example.html).
     -   **AC analysis**
     -   **PZ** analysis
     -   **Periodic steady state analysis** of non-autonomous circuits, *time* *domain* shooting and brute-force algorithms.
 -   Symbolic:
-    -   **Small signal analysis**, AC or DC, with extraction of transfer functions, DC gain, poles and zeros. Various [symbolic analysis examples on this page](https://github.com/ahkab/ahkab/wiki/Example:-Symbolic-simulation).
+    -   **Small signal analysis**, AC or DC, with extraction of transfer functions, DC gain, poles and zeros. Various [symbolic analysis examples on this page](https://ahkab.readthedocs.org/en/latest/examples/Symbolic-simulation.html).
 
 The results are saved to disk, plotted or printed to stdout and can be read/processed by the most common tools (eg. [Octave](http://www.gnu.org/software/octave/), [gnuplot](http://www.gnuplot.info/), [Matlab](http://www.mathworks.com/products/matlab/), [gwave](http://www.telltronics.org/software/gwave/) and others)
 
@@ -41,7 +41,7 @@ The program requires:
 
 Matplotlib is strongly recommended and no plotting will work without.
 
-If you need more information about the dependencies, check the [Install notes](https://github.com/ahkab/ahkab/wiki/Install:-Notes).
+If you need more information about the dependencies, check the [Install notes](https://ahkab.readthedocs.org/en/latest/help/Install-Notes.html).
 
 Usage
 -----
