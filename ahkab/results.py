@@ -792,6 +792,19 @@ class dc_solution(solution, _mutable_data):
     def get_xlabel(self):
         return self.variables[0]
 
+    def values(self):
+        """Get all of the results set's variables values."""
+        # data, headers, pos, EOF = csvlib.load_csv(...)
+        data, _, _, _ = csvlib.load_csv(self.filename,
+                                        load_headers=self.variables,
+                                        nsamples=None, skip=0, verbose=0)
+        values = [data[i, :] for i in range(data.shape[0])]
+        return values
+
+    def items(self, verbose=3):
+        vlist = self.values()
+        return list(zip(self.variables, vlist))
+
 class tran_solution(solution, _mutable_data):
     """Transient results
 
