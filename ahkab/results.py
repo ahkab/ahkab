@@ -178,8 +178,11 @@ class solution(object):
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
         # data, headers, pos, EOF = csvlib.load_csv(...)
-        data, _, _, _ = csvlib.load_csv(self.filename, load_headers=[name],
-                                        nsamples=None, skip=0, verbose=0)
+        try:
+            data, _, _, _ = csvlib.load_csv(self.filename, load_headers=[name],
+                                            nsamples=None, skip=0, verbose=0)
+        except ValueError:
+            raise KeyError(name)
         return data.reshape((-1,))
 
     def get(self, name, default=None):
