@@ -829,24 +829,21 @@ class tran_solution(solution, _mutable_data):
                 self.units.update({varname:"A"})
 
     def __str__(self):
-        return "<TRAN simulation results for %s (netlist %s), from %g s to %g s. Diff. \
-method %s. Run on %s, data file %s>" % \
-        (
-         self.netlist_title, self.netlist_file, self.tstart, self.tstop, self.method,
-         self.timestamp, self.filename
-        )
+        return ("<TRAN simulation results for '%s' (netlist %s), from %g s to" +
+                " %g s. Diff. method %s. Run on %s, data file %s>") % \
+               (self.netlist_title, self.netlist_file, self.tstart, self.tstop,
+                self.method, self.timestamp, self.filename)
 
     def add_line(self, time, x):
         """This method adds a solution and its corresponding time value to the results set.
         """
         if not self._lock:
-            time = np.mat(np.array([time]))
+            time = np.array([[time]])
             data = np.concatenate((time, x), axis=0)
             self._add_data(data)
         else:
-            printing.print_general_error(
-                                "Attempting to add values to a complete result set. BUG"
-                                )
+            raise RuntimeError("Attempting to add values to a complete " +
+                               "result set.")
 
     def lock(self):
         self._lock = True
