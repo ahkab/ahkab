@@ -769,13 +769,11 @@ class dc_solution(solution, _mutable_data):
                 self.units.update({varname:"A"})
 
     def __str__(self):
-        return "<DC simulation results for %s (netlist %s). %s sweep of %s from %g %s to \
-%g %s. Run on %s, data filename %s.>" % \
-        (
-         self.netlist_title, self.netlist_file, self.stype, self.variables[0].upper(), \
-         self.start, self.units[self.variables[0]], self.stop, self.units[self.variables[0]],
-         self.timestamp, self.filename
-        )
+        return ("<DC simulation results for '%s' (netlist %s). %s sweep of" +
+                " %s from %g to %g %s. Run on %s, data filename %s>") % \
+               (self.netlist_title, self.netlist_file, self.stype,
+                self.variables[0].upper(), self.start, self.stop,
+                self.units[self.variables[0]], self.timestamp, self.filename)
 
     def add_op(self, sweepvalue, op):
         """A DC sweep is made of a set of OP points.
