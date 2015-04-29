@@ -795,12 +795,12 @@ class tran_solution(solution, _mutable_data):
     tstop : float
         the transient simulation stop time.
     op : op_solution instance
-        the op used to start the transient analysis.
+        the Operating Point (OP) used to start the transient analysis.
     method : str
         the differentiation method employed.
     outfile : str
         the filename of the save file.
-        Use "stdout" to write to the std output.
+        Use "stdout" to write to the standard output.
     """
     def __init__(self, circ, tstart, tstop, op, method, outfile):
         solution.__init__(self, circ, outfile)
