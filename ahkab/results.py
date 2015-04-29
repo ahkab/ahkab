@@ -191,7 +191,7 @@ class solution(object):
             # data, headers, pos, EOF = csvlib.load_csv(...)
             data, _, _, _ = csvlib.load_csv(self.filename, load_headers=[name],
                                             nsamples=None, skip=0, verbose=0)
-        except KeyError:
+        except ValueError:
             return default
         return data.reshape((-1,))
 
