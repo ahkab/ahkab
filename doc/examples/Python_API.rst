@@ -251,23 +251,22 @@ stop band in the example:
 
 .. code:: python
 
-         import numpy as np
-         import scipy, scipy.interpolate
+    import numpy as np
+    import scipy, scipy.interpolate
 
-         # Normalize the output to the low frequency value and convert to array
-         norm_out = np.abs(r['ac']['Vn4'])/np.abs(r['ac']['Vn4']).max()
-         # Convert to dB
-         norm_out_db = 20*np.log10(norm_out)
-         # Convert angular frequencies to Hz and convert matrix to array
-         frequencies = r['ac']['w']/2/np.pi
-         # call scipy to interpolate
-         norm_out_db_interpolated = scipy.interpolate.interp1d(frequencies, norm_out_db)
+    # Normalize the output to the low frequency value and convert to array
+    norm_out = np.abs(r['ac']['Vn4'])/np.abs(r['ac']['Vn4']).max()
+    # Convert to dB
+    norm_out_db = 20*np.log10(norm_out)
+    # Convert angular frequencies to Hz and convert matrix to array
+    frequencies = r['ac']['w']/2/np.pi
+    # call scipy to interpolate
+    norm_out_db_interpolated = scipy.interpolate.interp1d(frequencies, norm_out_db)
 
-         print "Maximum attenuation in the pass band (0-%g Hz) is %g dB" % \
-         (2e3, -1.0*norm_out_db_interpolated(2e3))
-         print "Minimum attenuation in the stop band (%g Hz - Inf) is %g dB" % \
-         (6.5e3, -1.0*norm_out_db_interpolated(6.5e3))
-
+    print "Maximum attenuation in the pass band (0-%g Hz) is %g dB" % \
+    (2e3, -1.0*norm_out_db_interpolated(2e3))
+    print "Minimum attenuation in the stop band (%g Hz - Inf) is %g dB" % \
+    (6.5e3, -1.0*norm_out_db_interpolated(6.5e3))
 
 You should see the following output:
 
