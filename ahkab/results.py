@@ -80,8 +80,8 @@ Index of the solution classes
 
 .. autosummary::
 
-    dc_solution
     ac_solution
+    dc_solution
     op_solution
     pss_solution
     pz_solution
