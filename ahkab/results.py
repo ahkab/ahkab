@@ -213,20 +213,11 @@ class solution(object):
         data, _, _, _ = csvlib.load_csv(self.filename,
                                         load_headers=self.variables,
                                         nsamples=None, skip=0, verbose=0)
-        values = []
-        for i in range(data.shape[1]):
-            values.append(data[:, i])
+        values = [data[i, :] for i in range(data.shape[0])]
         return values
 
     def items(self, verbose=3):
-        # data, headers, pos, EOF = csvlib.load_csv(...)
-        data, headers, _, _ = csvlib.load_csv(self.filename,
-                                        load_headers=self.variables,
-                                        nsamples=None, skip=0, verbose=verbose)
-        vlist = []
-        for j in range(data.shape[0]):
-            vlist.append(data[j,:].T)
-        return list(zip(headers, vlist))
+        return list(zip(self.keys(), self.values()))
 
     # iterator methods
     def __iter__(self):
@@ -309,7 +300,7 @@ class op_solution(solution, _mutable_data):
         str_repr = \
             (("OP simulation results for '%s'" % (self.netlist_title,)) +
             ('(netlist %s)'%(self.netlist_file,) if self.netlist_file else '') +
-            ('.\nRun on %s, data filename %s.\n' % \
+            ('.\nRun on %s, data file %s.\n' % \
              (self.timestamp, self.filename)))
         return str_repr + self.get_table_array()
 
@@ -618,7 +609,7 @@ class ac_solution(solution, _mutable_data):
 
     def __str__(self):
         return ("<AC simulation results for '%s' (netlist %s). %s sweep, " +
-                "from %g to %g rad/sec, %d points. Run on %s, data filename " +
+                "from %g to %g rad/sec, %d points. Run on %s, data file " +
                 "%s>") % (self.netlist_title, self.netlist_file, self.stype,
                           self.ostart, self.ostop, self.opoints, self.timestamp,
                           self.filename)
@@ -770,7 +761,7 @@ class dc_solution(solution, _mutable_data):
 
     def __str__(self):
         return ("<DC simulation results for '%s' (netlist %s). %s sweep of" +
-                " %s from %g to %g %s. Run on %s, data filename %s>") % \
+                " %s from %g to %g %s. Run on %s, data file %s>") % \
                (self.netlist_title, self.netlist_file, self.stype,
                 self.variables[0].upper(), self.start, self.stop,
                 self.units[self.variables[0]], self.timestamp, self.filename)
@@ -792,19 +783,6 @@ class dc_solution(solution, _mutable_data):
     def get_xlabel(self):
         return self.variables[0]
 
-    def values(self):
-        """Get all of the results set's variables values."""
-        # data, headers, pos, EOF = csvlib.load_csv(...)
-        data, _, _, _ = csvlib.load_csv(self.filename,
-                                        load_headers=self.variables,
-                                        nsamples=None, skip=0, verbose=0)
-        values = [data[i, :] for i in range(data.shape[0])]
-        return values
-
-    def items(self, verbose=3):
-        vlist = self.values()
-        return list(zip(self.variables, vlist))
-
 class tran_solution(solution, _mutable_data):
     """Transient results
 
@@ -817,12 +795,12 @@ class tran_solution(solution, _mutable_data):
     tstop : float
         the transient simulation stop time.
     op : op_solution instance
-        the op used to start the transient analysis.
+        the Operating Point (OP) used to start the transient analysis.
     method : str
         the differentiation method employed.
     outfile : str
         the filename of the save file.
-        Use "stdout" to write to the std output.
+        Use "stdout" to write to the standard output.
     """
     def __init__(self, circ, tstart, tstop, op, method, outfile):
         solution.__init__(self, circ, outfile)
@@ -851,24 +829,21 @@ class tran_solution(solution, _mutable_data):
                 self.units.update({varname:"A"})
 
     def __str__(self):
-        return "<TRAN simulation results for %s (netlist %s), from %g s to %g s. Diff. \
-method %s. Run on %s, data filename %s.>" % \
-        (
-         self.netlist_title, self.netlist_file, self.tstart, self.tstop, self.method,
-         self.timestamp, self.filename
-        )
+        return ("<TRAN simulation results for '%s' (netlist %s), from %g s to" +
+                " %g s. Diff. method %s. Run on %s, data file %s>") % \
+               (self.netlist_title, self.netlist_file, self.tstart, self.tstop,
+                self.method, self.timestamp, self.filename)
 
     def add_line(self, time, x):
         """This method adds a solution and its corresponding time value to the results set.
         """
         if not self._lock:
-            time = np.mat(np.array([time]))
+            time = np.array([[time]])
             data = np.concatenate((time, x), axis=0)
             self._add_data(data)
         else:
-            printing.print_general_error(
-                                "Attempting to add values to a complete result set. BUG"
-                                )
+            raise RuntimeError("Attempting to add values to a complete " +
+                               "result set.")
 
     def lock(self):
         self._lock = True
@@ -929,7 +904,7 @@ class pss_solution(solution, _mutable_data):
 
     def __str__(self):
         return "<PSS simulation results for %s (netlist %s), period %g s. Method: %s. \
-Run on %s, data filename %s.>" % \
+Run on %s, data file %s.>" % \
         (
          self.netlist_title, self.netlist_file, self.period, self.method, self.timestamp,
          self.filename
