@@ -309,7 +309,7 @@ class op_solution(solution, _mutable_data):
         str_repr = \
             (("OP simulation results for '%s'" % (self.netlist_title,)) +
             ('(netlist %s)'%(self.netlist_file,) if self.netlist_file else '') +
-            ('.\nRun on %s, data filename %s.\n' % \
+            ('.\nRun on %s, data file %s.\n' % \
              (self.timestamp, self.filename)))
         return str_repr + self.get_table_array()
 
@@ -618,7 +618,7 @@ class ac_solution(solution, _mutable_data):
 
     def __str__(self):
         return ("<AC simulation results for '%s' (netlist %s). %s sweep, " +
-                "from %g to %g rad/sec, %d points. Run on %s, data filename " +
+                "from %g to %g rad/sec, %d points. Run on %s, data file " +
                 "%s>") % (self.netlist_title, self.netlist_file, self.stype,
                           self.ostart, self.ostop, self.opoints, self.timestamp,
                           self.filename)
@@ -770,7 +770,7 @@ class dc_solution(solution, _mutable_data):
 
     def __str__(self):
         return ("<DC simulation results for '%s' (netlist %s). %s sweep of" +
-                " %s from %g to %g %s. Run on %s, data filename %s>") % \
+                " %s from %g to %g %s. Run on %s, data file %s>") % \
                (self.netlist_title, self.netlist_file, self.stype,
                 self.variables[0].upper(), self.start, self.stop,
                 self.units[self.variables[0]], self.timestamp, self.filename)
@@ -852,7 +852,7 @@ class tran_solution(solution, _mutable_data):
 
     def __str__(self):
         return "<TRAN simulation results for %s (netlist %s), from %g s to %g s. Diff. \
-method %s. Run on %s, data filename %s.>" % \
+method %s. Run on %s, data file %s>" % \
         (
          self.netlist_title, self.netlist_file, self.tstart, self.tstop, self.method,
          self.timestamp, self.filename
@@ -929,7 +929,7 @@ class pss_solution(solution, _mutable_data):
 
     def __str__(self):
         return "<PSS simulation results for %s (netlist %s), period %g s. Method: %s. \
-Run on %s, data filename %s.>" % \
+Run on %s, data file %s.>" % \
         (
          self.netlist_title, self.netlist_file, self.period, self.method, self.timestamp,
          self.filename
