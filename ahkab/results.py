@@ -781,7 +781,7 @@ class dc_solution(solution, _mutable_data):
         This method adds an OP solution and
         its corresponding sweep value to the results set.
         """
-        sweepvalue = np.mat(np.array([sweepvalue]))
+        sweepvalue = np.array([[sweepvalue]])
         x = op.asmatrix()
         data = np.concatenate((sweepvalue, x), axis=0)
         self._add_data(data)
