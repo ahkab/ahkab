@@ -47,7 +47,7 @@ class Test_DC_Solution:
         # values(), keys(), items()
         assert len(r.values()) == r.asmatrix().shape[0]
         assert len(r.values()[1]) == r.asmatrix().shape[1]
-        assert set(zip(*r.items())[0]) == set(r.keys())
+        assert set(list(zip(*r.items()))[0]) == set(r.keys())
         # Iterator interface
         keys = []
         values = []
