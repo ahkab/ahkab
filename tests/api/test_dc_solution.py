@@ -33,6 +33,12 @@ class Test_DC_Solution:
         assert r['V1'][0] == -5
         assert np.allclose(r['V1'][-1], 5)
         assert (r.get_x() == r['V1']).all()
+        # solution methods
+        assert len(r) == len(r.variables)
+        assert len(r) == len(list(r.keys()))
+        assert r.has_key('V1')
+        assert 'V1' in r
+        assert not 'bogus' in r
         # Dictionary access with bogus keys
         try:
             r['sd']

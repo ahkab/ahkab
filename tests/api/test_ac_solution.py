@@ -29,6 +29,12 @@ class Test_AC_solution:
             assert False
         except KeyError:
             pass
+        # solution methods
+        assert len(r) == len(r.variables)
+        assert len(r) == len(list(r.keys()))
+        assert r.has_key('w')
+        assert 'w' in r
+        assert not 'bogus' in r
         #get method
         assert r.get('sd', 'No such key') == 'No such key'
         assert r.get('VN1').any()
