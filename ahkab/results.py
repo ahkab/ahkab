@@ -1070,7 +1070,7 @@ class symbolic_solution(object):
                    ('simulation'*(not self.tf) + 'transfer function'*self.tf,
                     self.netlist_title, self.netlist_file, self.timestamp)
         keys = list(self.results.keys())
-        keys.sort(lambda x, y: cmp(str(x), str(y)))
+        keys.sort(key=str)
         if not self.tf:
             for key in keys:
                 str_repr +=  str(key) + "\t = " + str(self.results[key]) + "\n"
