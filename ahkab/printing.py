@@ -98,10 +98,11 @@ import numpy as np
 from . import options
 from . import py3compat
 
-if py3compat.PY2 and not py3compat.IPYTHON:
+if py3compat.PY2:
     import codecs
-    UTF8Writer = codecs.getwriter('utf8')
-    sys.stdout = UTF8Writer(sys.stdout)
+    if not py3compat.IPYTHON:
+        UTF8Writer = codecs.getwriter('utf8')
+        sys.stdout = UTF8Writer(sys.stdout)
 
 def open_utf8(filename):
     """Get a file handle wrapped in a UTF-8 writer
