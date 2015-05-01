@@ -1065,10 +1065,6 @@ class symbolic_solution(object):
             asolution = pickle.load(fp)
         return asolution
 
-
-    def __repr__(self):
-        return self.results.__repr__()
-
     def __str__(self):
         str_repr = "Symbolic %s results for '%s' (netlist %s).\nRun on %s.\n" % \
                    ('simulation'*(not self.tf) + 'transfer function'*self.tf,
