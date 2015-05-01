@@ -1281,7 +1281,10 @@ class case_insensitive_dict(object):
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
         keys = list(self._dict.keys())
-        i = [k.upper() for k in keys].index(text_type(name).upper())
+        try:
+            i = [k.upper() for k in keys].index(text_type(name).upper())
+        except ValueError:
+            raise KeyError(name)
         return self._dict[keys[i]]
 
     def get(self, name, default=None):
