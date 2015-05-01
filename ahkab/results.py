@@ -988,12 +988,12 @@ class symbolic_solution(object):
         **Returns:**
 
         symbol : Sympy symbol
-            The corresponding symbol, if found.
+            The corresponding symbol, if it exists in the result set.
 
         **Raises:**
 
         ValueError : exception
-            In case no corresponding symbol is found.
+            In case no such symbol is found.
         """
 
         symbs = [x for x in self._symbols if x.name.lower() == variable.lower()]
@@ -1133,12 +1133,12 @@ class symbolic_solution(object):
 
     # iterator methods
     def __iter__(self):
-        self.iter_index = 0
+        self.iter_index = -1
         return self
 
     def __next__(self):
         """Iterator method."""
-        if self.iter_index == len(list(self.results.keys()))-1:
+        if self.iter_index == len(list(self.results.keys())) - 1:
             self.iter_index = 0
             raise StopIteration
         else:
