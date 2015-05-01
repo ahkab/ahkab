@@ -933,16 +933,17 @@ class symbolic_solution(object):
     **Parameters:**
 
     results_dict : dict
-        the results dict returned by sympy.solve(),
+        the results dict returned by ``sympy.solve()``,
     substitutions : dict
-        the substitutions (dict) employed before solving,
+        the substitutions (dictionary) employed before solving,
     circ : circuit instance
         the circuit instance of the simulated circuit.
     outfile : str, optional
         the filename of the save file.
-        Use ``"stdout"`` to write to the std output.
+        Use ``"stdout"`` to write to the standard output.
     tf : bool, optional
-        Set this to ``True`` if this set of results corrsponds to a transfer function.
+        Transfer function flag: set this to ``True`` if this set of results
+        corrsponds to a transfer function.  Defaults to ``False``.
     """
     def __init__(self, results_dict, substitutions, circ, outfile=None, tf=False):
         self.sol_type = "Symbolic"
@@ -970,7 +971,7 @@ class symbolic_solution(object):
             self.save()
 
     def as_symbol(self, variable):
-        """Converts a string to a symbolic variable.
+        """Converts a string to the corresponding symbolic variable.
 
         This symbol may then be used by the user as an atom to construct
         new expressions, modify the results expressions or it can be passed
@@ -981,7 +982,8 @@ class symbolic_solution(object):
         variable : string
             The string that identifies the variable. Eg. ``'R1'`` for the variable
             corresponding to the resistance of the resistor ``R1``. Note that the
-            case is disregarded.
+            case is disregarded and that the first letter defines the type of
+            the element (resistor, capacitor...).
 
         **Returns:**
 
@@ -1068,7 +1070,7 @@ class symbolic_solution(object):
         return self.results.__repr__()
 
     def __str__(self):
-        str_repr = "Symbolic %s results for %s (netlist %s).\nRun on %s.\n" % \
+        str_repr = "Symbolic %s results for '%s' (netlist %s).\nRun on %s.\n" % \
                    ('simulation'*(not self.tf) + 'transfer function'*self.tf,
                     self.netlist_title, self.netlist_file, self.timestamp)
         keys = list(self.results.keys())
