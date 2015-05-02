@@ -915,9 +915,9 @@ class pss_solution(solution, _mutable_data):
         self._add_data(data)
 
     def asmatrix(self):
-        allvalues = csvlib.load_csv(self.filename, load_headers=[],
-                                    nsamples=None, skip=0, verbose=0)
-        return allvalues[0, :], allvalues[1:, :]
+        allvalues, _, _, _ = csvlib.load_csv(self.filename, load_headers=[],
+                                             nsamples=None, skip=0, verbose=0)
+        return allvalues
 
     def get_x(self):
         return self.get(self.variables[0])
