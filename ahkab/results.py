@@ -1260,7 +1260,7 @@ class case_insensitive_dict(object):
         """Get the number of elements in the set."""
         return len(self._dict)
 
-    def __repr__(self):
+    def __str__(self):
         rpr = "{"
         keys = list(self._dict.keys())
         for i in range(len(keys)):
