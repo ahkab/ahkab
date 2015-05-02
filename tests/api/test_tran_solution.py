@@ -37,7 +37,7 @@ class Test_TRAN_solution:
         assert r.get_xlabel() == 'T'
         (r.get_x() == r['T']).all()
         # solution methods
-        assert r.asmatrix().shape == (8, 10)
+        assert r.asarray().shape == (8, 10)
         assert len(r) == len(r.variables)
         assert len(r) == len(list(r.keys()))
         assert r.has_key('T')
@@ -55,8 +55,8 @@ class Test_TRAN_solution:
         # default value in get()
         assert r.get('sd', 'No such key') == 'No such key'
         # keys, values, items
-        assert len(r.values()) == r.asmatrix().shape[0]
-        assert len(r.values()[1]) == r.asmatrix().shape[1]
+        assert len(r.values()) == r.asarray().shape[0]
+        assert len(r.values()[1]) == r.asarray().shape[1]
         assert set(list(zip(*r.items()))[0]) == set(r.keys())
         # dictionary interface
         keys = []

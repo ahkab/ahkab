@@ -47,7 +47,7 @@ class Test_OP_solution:
         assert r.get('VN1') == 0
 
         # the important part is not the value
-        np.allclose(r.asmatrix(),
+        np.allclose(r.asarray(),
                     np.array([[1.00000000e+00],
                               [0.00000000e+00],
                               [1.00000000e+00],

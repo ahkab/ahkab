@@ -158,7 +158,7 @@ class solution(object):
         # Please redefine this sol_type in the subclasses
         self.sol_type = None
 
-    def asmatrix(self):
+    def asarray(self):
         """Return all data.
 
         .. note::
@@ -319,7 +319,7 @@ class op_solution(solution, _mutable_data):
             return default
         return data
 
-    def asmatrix(self):
+    def asarray(self):
         """Get all data as a np matrix."""
         return self.x
 
@@ -630,7 +630,7 @@ class ac_solution(solution, _mutable_data):
     def get_xlabel(self):
         return self.variables[0]
 
-    def asmatrix(self):
+    def asarray(self):
         """Return all data as a (possibly huge) python matrix."""
         ## data, headers, pos, EOF = csvlib.load_csv()
         data, headers, _, _ = csvlib.load_csv(self.filename, load_headers=[],
@@ -695,7 +695,7 @@ class ac_solution(solution, _mutable_data):
 
     def values(self):
         """Get all of the results set's variables values."""
-        data = self.asmatrix()
+        data = self.asarray()
         values = [np.real_if_close(data[0, :])]
         for i in range(1, data.shape[0]):
             values.append(data[i, :])
@@ -772,7 +772,7 @@ class dc_solution(solution, _mutable_data):
         its corresponding sweep value to the results set.
         """
         sweepvalue = np.array([[sweepvalue]])
-        x = op.asmatrix()
+        x = op.asarray()
         data = np.concatenate((sweepvalue, x), axis=0)
         self._add_data(data)
 
@@ -913,7 +913,7 @@ class pss_solution(solution, _mutable_data):
         data = np.concatenate((time, x), axis=0)
         self._add_data(data)
 
-    def asmatrix(self):
+    def asarray(self):
         allvalues, _, _, _ = csvlib.load_csv(self.filename, load_headers=[],
                                              nsamples=None, skip=0, verbose=0)
         return allvalues

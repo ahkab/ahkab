@@ -202,7 +202,7 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
                 x0 = np.zeros((MNA.shape[0] - 1, 1))
             else:
                 if isinstance(x0, results.op_solution):
-                    x0 = x0.asmatrix()
+                    x0 = x0.asarray()
                 # else
                     # hopefully x0 is an ndarray!
                 printing.print_info_line(("Using the supplied op as " +

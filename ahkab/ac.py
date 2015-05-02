@@ -233,7 +233,7 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
                 x0.print_short()
             printing.print_info_line(
                 ("Linearizing the circuit...", 5), verbose, print_nl=False)
-            J = _generate_J(xop=x0.asmatrix(), circ=circ, mna=mna,
+            J = _generate_J(xop=x0.asarray(), circ=circ, mna=mna,
                            Nac=Nac, data_filename=outfile, verbose=verbose)
             printing.print_info_line((" done.", 5), verbose)
             # we have J, continue
