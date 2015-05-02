@@ -903,12 +903,10 @@ class pss_solution(solution, _mutable_data):
             self.set_results(t_array, x_array)
 
     def __str__(self):
-        return "<PSS simulation results for %s (netlist %s), period %g s. Method: %s. \
-Run on %s, data file %s.>" % \
-        (
-         self.netlist_title, self.netlist_file, self.period, self.method, self.timestamp,
-         self.filename
-        )
+        return ("<PSS simulation results for '%s' (netlist %s), period %g s. " +
+                "Method: %s. Run on %s, data file %s>") % \
+               (self.netlist_title, self.netlist_file, self.period, self.method,
+                self.timestamp, self.filename)
 
     def set_results(self, t, x):
         """All the results are set at the same time for a PSS"""
