@@ -1255,12 +1255,12 @@ class case_insensitive_dict(object):
     """
     def __init__(self):
         self._dict = {}
-        # Access as a dictionary BY VARIABLE NAME:
+
     def __len__(self):
         """Get the number of elements in the set."""
         return len(self._dict)
 
-    def __repr__(self):
+    def __str__(self):
         rpr = "{"
         keys = list(self._dict.keys())
         for i in range(len(keys)):
@@ -1288,7 +1288,7 @@ class case_insensitive_dict(object):
         try:
             keys = list(self._dict.keys())
             i = [k.upper() for k in keys].index(name.upper())
-        except KeyError:
+        except ValueError:
             return default
         return self._dict[keys[i]]
 
