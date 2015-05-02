@@ -35,7 +35,7 @@ class Test_TRAN_solution:
         # hence no t=0
         assert np.alltrue(r.get_x() == np.array(list(ahkab.utilities.lin_axis_iterator(5e-6, 50e-6, 10))))
         assert r.get_xlabel() == 'T'
-        (r.get_x() == r['T']).all()
+        assert (r.get_x() == r['T']).all()
         # solution methods
         assert r.asmatrix().shape == (8, 10)
         assert len(r) == len(r.variables)
