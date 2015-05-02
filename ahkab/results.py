@@ -615,9 +615,8 @@ class ac_solution(solution, _mutable_data):
                           self.filename)
 
     def add_line(self, omega, x):
-        omega = np.mat(np.array([omega]))
-
-        xsplit = np.mat(np.zeros((x.shape[0]*2, 1)))
+        omega = np.array([[omega]])
+        xsplit = np.zeros((x.shape[0]*2, 1))
         for i in range(x.shape[0]):
             xsplit[2*i, 0] = np.abs(x[i, 0])
             xsplit[2*i+1, 0] = np.angle(x[i, 0], deg=options.ac_phase_in_deg)
