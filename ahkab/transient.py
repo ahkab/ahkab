@@ -193,7 +193,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
     else:
         if isinstance(x0, results.op_solution):
             opsol = x0
-            x0 = x0.asmatrix()
+            x0 = x0.asarray()
         else:
             opsol =  results.op_solution(x=x0, error=np.zeros((mna.shape[0], 1)), circ=circ, outfile=None)
         printing.print_info_line(("Using the supplied op as x(t=%g)." % (tstart,), 5), verbose)

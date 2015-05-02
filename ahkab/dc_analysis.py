@@ -239,7 +239,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None,
     # initial guess, if specified, otherwise it's zero
     if x0 is not None:
         if isinstance(x0, results.op_solution):
-            x = x0.asmatrix()
+            x = x0.asarray()
         else:
             x = x0
     else:
@@ -1160,7 +1160,7 @@ def modify_x0_for_ic(circ, x0):
     """
 
     if isinstance(x0, results.op_solution):
-        x0 = copy.copy(x0.asmatrix())
+        x0 = copy.copy(x0.asarray())
         return_obj = True
     else:
         return_obj = False

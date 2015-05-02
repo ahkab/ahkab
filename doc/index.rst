@@ -6,12 +6,13 @@ Ahkab |release| Docs
 
 Ahkab (pronounced "uh, cab") is an open-source SPICE-like interactive circuit simulator.
 
-Command line interface and netlist syntax
------------------------------------------
+General help pages
+------------------
 
 .. toctree::
    :maxdepth: 1
 
+   misc/A-Good-Idea
    help/Install-Notes
    help/Command-Line-Help
    help/Netlist-Syntax
@@ -60,16 +61,16 @@ Module reference
    trap
    utilities
 
-Python API
-----------
+Simulating from Python
+----------------------
 
 .. toctree::
    :maxdepth: 1
 
    examples/Python_API
 
-Example simulations
--------------------
+Examples of simulation from the CLI
+-----------------------------------
 
 .. toctree::
    :maxdepth: 1

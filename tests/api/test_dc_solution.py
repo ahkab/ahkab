@@ -49,10 +49,10 @@ class Test_DC_Solution:
         assert r.get('sd', 'No such key') == 'No such key'
         assert not r.get('VN1').any() # all 0s
         # data shape
-        assert r.asmatrix().shape == (8, 100)
+        assert r.asarray().shape == (8, 100)
         # values(), keys(), items()
-        assert len(r.values()) == r.asmatrix().shape[0]
-        assert len(r.values()[1]) == r.asmatrix().shape[1]
+        assert len(r.values()) == r.asarray().shape[0]
+        assert len(r.values()[1]) == r.asarray().shape[1]
         assert set(list(zip(*r.items()))[0]) == set(r.keys())
         # Iterator interface
         keys = []

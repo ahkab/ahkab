@@ -42,10 +42,10 @@ class Test_AC_solution:
         assert r['w'][0] == 10000000
         assert np.allclose(r['w'][-1], 10000000000)
         # data shape
-        assert r.asmatrix().shape == (8, 100)
+        assert r.asarray().shape == (8, 100)
         # data
-        assert len(r.values()) == r.asmatrix().shape[0]
-        assert len(r.values()[1]) == r.asmatrix().shape[1]
+        assert len(r.values()) == r.asarray().shape[0]
+        assert len(r.values()[1]) == r.asarray().shape[1]
         # iterator checks
         keys = []
         values = []

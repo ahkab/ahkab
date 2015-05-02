@@ -340,7 +340,7 @@ def _build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
     x = np.mat(np.zeros((points * n_of_var, 1)))
     if x0 is not None:
         if isinstance(x0, results.op_solution):
-            x0 = x0.asmatrix()
+            x0 = x0.asarray()
         if x0.shape[0] != n_of_var:
             print("Warning x0 has the wrong dimensions. Using all 0s.")
         else:
