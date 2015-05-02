@@ -397,14 +397,15 @@ class Circuit(list):
         **Parameters:**
 
         model_type : string
-            the model type (eg "ekv").
+            the model type (eg "ekv"). Right now, the possible values are:
+            ``"mosq"``, ``"ekv"``, ``"diode"``, ``"sw"``.
 
         model_label : string
-            a unique identifier for the model being added (eg. "nch1").
+            a unique identifier for the model being added (eg. ``"nch1"``).
 
         model_parameters: dict
             a dictionary holding the parameters to be supplied to the
-            model to initialize it.
+            model to instantiate it.
 
         """
 
