@@ -1,6 +1,70 @@
 <!-- Name: Changelog -->
 #Changelog
 
+## Changelog for v 0.16
+
+Version 0.16 represents the culmination of 1 month of efforts, yet another step
+in the current time-based release scheme.
+
+### Features added:
+
+This release brings the test coverage of the codebase over the 80% milestone for
+the first time. It also features a faster substitution algorithm for symbolic
+simulations, we empoly the ``tabulate`` module more extensively, producing a
+prettier output (for example ``print_short()`` now prints a pretty table.)
+
+Internally, We removed occurrences of ``np.matrix``, in favor of ``np.array``,
+according to the overall planned switch in the library. This should be
+completely transparent to the user.
+
+A few changes that have been introduced are *incompatible* with the previous
+releases:
+
+* The axis iterators ``utilities.log_axis_iterator`` and
+  ``utilities.lin_axis_iterator`` now follow the syntax ``(min, max, points)``.
+* The solution method ``solution.asmatrix()`` has been renamed to
+  ``solution.asarray()``.
+* We droppped the (undocumented) support for accessing singularities in
+  ``pz_solution`` as ``'Re(p0)'`` and ``'Im(p0)'``. Hopefully, being
+  undocumented it had little use. Please use ``numpy.real(r['p0'])`` or
+  ``numpy.imag(r['p0'])`` to achieve the same result.
+* Remove ``printing.table_print()`` for ``print(printing.table())``.
+
+We apologize about the above, we believe the technical debt we paid with the
+changes above makes up for the discomfort to our userbase.
+
+Moreover, as in the previous releases, several commits were devoted to improving
+the documentation: you can find the new, improved documentation online at
+http://ahkab.readthedocs.org/en/latest/
+
+### Issues fixed
+
+* #29 - ``ahkab`` should now work well in IPython running under Python2 again.
+
+### Changes from contributors and pull requests merged:
+
+*None.*
+
+### Bugs fixed, short list:
+
+* BUGFIX: Always plot in tests even if the test fails (especially then!)
+* BUGFIX: catch ``ValueError`` in ``results.cid``
+* BUGFIX: fix ``pss_solution.asmatrix()``
+* BUGFIX: import ``codecs`` even if on Ipython
+* BUGFIX: fix iterator off-by-one in ``symbolic_solution``
+* BUGFIX: key misses in ``symbolic_solution`` raise ``KeyErrors``
+* BUGFIX: fix slicing in the solution (use it too)
+* BUGFIX: ``dc_solution.values()`` now slices along the correct axis
+* BUGFIX: ``load_csv()`` raises ``ValueError``
+* BUGFIX: key misses raise ``KeyErrors``
+* BUGFIX: prevent breaking readline on ipython, fixes #29
+* BUGFIX: ensure w is always returned as real data, not cplx
+* BUGFIX: Improve the iterators syntax, always include endpoints.
+* BUGFIX: raise ``KeyError`` for key misses in ac_solution
+* BUGFIX: ``items()`` returns no arrays.
+* BUGFIX: ``values()`` returns a list, not an array.
+* BUGFIX: fix iterator increment-by-one bug
+
 ## Changelog for v 0.15
 
 Version 0.15 is just a bugfix release addressing the fact that the minimum version of the ``sympy`` release that is needed is 0.7.6.
@@ -22,7 +86,7 @@ Moreover, as in the previous releases, many commits were devoted to improving th
 
 ### Changes from contributors and pull requests merged:
 
-*None.* 
+*None.*
 
 ### Bugs fixed, short list:
 
@@ -36,7 +100,7 @@ Moreover, as in the previous releases, many commits were devoted to improving th
 
 Version 0.13 represents the culmination of efforts dating back to January and contains 135 commits.
 
-This release features current-controlled current sources and voltage sources and new options to select the format of numbers printed for user display and how the MNA matrix is built in Symbolic Analysis. 
+This release features current-controlled current sources and voltage sources and new options to select the format of numbers printed for user display and how the MNA matrix is built in Symbolic Analysis.
 
 Moreover, as in the previous releases, many commits were devoted to improving the documentation: you can find the new, improved documentation at http://ahkab.readthedocs.org/en/latest/
 
@@ -49,7 +113,7 @@ Moreover, as in the previous releases, many commits were devoted to improving th
 
 ### Changes from contributors and pull requests merged:
 
-*None.* 
+*None.*
 
 ### Bugs fixed, short list:
 
@@ -79,7 +143,7 @@ Moreover, many commits were devoted to improving the documentation: you can find
 
 ### Changes from contributors and pull requests merged:
 
-*None.* 
+*None.*
 
 ### Bugs fixed, short list:
 
@@ -116,7 +180,7 @@ repository.
 ### Bugs fixed, short list:
 
 * BUGFIX: AC sweeps consistently default to LOG.
-* BUGFIX: Convert print_netlist_elem_line to get_... 
+* BUGFIX: Convert print_netlist_elem_line to get_...
 * BUGFIX: parse_analysis() is not a generator anymore`.
 * BUGFIX: Remove print_circuit(), use print(circuit).
 * BUGFIX: EKV devices now match the usual constructor.
@@ -154,7 +218,7 @@ repository.
 
 ### Changes from contributors and pull requests merged:
 
-*    Incorporate most changes from @weilawei. 
+*    Incorporate most changes from @weilawei.
 *    Merge pull request #18 from endolith/patch-1
 *    Merge branch 'patch-1' of https://github.com/mightyiam/ahkab
 
@@ -185,7 +249,7 @@ repository.
 *    Move `convergence_check()` to utilities.
 *    Use relative imports and move to single versioning of files.
 *    Remove def. values from time functions
-  
+
 Thanks to @weilawei**, @endolith, @mightyiam for their contributions.
 
 ** Big thanks man, excellent job.
@@ -199,7 +263,7 @@ Thanks to @weilawei**, @endolith, @mightyiam for their contributions.
 *  Improved diode model with temperature support (but no capacitances).
 
 ## 8/8/13
- * Dropped psycho support. 
+ * Dropped psycho support.
  * Re-added the quadratic law MOS transistor model.
  * Updated wiki pages and examples.
  * Many small fixes.

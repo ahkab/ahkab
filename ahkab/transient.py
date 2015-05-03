@@ -193,7 +193,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
     else:
         if isinstance(x0, results.op_solution):
             opsol = x0
-            x0 = x0.asmatrix()
+            x0 = x0.asarray()
         else:
             opsol =  results.op_solution(x=x0, error=np.zeros((mna.shape[0], 1)), circ=circ, outfile=None)
         printing.print_info_line(("Using the supplied op as x(t=%g)." % (tstart,), 5), verbose)
@@ -334,7 +334,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
         elif x is not None:
             x0 = x
 
-        (x1, error, solved, n_iter) = dc_analysis.dc_solve(
+        x1, error, solved, n_iter = dc_analysis.dc_solve(
                                                      mna=(mna + np.multiply(x_coeff, D)),
                                                      Ndc=N,  Ntran=np.dot(D, const), circ=circ,
                                                      Gmin=Gmin_matrix, x0=x0,
@@ -361,7 +361,9 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
                                 new_step_coeff = new_value
                             #print new_value
                     new_step = tstep * new_step_coeff
-                    if options.transient_use_aposteriori_step_control and new_step < options.transient_aposteriori_step_threshold * tstep:
+                    if (options.transient_use_aposteriori_step_control and
+                        new_step_coeff <
+                        options.transient_aposteriori_step_threshold):
                         #don't recalculate a x for a small change
                         tstep = check_step(new_step, time, tstop, HMAX)
                         #print "Apost. (reducing) step = "+str(tstep)
@@ -427,10 +429,10 @@ def check_step(tstep, time, tstop, HMAX):
 
     The following problems are checked:
 
-    - the step must be shorter than ``HMAX``. In the context of a trnsient
+    - the step must be shorter than ``HMAX``. In the context of a transient
       analysis, that usually is the time step provided by the user,
-    - the step must be shorter than the simulation time left (ie stop time -
-      current time),
+    - the step must be equal or shorter than the simulation time left (ie stop
+      time minus current time),
     - the step must be longer than ``options.hmin``, the minimum allowable time
       step. If the step goes below this value, convergence problems due to
       machine precision will occur. Typically when this happens, we halt the

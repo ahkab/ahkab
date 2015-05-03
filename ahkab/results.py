@@ -80,8 +80,8 @@ Index of the solution classes
 
 .. autosummary::
 
-    dc_solution
     ac_solution
+    dc_solution
     op_solution
     pss_solution
     pz_solution
@@ -158,7 +158,7 @@ class solution(object):
         # Please redefine this sol_type in the subclasses
         self.sol_type = None
 
-    def asmatrix(self):
+    def asarray(self):
         """Return all data.
 
         .. note::
@@ -178,8 +178,11 @@ class solution(object):
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
         # data, headers, pos, EOF = csvlib.load_csv(...)
-        data, _, _, _ = csvlib.load_csv(self.filename, load_headers=[name],
-                                        nsamples=None, skip=0, verbose=0)
+        try:
+            data, _, _, _ = csvlib.load_csv(self.filename, load_headers=[name],
+                                            nsamples=None, skip=0, verbose=0)
+        except ValueError:
+            raise KeyError(name)
         return data.reshape((-1,))
 
     def get(self, name, default=None):
@@ -188,7 +191,7 @@ class solution(object):
             # data, headers, pos, EOF = csvlib.load_csv(...)
             data, _, _, _ = csvlib.load_csv(self.filename, load_headers=[name],
                                             nsamples=None, skip=0, verbose=0)
-        except KeyError:
+        except ValueError:
             return default
         return data.reshape((-1,))
 
@@ -210,20 +213,11 @@ class solution(object):
         data, _, _, _ = csvlib.load_csv(self.filename,
                                         load_headers=self.variables,
                                         nsamples=None, skip=0, verbose=0)
-        values = []
-        for i in range(data.shape[1]):
-            values.append(data[:, i])
+        values = [data[i, :] for i in range(data.shape[0])]
         return values
 
     def items(self, verbose=3):
-        # data, headers, pos, EOF = csvlib.load_csv(...)
-        data, headers, _, _ = csvlib.load_csv(self.filename,
-                                        load_headers=self.variables,
-                                        nsamples=None, skip=0, verbose=verbose)
-        vlist = []
-        for j in range(data.shape[0]):
-            vlist.append(data[j,:].T)
-        return list(zip(headers, vlist))
+        return list(zip(self.keys(), self.values()))
 
     # iterator methods
     def __iter__(self):
@@ -306,14 +300,9 @@ class op_solution(solution, _mutable_data):
         str_repr = \
             (("OP simulation results for '%s'" % (self.netlist_title,)) +
             ('(netlist %s)'%(self.netlist_file,) if self.netlist_file else '') +
-            ('.\nRun on %s, data filename %s.\n' % \
+            ('.\nRun on %s, data file %s.\n' % \
              (self.timestamp, self.filename)))
-        for v in self.variables:
-            str_repr += "%s:\t%e\t%s\t(%e %s, %f %%)\n" % \
-                (v, self.results[v], self.units[v], \
-                self.errors[v], self.units[v], \
-                self.errors[v]/self.results[v]*100.0)
-        return str_repr
+        return str_repr + self.get_table_array()
 
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
@@ -330,21 +319,20 @@ class op_solution(solution, _mutable_data):
             return default
         return data
 
-    def asmatrix(self):
-        """Get all data as a np matrix."""
+    def asarray(self):
+        """Get all data as a ``numpy`` array"""
         return self.x
 
     def get_table_array(self):
-        headers = ("Variable", "Value", "Error", "(%)", "Units")
+        headers = ("Variable", "Units", "Value", "Error", "%")
         table = []
         for v in self.variables:
             if self.results[v] != 0:
                 relerror = self.errors[v]/self.results[v]*100.0
             else:
                 relerror = 0.0
-            line = (v, self.results[v], self.errors[v], '(%.2f)'%relerror,
-                    self.units[v])
-            line = list(map(str, line))
+            line = (v, self.units[v], self.results[v], self.errors[v], '%d' %
+                    relerror)
             table.append(line)
         return printing.table(table, headers=headers)
 
@@ -488,11 +476,19 @@ class op_solution(solution, _mutable_data):
         self._add_data(self.x)
 
     def print_short(self):
-        str_repr = ""
+        """Print a short, essential representation of the OP results"""
+        table = []
+        line = []
         for v in self.variables:
-            str_repr += "%s: %e %s,\t" % \
-                (v, self.results[v], self.units[v])
-        print(str_repr[:-2])
+            line.append("%s: %g %s" % \
+                        (v, self.results[v], self.units[v]))
+            if len(line) == 5:
+                table.append(line)
+                line = []
+        if len(line) > 0: # add the last line
+            line += [""]*(5 - len(line))
+            table.append(line)
+        print(printing.table(table))
 
     @staticmethod
     def gmin_check(op2, op1):
@@ -529,28 +525,31 @@ class op_solution(solution, _mutable_data):
 
     def values(self):
         """Get all of the results set's variables values."""
-        return self.x
+        return np.squeeze(self.x).tolist()
 
     def items(self, verbose=3):
         vlist = []
         for j in range(self.x.shape[0]):
-            vlist.append(self.x[j])
+            vlist.append(self.x[j, 0])
         return list(zip(self.variables, vlist))
 
     # iterator methods
     def __iter__(self):
-        self.iter_index = 0
+        self._iter_index = 0
         return self
 
-    def __next__(self):
-        if self.iter_index == len(self.variables):
-            self.iter_index = 0
+    def next(self):
+        if self._iter_index == len(self.variables):
+            self._iter_index = 0
             raise StopIteration
         else:
-            nxt = self.variables[self.iter_index], \
-                   self.x[self.iter_index]
-            self.iter_index += 1
+            nxt = self.variables[self._iter_index], \
+                   self.x[self._iter_index]
+            self._iter_index += 1
         return nxt
+
+    def __next__(self):
+        return self.next()
 
 
 class ac_solution(solution, _mutable_data):
@@ -561,18 +560,18 @@ class ac_solution(solution, _mutable_data):
     circ : circuit instance
         the circuit instance of the simulated circuit
     start : float
-       the AC sweep start value.
+       the AC sweep angular frequency start value, in rad/sec.
     stop : float
-       the AC sweep stop value.
+       the AC sweep angular frequency stop value, in rad/sec.
     points : int
        the AC sweep total points.
     stype : str
        the type of sweep, ``"LOG"``, ``"LIN"`` or arb. ``"POINTS"``.
     op : op_solution
-       the linearization op used to compute the results
+       the linearization Operating Point used to compute the results.
     outfile: str
-        the file to write the results to.
-        Use "stdout" to write to std output.
+        the file to write the results to.  Use ``"stdout"`` to write to the
+        standard output.
     """
     def __init__(self, circ, start, stop, points, stype, op, outfile):
         solution.__init__(self, circ, outfile)
@@ -609,14 +608,15 @@ class ac_solution(solution, _mutable_data):
         self._init_file_done = True
 
     def __str__(self):
-        return "<AC simulation results for %s (netlist %s). %s sweep, from %g Hz to %g Hz, \
-%d points. Run on %s, data filename %s.>" % \
-        (self.netlist_title, self.netlist_file, self.stype, self.ostart, self.ostop, self.opoints, self.timestamp, self.filename)
+        return ("<AC simulation results for '%s' (netlist %s). %s sweep, " +
+                "from %g to %g rad/sec, %d points. Run on %s, data file " +
+                "%s>") % (self.netlist_title, self.netlist_file, self.stype,
+                          self.ostart, self.ostop, self.opoints, self.timestamp,
+                          self.filename)
 
     def add_line(self, omega, x):
-        omega = np.mat(np.array([omega]))
-
-        xsplit = np.mat(np.zeros((x.shape[0]*2, 1)))
+        omega = np.array([[omega]])
+        xsplit = np.zeros((x.shape[0]*2, 1))
         for i in range(x.shape[0]):
             xsplit[2*i, 0] = np.abs(x[i, 0])
             xsplit[2*i+1, 0] = np.angle(x[i, 0], deg=options.ac_phase_in_deg)
@@ -630,7 +630,7 @@ class ac_solution(solution, _mutable_data):
     def get_xlabel(self):
         return self.variables[0]
 
-    def asmatrix(self):
+    def asarray(self):
         """Return all data as a (possibly huge) python matrix."""
         ## data, headers, pos, EOF = csvlib.load_csv()
         data, headers, _, _ = csvlib.load_csv(self.filename, load_headers=[],
@@ -670,9 +670,15 @@ class ac_solution(solution, _mutable_data):
             headers = ['|%s|' % name, 'arg(%s)' % name]
         else:
             headers = [name]
-        # data, headers, pos, EOF = csvlib.load_csv()
-        data, headers, _, _ = csvlib.load_csv(self.filename, load_headers=headers,
-                                              nsamples=None, skip=0, verbose=0)
+        try:
+            # data, headers, pos, EOF = csvlib.load_csv()
+            data, headers, _, _ = csvlib.load_csv(self.filename,
+                                                  load_headers=headers,
+                                                  nsamples=None, skip=0,
+                                                  verbose=0)
+        except ValueError:
+            # raise the correct exception
+            raise KeyError(name)
         if len(headers) == 2:
             data = data[0, :] * np.exp(1j*data[1, :])
         else:
@@ -689,9 +695,9 @@ class ac_solution(solution, _mutable_data):
 
     def values(self):
         """Get all of the results set's variables values."""
-        data = self.asmatrix()
-        values = []
-        for i in range(data.shape[0]):
+        data = self.asarray()
+        values = [np.real_if_close(data[0, :])]
+        for i in range(1, data.shape[0]):
             values.append(data[i, :])
         return values
 
@@ -753,13 +759,11 @@ class dc_solution(solution, _mutable_data):
                 self.units.update({varname:"A"})
 
     def __str__(self):
-        return "<DC simulation results for %s (netlist %s). %s sweep of %s from %g %s to \
-%g %s. Run on %s, data filename %s.>" % \
-        (
-         self.netlist_title, self.netlist_file, self.stype, self.variables[0].upper(), \
-         self.start, self.units[self.variables[0]], self.stop, self.units[self.variables[0]],
-         self.timestamp, self.filename
-        )
+        return ("<DC simulation results for '%s' (netlist %s). %s sweep of" +
+                " %s from %g to %g %s. Run on %s, data file %s>") % \
+               (self.netlist_title, self.netlist_file, self.stype,
+                self.variables[0].upper(), self.start, self.stop,
+                self.units[self.variables[0]], self.timestamp, self.filename)
 
     def add_op(self, sweepvalue, op):
         """A DC sweep is made of a set of OP points.
@@ -767,8 +771,8 @@ class dc_solution(solution, _mutable_data):
         This method adds an OP solution and
         its corresponding sweep value to the results set.
         """
-        sweepvalue = np.mat(np.array([sweepvalue]))
-        x = op.asmatrix()
+        sweepvalue = np.array([[sweepvalue]])
+        x = op.asarray()
         data = np.concatenate((sweepvalue, x), axis=0)
         self._add_data(data)
 
@@ -790,12 +794,12 @@ class tran_solution(solution, _mutable_data):
     tstop : float
         the transient simulation stop time.
     op : op_solution instance
-        the op used to start the transient analysis.
+        the Operating Point (OP) used to start the transient analysis.
     method : str
         the differentiation method employed.
     outfile : str
         the filename of the save file.
-        Use "stdout" to write to the std output.
+        Use "stdout" to write to the standard output.
     """
     def __init__(self, circ, tstart, tstop, op, method, outfile):
         solution.__init__(self, circ, outfile)
@@ -824,24 +828,21 @@ class tran_solution(solution, _mutable_data):
                 self.units.update({varname:"A"})
 
     def __str__(self):
-        return "<TRAN simulation results for %s (netlist %s), from %g s to %g s. Diff. \
-method %s. Run on %s, data filename %s.>" % \
-        (
-         self.netlist_title, self.netlist_file, self.tstart, self.tstop, self.method,
-         self.timestamp, self.filename
-        )
+        return ("<TRAN simulation results for '%s' (netlist %s), from %g s to" +
+                " %g s. Diff. method %s. Run on %s, data file %s>") % \
+               (self.netlist_title, self.netlist_file, self.tstart, self.tstop,
+                self.method, self.timestamp, self.filename)
 
     def add_line(self, time, x):
         """This method adds a solution and its corresponding time value to the results set.
         """
         if not self._lock:
-            time = np.mat(np.array([time]))
+            time = np.array([[time]])
             data = np.concatenate((time, x), axis=0)
             self._add_data(data)
         else:
-            printing.print_general_error(
-                                "Attempting to add values to a complete result set. BUG"
-                                )
+            raise RuntimeError("Attempting to add values to a complete " +
+                               "result set.")
 
     def lock(self):
         self._lock = True
@@ -901,12 +902,10 @@ class pss_solution(solution, _mutable_data):
             self.set_results(t_array, x_array)
 
     def __str__(self):
-        return "<PSS simulation results for %s (netlist %s), period %g s. Method: %s. \
-Run on %s, data filename %s.>" % \
-        (
-         self.netlist_title, self.netlist_file, self.period, self.method, self.timestamp,
-         self.filename
-        )
+        return ("<PSS simulation results for '%s' (netlist %s), period %g s. " +
+                "Method: %s. Run on %s, data file %s>") % \
+               (self.netlist_title, self.netlist_file, self.period, self.method,
+                self.timestamp, self.filename)
 
     def set_results(self, t, x):
         """All the results are set at the same time for a PSS"""
@@ -914,10 +913,10 @@ Run on %s, data filename %s.>" % \
         data = np.concatenate((time, x), axis=0)
         self._add_data(data)
 
-    def asmatrix(self):
-        allvalues = csvlib.load_csv(self.filename, load_headers=[],
-                                    nsamples=None, skip=0, verbose=0)
-        return allvalues[0, :], allvalues[1:, :]
+    def asarray(self):
+        allvalues, _, _, _ = csvlib.load_csv(self.filename, load_headers=[],
+                                             nsamples=None, skip=0, verbose=0)
+        return allvalues
 
     def get_x(self):
         return self.get(self.variables[0])
@@ -931,16 +930,17 @@ class symbolic_solution(object):
     **Parameters:**
 
     results_dict : dict
-        the results dict returned by sympy.solve(),
+        the results dict returned by ``sympy.solve()``,
     substitutions : dict
-        the substitutions (dict) employed before solving,
+        the substitutions (dictionary) employed before solving,
     circ : circuit instance
         the circuit instance of the simulated circuit.
     outfile : str, optional
         the filename of the save file.
-        Use ``"stdout"`` to write to the std output.
+        Use ``"stdout"`` to write to the standard output.
     tf : bool, optional
-        Set this to ``True`` if this set of results corrsponds to a transfer function.
+        Transfer function flag: set this to ``True`` if this set of results
+        corrsponds to a transfer function.  Defaults to ``False``.
     """
     def __init__(self, results_dict, substitutions, circ, outfile=None, tf=False):
         self.sol_type = "Symbolic"
@@ -968,7 +968,7 @@ class symbolic_solution(object):
             self.save()
 
     def as_symbol(self, variable):
-        """Converts a string to a symbolic variable.
+        """Converts a string to the corresponding symbolic variable.
 
         This symbol may then be used by the user as an atom to construct
         new expressions, modify the results expressions or it can be passed
@@ -979,17 +979,18 @@ class symbolic_solution(object):
         variable : string
             The string that identifies the variable. Eg. ``'R1'`` for the variable
             corresponding to the resistance of the resistor ``R1``. Note that the
-            case is disregarded.
+            case is disregarded and that the first letter defines the type of
+            the element (resistor, capacitor...).
 
         **Returns:**
 
         symbol : Sympy symbol
-            The corresponding symbol, if found.
+            The corresponding symbol, if it exists in the result set.
 
         **Raises:**
 
         ValueError : exception
-            In case no corresponding symbol is found.
+            In case no such symbol is found.
         """
 
         symbs = [x for x in self._symbols if x.name.lower() == variable.lower()]
@@ -1061,16 +1062,12 @@ class symbolic_solution(object):
             asolution = pickle.load(fp)
         return asolution
 
-
-    def __repr__(self):
-        return self.results.__repr__()
-
     def __str__(self):
-        str_repr = "Symbolic %s results for %s (netlist %s).\nRun on %s.\n" % \
+        str_repr = "Symbolic %s results for '%s' (netlist %s).\nRun on %s.\n" % \
                    ('simulation'*(not self.tf) + 'transfer function'*self.tf,
                     self.netlist_title, self.netlist_file, self.timestamp)
         keys = list(self.results.keys())
-        keys.sort(lambda x, y: cmp(str(x), str(y)))
+        keys.sort(key=str)
         if not self.tf:
             for key in keys:
                 str_repr +=  str(key) + "\t = " + str(self.results[key]) + "\n"
@@ -1129,12 +1126,12 @@ class symbolic_solution(object):
 
     # iterator methods
     def __iter__(self):
-        self.iter_index = 0
+        self.iter_index = -1
         return self
 
     def __next__(self):
         """Iterator method."""
-        if self.iter_index == len(list(self.results.keys()))-1:
+        if self.iter_index == len(list(self.results.keys())) - 1:
             self.iter_index = 0
             raise StopIteration
         else:
@@ -1189,14 +1186,9 @@ class pz_solution(solution, _mutable_data):
                 self.data.update({self.variables[i]: data[i, 0]})
 
     def _add_data(self, data):
-        """Remember to call this method with REAL data - already split in ABS and PHASE."""
+        """Remember to call this method with REAL data - already split in RE and IM."""
         csvlib.write_csv(self.filename, data, self.csv_headers, append=self._init_file_done)
         self._init_file_done = True
-
-    def __repr__(self):
-        return ("%s PZ solution, poles: %s, zeros: %s") % \
-               (self.netlist_file, list(self.poles),
-                list(self.zeros))
 
     def __str__(self):
         return ("PZ simulation results for %s (netlist %s).\n" + \
@@ -1209,11 +1201,6 @@ class pz_solution(solution, _mutable_data):
         """Get a specific variable, as from a dictionary."""
         if name in self.data:
             return self.data[name]
-        elif len(name) > 4 and name[3:-1] in self.data:
-            if name[:2].upper() == 'RE':
-                return np.real(self.data[name[3:-1]])
-            if name[:2].upper() == 'IM':
-                return np.imag(self.data[name[3:-1]])
         raise KeyError
 
     def get(self, name, default=None):
@@ -1228,7 +1215,7 @@ class pz_solution(solution, _mutable_data):
 
     def __contains__(self, name):
         """Determine whether the result set contains a variable."""
-        return name in self.data or (len(name) > 4 and name[3:-1] in self.data)
+        return name in self.data
 
     def keys(self):
         """Get all of the results set's variable's names."""
@@ -1243,8 +1230,16 @@ class pz_solution(solution, _mutable_data):
 
     # iterator methods
     def __iter__(self):
-        self.iter_index = 0
+        # take into account that we increment first, then return
+        # the value
+        self.iter_index = -1
         return self
+
+    def __next__(self):
+        # redefine this or the superclass method will be used on
+        # PY3, calling the superclass' next() and not *our* next
+        # method below.
+        return self.next()
 
     def next(self):
         if self.iter_index == len(self.variables)-1:
@@ -1260,12 +1255,12 @@ class case_insensitive_dict(object):
     """
     def __init__(self):
         self._dict = {}
-        # Access as a dictionary BY VARIABLE NAME:
+
     def __len__(self):
         """Get the number of elements in the set."""
         return len(self._dict)
 
-    def __repr__(self):
+    def __str__(self):
         rpr = "{"
         keys = list(self._dict.keys())
         for i in range(len(keys)):
@@ -1279,7 +1274,10 @@ class case_insensitive_dict(object):
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
         keys = list(self._dict.keys())
-        i = [k.upper() for k in keys].index(text_type(name).upper())
+        try:
+            i = [k.upper() for k in keys].index(text_type(name).upper())
+        except ValueError:
+            raise KeyError(name)
         return self._dict[keys[i]]
 
     def get(self, name, default=None):
@@ -1290,7 +1288,7 @@ class case_insensitive_dict(object):
         try:
             keys = list(self._dict.keys())
             i = [k.upper() for k in keys].index(name.upper())
-        except KeyError:
+        except ValueError:
             return default
         return self._dict[keys[i]]
 

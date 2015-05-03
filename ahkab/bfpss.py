@@ -173,7 +173,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
     else:
         J = np.zeros(CMAT.shape)
     T = np.zeros((CMAT.shape[0], 1))
-    # td is a np matrix that will hold the damping factors
+    # td is a np array that will hold the damping factors
     td = np.zeros((points, 1))
     iteration = 0  # newton iteration counter
 
@@ -242,8 +242,9 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
             dx = np.linalg.solve(J, -residuo)
         # td
         for index in range(points):
-            td[index, 0] = dc_analysis.get_td(
-                dx[index*n_of_var:(index + 1)*n_of_var, 0], locked_nodes, n=-1)
+            td[index, 0] = dc_analysis.get_td(dx[index*n_of_var:(index + 1)*n_of_var,
+                                                 0].reshape(-1, 1),
+                                              locked_nodes, n=-1)
         x = x + min(abs(td))[0] * dx
         # convergence check
         converged = _convergence_check(dx, x, nv_indices, ni_indices,
@@ -263,7 +264,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
     tick.hide(verbose > 2)
     if converged:
         printing.print_info_line(("done.", 3), verbose)
-        t = np.mat(np.arange(points) * step)
+        t = np.arange(points) * step
         t = t.reshape((1, points))
         x = x.reshape((points, n_of_var))
         sol = results.pss_solution(
@@ -337,10 +338,10 @@ def _build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
     printing.print_info_line(("Building x...", 5), verbose, print_nl=False)
     tick.reset()
     tick.display(verbose > 2)
-    x = np.mat(np.zeros((points * n_of_var, 1)))
+    x = np.zeros((points * n_of_var, 1))
     if x0 is not None:
         if isinstance(x0, results.op_solution):
-            x0 = x0.asmatrix()
+            x0 = x0.asarray()
         if x0.shape[0] != n_of_var:
             print("Warning x0 has the wrong dimensions. Using all 0s.")
         else:
@@ -351,7 +352,6 @@ def _build_x(mna, step, points, tick, x0=None, n_of_var=None, verbose=3):
 
     tick.hide(verbose > 2)
     printing.print_info_line(("done.", 5), verbose)
-
     return x
 
 
@@ -359,16 +359,14 @@ def _build_Tf(sTf, points, tick, n_of_var, verbose=3):
     printing.print_info_line(("Building Tf...", 5), verbose, print_nl=False)
     tick.reset()
     tick.display(verbose > 2)
-    Tf = np.mat(np.zeros((points * n_of_var, 1)))
+    Tf = np.zeros((points * n_of_var, 1))
 
     for index in range(1, points):
         Tf = utilities.set_submatrix(row=index*n_of_var, col=0, dest_matrix=Tf,
                                      source_matrix=sTf)
         tick.step()
-
     tick.hide(verbose > 2)
     printing.print_info_line(("done.", 5), verbose)
-
     return Tf
 
 

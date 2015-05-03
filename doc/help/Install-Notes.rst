@@ -1,3 +1,5 @@
+.. _install-ahkab:
+
 Installing ahkab
 ''''''''''''''''
 
@@ -22,7 +24,7 @@ Please try to use an up-to-date version of the libraries instead of the
 bare minimum required.
 
 All platform that are supported by the dependencies are also platforms
-supported by ahkab, although the author only runs \*UNIX variants. If
+supported by ``ahkab``, although the author only runs \*UNIX variants. If
 you run into any problem, please report it in `the issue manager
 <https://github.com/ahkab/ahkab/issues>`__.
 
@@ -52,20 +54,49 @@ Plotting requires `matplotlib <http://matplotlib.sourceforge.net/>`__:
 Install
 -------
 
-The project is hosted on GitHub and `on
-PyPI <https://pypi.python.org/pypi/ahkab/>`__: to run ahkab, you can:
+The source code for the project is `hosted on GitHub
+<https://github.com/ahkab/ahkab>`__ and releases can be found `on PyPI
+<https://pypi.python.org/pypi/ahkab/>`__.
 
-- run ``pip install ahkab --user``,
-- `download a tarball containing the source
-  code <https://github.com/ahkab/ahkab/archive/master.zip>`__,
-- or check out the latest code `as explained here
-  <https://help.github.com/articles/fetching-a-remote/#clone>`__.
+To install ``ahkab``, you can have two options: using ``pip`` or using
+``distutils``.
 
-If you choose not to use PIP, you will need to install the module
-manually for your user on your \*UNIX system with the ``distutils``
-script provided:
+Install with pip
+""""""""""""""""
 
-``python setup.py install --prefix=~/.local``
+If you use ``pip``, which boundled in your Python installation, the source code
+is downloaded from you off the Python Package Index (`PyPI
+<https://pypi.python.org/>`__).
+
+You may:
+
+- Issue ``pip install ahkab``, which may require administrative access depending
+  on what permissions your user has on your Python installation.
+- To avoid having to supply admin credentials, you may use ``pip`` according to
+  "the user scheme", issuing ``pip install ahkab --user``.
+
+Install with distutils
+""""""""""""""""""""""
+
+Installing manually through ``distutils`` requires that you download the source
+code, untar and move to the root directory of the package.
+
+For which you should first either:
+  - `download a release tarball containing the source code
+    <https://github.com/ahkab/ahkab/releases/>`__,
+  - or check out the latest code `as explained on GitHub
+    <https://help.github.com/articles/fetching-a-remote/#clone>`__.
+
+Then, you will need to install the module manually with the ``distutils`` script ``setup.py`` provided, you can choose whether:
+    - to install for all users: ``python setup.py install``
+    - or only your own: ``python setup.py install --user``
+    - or to install to a different prefix: ``python setup.py install
+      --prefix=~/.local``
+
+The Python documentation for installing with ``distutils`` will clear up any
+remaining doubt: `for version 2 of the language
+<https://docs.python.org/2/install/#the-new-standard-distutils>`__, `for version
+3 <https://docs.python.org/3/install/>`__.
 
 Thanks
 ------

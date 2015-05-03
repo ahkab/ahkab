@@ -244,7 +244,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None,
     # initial guess, if specified, otherwise it's zero
     if x0 is not None:
         if isinstance(x0, results.op_solution):
-            x = x0.asmatrix()
+            x = x0.asarray()
         else:
             x = x0
     else:
@@ -518,9 +518,9 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
     sweep_type = sweep_type.upper()[:3]
 
     if sweep_type == options.dc_log_step:
-        dc_iter = utilities.log_axis_iterator(stop, start, nsteps=points)
+        dc_iter = utilities.log_axis_iterator(start, stop, points=points)
     elif sweep_type == options.dc_lin_step:
-        dc_iter = utilities.lin_axis_iterator(stop, start, nsteps=points)
+        dc_iter = utilities.lin_axis_iterator(start, stop, points=points)
     else:
         printing.print_general_error("Unknown sweep type: %s" % (sweep_type,))
         sys.exit(1)
@@ -1165,7 +1165,7 @@ def modify_x0_for_ic(circ, x0):
     """
 
     if isinstance(x0, results.op_solution):
-        x0 = copy.copy(x0.asmatrix())
+        x0 = copy.copy(x0.asarray())
         return_obj = True
     else:
         return_obj = False

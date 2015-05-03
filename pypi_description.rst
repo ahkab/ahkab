@@ -1,5 +1,5 @@
 ahkab
-======
+=====
 
 **a SPICE-like electronic circuit simulator written in Python**
 
@@ -9,10 +9,10 @@ The code should be easy to read and modify, the main language is Python
 News!
 -----
 
--  Ahkab v0.15 was released on Apr 20 2015, including
-   bugfixes and additional documentation. It is recommended to upgrade.
+-  Ahkab v0.16 was released on May 3 2015, including new features, many
+   bugfixes and improved documentation. It is recommended to upgrade.
    Check out `the release
-   notes <https://github.com/ahkab/ahkab/releases/tag/v0.15>`__ for
+   notes <https://github.com/ahkab/ahkab/releases/tag/v0.16>`__ for
    more!
 -  The whole codebase has been going through a (yet incomplete)
    refactoring and documenting effort. The `new documentation is
@@ -32,12 +32,12 @@ Supported simulations:
 
    -  **Operating point**, with guess computation to speed up the
       solution. See example: `Downscaling current
-      mirror <https://github.com/ahkab/ahkab/wiki/Example:-OP-simulation>`__
+      mirror <https://ahkab.readthedocs.org/en/latest/examples/OP_simulation.html>`__
    -  **DC sweep**
    -  **Transient analysis**, available differentiation formulas:
       implicit Euler, trapezoidal, gear orders from 2 to 5. See for
       example the `simulation of a Colpitts
-      Oscillator <https://github.com/ahkab/ahkab/wiki/Example:-Transient-simulation-1>`__.
+      Oscillator <https://ahkab.readthedocs.org/en/latest/examples/Transient-Example.html>`__.
    -  **AC analysis**
    -  **PZ** analysis
    -  **Periodic steady state analysis** of non-autonomous circuits,
@@ -48,7 +48,7 @@ Supported simulations:
    -  **Small signal analysis**, AC or DC, with extraction of transfer
       functions, DC gain, poles and zeros. Various `symbolic analysis
       examples on this
-      page <https://github.com/ahkab/ahkab/wiki/Example:-Symbolic-simulation>`__.
+      page <https://ahkab.readthedocs.org/en/latest/examples/Symbolic-simulation.html>`__.
 
 The results are saved to disk, plotted or printed to stdout and can be
 read/processed by the most common tools (eg.
@@ -69,7 +69,7 @@ The program requires:
 Matplotlib is strongly recommended and no plotting will work without.
 
 If you need more information about the dependencies, check the `Install
-notes <https://github.com/ahkab/ahkab/wiki/Install:-Notes>`__.
+notes <https://ahkab.readthedocs.org/en/latest/help/Install-Notes.html>`__.
 
 Usage
 -----
@@ -205,9 +205,9 @@ and `Rob Crowther <https://github.com/weilawei>`__.
    :target: https://travis-ci.org/ahkab/ahkab
 .. |Coverage Status| image:: https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master
    :target: https://coveralls.io/r/ahkab/ahkab?branch=master
-.. |PyPi version| image:: http://img.shields.io/badge/version-0.15-brightgreen.png
+.. |PyPi version| image:: http://img.shields.io/badge/version-0.16-brightgreen.png
    :target: https://pypi.python.org/pypi/ahkab/
 .. |GPLv2 license| image:: http://img.shields.io/badge/license-GPL%20v2-brightgreen.png
    :target: https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE
-.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.15462.svg
-   :target: http://dx.doi.org/10.5281/zenodo.15462
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.16971.svg
+   :target: http://dx.doi.org/10.5281/zenodo.16971

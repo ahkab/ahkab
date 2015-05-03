@@ -173,9 +173,9 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
     """
     calc_zeros = (input_source is not None) and (output_port is not None)
     if calc_zeros:
-        if type(input_source) != str:
+        if type(input_source) not in py3compat.string_types:
             input_source = input_source.part_id
-        if type(output_port) == str:
+        if type(output_port) in py3compat.string_types:
             output_port = plotting._split_netlist_label(output_port)[0] 
             output_port = [o[1:] for o in output_port]
             output_port = [o.lower() for o in output_port]
@@ -202,7 +202,7 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
                 x0 = np.zeros((MNA.shape[0] - 1, 1))
             else:
                 if isinstance(x0, results.op_solution):
-                    x0 = x0.asmatrix()
+                    x0 = x0.asarray()
                 # else
                     # hopefully x0 is an ndarray!
                 printing.print_info_line(("Using the supplied op as " +

@@ -373,7 +373,7 @@ class vswitch_model:
             [self.name, "", "", "SWITCH MODEL", "", "", "", "", "",  "", "", ""])
         arr.append(["VT", "[V]", self.VT, "VH", "[V]:", self.VH,
                    "RON", "[ohm]", self.RON, "ROFF", "[ohm]", self.ROFF])
-        printing.table_print(arr)
+        print(printing.table(arr))
 
     def get_i(self, xxx_todo_changeme, dev, debug=False):
         """Returns the output current.
