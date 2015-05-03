@@ -320,7 +320,7 @@ class op_solution(solution, _mutable_data):
         return data
 
     def asarray(self):
-        """Get all data as a np matrix."""
+        """Get all data as a ``numpy`` array"""
         return self.x
 
     def get_table_array(self):

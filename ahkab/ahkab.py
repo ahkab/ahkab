@@ -192,7 +192,7 @@ def new_op(guess=None, x0=None, outfile=None, verbose=0):
     x0 : matrix, optional
         In alternative to the ``guess`` option above, one can provide
         an explicit starting point to the OP algorithm, setting x0 to an opportunely sized
-        np matrix. FIXME help method here
+        ``numpy`` array. FIXME mention help method here
         If both x0 and guess are set, x0 takes the precedence.
 
     outfile : string, optional
@@ -253,11 +253,11 @@ def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None
         if set to ``True``, the analysis will start from an initial guess,
         hopefully speeding up the convergence of particularly stiff circuits.
 
-    x0 : np matrix, optional
+    x0 : ``numpy`` array, optional
         if the ``guess`` option above is not used, one can provide
         a starting point directly, setting ``x0`` to an opportunely sized
-        np matrix.
-        If both ``x0`` and ``guess`` are set, x0 takes the precedence.
+        ``numpy`` array.
+        If both ``x0`` and ``guess`` are set, ``x0`` takes the precedence.
 
     outfile : string, optional
         the filename of the output file where the results will be written.
@@ -308,7 +308,7 @@ def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP,
         the time step. If the step control is active, this is the
         minimum time step value that will be allowed during simulation.
 
-    x0 : np matrix, optional
+    x0 : ``numpy`` array, optional
         the optional initial conditions point, :math:`x0 = x(t=0)`.
 
     method : string , optional
@@ -421,7 +421,7 @@ def new_pss(period, x0=None, points=None, method=options.BFPSS, autonomous=False
         the time period of the solution, in seconds. This value is required,
         autonomous circuits are currently unsupported.
 
-    x0 : np matrix, optional
+    x0 : ``numpy`` array, optional
         the starting point solution, used at :math:`t=0`.
 
     points : int, optional
@@ -436,7 +436,7 @@ def new_pss(period, x0=None, points=None, method=options.BFPSS, autonomous=False
         Whether the circuit is autonomous or not.
         Non-autonomous circuits are currently unsupported!
 
-    mna, Tf, D : np matrices, optional
+    mna, Tf, D : ``numpy`` arrays, optional
         The matrices to be used to solve the circuit.
         They are optional, if they have already been computed, reusing them saves time.
 
@@ -499,7 +499,7 @@ def new_pz(input_source=None, output_port=None, shift=0.0, MNA=None, outfile=Non
         analyses from overwriting each-other's results.
         If unset defaults to ``stdout``.
 
-    x0 : np matrix or str, optional
+    x0 : ``numpy`` array or str, optional
         the optional linearization point. If set to a string, it must be
         the result of an .OP analysis (use ``'op'``) or an .IC condition
         defined in the netlist. It has no effect on linear circuits.
@@ -701,8 +701,8 @@ def new_x0(circ, icdict):
 
     **Returns:**
 
-    x0 : np matrix
-        The assembled x0
+    x0 : ``numpy`` array
+        The assembled x0.
     """
 
     return dc_analysis.build_x0_from_user_supplied_ic(circ, icdict)
@@ -717,7 +717,7 @@ def icmodified_x0(circ, x0):
         The circuit instance from which the initial conditions are to be
         extracted.
 
-    x0 : np matrix
+    x0 : ``numpy`` array
         The vector to which the initial conditions are to be applied.
     """
     return dc_analysis.modify_x0_for_ic(circ, x0)
