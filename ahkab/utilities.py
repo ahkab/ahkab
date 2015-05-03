@@ -398,9 +398,9 @@ def convergence_check(x, dx, residuum, nv_minus_one, debug=False):
         else ``None``.
     """
     if not hasattr(x, 'shape'):
-        x = np.mat(np.array(x))
-        dx = np.mat(np.array(dx))
-        residuum = np.mat(np.array(residuum))
+        x = np.array(x)
+        dx = np.array(dx)
+        residuum = np.array(residuum)
     vcheck, vresults = voltage_convergence_check(x[:nv_minus_one, 0],
                                                  dx[:nv_minus_one, 0],
                                                  residuum[:nv_minus_one, 0])
