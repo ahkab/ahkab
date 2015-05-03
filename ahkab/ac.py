@@ -312,7 +312,7 @@ def _generate_AC(circ, shape):
         the *unreduced* AC matrix
 
     """
-    AC = np.matrix(np.zeros((shape[0] + 1, shape[1] + 1)))
+    AC = np.zeros((shape[0] + 1, shape[1] + 1))
     nv = circ.get_nodes_number()  # - 1
     i_eq = 0  # each time we find a vsource or vcvs or ccvs, we'll add one to this.
     for elem in circ:
@@ -340,7 +340,7 @@ def _generate_AC(circ, shape):
             i_eq = i_eq + 1
 
     if options.cmin > 0:
-        cmin_mat = np.matrix(np.eye(shape[0] + 1 - i_eq))
+        cmin_mat = np.eye(shape[0] + 1 - i_eq)
         cmin_mat[0, 1:] = 1
         cmin_mat[1:, 0] = 1
         cmin_mat[0, 0] = cmin_mat.shape[0] - 1
@@ -361,7 +361,7 @@ def _generate_Nac(circ):
         The circuit instance for which the matrix will be generated.
     """
     n_of_nodes = circ.get_nodes_number()
-    Nac = np.mat(np.zeros((n_of_nodes, 1)), dtype=complex)
+    Nac = np.zeros((n_of_nodes, 1), dtype=complex)
     j = np.complex('j')
     # process `ISource`s
     for elem in circ:
@@ -387,8 +387,8 @@ def _generate_J(xop, circ, mna, Nac, data_filename, verbose=0):
     """Build the linearized matrix :math:`J`.
     """
     # setup J
-    J = np.mat(np.zeros(mna.shape))
-    Tlin = np.mat(np.zeros(Nac.shape))
+    J = np.zeros(mna.shape)
+    Tlin = np.zeros(Nac.shape)
     for elem in circ:
         if elem.is_nonlinear:
             dc_analysis.update_J_and_Tx(J, Tlin, xop, elem, time=None)
