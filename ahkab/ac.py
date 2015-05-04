@@ -228,7 +228,7 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
     # It's a good idea to call AC with prebuilt MNA matrix if the circuit is
     # big
     if mna is None:
-        (mna, N) = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
+        mna, N = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
         del N
         mna = utilities.remove_row_and_col(mna)
     if Nac is None:
@@ -244,14 +244,16 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
             # we used the supplied linearization matrix
         else:
             if x0 is None:
-                printing.print_info_line(
-                    ("Starting OP analysis to get a linearization point...", 3), verbose, print_nl=False)
+                printing.print_info_line(("Starting OP analysis to get a " +
+                                          "linearization point...", 3), verbose,
+                                         print_nl=False)
                 # silent OP
                 x0 = dc_analysis.op_analysis(circ, verbose=0)
                 if x0 is None:  # still! Then op_analysis has failed!
                     printing.print_info_line(("failed.", 3), verbose)
-                    printing.print_general_error(
-                        "OP analysis failed, no linearization point available. Quitting.")
+                    printing.print_general_error("OP analysis failed, no " +
+                                                 "linearization point " +
+                                                 "available. Quitting.")
                     sys.exit(3)
                 else:
                     printing.print_info_line(("done.", 3), verbose)
@@ -259,10 +261,10 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
                 ("Linearization point (xop):", 5), verbose)
             if verbose > 4:
                 x0.print_short()
-            printing.print_info_line(
-                ("Linearizing the circuit...", 5), verbose, print_nl=False)
-            J = _generate_J(xop=x0.asarray(), circ=circ, mna=mna,
-                           Nac=Nac, data_filename=outfile, verbose=verbose)
+            printing.print_info_line(("Linearizing the circuit...", 5), verbose,
+                                     print_nl=False)
+            J = _generate_J(xop=x0.asarray(), circ=circ,
+                            reduced_mna_size=mna.shape[0])
             printing.print_info_line((" done.", 5), verbose)
             # we have J, continue
     else:  # not circ.is_nonlinear()
@@ -417,15 +419,30 @@ def _generate_Nac(circ):
     return Nac
 
 
-def _generate_J(xop, circ, mna, Nac, data_filename, verbose=0):
-    """Build the linearized matrix :math:`J`.
+def _generate_J(xop, circ, reduced_mna_size):
+    """Build the linearized matrix :math:`J`
+
+    **Parameters:**
+
+    xop : ndarray
+        The linearization point, as a ``numpy`` ndarray.
+    circ : Circuit instance
+        The circuit for which :math:`J` is to be generated.
+    reduced_mna_size : int
+        The size of the (square) Modified Nodal Analysis Matrix, after
+        reduction.
+
+    **Returns:**
+
+    J : ndarray of size ``(reduced_mna_size, reduced_mna_size)``
+        The reduced Jacobian :math:`J`.
+
     """
     # setup J
-    J = np.zeros(mna.shape)
-    Tlin = np.zeros(Nac.shape)
+    J = np.zeros((reduced_mna_size, reduced_mna_size))
+    Tlin = np.zeros((reduced_mna_size, 1))
     for elem in circ:
         if elem.is_nonlinear:
             dc_analysis.update_J_and_Tx(J, Tlin, xop, elem, time=None)
     # del Tlin # not needed! **DC**!
-
     return J
