@@ -1,3 +1,21 @@
+# -*- coding: iso-8859-1 -*-
+# test_tran_solution.py
+# Unit tests for the TRAN solution class
+# Copyright 2015 Giuseppe Venturini
+# This file is part of the ahkab simulator.
+#
+# Ahkab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 2 of the License.
+#
+# Ahkab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License v2
+# along with ahkab. If not, see <http://www.gnu.org/licenses/>.
+
 from __future__ import unicode_literals, print_function, division
 import numpy as np
 import ahkab

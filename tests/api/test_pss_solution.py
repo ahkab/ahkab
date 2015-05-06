@@ -1,3 +1,21 @@
+# -*- coding: iso-8859-1 -*-
+# test_pss_solution.py
+# Unit tests for the PSS solution class
+# Copyright 2015 Giuseppe Venturini
+# This file is part of the ahkab simulator.
+#
+# Ahkab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 2 of the License.
+#
+# Ahkab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License v2
+# along with ahkab. If not, see <http://www.gnu.org/licenses/>.
+
 from __future__ import unicode_literals, print_function, division
 import numpy as np
 import ahkab
@@ -15,7 +33,7 @@ class Test_PSS_solution:
         ttn.add_capacitor('C1', 'n1', 'n2', 31.83e-12)
         ttn.add_capacitor('C2', 'n1', 'n2', 15.91e-12)
         ttn.add_vcvs('E1', 'out', ttn.gnd, 'n2', 'n3', 1e6)
-                # create a simulation object and run it!
+        # create a simulation object and run it!
         op = ahkab.new_op()
         pssa = ahkab.new_pss(1e-6, points=60)
         self.r = ahkab.run(ttn, [op, pssa])['pss']

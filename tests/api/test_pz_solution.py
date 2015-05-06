@@ -1,3 +1,21 @@
+# -*- coding: iso-8859-1 -*-
+# test_pz_solution.py
+# Unit tests for the PZ solution class
+# Copyright 2015 Giuseppe Venturini
+# This file is part of the ahkab simulator.
+#
+# Ahkab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 2 of the License.
+#
+# Ahkab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License v2
+# along with ahkab. If not, see <http://www.gnu.org/licenses/>.
+
 from __future__ import print_function, division, unicode_literals
 
 import numpy as np
@@ -7,7 +25,7 @@ from nose import SkipTest
 from ahkab import py3compat
 
 def test_pz_solution():
-    """Test the PZ solution class"""
+    """Test results.pz_solution"""
     # Numeric test, not to run on PYPY
     if py3compat.PYPY:
         raise SkipTest
@@ -20,7 +38,7 @@ def test_pz_solution():
     pza = ahkab.new_pz('V1', ('out', bpf.gnd), x0=None, shift=1e3)
     r = ahkab.run(bpf, pza)['pz']
 
-    print(str(r))
+    str(r)
 
     np.allclose(r['p0']+r['p1'], -1034507*2, rtol=1e-3)
     np.allclose(abs(r['p0']-r['p1']), 107297253*2, rtol=1e-3)

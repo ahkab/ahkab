@@ -1,7 +1,7 @@
 # -*- coding: iso-8859-1 -*-
 # test_utilities.py
-# Utilities file for Ahkab simulator
-# Copyright 2006 Giuseppe Venturini
+# Utilities module test file for the Ahkab simulator
+# Copyright 2015 Giuseppe Venturini
 
 # This file is part of the ahkab simulator.
 #
@@ -37,9 +37,8 @@ import numpy as np
 #: The machine epsilon, the upper bound on the relative error due to rounding in
 #: floating point arithmetic.
 def test_eps():
-    """Test the EPS value"""
+    """Test utilities.EPS"""
     assert utilities.EPS == np.finfo(float).eps
-
 
 def test_expand_matrix():
     """Test utilities.expand_matrix()"""
