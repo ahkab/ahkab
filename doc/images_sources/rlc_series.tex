@@ -1,0 +1,30 @@
+\documentclass[border=3pt]{standalone}
+\usepackage{tikz}
+\usepackage{siunitx}
+\usepackage[europeanresistors,americaninductors]{circuitikz}
+\begin{document}
+
+\begin{circuitikz}[american voltages]
+  % rotor circuit
+  %to [R, l_=$R_R$] (6,4) % rotor resistance
+  %to [short, i_=$\underline{i}^s_R$] (5,4) % rotor current
+
+  % stator circuit
+  %(0,0) to [open, v^>=$\underline{u}^s_s$] (0,4) % stator voltage
+  \draw (0, 0)  to [V, l=$V_1$, i>=$I(s)$] (0,4); %V1
+
+\draw
+  (0, 4) %to [short, *- , ] (1,4) % stator current
+  to [L, l=\mbox{$L_1=\SI{1}{\micro\henry}$}, *-] (2.5,4) % ind
+  to [C, l=\mbox{$C_1=\SI{2.2}{\pico\farad}$}, *-] (5,4) %  cap
+  %to [short, i_=$\underline{i}^s_M$] (5,3) % magnetizing current
+  to [R, l_=\mbox{$R_1=\SI{13}{\ohm}$}, *-] (5,0); % resistor
+  
+   \draw (0,0) to [short, *-] (5,0);
+   \draw (5.25,0) to [open, v>=$V_{OUT}$] (5.25,4); % output voltage
+   \draw (0,0) node[ground] {};
+   
+\draw {[anchor=south, color=blue] (0,4) node {in} (2.5,4) node {n1} (5,4) node {out} (0.2,0) node {0}};
+\end{circuitikz}
+
+\end{document}

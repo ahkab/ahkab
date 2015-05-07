@@ -68,6 +68,7 @@ Simulating from Python
    :maxdepth: 1
 
    examples/Python_API
+   examples/PZ_Example
 
 Examples of simulation from the CLI
 -----------------------------------
