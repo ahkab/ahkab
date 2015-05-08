@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ahkab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/ahkab/js/jquery.min.js"></script>
+    <script src="/ahkab/js/bootstrap.min.js"></script>
+    <link href="/ahkab/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/ahkab/css/theme.css" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                  <span class="sr-only">Toggle navigation</span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="/ahkab/">Ahkab</a>
+              </div>
+              <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <!---<li class="active"><a href="/ahkab/">Home</a></li> one page -->
+                    <li class="active visible-xs-block"><a href="/ahkab/links.html">Links</a></li>
+                    
+                      <li class="active"><a href="https://github.com/ahkab/ahkab">Github</a></li>
+                    
+                    <li class="active"><a href="https://ahkab.readthedocs.org/en/latest/">Docs</a></li>
+                    <li class="active"><a href="https://github.com/ahkab/ahkab/issues">Bug tracker</a></li>
+                    <li class="active"><a href="https://pypi.python.org/pypi/ahkab/">PYPI</a></li>
+                    <li class="active"><a href="https://github.com/ahkab/ahkab/zipball/master">Download</a></li>
+                    <li class="active"><a href="http://tinymailto.com/5310">Get in touch</a></li>
+                </ul>
+              </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="container container-left">
+    <div class="row">
+        <div class="col-md-3 hidden-xs">
+            <div class="sidebar well">
+<h1>Ahkab</h1>
+<br/>
+<img src="https://rawgithub.com/ahkab/ahkab/master/doc/_static/logo.png" alt="Monkeying around" style="width: 100%;">
+</br>
+<h2>Open Source electronic circuit simulation in Python</h2>
+</div>
+
+<div class="sidebar well">
+<h2>Quick links</h2>
+<ul>
+  <li><a href="https://github.com/ahkab/ahkab">Repository</a></li>
+  <li><a href="https://ahkab.readthedocs.org/en/latest/">Documentation</a></li>
+  <li><a href="https://github.com/ahkab/ahkab/issues">Bug tracker</a></li>
+  <li><a href="https://pypi.python.org/pypi/ahkab/">PYPI page</a></li>
+  <li><a href="https://github.com/ahkab/ahkab/zipball/master">Download as a .zip file</a></li>
+  <li><a href="http://tinymailto.com/5310">Get in touch</a></li>
+</ul>
+
+</div>
+
+        </div>
+        <div class="col-md-9">
+          <div class="article">
+            <div class="well">
+                <div class="post-content">
+                <h2 id="a-spice-like-electronic-circuit-simulator-written-in-python-">a SPICE-like electronic circuit simulator written in Python </h2>
+
+<p>The code should be easy to read and modify, the main language is Python -- 2 or 3 -- and it is platform-independent.</p>
+
+<p><a href="https://travis-ci.org/ahkab/ahkab"><img src="https://travis-ci.org/ahkab/ahkab.png?branch=master" alt="Build Status"></a> <a href="https://coveralls.io/r/ahkab/ahkab?branch=master"><img src="https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master" alt="Coverage Status"></a> <a href="https://pypi.python.org/pypi/ahkab/"><img src="http://img.shields.io/badge/version-0.16-brightgreen.png" alt="PyPi version"></a> <a href="https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE"><img src="http://img.shields.io/badge/license-GPL%20v2-brightgreen.png" alt="GPLv2 license"></a>
+<a href="http://dx.doi.org/10.5281/zenodo.17404"><img src="https://zenodo.org/badge/doi/10.5281/zenodo.17404.svg" alt="DOI"></a></p>
+
+<h2 id="news!">News!</h2>
+
+<ul>
+<li>  Ahkab v0.16 was released on May 3 2015, including new features, many
+bugfixes and improved documentation. It is recommended to upgrade. Check out
+<a href="https://github.com/ahkab/ahkab/releases/tag/v0.16">the release notes</a> for
+more!</li>
+<li>  The whole codebase has been going through a refactoring and
+documenting effort. It&#39;s not complete, yet, but it&#39;s improving. Take
+a look at <a href="http://ahkab.readthedocs.org/">the new documentation!</a></li>
+</ul>
+
+<h2 id="supported-simulations:">Supported simulations:</h2>
+
+<ul>
+<li>  Numeric:
+
+<ul>
+<li>  <strong>Operating point</strong>, with guess computation to speed up the
+solution. See example: <a href="http://ahkab.readthedocs.org/en/latest/examples/OP_simulation.html">Downscaling current
+mirror</a></li>
+<li>  <strong>DC sweep</strong>.</li>
+<li>  <strong>Transient analysis</strong>, available differentiation formulas:
+implicit Euler, trapezoidal, gear orders from 2 to 5. See for
+example the <a href="http://ahkab.readthedocs.org/en/latest/examples/Transient-Example.html">simulation of a Colpitts
+Oscillator</a>.</li>
+<li>  <strong>AC analysis</strong>.</li>
+<li>  <strong>Periodic steady state analysis</strong> of non-autonomous circuits,
+<em>time</em> <em>domain</em> shooting and brute-force algorithms.</li>
+<li>  <strong>Pole-zero analysis</strong>.</li>
+</ul></li>
+<li>  Symbolic:
+
+<ul>
+<li>  <strong>Small signal analysis</strong>, AC or DC, with extraction of transfer
+functions, DC gain, poles and zeros. Various <a href="http://ahkab.readthedocs.org/en/latest/examples/Symbolic-simulation.html">symbolic analysis
+examples on this
+page</a>.</li>
+</ul></li>
+</ul>
+
+<p>An experimental <code>pypy</code> branch <a href="https://github.com/ahkab/ahkab/tree/pypy_symbolic">is available on
+Github</a> for those who are
+mostly interested in the symbolic capabilities of the simulator and raw speed - be sure to install
+<a href="https://bitbucket.org/pypy/numpy">numpy for pypy</a> first!.</p>
+
+<h2 id="download-and-install">Download and install</h2>
+
+<p>That&#39;s so easy! Check out the code from Github, or install from a
+tarball, or even better get the latest ahkab off PYPI with a single command:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"># pip install ahkab
+</code></pre></div>
+<p>Notice pip will try to satisfy the dependencies for you. You may want to
+install them yourself with your OS package manager before running the
+above command. All dependencies are listed in the doc.</p>
+
+<h2 id="run-standalone">Run standalone</h2>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ python ahkab -o graph.dat &lt;netlist file&gt;
+</code></pre></div>
+<p>See <code>ahkab --help</code> for command line switches.</p>
+
+<h2 id="documentation">Documentation</h2>
+
+<p>The simulator can either be run from the command line with a netlist
+file or included in a python script.</p>
+
+<p>Please refer to the
+<a href="http://ahkab.readthedocs.org/">documentation</a>, in particular the
+<a href="http://ahkab.readthedocs.org/en/latest/help/Netlist-Syntax.html">netlist syntax
+page</a>
+for how to write the netlist files that describe the circuit. Experience
+with running SPICE or other commercial simulators can be useful.</p>
+
+<p>The latter option is shown briefly in the <a href="http://ahkab.readthedocs.org/en/latest/examples/Python_API.html">Python
+API</a>
+doc page.</p>
+
+<p>Have fun! Don&#39;t forget to report back cool simulations or any bug may
+you run into!</p>
+
+<h2 id="how-this-project-was-born">How this project was born</h2>
+
+<p>This project was born when I was an enthusiastic undergrad, apparently
+with plenty of free time, attending &quot;Simulazione Circuitale&quot; (<em>Circuit
+Simulation</em>) taught by <a href="http://brambilla.dei.polimi.it/">Prof. A.
+Brambilla</a> back in Italy at the
+Polytechnic University of Milan.</p>
+
+<p>I am grateful to prof. Brambilla for teaching one of the most
+interesting courses of my university years. -GV</p>
+
+<h2 id="bugs-and-patches">Bugs and patches</h2>
+
+<p>Note that this project is still far from its 1.0 release. <em>I may add new
+functionality at the expense of breaking stuff</em>. Most likely I will introduce a
+new feature even if that means breaking backwards compatibility a couple of
+cases. I apologize about that. 
+If you know how to fix the problem and you have a bit of time to spare, you can
+send me a pull request or a patch. :)</p>
+
+<p>Does it work? Bugs? Do you have patches? Did you run some noteworthy
+simulation? <em>Let me know!</em></p>
+
+<ul>
+<li>For all your bug-squashing needs, please <a href="https://github.com/ahkab/ahkab/issues">file an issue in our bug
+tracker</a>.</li>
+<li>Feedback is very welcome, my <a href="http://tinymailto.com/5310">email address</a> is
+available after a captcha.</li>
+</ul>
+
+<h2 id="support-the-development-with-a-donation">Support the development with a donation</h2>
+
+<p>If you wish to support the development of <code>ahkab</code>, <strong><em>please donate to cancer research:</em></strong></p>
+
+<ul>
+<li>  <a href="http://www.aicr.org.uk/donate.aspx">Association for International Cancer Research (eng)</a>,</li>
+</ul>
+
+<p>or</p>
+
+<ul>
+<li>  <a href="http://www.istitutotumori.mi.it/modules.php?name=Content&amp;pa=showpage&amp;pid=24">Fond. IRCCS Istituto Nazionale dei Tumori (it)</a>.</li>
+</ul>
+
+<h2 id="credits">Credits</h2>
+
+<p><strong>Authors:</strong> <a href="https://github.com/ggventurini">Giuseppe Venturini</a>, with
+contributions from <a href="https://github.com/itdaniher">Ian Daniher</a>, <a href="https://github.com/weilawei">Rob
+Crowther</a> and others.</p>
+
+<p><strong>Code:</strong> Ahkab redistributes the module <code>py3compat.py</code>, which is (c) 2013 - the
+Jinja team.</p>
+
+                </div>
+            </div>
+          </div>
+          <!--- we don't have posts, just one page.
+          <div class="pagination">
+              
+              
+          --->
+</div>
+
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="span12 footer">
+            <p class="copyright">&copy;2015 Giuseppe Venturini. Powered by <a href="http://jekyllrb.com">Jekyll</a>, using a modified theme, originally by <a href="https://github.com/scotte/jekyll-clean">Scott Emmons</a>
+            under
+            <a href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution</a></p>
+        </div>
+    </div>
+</div>
+
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43456631-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+
+
+
+</body>
+</html>
+

@@ -1,147 +1,15 @@
-<!DOCTYPE html>
-<html>
+---
+layout: default
+---
 
-  <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="description" content="Ahkab : a SPICE-like electronic circuit simulator written in Python">
-
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-
-    <title>Ahkab</title>
-  </head>
-
-  <body>
-
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/ahkab/ahkab">View on GitHub</a>
-
-          <h1 id="project_title">Ahkab</h1>
-          <h2 id="project_tagline">a SPICE-like electronic circuit simulator written in Python</h2>
-
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/ahkab/ahkab/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/ahkab/ahkab/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
+{% for post in paginator.posts %}
+<div class="article">
+    <div class="well">
+        <div class="content">
+            {{ post.content }}
+        </div>
     </div>
+</div>
+{% endfor %}
 
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <p><a href="https://travis-ci.org/ahkab/ahkab"><img src="https://travis-ci.org/ahkab/ahkab.png?branch=master" alt="Build Status"></a> <a href="https://coveralls.io/r/ahkab/ahkab?branch=master"><img src="https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master" alt="Coverage Status"></a>
-<a href="https://pypi.python.org/pypi/ahkab/"><img src="http://img.shields.io/badge/version-0.14-brightgreen.png" alt="PyPi version"></a> <a href="https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE"><img src="http://img.shields.io/badge/license-GPL%20v2-brightgreen.png" alt="GPLv2 license"></a></p>
-
-<h3>
-<a id="news" class="anchor" href="#news" aria-hidden="true"><span class="octicon octicon-link"></span></a>News!</h3>
-
-<ul>
-<li>The whole codebase has been going through a refactoring and documenting effort. It's not complete, yet, but it's improving. Take a look at <a href="http://ahkab.readthedocs.org/">the new documentation!</a>
-</li>
-</ul>
-
-<h3>
-<a id="supported-simulations" class="anchor" href="#supported-simulations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Supported simulations:</h3>
-
-<ul>
-<li>Numeric:
-
-<ul>
-<li>
-<strong>Operating point</strong>, with guess computation to speed up the solution. See example: <a href="http://ahkab.readthedocs.org/en/latest/examples/OP_simulation.html">Downscaling current mirror</a>
-</li>
-<li>
-<strong>DC sweep</strong>.</li>
-<li>
-<strong>Transient analysis</strong>, available differentiation formulas: implicit Euler, trapezoidal, gear orders from 2 to 5. See for example the <a href="http://ahkab.readthedocs.org/en/latest/examples/Transient-Example.html">simulation of a Colpitts Oscillator</a>.</li>
-<li>
-<strong>AC analysis</strong>.</li>
-<li>
-<strong>Periodic steady state analysis</strong> of non-autonomous circuits, <em>time</em> <em>domain</em> shooting and brute-force algorithms.</li>
-<li>
-<strong>Pole-zero analysis</strong>.</li>
-</ul>
-</li>
-<li>Symbolic: 
-
-<ul>
-<li>
-<strong>Small signal analysis</strong>, AC or DC, with extraction of transfer functions, DC gain, poles and zeros. Various <a href="http://ahkab.readthedocs.org/en/latest/examples/Symbolic-simulation.html">symbolic analysis examples on this page</a>.</li>
-</ul>
-</li>
-</ul>
-
-<p>An experimental <code>pypy</code> branch is available on Github for those who are mostly interested in the symbolic capabilities - be sure to install numpypy first!.</p>
-
-<h3>
-<a id="download-and-install" class="anchor" href="#download-and-install" aria-hidden="true"><span class="octicon octicon-link"></span></a>Download and install</h3>
-
-<p>That's so easy! Check out the code from Github, or install from a tarball or get ahkab off PYPI with a single command:</p>
-
-<pre><code># pip install ahkab</code></pre>
-
-<p>Notice pip will try to satisfy the dependencies for you. You may want to install them yourself with your OS package manager before running the above command.</p>
-
-<h3>
-<a id="run-standalone" class="anchor" href="#run-standalone" aria-hidden="true"><span class="octicon octicon-link"></span></a>Run standalone</h3>
-
-<pre><code>$ python ahkab -o graph.dat &lt;netlist file&gt;`
-</code></pre>
-
-<p>See <code>ahkab --help</code> for command line switches.</p>
-
-<h3>
-<a id="documentation" class="anchor" href="#documentation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Documentation</h3>
-
-<p>The simulator can either be run from the command line with a netlist file or included in a python script.</p>
-
-<p>For the time being, please refer to the <a href="http://ahkab.readthedocs.org/">documentation</a>, in particular the <a href="http://ahkab.readthedocs.org/en/latest/help/Netlist-Syntax.html">netlist syntax page</a> for how to write the netlist files that describe the circuit. Experience with running SPICE or other commercial simulators can be useful.</p>
-
-<p>The latter option is shown briefly in the <a href="http://ahkab.readthedocs.org/en/latest/examples/Python_API.html">Python API</a> doc page.</p>
-
-<p>Have fun! Don't forget to report back cool simulations or any bug may you run into!</p>
-
-<h3>
-<a id="how-this-project-was-born" class="anchor" href="#how-this-project-was-born" aria-hidden="true"><span class="octicon octicon-link"></span></a>How this project was born</h3>
-
-<p>This project was born when I was an enthusiastic undergrad, apparently with plenty of free time, attending "Simulazione Circuitale" (<em>Circuit Simulation</em>) taught by <a href="http://brambilla.dei.polimi.it/">Prof. A. Brambilla</a> back in Italy at the Polytechnic University of Milan.</p>
-
-<p>I am grateful to prof. Brambilla for teaching one of the most interesting courses of my university years. -GV</p>
-
-<h3>
-<a id="contributors" class="anchor" href="#contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Contributors</h3>
-
-<p>Giuseppe Venturini (<a href="https://github.com/ggventurini" class="user-mention">@ggventurini</a> on GH) Ian Daniher (<a href="https://github.com/itdaniher" class="user-mention">@itdaniher</a>, also on GH)</p>
-
-<h3>
-<a id="bugs-and-patches" class="anchor" href="#bugs-and-patches" aria-hidden="true"><span class="octicon octicon-link"></span></a>Bugs and patches</h3>
-
-<p>Note that <em>I often add new functionality at the expense of breaking stuff</em>. Most likely I will introduce a new feature even if that means breaking a couple of others. It should get fixed soon, but if you have a bit of time to spare, you can send me a pull request or a patch. :)</p>
-
-<p>Does it work? Bugs? Do you have patches? Did you run some noteworthy simulation? Let me know! Feedback is very welcome, my <a href="http://tinymailto.com/5310">email address</a> is available after a captcha.</p>
-      </section>
-    </div>
-
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Ahkab maintained by <a href="https://github.com/ahkab">Giuseppe Venturini</a></p>
-      </footer>
-    </div>
-
-              <script type="text/javascript">
-            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-          </script>
-          <script type="text/javascript">
-            try {
-              var pageTracker = _gat._getTracker("UA-43456631-1");
-            pageTracker._trackPageview();
-            } catch(err) {}
-          </script>
-
-
-  </body>
-</html>
+</div>
