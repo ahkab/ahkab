@@ -16,7 +16,20 @@
 # You should have received a copy of the GNU General Public License v2
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
-""" This module contains the methods required to perform an AC analysis.
+"""This module contains the methods required to perform an AC analysis.
+
+.. note::
+
+    Typically, the user does not need to call the functions in this module
+    directly, instead, we recommend defining an AC analysis object through the
+    convenience method :func:`ahkab.ahkab.new_ac` and then running it calling
+    :func:`ahkab.ahkab.run`.
+
+Overview of AC simulations
+--------------------------
+
+The AC simulation problem
+'''''''''''''''''''''''''
 
 Our AC analysis problem can be written as:
 
@@ -26,18 +39,20 @@ Our AC analysis problem can be written as:
 
 We need:
 
-    1. the mna matrix :math:`MNA`,
+    1. the Modified Nodal Analysis matrix :math:`MNA`,
     2. the :math:`AC` matrix, holding the frequency dependent parts,
     3. :math:`J`, the Jacobian matrix from the linearized non-linear elements,
     4. :math:`N_{ac}`, the AC sources contribution.
 
-An OP has to be computed first if there is any non-linear device in the circuit.
+An Operating Point (OP) has to be computed first if there is any non-linear
+device in the circuit to perform the linearization.
 
 When all the matrices are available, it is possible to solve the system
 for the frequency values specified by the user, providing the resulting
-matrix is not singular (and possibly well conditioned). 
+matrix is not singular (and possibly well conditioned).
 
-**Building the AC matrix:**
+Building the AC matrix
+''''''''''''''''''''''
 
 It's easy to set up the voltage lines, since line 2 refers to
 node 2, etc...
@@ -51,10 +66,11 @@ following elements:
 
     \\mathrm{(KCL\\ node\\ n2)}\\qquad -j\\omega C\\ V(n1) + j\\omega C V(n2) + ... = ...
 
-Inductors generate, together with voltage sources, ccvs, vcvs, a
+Inductors generate, together with voltage sources, Current-Controlled Voltage
+sources (CCVS), Voltage-Controlled Voltage Sources (VCVS), an
 additional line in the :math:`MNA` matrix, and hence in :math:`AC` too.
-The current flowing through the device gets added to the unknowns vector,
-:math:`x`.
+In fact, the current flowing through the device gets added to the unknowns
+vector, :math:`x`.
 
 For example, in the case of an inductors, we have:
 
@@ -64,9 +80,19 @@ For example, in the case of an inductors, we have:
 
 To understand on which line is the KVL line for an inductor, we use the
 *order* of the elements in :mod:`ahkab.circuit`:
-First are assembled all the voltage rows, then the current ones in the same order in which
-the elements that introduce them are found in :mod:`ahkab.circuit`.
 
+* first are assembled all the voltage rows,
+* then the current rows, in the same order in which the elements that introduce
+  them are found in :class:`ahkab.circuit.Circuit`.
+
+Solving
+'''''''
+
+For each angular frequency :math:`\\omega`, the simulator solves the matrix
+equation described.
+
+Since the equation is linear, solving is performed with a single matrix
+inversion and multiplication for each step.
 
 Module reference
 ----------------
@@ -130,20 +156,21 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
         The circuit to be simulated.
 
     start : float
-        The start angular frequency for the AC analysis
+        The start angular frequency for the AC analysis, in rad/s.
 
     points : float,
-        The number of points to be use the discretize the
+        The number of points to be used to discretize the
         ``[start, stop]`` interval.
 
     stop : float
-        The stop angular frequency.
+        The stop angular frequency, in rad/s.
 
     sweep_type : string, optional
-        Either ``options.ac_log_step`` (``'LOG'``) or ``options.ac_lin_step``
-        (``'LIN'``), defaults to a logarithmic sweep.
+        Either ``options.ac_log_step`` (ie ``'LOG'``) or ``options.ac_lin_step``
+        (ie ``'LIN'``), defaults to ``options.ac_log_step``, resulting in a
+        logarithmic sweep.
 
-    x0 : op results instance, optional
+    x0 : OP results instance, optional
         The linearization point. If not set, it will be computed
         running an OP analysis.
 
@@ -152,18 +179,19 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
         if not supplied.
 
     outfile : string, optional
-        the filename of the output file where the results will be written.
-        '.ac' is automatically added at the end to prevent different
-        analyses from overwriting each-other's results.
-        If unset or set to ``None``, defaults to ``stdout``.
+        The name of the file where the results will be written.
+        The suffix ``'.ac'`` is automatically added at the end of the string to
+        prevent different analyses from overwriting each-other's results. Set to
+        ``'stdout'`` to write to the standard output.  If unset, or set to
+        ``None``, defaults to the standard output.
 
     verbose : int, optional
-        the verbosity level, from 0 (silent) to 6 (debug).
+        The verbosity level, from 0 (silent) to 6 (debug).
 
     **Returns:**
 
     ACresult : AC solution
-        The AC analysis results
+        The AC analysis results.
     """
 
     if outfile == 'stdout':
@@ -200,7 +228,7 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
     # It's a good idea to call AC with prebuilt MNA matrix if the circuit is
     # big
     if mna is None:
-        (mna, N) = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
+        mna, N = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
         del N
         mna = utilities.remove_row_and_col(mna)
     if Nac is None:
@@ -216,14 +244,16 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
             # we used the supplied linearization matrix
         else:
             if x0 is None:
-                printing.print_info_line(
-                    ("Starting OP analysis to get a linearization point...", 3), verbose, print_nl=False)
+                printing.print_info_line(("Starting OP analysis to get a " +
+                                          "linearization point...", 3), verbose,
+                                         print_nl=False)
                 # silent OP
                 x0 = dc_analysis.op_analysis(circ, verbose=0)
                 if x0 is None:  # still! Then op_analysis has failed!
                     printing.print_info_line(("failed.", 3), verbose)
-                    printing.print_general_error(
-                        "OP analysis failed, no linearization point available. Quitting.")
+                    printing.print_general_error("OP analysis failed, no " +
+                                                 "linearization point " +
+                                                 "available. Quitting.")
                     sys.exit(3)
                 else:
                     printing.print_info_line(("done.", 3), verbose)
@@ -231,10 +261,10 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
                 ("Linearization point (xop):", 5), verbose)
             if verbose > 4:
                 x0.print_short()
-            printing.print_info_line(
-                ("Linearizing the circuit...", 5), verbose, print_nl=False)
-            J = _generate_J(xop=x0.asarray(), circ=circ, mna=mna,
-                           Nac=Nac, data_filename=outfile, verbose=verbose)
+            printing.print_info_line(("Linearizing the circuit...", 5), verbose,
+                                     print_nl=False)
+            J = _generate_J(xop=x0.asarray(), circ=circ,
+                            reduced_mna_size=mna.shape[0])
             printing.print_info_line((" done.", 5), verbose)
             # we have J, continue
     else:  # not circ.is_nonlinear()
@@ -301,15 +331,15 @@ def _generate_AC(circ, shape):
     **Parameters:**
 
     circ : Circuit instance
-        The circuit instance for which the matrix will be generated.
+        The circuit instance for which the :math:`AC` matrix will be generated.
 
     shape : int
         The reduced MNA size.
 
     **Returns:**
- 
+
     AC : ndarray
-        the *unreduced* AC matrix
+        The *unreduced* (full size) :math:`AC` matrix.
 
     """
     AC = np.zeros((shape[0] + 1, shape[1] + 1))
@@ -358,7 +388,13 @@ def _generate_Nac(circ):
     **Parameters:**
 
     circ : Circuit instance
-        The circuit instance for which the matrix will be generated.
+        The circuit instance for which the :math:`N_{ac}` matrix will be
+        generated.
+
+    **Returns:**
+
+    Nac : ndarray
+        The constant term :math:`N_{ac}`.
     """
     n_of_nodes = circ.get_nodes_number()
     Nac = np.zeros((n_of_nodes, 1), dtype=complex)
@@ -383,15 +419,30 @@ def _generate_Nac(circ):
     return Nac
 
 
-def _generate_J(xop, circ, mna, Nac, data_filename, verbose=0):
-    """Build the linearized matrix :math:`J`.
+def _generate_J(xop, circ, reduced_mna_size):
+    """Build the linearized matrix :math:`J`
+
+    **Parameters:**
+
+    xop : ndarray
+        The linearization point, as a ``numpy`` ndarray.
+    circ : Circuit instance
+        The circuit for which :math:`J` is to be generated.
+    reduced_mna_size : int
+        The size of the (square) Modified Nodal Analysis Matrix, after
+        reduction.
+
+    **Returns:**
+
+    J : ndarray of size ``(reduced_mna_size, reduced_mna_size)``
+        The reduced Jacobian :math:`J`.
+
     """
     # setup J
-    J = np.zeros(mna.shape)
-    Tlin = np.zeros(Nac.shape)
+    J = np.zeros((reduced_mna_size, reduced_mna_size))
+    Tlin = np.zeros((reduced_mna_size, 1))
     for elem in circ:
         if elem.is_nonlinear:
             dc_analysis.update_J_and_Tx(J, Tlin, xop, elem, time=None)
     # del Tlin # not needed! **DC**!
-
     return J

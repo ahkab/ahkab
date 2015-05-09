@@ -1,0 +1,37 @@
+\documentclass[border=3pt]{standalone}
+\usepackage{tikz}
+\usepackage{siunitx}
+\usepackage[europeanresistors,americaninductors]{circuitikz}
+\begin{document}
+
+\begin{circuitikz}[american voltages]
+  \draw (0, 0)  to [R, l=\mbox{$R_1=\SI{5}{\ohm}$}, -*] (0,4) %R1
+  to [V, l=\mbox{$V_1=\SI{8}{\V}$}, i<=$I_1$, -*] (4,4) %V1
+  to [R, l=\mbox{$R_2=\SI{2}{\ohm}$}] (4,0); %R2
+
+  \draw (4, 4) to [V, l=\mbox{$V_2=\SI{4}{\V}$}, i<=$I_2$, -*] (8,4) %V2
+  to [R, l=\mbox{$R_3=\SI{4}{\ohm}$}] (8,0); %R3
+
+ \draw (8, 4)  to [R, l=\mbox{$R_4=\SI{1}{\ohm}$}, -*] (12, 4); % R4
+
+ \draw (12,0) to [V, l_=\mbox{$V_3=\SI{10}{\V}$}, i<=$I_3$] (12, 4); %V3
+
+ \draw (4, 4) -- (4, 6) to [R, l=\mbox{$R_5=\SI{4}{\ohm}$}] (12, 6) -- (12, 4); %R5
+
+% the dots
+\draw (12, 0) to[short, *-] (8, 0)
+ to[short, *-] (4, 0)
+ to[short, *-*] (0, 0);
+
+% the ground
+\draw (0,0) node[ground] {};
+% the node labels
+\draw {[anchor=south, color=blue] (0,4) node {n1}
+ (4.25, 4) node {n2}
+ (8, 4) node {n3}
+ (12.25, 4) node {n4}
+ (0.2, 0) node {0}};
+
+\end{circuitikz}
+
+\end{document}

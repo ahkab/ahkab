@@ -1,11 +1,13 @@
-Python scripting tutorial
-~~~~~~~~~~~~~~~~~~~~~~~~~
+AC and TRAN tutorial
+~~~~~~~~~~~~~~~~~~~~
 
-Interacting with the simulator inside a Python program gives the user the
+While the simulation below might me done from the command line with an netlist
+file, interacting with the simulator inside a Python program gives the user the
 ability to employ all the extreme flexibility and power of the Python language.
 
-This page gives an (incomplete) tutorial showing how. More can
-be found in :mod:`ahkab` and :mod:`ahkab.circuit`.
+This page gives an beginners tutorial showing how, especially illustrating AC
+and TRAN simulations. Please refer to the doc pages for :mod:`ahkab` and
+:mod:`ahkab.circuit` for more.
 
 Tutorial
 """"""""
@@ -62,24 +64,7 @@ Ordinary nodes can be defined as:
 Then you can use the nodes you have defined to add your elements to the
 circuit. The circuit instance provides convenient helper functions.
 
-You can use any of these styles:
-
-.. code:: python
-
-    # setup, just like before
-    import ahkab
-    from ahkab import circuit, printing, devices
-    mycircuit = circuit.Circuit(title="Butterworth Example circuit")
-    # first option: define the new nodes and add to the circuit using 
-    # positional arguments
-    n1 = mycircuit.create_node("n1")
-    n2 = mycircuit.create_node("n2")
-    mycircuit.add_resistor("R1", n1, n2, 600.)
-    # or add the nodes and the resistor directly to the circuit using keyword args:
-    # (better double check the node names in big circuits) 
-    mycircuit.add_resistor("R1", n1="n1", n2="n2", value=600) 
-
-Using the second style, the passives in example 7.4 can be added as:
+The passives in example 7.4 can be added as:
 
 .. code:: python
 

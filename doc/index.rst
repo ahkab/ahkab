@@ -6,6 +6,20 @@ Ahkab |release| Docs
 
 Ahkab (pronounced "uh, cab") is an open-source SPICE-like interactive circuit simulator.
 
+|Build Status| |Coverage Status| |PyPi version| |GPLv2 license| |DOI|
+
+.. these entries are hidde, they go to the sidebar but they do not clutter the
+   main page.
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   Homepage <https://ahkab.github.io/ahkab/>
+   Repository <https://github.com/ahkab/ahkab>
+   Issue Tracker <https://github.com/ahkab/ahkab/issues>
+
+
 General help pages
 ------------------
 
@@ -55,7 +69,7 @@ Module reference
    shooting
    switch
    symbolic
-   testing 
+   testing
    ticker
    transient
    trap
@@ -67,7 +81,9 @@ Simulating from Python
 .. toctree::
    :maxdepth: 1
 
+   examples/Simple_OP
    examples/Python_API
+   examples/PZ_Example
 
 Examples of simulation from the CLI
 -----------------------------------
@@ -94,3 +110,13 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+.. |Build Status| image:: https://travis-ci.org/ahkab/ahkab.png?branch=master
+   :target: https://travis-ci.org/ahkab/ahkab
+.. |Coverage Status| image:: https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master
+   :target: https://coveralls.io/r/ahkab/ahkab?branch=master
+.. |PyPi version| image:: http://img.shields.io/badge/version-0.16-brightgreen.png
+   :target: https://pypi.python.org/pypi/ahkab/
+.. |GPLv2 license| image:: http://img.shields.io/badge/license-GPL%20v2-brightgreen.png
+   :target: https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.17404.svg
+   :target: http://dx.doi.org/10.5281/zenodo.17404
