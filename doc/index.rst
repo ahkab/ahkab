@@ -81,6 +81,7 @@ Simulating from Python
 .. toctree::
    :maxdepth: 1
 
+   examples/Simple_OP
    examples/Python_API
    examples/PZ_Example
 
