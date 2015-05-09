@@ -172,7 +172,7 @@ Notice that:
    ``'out'``...) are nothing but strings. If you prefer handles, you can
    call the ``create_node()`` method of the circuit instance ``bpf``
    (`create\_node
-   documentation <https://ahkab.readthedocs.org/en/latest/circuit.html#ahkab.circuit.Circuit.create_node>`__.
+   documentation <https://ahkab.readthedocs.org/en/latest/circuit.html#ahkab.circuit.Circuit.create_node>`__).
 -  Using the convenience methods ``add_*``, the nodes are not explicitly
    added to the circuit, but they are in fact automatically taken care
    of behind the hood.
@@ -215,7 +215,8 @@ signature is:
 
 .. code-block:: python
 
-    ahkab.new_pz(input_source=None, output_port=None, shift=0.0, MNA=None, outfile=None, x0=u'op', verbose=0)
+    ahkab.new_pz(input_source=None, output_port=None, shift=0.0, MNA=None,
+                 outfile=None, x0=u'op', verbose=0)
 
 And you can find `the documentation for ahkab.new\_pz
 here <https://ahkab.readthedocs.org/en/latest/ahkab.html#ahkab.ahkab.new_pz>`__.
@@ -306,11 +307,15 @@ Graphically, we can see better where the singularities are located:
     plot([np.real(r['p0']), 0], [np.imag(r['p0']), 0], 'k--', alpha=.5)
     plot([np.real(r['p1']), 0], [np.imag(r['p1']), 0], 'k--', alpha=.5)
     # print the distance between p0 and p1
-    plot([np.real(r['p1']), np.real(r['p0'])], [np.imag(r['p1']), np.imag(r['p0'])], 'k-', alpha=.5, lw=.5)
+    plot([np.real(r['p1']), np.real(r['p0'])],
+         [np.imag(r['p1']), np.imag(r['p0'])],
+         'k-', alpha=.5, lw=.5)
     # label the singularities
-    text(np.real(r['p1']), np.imag(r['p1'])*1.1, '$p_1$', ha='center', fontsize=20)
+    text(np.real(r['p1']), np.imag(r['p1'])*1.1, '$p_1$', ha='center',
+         fontsize=20)
     text(.4e6, .4e7, '$z_0$', ha='center', fontsize=20)
-    text(np.real(r['p0']), np.imag(r['p0'])*1.2, '$p_0$', ha='center', va='bottom', fontsize=20)
+    text(np.real(r['p0']), np.imag(r['p0'])*1.2, '$p_0$', ha='center',
+         va='bottom', fontsize=20)
     xlabel('Real [Hz]'); ylabel('Imag [Hz]'); title('Singularities');
 
 .. figure:: ../images/pz_example/singularities_plot.png
@@ -425,9 +430,12 @@ visually.
 ::
 
     figure(figsize=figsize)
-    semilogx(rac.get_x()/2/np.pi, dB20(abs(rac['vout'])), label='TF from AC analysis')
-    semilogx(rac.get_x()/2/np.pi, dB20(abs(Hl(rac.get_x()))), 'o', ms=4, label='TF from PZ analysis')
-    legend(); xlabel('Frequency [Hz]'); ylabel('|H(w)| [dB]'); xlim(4e7, 3e8); ylim(-50, 1);
+    semilogx(rac.get_x()/2/np.pi, dB20(abs(rac['vout'])),
+             label='TF from AC analysis')
+    semilogx(rac.get_x()/2/np.pi, dB20(abs(Hl(rac.get_x()))), 'o', ms=4,
+             label='TF from PZ analysis')
+    legend(); xlabel('Frequency [Hz]'); ylabel('|H(w)| [dB]');
+    xlim(4e7, 3e8); ylim(-50, 1);
 
 .. figure:: ../images/pz_example/plot_pz_ac.png
    :alt: Transfer function plot of AC and PZ simulation data
@@ -591,12 +599,16 @@ Let's take a look at PZ, AC and symbolic results together:
 ::
 
     figure(figsize=figsize);  title('Series RLC passband: TFs compared')
-    semilogx(rac.get_x()/2/np.pi, dB20(abs(rac['vout'])), label='TF from AC analysis')
-    semilogx(rac.get_x()/2/np.pi, dB20(abs(Hl(rac.get_x()))), 'o', ms=4, label='TF from PZ analysis')
-    semilogx(rac.get_x()/2/np.pi, dB20(abs(HS(rac.get_x()))), '-', lw=10, alpha=.2, label='TF from symbolic analysis')
+    semilogx(rac.get_x()/2/np.pi, dB20(abs(rac['vout'])),
+             label='TF from AC analysis')
+    semilogx(rac.get_x()/2/np.pi, dB20(abs(Hl(rac.get_x()))), 'o', ms=4,
+             label='TF from PZ analysis')
+    semilogx(rac.get_x()/2/np.pi, dB20(abs(HS(rac.get_x()))), '-', lw=10,
+             alpha=.2, label='TF from symbolic analysis')
     vlines(1.07297e+08, *gca().get_ylim(), alpha=.4)
     text(7e8/2/np.pi, -45, '$f_d = 107.297\\, \\mathrm{MHz}$', fontsize=20)
-    legend(); xlabel('Frequency [Hz]'); ylabel('|H(w)| [dB]'); xlim(4e7, 3e8); ylim(-50, 1);
+    legend(); xlabel('Frequency [Hz]'); ylabel('|H(w)| [dB]');
+    xlim(4e7, 3e8); ylim(-50, 1);
 
 .. figure:: ../images/pz_example/plot_complete.png
    :alt: Plot of the transfer function from the three datasets
