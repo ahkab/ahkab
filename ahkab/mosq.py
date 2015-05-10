@@ -40,8 +40,6 @@ following, we have the following regions implemented:
    :math:`I_D = 1/2 k_n W/L (V_{GS}-V_T)^2 * [1 + \lambda*(V_{DS}-V_{GS}+V_T)]`
 
 """
-from __future__ import division
-
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
@@ -69,7 +67,7 @@ BEX_DEFAULT = -1.5
 ISMALL_GUESS_MIN = 1e-10
 
 
-class mosq_device:
+class mosq_device(object):
     def __init__(self, part_id, nd, ng, ns, nb, W, L, model, M=1, N=1):
         """Quadratic Law MOSFET device
 
@@ -108,7 +106,7 @@ class mosq_device:
         self.ports = ((self.n1, self.n2), (
             self.ng, self.n2), (self.nb, self.n2))
 
-        class dev_class:
+        class dev_class(object):
             pass  # empty class to hold device parameters
         self.device = dev_class()
         self.device.L = float(L)  # channel length -
@@ -120,8 +118,8 @@ class mosq_device:
         self.mosq_model = model
         self.mc_enabled = False
         self.opdict = {}
-        self.opdict.update(
-            {'state': (float('nan'), float('nan'), float('nan'))})
+        self.opdict.update( {'state':(float('nan'), float('nan'),
+                                      float('nan'))})
         self.part_id = part_id
         self.is_nonlinear = True
         self.is_symbolic = True
@@ -138,13 +136,27 @@ class mosq_device:
 
         **Returns:**
 
-        a tuple of tuples of ports nodes, as:
+        tp : a tuple of tuples of nodes, each node being a drive port of the
+        device.
 
-        ``(port0, port1, port2...)``
+        Eg. ``tp`` might be defined as:
 
-        Where each port is in the form:
+            tp = (port0, port1, port2...)
+
+        Where each port in the tuple is of the form:
 
             port0 = (nplus, nminus)
+
+        In the case of a MOSQ device, the method returns:
+
+            ((nd, nb), (ng, nb), (ns, nb))
+
+        Where:
+
+        * ``nd`` is the internal identifier of the drain node,
+        * ``ng`` is the internal identifier of the gate node,
+        * ``ns`` is the internal identifier of the source node.
+        * ``nb`` is the internal identifier of the bulk node,
 
         """
         return self.ports  # d,g,b
@@ -154,19 +166,27 @@ class mosq_device:
 
         **Returns:**
 
-        ports : a tuple of tuples of ports nodes, as:
+        ports : a tuple of tuples of nodes, such as as:
 
-        ``(port0, port1, port2...)``
+            (port0, port1, port2...)
 
-        Where each port is in the form:
+        Where each port in the tuple is itself a tuple, made of two nodes, eg.
 
             port0 = (nplus, nminus)
+
+        In the case of a MOS device, the method returns:
+
+            ((nd, ns),)
+
+        Where:
+
+        * ``nd`` is the internal identifier of the drain node,
+        * ``ns`` is the internal identifier of the source node.
 
         """
         return ((self.n1, self.n2),)
 
     def __str__(self):
-        mos_type = self._get_mos_type()
         rep = self.part_id + " %(nd)s %(ng)s %(ns)s %(nb)%s " + \
               self.mosq_model.name + " w=" + str(self.device.W) + " l=" + \
               str(self.device.L) + " M=" + str(self.device.M) + " N=" + \
@@ -180,9 +200,9 @@ class mosq_device:
         return mtype
 
     def istamp(self, ports_v, time=0, reduced=True):
-        """Get the current matrix
+        """Get the current stamp matrix
 
-        A matrix corresponding to the current flowing in the element
+        A stamp matrix corresponding to the current flowing in the element
         with the voltages applied as specified in the ``ports_v`` vector.
 
         **Parameters:**
@@ -195,7 +215,7 @@ class mosq_device:
 
         """
         sw_vect, CS = self.mosq_model.get_voltages(*ports_v)
-        ids = self.mosq_model.get_ids(self.device, sw_vect, self.opdict)
+        ids = self.mosq_model.get_ids(self.mosq_model, self.device, sw_vect)
         istamp = np.array((CS*ids, -CS*ids), dtype=np.float64)
         indices = ((self.n1 - 1*reduced, self.n2 - 1*reduced), (0, 0))
         if reduced:
@@ -205,20 +225,34 @@ class mosq_device:
         return indices, istamp
 
     def update_status_dictionary(self, ports_v):
+        """Update the status dictionary
+
+        The status dictionary may be accessed at ``elem.opdict`` and contains
+        several pieces of information that may be of interest regarding the
+        biasing of the MOS device.
+        """
         if self.opdict is None:
             self.opdict = {}
-        if not (self.opdict['state'] == ports_v[0] and 'gmd' in self.opdict) or \
-            not (self.opdict['state'] == ports_v[0] and 'gm' in self.opdict) or \
-            not (self.opdict['state'] == ports_v[0] and 'gmb' in self.opdict) or \
-                not (self.opdict['state'] == ports_v[0] and 'Ids' in self.opdict):
+        if not (self.opdict['state'] == ports_v[0]).all() or 'gmd' not in self.opdict \
+            or 'gm' not in self.opdict or 'gmb' not in self.opdict \
+            or 'Ids' not in self.opdict or 'SAT' not in self.opdict:
 
-            swapped, CS = self.mosq_model.get_voltages(*ports_v[0])
-            self.opdict['state'] == ports_v[0]
+            vds, vgs, vbs = ports_v[0]
+            self.opdict['state'] = ports_v[0]
             gstamp = self.gstamp(ports_v[0], reduced=False)[1]
             self.opdict['gmd'] = gstamp[0, 0]
             self.opdict['gm'] = gstamp[0, 1]
             self.opdict['gmb'] = gstamp[0, 3]
             self.opdict['Ids'] = self.istamp(ports_v[0], reduced=False)[1][0]
+            self.opdict.update({'VTH':self.mosq_model.get_VT(ports_v[0], self.device)})
+            self.opdict.update({'W':self.device.W, 'L':self.device.L,
+                                'ON':(vgs >= self.opdict['VTH'])})
+            self.opdict.update({'beta':.5*self.mosq_model.KP*self.device.W/self.device.L})
+            self.opdict.update({'VOD':self.mosq_model.NPMOS*(vgs - self.opdict['VTH']),
+                                'SAT':vds > vgs - self.opdict['VTH']})
+        else:
+            pass
+            #already up to date
 
     def get_op_info(self, ports_v):
         """Information regarding the Operating Point (OP)
@@ -265,39 +299,56 @@ class mosq_device:
         else:
             status = "ON"
 
-        arr = [
-            [self.part_id + " ch", status, "", "", sat_status, "", "", "", "", "", "", ""], ]
-        arr.append(
-            ["beta", "[A/V^2]:", self.opdict['beta'], "Weff", "[m]:", str(self.opdict['W']) + " (" + str(self.device.W) + ")",
-             "L", "[m]:", str(self.opdict['L']) + " (" + str(self.device.L) + ")", "M/N:", "", str(self.device.M) + "/" + str(self.device.N)])
-        arr.append(["Vds", "[V]:", float(ports_v[0][0]), "Vgs", "[V]:", float(
-            ports_v[0][1]), "Vbs", "[V]:", float(ports_v[0][2]),  "", "", ""])
-        arr.append(["VTH", "[V]:", self.opdict['VTH'], "VOD", "[V]:", self.opdict[
-                   'VOD'], "", "", "", "VA", "[V]:", str(self.opdict['Ids'] / self.opdict['gmd'])])
-        arr.append(
-            ["Ids", "[A]:", self.opdict['Ids'], "", "", "", "", "", "", "", "", ''])
+        arr = [[self.part_id + " ch", status, "", "", sat_status, "", "", "",
+                "", "", "", ""], ]
+        arr.append(["beta", "[A/V^2]:", self.opdict['beta'], "Weff", "[m]:",
+                    str(self.opdict['W']) + " (" + str(self.device.W) + ")",
+                    "L", "[m]:", str(self.opdict['L']) + " (" +
+                    str(self.device.L) + ")", "M/N:", "", str(self.device.M) +
+                    "/" + str(self.device.N)])
+        arr.append(["Vds", "[V]:", float(ports_v[0][0]), "Vgs", "[V]:",
+                    float(ports_v[0][1]), "Vbs", "[V]:", float(ports_v[0][2]),  "",
+                    "", ""])
+        arr.append(["VTH", "[V]:", self.opdict['VTH'], "VOD", "[V]:",
+                    self.opdict['VOD'], "", "", "", "VA", "[V]:",
+                    str(self.opdict['Ids'] / self.opdict['gmd'])])
+        arr.append(["Ids", "[A]:", self.opdict['Ids'], "", "", "", "", "", "",
+                    "", "", ''])
         arr.append(["gm", "[S]:", self.opdict['gm'], "gmb", "[S]:",
-                   self.opdict['gmb'], "ro", u"[\u2126]:", 1./self.opdict['gmd'], "", "", ""])
+                    self.opdict['gmb'], "ro", u"[\u2126]:",
+                    1./self.opdict['gmd'], "", "", ""])
 
         return None, arr
 
     def gstamp(self, ports_v, time=0, reduced=True):
-        """Returns the differential (trans)conductance rs the port specified by port_index
-        when the element has the voltages specified in ports_v across its ports,
-        at (simulation) time.
+        """Get the transconductance stamp matrix
 
-        ports_v: a list in the form: [voltage_across_port0, voltage_across_port1, ...]
-        port_index: an integer, 0 <= port_index < len(self.get_ports())
-        time: the simulation time at which the evaluation is performed. Set it to
-        None during DC analysis.
+        **Parameters:**
+
+        ports_v : sequence
+            a sequence of the form: ``[voltage_across_port0,
+            voltage_across_port1, ...]``
+        time : float, optional
+            the simulation time at which the evaluation is performed. Set it to
+            ``None`` during DC analysis. Defaults to 0.
+        reduced : bool, optional
+            Whether the returned matrix should be in reduced form or not.
+            Defaults to ``True``, corresponding to reduced form.
+
+        **Returns:**
+
+        indices : sequence of sequences
+            The indices corresponding to the stamp matrix.
+        stamp : ndarray
+            The stamp matrix.
         """
         indices = ([self.n1 - 1]*4 + [self.ng - 1]*4 + [self.n2 - 1]*4 + [self.nb - 1]*4,
                    [self.n1 - 1, self.ng - 1, self.n2 - 1, self.nb - 1]*4)
 
         sw_vect, CS = self.mosq_model.get_voltages(*ports_v)
-        gmd = self.mosq_model.get_gmd(self.device, sw_vect, self.opdict)
-        gmg = self.mosq_model.get_gm(self.device, sw_vect, self.opdict)
-        gmb = self.mosq_model.get_gmb(self.device, sw_vect, self.opdict)
+        gmd = self.mosq_model.get_gmd(self.mosq_model, self.device, sw_vect)
+        gmg = self.mosq_model.get_gm(self.mosq_model, self.device, sw_vect)
+        gmb = self.mosq_model.get_gmb(self.mosq_model, self.device, sw_vect)
         if gmd == 0:
             gmd = options.gmin*2
         if gmg == 0:
@@ -324,7 +375,7 @@ class mosq_device:
             stamp_folded = []
             indices_folded = []
             for ix, it in enumerate([(i, y) for i, y in zip(*indices)]):
-                if not it in indices_folded:
+                if it not in indices_folded:
                     indices_folded.append(it)
                     stamp_folded.append(stamp_flat[ix])
                 else:
@@ -350,6 +401,7 @@ class mosq_device:
             self.device.mckey = None
 
     def get_netlist_elem_line(self, nodes_dict):
+        """Get the element netlist entry"""
         mos_type = self._get_mos_type()
         return "%s %s %s %s %s %s type=%s w=%g l=%g m=%g n=%g" % \
               (self.part_id, nodes_dict[self.n1], nodes_dict[self.ng],
@@ -358,15 +410,13 @@ class mosq_device:
               self.device.N)
 
 
-class mosq_mos_model:
-
+class mosq_mos_model(object):
     def __init__(self, name=None, TYPE='n', TNOM=None, COX=None,
                  GAMMA=None, NSUB=None, PHI=None, VTO=None, KP=None,
                  LAMBDA=None, AKP=None, AVT=None,
                  TOX=None, VFB=None, U0=None, TCV=None, BEX=None):
 
         self.name = "model_mosq0" if name is None else name
-        Vth = constants.Vth()
         self.TNOM = float(TNOM) if TNOM is not None else constants.Tref
         # print "TYPE IS:" + TYPE
         if TYPE.lower() == 'n':
@@ -445,14 +495,16 @@ class mosq_mos_model:
                             (0, 0, 0, 1)))
 
     def set_device_temperature(self, T):
-        """Change the temperature of the device. VTO, KP and PHI get updated.
+        """Change the temperature of the device.
+
+        Correspondingly, ``VTO``, ``KP`` and ``PHI`` get updated.
         """
         self.TEMP = T
         self.VTO = self.VTO - self.TCV * (T - self.TNOM)
         self.KP = self.KP * (T / self.TNOM) ** self.BEX
-        self.PHI = self.PHI * T / self.TNOM + 3 * constants.Vth(self.TNOM) * math.log(T / self.TNOM) \
-            - constants.si.Eg(
-                self.TNOM) * T / self.TNOM + constants.si.Eg(T)
+        self.PHI = (self.PHI * T / self.TNOM + 3 * constants.Vth(self.TNOM) *
+                    math.log(T / self.TNOM) - constants.si.Eg(self.TNOM) * T /
+                    self.TNOM + constants.si.Eg(T))
 
     def get_device_temperature(self):
         """Returns the temperature of the device - in K.
@@ -460,30 +512,36 @@ class mosq_mos_model:
         return self.TEMP
 
     def print_model(self):
-        """All the internal parameters of the model get printed out,
-        for visual inspection. Notice some can be set to None
-        (ie not available) if they were not provided in the netlist
-        or some not provided are calculated from the others.
+        """Print out the model
+
+        All the internal parameters of the model get printed out, for visual
+        inspection. Notice some can be set to ``None`` (ie not available) if
+        they were not provided and some of those not provided are calculated
+        from the others.
         """
         arr = []
         TYPE = 'N' if self.NPMOS == 1 else "P"
-        arr.append(
-            [self.name, "", "", TYPE + " MOS", "SQUARE MODEL", "", "", "", "",  "", "", ""])
+        arr.append([self.name, "", "", TYPE + " MOS", "SQUARE MODEL", "", "",
+                    "", "",  "", "", ""])
         arr.append(["KP", "[A/V^2]", self.KP, "VTO", "[V]:", self.VTO,
-                   "TOX", "[m]", self.TOX, "COX", "[F/m^2]:", self.COX])
+                    "TOX", "[m]", self.TOX, "COX", "[F/m^2]:", self.COX])
         arr.append(["PHI", "[V]:", self.PHI, "GAMMA", "sqrt(V)", self.GAMMA,
-                   "NSUB", "[cm^-3]", self.NSUB,  "VFB", "[V]:", self.VFB])
-        arr.append(
-            ["U0", "[cm^2/(V*s)]:", self.U0, "TCV", "[V/K]", self.TCV, "BEX", "", self.BEX,  "", "", ""])
+                    "NSUB", "[cm^-3]", self.NSUB,  "VFB", "[V]:", self.VFB])
+        arr.append(["U0", "[cm^2/(V*s)]:", self.U0, "TCV", "[V/K]", self.TCV,
+                    "BEX", "", self.BEX,  "", "", ""])
         print(printing.table(arr))
 
     def get_voltages(self, vds, vgs, vbs):
         """Performs the D <-> S swap if needed.
-        Returns:
-        (VDS, VGS, VBS) after the swap
-        CS, an integer which equals to:
-            +1 if no swap was necessary,
-            -1 if VD and VS have been swapped.
+
+        **Returns:**
+
+        voltages : tuple
+            A tuple containing ``(VDS, VGS, VBS)`` after the swap
+        CS : int
+            ``CS`` is an integer which equals to:
+            * +1 if no swap was necessary,
+            * -1 if VD and VS have been swapped.
         """
         # vd / vs swap
         vds = float(vds)
@@ -517,29 +575,35 @@ class mosq_mos_model:
             svt, skp = 0, 0
         return svt, skp
 
-    def get_ids(self, device, xxx_todo_changeme, opdict=None, debug=False):
+    def get_VT(self, voltages, device):
+        """Get the threshold voltage"""
+        #vds, vgs, vbs = voltages
+        _, _, vbs = voltages
+        #(_, _, vbs), CS = self.get_voltages(*voltages)
+        vsqrt1 = max(-vbs + 2*self.PHI, 0.)
+        vsqrt2 = max(2*self.PHI, 0.)
+        svt, _ = self.get_svt_skp(device)
+        VT = self.VTO + svt + self.GAMMA * (math.sqrt(vsqrt1) -
+                                            math.sqrt(vsqrt2))
+        return VT
+
+    @utilities.memoize
+    def get_ids(self, device, voltages):
         """Returns:
-            IDS, the drain-to-source current (de-normalized),
-            qs, the (scaled) charge at the source,
-            qr, the (scaled) charge at the drain.
+            IDS, the drain-to-source current
         """
-        (vds, vgs, vbs) = xxx_todo_changeme
+        (vds, vgs, vbs) = voltages
+        debug = False
         if debug:
             print("=== %s (%sch) current for vds: %g, vgs: %g, vbs: %g" \
                   % (device.part_id, 'n'*(self.NPMOS == 1) +
                   'p'*(self.NPMOS == -1), vds, vgs, vbs))
 
-        # monte carlo support
-        svt, skp = self.get_svt_skp(device, debug=debug)
-
         if debug:
             print("PHI:", self.PHI, "vbs:", vbs)
 
-        vsqrt1 = max(-vbs + 2*self.PHI, 0.)
-        vsqrt2 = max(2*self.PHI, 0.)
-
-        VT = self.VTO + svt + self.GAMMA * \
-            (math.sqrt(vsqrt1) - math.sqrt(vsqrt2))
+        VT = self.get_VT((vds, vgs, vbs), device)
+        svt, skp = self.get_svt_skp(device)
         if vgs < VT:
             ids = options.iea * (vgs / VT + vds / VT) / 100
             if debug:
@@ -557,29 +621,13 @@ class mosq_mos_model:
                     print("SAT: %g" % ids)
         Ids = self.NPMOS * device.M / device.N * ids
 
-        opdict.update(
-            {'state': (vds * self.NPMOS, vgs * self.NPMOS, vbs * self.NPMOS)})
-        opdict.update(
-            {'Ids': Ids, "W": device.W, "L": device.L, "ON": 1 * (vgs >= VT)})
-        opdict.update({'beta': .5 * self.KP * device.W / device.L})
-        opdict.update(
-            {'VTH': VT, "VOD": self.NPMOS * (vgs - VT), 'SAT': vds > vgs - VT})
-
         return Ids
 
-        if debug:
-            print("vd:", vd, "vg:", VG / self.scaling.Ut, "vs:", vs, "vds:", vd - vs)
-            print("v_ifn:", v_ifn, "v_irn:", v_irn)
-            print("ifn:", ifn, "irn:", irn)
-            print("ip_abs_err:", ip_abs_err)
-            print("Vth:", self.scaling.Ut)
-            print("nv", nv, "Is", self.scaling.Is)
-            print("Weff:", device.W, "Leff:", Leff)
-            print("NPMOS:", self.NPMOS, "CS_FACTOR", CS_FACTOR)
-
-    def get_gmb(self, device, xxx_todo_changeme1, opdict=None, debug=False):
+    @utilities.memoize
+    def get_gmb(self, device, voltages):
         """Returns the source-bulk transconductance or d(IDS)/d(VS-VB)."""
-        (vds, vgs, vbs) = xxx_todo_changeme1
+        (vds, vgs, vbs) = voltages
+        debug = False
         svt, skp = self.get_svt_skp(device, debug=False)
         assert vds >= 0
         vsqrt1 = max(-vbs + 2*self.PHI, 0.)
@@ -608,9 +656,11 @@ class mosq_mos_model:
             print("gmb %g" % gmb)
         return gmb
 
-    def get_gmd(self, device, xxx_todo_changeme2, opdict=None, debug=False):
+    @utilities.memoize
+    def get_gmd(self, device, voltages):
         """Returns the drain-bulk transconductance or d(IDS)/d(VD-VB)."""
-        (vds, vgs, vbs) = xxx_todo_changeme2
+        (vds, vgs, vbs) = voltages
+        debug = False
         svt, skp = self.get_svt_skp(device, debug=False)
         assert vds >= 0
         vsqrt1 = max(-vbs + 2*self.PHI, 0.)
@@ -630,9 +680,11 @@ class mosq_mos_model:
             print("gmd %g" % gmd)
         return gmd
 
-    def get_gm(self, device, xxx_todo_changeme3, opdict=None, debug=False):
+    @utilities.memoize
+    def get_gm(self, device, voltages):
         """Returns the gate-bulk transconductance or d(IDS)/d(VG-VB)."""
-        (vds, vgs, vbs) = xxx_todo_changeme3
+        (vds, vgs, vbs) = voltages
+        debug = False
         svt, skp = self.get_svt_skp(device, debug=False)
         assert vds >= 0
         vsqrt1 = max(-vbs + 2*self.PHI, 0.)
@@ -647,7 +699,7 @@ class mosq_mos_model:
             else:
                 gm = -0.5*self.KP*self.LAMBDA * device.W/device.L * (-self.GAMMA*(-vsqrt2**.5 + vsqrt1**.5) + vgs - self.VTO)**2 \
                      +0.5*self.KP * device.W/device.L *(self.LAMBDA*( self.GAMMA*(-vsqrt2**.5 + vsqrt1**.5) + vds - vgs + self.VTO) + 1.0) *\
-                    (-2 * self.GAMMA * (-vsqrt2**.5 + vsqrt1**.5) + 2*vgs - 2*self.VTO)
+                     (-2 * self.GAMMA * (-vsqrt2**.5 + vsqrt1**.5) + 2*vgs - 2*self.VTO)
         gm = (1 + skp) * gm * device.M / device.N
         if debug:
             print("gmg %g" % gm)
