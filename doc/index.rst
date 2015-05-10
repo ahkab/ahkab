@@ -31,6 +31,26 @@ General help pages
    help/Command-Line-Help
    help/Netlist-Syntax
 
+Simulating from Python
+----------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   examples/Simple_OP
+   examples/Python_API
+   examples/PZ_Example
+
+Examples of simulation from the CLI
+-----------------------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   examples/OP_simulation
+   examples/Transient-Example
+   examples/Symbolic-simulation
+
 Help pages on particular elements
 ---------------------------------
 
@@ -74,26 +94,6 @@ Module reference
    transient
    trap
    utilities
-
-Simulating from Python
-----------------------
-
-.. toctree::
-   :maxdepth: 1
-
-   examples/Simple_OP
-   examples/Python_API
-   examples/PZ_Example
-
-Examples of simulation from the CLI
------------------------------------
-
-.. toctree::
-   :maxdepth: 1
-
-   examples/OP_simulation
-   examples/Transient-Example
-   examples/Symbolic-simulation
 
 License
 -------
