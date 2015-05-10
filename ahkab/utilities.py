@@ -28,6 +28,7 @@ Module reference
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
+import collections
 import os
 import os.path
 import operator
@@ -670,4 +671,44 @@ def check_ground_paths(mna, circ, reduced_mna=True, verbose=3):
                     "No path to ground from node " + circ.nodes_dict[node])
             test_passed = False
     return test_passed
+
+def memoize(f):
+    """Memoization decorator
+
+    **Parameters:**
+
+    f : function
+        The function to apply memoization to.
+
+    **Returns:**
+
+    fm : function
+        The function with added memoization.
+
+    **Implementation:**
+
+    Originally from `this post
+    <https://code.activestate.com/recipes/578231-probably-the-fastest-memoization-decorator-in-the-/#c4>`_,
+    it has been modified to provide a cache of size ``options.cache_len``.
+
+    .. note::
+
+        The size of the cache is per model instance and per function. If you
+        have one model, shared by several elements, you probably prefer to have
+        a big cache.
+
+    """
+    class memodict(collections.OrderedDict):
+        __slots__ = ()
+        def __getitem__(self, *key):
+            return dict.__getitem__(self, key)
+        def __missing__(self, key):
+            print(len(self))
+            ret = self[key] = f(*key)
+            # set options.cache_len to None to disable any size limit.
+            if options.cache_len is not None and len(self) > options.cache_len:
+                self.popitem() #FIFO pop
+            return ret
+    return memodict().__getitem__
+
 

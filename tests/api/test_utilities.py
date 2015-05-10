@@ -203,3 +203,12 @@ def test_check_circuit4():
     v, _ = ahkab.utilities.check_circuit(c)
     assert not v
 
+def test_memoize():
+    """Test utilities.memoize()"""
+    @ahkab.utilities.memoize
+    def test(a):
+        return a**2
+    # we just check that cache and misses
+    # return the same values
+    assert test(5) == test(5)
+

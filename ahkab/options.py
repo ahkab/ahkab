@@ -36,6 +36,8 @@ except ImportError:
 #: Encoding of the netlist files.
 encoding = 'utf8'
 
+#: Cache size to be used in :func:`utilities.memoize`, defaults to 512MB
+cache_len = 67108864 # 512MB
 
 #: A boolean to differentiate command line execution from module import
 #:
