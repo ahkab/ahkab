@@ -127,7 +127,7 @@ class mosq_device(object):
                          self.mosq_model.VTO*1.1*self.mosq_model.NPMOS,
                          0]
 
-        devcheck, reason = self.mosq_model._device_check(self.device)
+        devcheck, reason = self.mosq_model.device_check(self.device)
         if not devcheck:
             raise ValueError(reason + " out of boundaries.")
 
@@ -237,7 +237,7 @@ class mosq_device(object):
             or 'gm' not in self.opdict or 'gmb' not in self.opdict \
             or 'Ids' not in self.opdict or 'SAT' not in self.opdict:
 
-            vds, vgs, vbs = ports_v[0]
+            vds, vgs, _ = ports_v[0]
             self.opdict['state'] = ports_v[0]
             gstamp = self.gstamp(ports_v[0], reduced=False)[1]
             self.opdict['gmd'] = gstamp[0, 0]
@@ -603,7 +603,7 @@ class mosq_mos_model(object):
             print("PHI:", self.PHI, "vbs:", vbs)
 
         VT = self.get_VT((vds, vgs, vbs), device)
-        svt, skp = self.get_svt_skp(device)
+        _, skp = self.get_svt_skp(device)
         if vgs < VT:
             ids = options.iea * (vgs / VT + vds / VT) / 100
             if debug:
@@ -722,7 +722,7 @@ class mosq_mos_model(object):
             ret = (False, "AKP " + str(self.AKP))
         return ret
 
-    def _device_check(self, adev):
+    def device_check(self, adev):
         """Performs sanity check on the device parameters."""
         if not adev.L > 0:
             ret = (False, "L")
