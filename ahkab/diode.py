@@ -34,7 +34,6 @@ from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
 import numpy as np
-import scipy.optimize
 
 from scipy.optimize import newton
 
@@ -174,7 +173,6 @@ class diode(object):
         """
         indices = ([self.n1 - 1]*2 + [self.n2 - 1]*2,
                    [self.n1 - 1, self.n2 - 1]*2)
-        v = ports_v[0]
         gm = self.model.get_gm(self.model, 0, utilities.tuplinator(ports_v), 0, self.device)
         if gm == 0:
             gm = options.gmin*2
@@ -202,7 +200,6 @@ class diode(object):
     def g(self, op_index, ports_v, port_index, time=0):
         if not port_index == 0:
             raise Exception("Attepted to evaluate a diode's gm on an unknown port.")
-        v = ports_v[0]
         gm = self.model.get_gm(self.model, op_index, utilities.tuplinator(ports_v), port_index, self.device)
         return gm
 
@@ -274,8 +271,7 @@ TM2_DEFAULT = 0.0
 T_DEFAULT = utilities.Celsius2Kelvin(26.85)
 AREA_DEFAULT = 1.0
 
-class diode_model:
-
+class diode_model(object):
     """A diode model implementing the `Shockley diode equation
     <http://en.wikipedia.org/wiki/Shockley_diode_equation#Shockley_diode_equation>`__.
 
@@ -407,8 +403,9 @@ class diode_model:
         T = float(T)
         self.EG = constants.si.Eg(T)
         self.IS = self.IS*(T/self.T)**(self.XTI/self.N)* \
-                  np.exp(-constants.e*constants.si.Eg(300)/(self.N*constants.k*T)
-                         *(1 - T/self.T))
+                  np.exp(-constants.e*constants.si.Eg(300)/\
+                         (self.N*constants.k*T)*
+                         (1 - T/self.T))
         self.BV = self.BV - self.TBV*(T - self.T)
         self.RS = self.RS*(1 + self.TRS*(T - self.T))
         self.T = T
