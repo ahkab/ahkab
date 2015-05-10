@@ -703,7 +703,6 @@ def memoize(f):
         def __getitem__(self, *key):
             return dict.__getitem__(self, key)
         def __missing__(self, key):
-            print(len(self))
             ret = self[key] = f(*key)
             # set options.cache_len to None to disable any size limit.
             if options.cache_len is not None and len(self) > options.cache_len:
