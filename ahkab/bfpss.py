@@ -267,8 +267,9 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
         t = np.arange(points) * step
         t = t.reshape((1, points))
         x = x.reshape((points, n_of_var))
-        sol = results.pss_solution(
-            circ=circ, method="brute-force", period=period, outfile=outfile, t_array=t, x_array=x.T)
+        sol = results.pss_solution(circ=circ, method="brute-force",
+                                   period=period, outfile=outfile)
+        sol.set_results(t, x.T)
     else:
         print("failed.")
         sol = None

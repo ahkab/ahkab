@@ -229,7 +229,8 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
         for index in range(1, points):
             xmat = numpy.concatenate((xmat, x[index].reshape(-1, 1)), axis=1)
         sol = results.pss_solution(circ=circ, method="shooting", period=period,
-                                   outfile=outfile, t_array=t, x_array=xmat)
+                                   outfile=outfile)
+        sol.set_results(t, xmat)
         # print_results(circ, x, fdata, points, step)
     else:
         print("failed.")

@@ -115,7 +115,7 @@ from .__version__ import __version__
 
 csvlib.SEPARATOR = "\t"
 
-class _mutable_data:
+class _mutable_data(object):
     def __init__(self):
         self._init_file_done = False
     def _add_data(self, data):
@@ -216,7 +216,7 @@ class solution(object):
         values = [data[i, :] for i in range(data.shape[0])]
         return values
 
-    def items(self, verbose=3):
+    def items(self):
         return list(zip(self.keys(), self.values()))
 
     # iterator methods
@@ -376,15 +376,15 @@ class op_solution(solution, _mutable_data):
                     opk, opi = elem.get_op_info(ports_v_v)
                 if elem.part_id[0].upper() != 'M':
                     if elem.part_id[0].upper() in op_info:
-                        op_info.update({elem.part_id[0].upper():op_info[elem.part_id[0].upper()]
-                                                                + [opi]})
+                        op_info.update({elem.part_id[0].upper():
+                                        op_info[elem.part_id[0].upper()]+[opi]})
                         #assert set(opk) == set(op_keys[elem.part_id[0].upper()])
                     else:
                         op_info.update({elem.part_id[0].upper():[opi]})
                         op_keys.update({elem.part_id[0].upper():[opk]})
                 else:
-                        op_info.update({elem.part_id.upper():opi})
-                        op_keys.update({elem.part_id.upper():[[]]})
+                    op_info.update({elem.part_id.upper():opi})
+                    op_keys.update({elem.part_id.upper():[[]]})
 
             if isinstance(elem, devices.GISource):
                 v = 0
@@ -527,7 +527,7 @@ class op_solution(solution, _mutable_data):
         """Get all of the results set's variables values."""
         return np.squeeze(self.x).tolist()
 
-    def items(self, verbose=3):
+    def items(self):
         vlist = []
         for j in range(self.x.shape[0]):
             vlist.append(self.x[j, 0])
@@ -701,7 +701,7 @@ class ac_solution(solution, _mutable_data):
             values.append(data[i, :])
         return values
 
-    def items(self, verbose=3):
+    def items(self):
         values = self.values()
         return zip(self.variables, values)
 
@@ -868,13 +868,14 @@ class pss_solution(solution, _mutable_data):
     outfile : str
         the filename of the save file.
         Use "stdout" to write to the std output.
-    t_array, x_array : ndarray, optional
-        If available, initialize the data set with ``t_array``, ``x_array``.
-        Otherwise, the data can be initialized at a later stage calling
-        :func:`pss_solution.set_results`.
+
+    .. note::
+
+        Instantiating ``pss_solution`` creates an *empty* data set. Call
+        :func:`set_results` to initialize its data.
 
     """
-    def __init__(self, circ, method, period, outfile, t_array=None, x_array=None):
+    def __init__(self, circ, method, period, outfile):
         solution.__init__(self, circ, outfile)
         self.sol_type = "PSS"
         self.period = period
@@ -898,9 +899,6 @@ class pss_solution(solution, _mutable_data):
                 self.variables += [varname]
                 self.units.update({varname:"A"})
 
-        if t_array is not None and x_array is not None:
-            self.set_results(t_array, x_array)
-
     def __str__(self):
         return ("<PSS simulation results for '%s' (netlist %s), period %g s. " +
                 "Method: %s. Run on %s, data file %s>") % \
@@ -908,7 +906,24 @@ class pss_solution(solution, _mutable_data):
                 self.timestamp, self.filename)
 
     def set_results(self, t, x):
-        """All the results are set at the same time for a PSS"""
+        """Set the results in the data set
+
+        .. note::
+
+            * All the data are set at the same time for a PSS results set.
+            * Instantiating ``pss_solution`` creates an empty data set.
+            * This method should be called as soon as the data is available.
+
+        **Parameters:**
+
+        t : ndarray
+            The time. The array should be 2D with shape ``(1, N)``.
+        x : ndarray
+            The data corresponding to the variables.
+            The array should be 2D with shape ``(M, N)``, where ``M`` is the
+            number of variables in the data set.
+
+        """
         time = np.array(t)
         data = np.concatenate((time, x), axis=0)
         self._add_data(data)
