@@ -34,12 +34,11 @@ from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
 import numpy as np
-import scipy, scipy.optimize
+import scipy.optimize
 
 from scipy.optimize import newton
 
 from . import constants
-from . import printing
 from . import utilities
 from . import options
 
@@ -52,14 +51,11 @@ class diode(object):
 
     n1, n2 : string
         The diode anode and cathode.
-
     model : model instance
         The diode model providing the mathemathical modeling.
-
     ic : float
         The diode initial voltage condition for transient analysis
         (ie :math:`V_D = V(n_1) - V(n_2)` at :math:`t = 0`).
-
     off : bool
          Whether the diode should be initially assumed to be off when
          computing an OP.
@@ -87,8 +83,6 @@ class diode(object):
         self.device.AREA = AREA if AREA is not None else 1.0
         self.device.T = T
         self.device.last_vd = .425
-        self.device._gm_db = {} # hold the latest gm, just in case
-        self.device._i_db = {} # hold the latest i, just in case
         self.n1 = n1
         self.n2 = n2
         self.ports = ((self.n1, self.n2),)
@@ -115,11 +109,10 @@ class diode(object):
     def set_temperature(self, T):
         """Set the operating temperature IN KELVIN degrees
         """
-        if self.device.T != T:
-            self.device.T = T
-            # reset the old values, different temperature
-            self.device._gm_db = {}
-            self.device._i_db = {}
+        # this automatically makes the memoization cache obsolete. self.device
+        # is in fact passed as one of the arguments, hashed and stored:
+        # if it changes, the old cache will return misses.
+        self.device.T = T
 
     def __str__(self):
         rep = "%s area=%g T=%g" % (
@@ -155,11 +148,7 @@ class diode(object):
 
         """
         v = ports_v[0]
-        if v in self.device._i_db:
-            i = self.device._i_db[v]
-        else:
-            i = self.model.get_i(v, self.device)
-            self.device._i_db = {v:i}
+        i = self.model.get_i(self.model, v, self.device)
         istamp = np.array((i, -i), dtype=np.float64)
         indices = ((self.n1 - 1*reduced, self.n2 - 1*reduced), (0, 0))
         if reduced:
@@ -170,11 +159,7 @@ class diode(object):
 
     def i(self, op_index, ports_v, time=0):  # with gmin added
         v = ports_v[0]
-        if v in self.device._i_db:
-            i = self.device._i_db[v]
-        else:
-            i = self.model.get_i(v, self.device)
-            self.device._i_db = {v:i}
+        i = self.model.get_i(self.model, v, self.device)
         return i
 
     def gstamp(self, ports_v, time=0, reduced=True):
@@ -190,11 +175,7 @@ class diode(object):
         indices = ([self.n1 - 1]*2 + [self.n2 - 1]*2,
                    [self.n1 - 1, self.n2 - 1]*2)
         v = ports_v[0]
-        if v in self.device._gm_db:
-            gm = self.device._gm_db[v]
-        else:
-            gm = self.model.get_gm(0, ports_v, 0, self.device)
-            self.device._gm_db = {v:gm}
+        gm = self.model.get_gm(self.model, 0, utilities.tuplinator(ports_v), 0, self.device)
         if gm == 0:
             gm = options.gmin*2
         stamp = np.array(((gm, -gm),
@@ -222,11 +203,7 @@ class diode(object):
         if not port_index == 0:
             raise Exception("Attepted to evaluate a diode's gm on an unknown port.")
         v = ports_v[0]
-        if v in self.device._gm_db:
-            gm = self.device._gm_db[v]
-        else:
-            gm = self.model.get_gm(op_index, ports_v, port_index, self.device)
-            self.device._gm_db = {v:gm}
+        gm = self.model.get_gm(self.model, op_index, utilities.tuplinator(ports_v), port_index, self.device)
         return gm
 
     def get_op_info(self, ports_v_v):
@@ -299,7 +276,7 @@ AREA_DEFAULT = 1.0
 
 class diode_model:
 
-    """A diode model implementing the `Shockley diode equation 
+    """A diode model implementing the `Shockley diode equation
     <http://en.wikipedia.org/wiki/Shockley_diode_equation#Shockley_diode_equation>`__.
 
     Currently the capacitance modeling part is missing.
@@ -364,13 +341,14 @@ class diode_model:
         strm = ".model diode %s IS=%g N=%g ISR=%g NR=%g RS=%g CJ0=%g M=%g " + \
                "VJ=%g FC=%g CP=%g TT=%g BV=%g IBV=%g KF=%g AF=%g FFE=%g " + \
                "TEMP=%g XTI=%g EG=%g TBV=%g TRS=%g TTT1=%g TTT2=%g TM1=%g " + \
-               "TM2=%g" 
+               "TM2=%g"
         print(strm % (self.name, self.IS, self.N, self.ISR, self.NR, self.RS,
                       self.CJ0, self.M, self.VJ, self.FC, self.CP, self.TT,
                       self.BV, self.IBV, self.KF, self.AF, self.FFE, self.TEMP,
                       self.XTI, self.EG, self.TBV, self.TRS, self.TTT1,
                       self.TTT2, self. TM1, self. TM2))
 
+    @utilities.memoize
     def get_i(self, vext, dev):
         if dev.T != self.T:
             self.set_temperature(dev.T)
@@ -391,7 +369,16 @@ class diode_model:
 
     def _obj_irs_prime(self, x, vext, dev):
         # obj fn derivative for newton
-        return 1./self.RS + self.get_gm(0, [vext-x], 0, dev, rs=False)
+        # first term
+        ret = 1./self.RS
+        # disable RS
+        RSSAVE = self.RS
+        self.RS = 0
+        # second term
+        ret += self.get_gm(self, 0, (vext-x,), 0, dev)
+        # renable RS
+        self.RS = RSSAVE
+        return ret
 
     def _safe_exp(self, x):
         return np.exp(x) if x < 70 else np.exp(70) + 10 * x
@@ -401,14 +388,15 @@ class diode_model:
             + self.ISR * (self._safe_exp(v/(self.NR * self.VT)) - 1)
         return i
 
-    def get_gm(self, op_index, ports_v, port_index, dev, rs=True):
+    @utilities.memoize
+    def get_gm(self, op_index, ports_v, port_index, dev):
         if dev.T != self.T:
             self.set_temperature(dev.T)
         gm = self.IS / (self.N * self.VT) *\
             self._safe_exp(ports_v[0] / (self.N * self.VT)) +\
             self.ISR / (self.NR * self.VT) *\
             self._safe_exp(ports_v[0] / (self.NR * self.VT))
-        if rs and self.RS != 0.0:
+        if self.RS != 0.0:
             gm = 1. / (self.RS + 1. / (gm + 1e-3*options.gmin))
         return dev.AREA * gm
 
@@ -424,3 +412,4 @@ class diode_model:
         self.BV = self.BV - self.TBV*(T - self.T)
         self.RS = self.RS*(1 + self.TRS*(T - self.T))
         self.T = T
+
