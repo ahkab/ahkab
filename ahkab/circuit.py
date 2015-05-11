@@ -1111,28 +1111,23 @@ class Circuit(list):
 
         **Returns:**
 
-        e : The circuit element, a n instance of a subclass of Component
+        e : circuit element (an instance of a subclass of Component)
             The element corresponding to ``index``.
 
         :raises IndexError: if no element corresponds to such an index.
         """
-        index = index - len(self.nodes) + 1
+        index = index - len(self.nodes_dict)/2 + 1
         ni = 0
-        found = False
         for e in self:
-            if circuit.is_elem_voltage_defined(e):
+            if is_elem_voltage_defined(e):
                 if index == ni:
-                    found = True
+                    break
                 else:
                     ni = ni + 1
-                if found:
-                    break
-        if found:
-            ret = e
-        else:
+        else: #executed if no break occurred
             raise IndexError('No element corresponds to vde index %d' %
-                             index + len(self.nodes) - 1)
-        return ret
+                             (index + len(self.nodes_dict)/2 - 1))
+        return e
 
 
 # STATIC METHODS
