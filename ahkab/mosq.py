@@ -95,9 +95,6 @@ class mosq_device(object):
         N : int, optional
             series multiplier (n. of series devices)
 
-        Selected methods:
-        - get_output_ports() -> (nd, ns)
-        - get_drive_ports() -> (nd, nb), (ng, nb), (ns, nb)
         """
         self.ng = ng
         self.nb = nb
@@ -141,13 +138,19 @@ class mosq_device(object):
 
         Eg. ``tp`` might be defined as:
 
+        ::
+
             tp = (port0, port1, port2...)
 
         Where each port in the tuple is of the form:
 
+        ::
+
             port0 = (nplus, nminus)
 
         In the case of a MOSQ device, the method returns:
+
+        ::
 
             ((nd, nb), (ng, nb), (ns, nb))
 
@@ -168,13 +171,19 @@ class mosq_device(object):
 
         ports : a tuple of tuples of nodes, such as as:
 
+        ::
+
             (port0, port1, port2...)
 
         Where each port in the tuple is itself a tuple, made of two nodes, eg.
 
+        ::
+
             port0 = (nplus, nminus)
 
         In the case of a MOS device, the method returns:
+
+        ::
 
             ((nd, ns),)
 
@@ -208,10 +217,11 @@ class mosq_device(object):
         **Parameters:**
 
         ports_v : list
-            A list in the form: [voltage_across_port0, voltage_across_port1, ...]
+            A list in the form: ``[voltage_across_port0, voltage_across_port1,
+            ...]``
         time: float
             the simulation time at which the evaluation is performed.
-            It has no effect here. Set it to None during DC analysis.
+            It has no effect here. Set it to ``None`` during DC analysis.
 
         """
         sw_vect, CS = self.mosq_model.get_voltages(*ports_v)
