@@ -119,7 +119,7 @@ Reference
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
-import sys
+import copy
 import math
 
 from . import devices
@@ -987,56 +987,67 @@ class Circuit(list):
 
         self.append(elem)
 
-    def remove_elem(self, elem):
+    def remove_elem(self, part_id):
         """Removes an element from the circuit and takes care that no
         "orphan" nodes are left.
 
         .. note::
 
-            Removing elements is *really* experimental.
+            Support for removing elements is experimental.
 
         **Parameters:**
 
-        elem : component instance
-            The element to be removed.
+        elem : string
+            The ID of the element to be removed.
 
-        **Returns:**
+        :raises ValueError: if no such element is found in the circuit.
 
-        fb : boolean
-            A boolean set to ``True`` if the element was found and removed,
-            ``False`` otherwise.
         """
-        if elem not in self:
-            return False
-
+        elem = self.get_elem_by_name(part_id)
         self.remove(elem)
         nodes = []
-        if hasattr(elem, n1) and elem.n1 != 0:
-            nodes = nodes + [n1]
-        if hasattr(elem, n2) and elem.n2 != 0 and elem.n2 not in nodes:
-            nodes = nodes + [n2]
+        if hasattr(elem, 'n1') and elem.n1 != 0:
+            nodes = nodes + [elem.n1]
+        if hasattr(elem, 'n2') and elem.n2 != 0 and elem.n2 not in nodes:
+            nodes = nodes + [elem.n2]
         if elem.is_nonlinear:
             for n1, n2 in elem.ports:
                 if n1 != 0 and n1 not in nodes:
                     nodes = nodes + [n1]
                 if n2 != 0 and n2 not in nodes:
                     nodes = nodes + [n2]
-
+        # check if then nodes are needed by other elements
         remove_list = copy.copy(nodes)
         for n in nodes:
             for e in self:
-                if hasattr(elem, n1) and e.n1 == n or\
-                        hasattr(elem, n2) and e.n2 == n:
+                if hasattr(elem, 'n1') and e.n1 == n or \
+                   hasattr(elem, 'n2') and e.n2 == n or \
+                   hasattr(elem, 'sn1') and e.sn1 == n or \
+                   hasattr(elem, 'sn2') and e.sn2 == n:
                     remove_list.remove(n)
                     break
                 if elem.is_nonlinear:
-                    for n1, n2 in elem.ports:
+                    oports = elem.get_output_ports()
+                    # check output ports
+                    for n1, n2 in oports:
                         if n1 == n or n2 == n:
                             remove_list.remove(n)
+                            break
+                    if n not in remove_list:
+                        break
+                    # check the ports that drive them
+                    for i in range(len(oports)):
+                        dports = elem.get_drive_ports(i)
+                        for n1, n2 in oports:
+                            if n1 == n or n2 == n:
+                                remove_list.remove(n)
+                                break
+                        if n not in remove_list:
+                            break
+
         for n in remove_list:
             self.nodes_dict.pop(self.nodes_dict[n])
             self.nodes_dict.pop(n)
-        return True
 
     def find_vde_index(self, id_wdescr, verbose=3):
         """Finds a voltage-defined element MNA index.
