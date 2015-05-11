@@ -1059,14 +1059,17 @@ class Circuit(list):
             self.nodes_dict.pop(self.nodes_dict[n])
             self.nodes_dict.pop(n)
 
-    def find_vde_index(self, id_wdescr, verbose=3):
+    def find_vde_index(self, elem_or_id, verbose=3):
         """Finds a voltage-defined element MNA index.
 
         **Parameters:**
 
-        id_wdescr : string
-            The element part_id, eg. 'V1'. Notice it includes
-            both the id ('V') and the description ('1').
+        elem_or_id : string or circuit element
+            You may pass as first element, alternatively, either the ``part_id``
+            of the element whose index is being requested (eg. 'V1') or the
+            element itself.
+            Notice the ``part_id`` includes both the id letter (eg. 'V') and the
+            description (eg. '1').
         verbose : int
             The verbosity level, from 0 (silent) to 6 (debug).
 
@@ -1077,22 +1080,25 @@ class Circuit(list):
 
         :raises ValueError: if no such element is in the circuit.
         """
+        if type(elem_or_id) not in py3compat.string_types:
+            # we got an element
+            part_id = elem_or_id.part_id
+        else:
+            # we got a string corresponding to the part_id of an element
+            part_id = elem_or_id
         vde_index = 0
-        found = False
         for elem in self:
             if is_elem_voltage_defined(elem):
-                if elem.part_id.upper() == id_wdescr.upper():
-                    found = True
+                if elem.part_id.upper() == part_id.upper():
                     break
                 else:
                     vde_index += 1
-
-        if not found:
-            raise ValueError(("find_vde_index(): element %s was not found." +\
-                              " This is a bug.") % (id_wdescr,))
         else:
-            printing.print_info_line(("%s found at index %d" % (id_wdescr,
-                                     vde_index), 6), verbose)
+            raise ValueError(("find_vde_index(): element %s was not found." +\
+                              " This is a bug.") % (part_id,))
+        printing.print_info_line(("%s found at index %d" % (part_id,
+                                                            vde_index), 6),
+                                 verbose)
         return vde_index
 
     def find_vde(self, index):
