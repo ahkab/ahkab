@@ -389,7 +389,7 @@ class Circuit(list):
         for e in self:
             if e.part_id.lower() == part_id.lower():
                 return e
-        raise ValueError('Element %s not found')
+        raise ValueError('Element %s not found' % part_id)
 
     def add_model(self, model_type, model_label, model_parameters):
         """Add a model to the available circuit models.
