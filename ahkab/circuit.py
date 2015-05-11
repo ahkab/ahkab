@@ -127,6 +127,7 @@ from . import diode
 from . import ekv
 from . import mosq
 from . import printing
+from . import py3compat
 from . import switch
 
 # will be added here by netlist_parser and circuit instances
@@ -987,7 +988,7 @@ class Circuit(list):
 
         self.append(elem)
 
-    def remove_elem(self, part_id):
+    def remove_elem(self, elem_or_id):
         """Removes an element from the circuit and takes care that no
         "orphan" nodes are left.
 
@@ -997,13 +998,22 @@ class Circuit(list):
 
         **Parameters:**
 
-        elem : string
-            The ID of the element to be removed.
+        elem_or_id : string or circuit element
+            You may pass as first element, alternatively, either the ``part_id``
+            of the element to be removed or the element itself.
+
+        The method will also take care of purging from the circuit nodes that
+        are left orphan, ie with no elements connected.
 
         :raises ValueError: if no such element is found in the circuit.
 
         """
-        elem = self.get_elem_by_name(part_id)
+        if type(elem_or_id) in py3compat.string_types:
+            #we got a part_id, we need the element
+            elem = self.get_elem_by_name(elem_or_id)
+        else:
+            # we got the element
+            elem = elem_or_id
         self.remove(elem)
         nodes = []
         if hasattr(elem, 'n1') and elem.n1 != 0:
