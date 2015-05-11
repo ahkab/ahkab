@@ -187,7 +187,7 @@ class Circuit(list):
 
         """
         got_ref = 0 in self.nodes_dict
-        if not name in self.nodes_dict:
+        if name not in self.nodes_dict:
             if name == '0':
                 int_node = 0
             else:
