@@ -18,7 +18,11 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This file implements the TRAP DF and a second order prediction formula.
+This file implements the Trapezoidal (TRAP) Differentiation Formula (DF) and a
+second order prediction formula.
+
+Module reference
+----------------
 """
 
 from __future__ import (unicode_literals, absolute_import,
@@ -31,19 +35,46 @@ order = 2
 
 
 def is_implicit():
-    """Returns: boolean"""
+    """Is this Differentiation Formula (DF) implicit?
+
+    **Returns:**
+
+    isit : boolean
+        In this case, that's ``True``.
+    """
     return True
 
 
 def get_required_values():
-    """This returns a python array built this way:
-    [ max_order_of_x, max_order_of_dx ]
-    Where:
-    Both the values are int, or None
-    if max_order_of_x is set to k, the df method needs all the x(n-i) values of x,
-    where i<=k (the value the function assumed i+1 steps before the one we will ask for the derivative).
-    The same applies to max_order_of_dx, but regards dx(n)/dt
-    None means that NO value is required.
+    """Get info regarding what values are needed by the DF
+
+    **Returns:**
+
+    tpl : tuple of tuples
+        A tuple of two tuples.
+
+        * The first tuple indicates what past values of the unknown are needed
+          for the DF.
+        * The second tuple indicates what past values of the unknown are needed
+          for the prediction method.
+
+        In particular, each of the sub-tuples is built this way:
+        ::
+
+            (max_order_of_x, max_order_of_dx)
+
+        Where both the values are either ``int``, or ``None``.
+        If ``max_order_of_x`` is set to an integer value :math:`k`, the DF needs
+        all the :math:`x_{n-i}` values of x, for all :math:`0 \\le i \\le k`. In
+        the previous text, :math:`x_{n-i}` is the value the :math:`x` array
+        assumed :math:`i` steps before the one we are considering for the
+        derivative.
+
+        Similar considerations apply to ``max_order_of_dx``, but regard rather
+        :math:`dx_n/dt` instead of :math:`x_n`.
+
+        If any of the values is set to ``None``, it is to be assume that no
+        value is required.
 
     The first array has to be used if no prediction is required, the second are the values needed for prediction.
     """
@@ -53,34 +84,77 @@ def get_required_values():
 
 def has_ff():
     """Has the method a Forward Formula for prediction?
-    Returns: boolean
+
+    **Returns:**
+
+    doesit : bool
+        In this particular case, this function always returns ``True``.
     """
     return True
 
 
 def get_df(pv_array, suggested_step, predict=True):
-    """The array must be built in this way:
-    It must be an array of these array:
+    """Get the coefficients for DF and prediction formula
 
-    [time, np_matrix, np_matrix]
+    **Parameters:**
 
-    Hence the pv_array[k] element is made of:
-    _ time is the time in which the solution is valid: t(n-k)
-    _ The first np_matrix is x(n-k)
-    _ The second is d(x(n-k))/dt
-    Values that are not needed may be None, they will be disregarded
-    Returns None if the incorrect values were given.
-    Otherwise returns an array:
-    _ the [0] element is the np matrix of coeffiecients (Nx1) of x(n+1)
-    _ the [1] element is the np matrix of constant terms (Nx1) of x(n+1)
-    The derivative may be written as:
-    d(x(n+1))/dt = ret[0]*x(n+1) + ret[1]"""
+    pv_array : sequence of sequences
+        Each element of ``pv_array`` must be of the form:
+
+        ::
+
+            (time, x, derivate(x))
+
+        In particular, the :math:`k` element of `pv_array` contains the values
+        of:
+
+        * :math:`t_{n-k}` (the time),
+        * :math:`x_{n-k}`,
+        * :math:`dx_{n-k}/dt`
+
+        evaluated :math:`k` time steps before the current one, labeled
+        :math:`n+1`.
+
+        How many samples are necessary is given by
+        :func:`ahkab.trap.get_required_values`.
+
+        Values that are not needed may be set to ``None``, as they will be
+        disregarded.
+    suggested_step : float
+        The step that will be used for the current iteration, provided the error
+        will be deemed acceptable.
+    predict : bool, optional
+        Whether a prediction for :math:`x_n` is needed as well or not. Defaults
+        to ``True``.
+
+    **Returns:**
+
+    ret : tuple
+        The return value has the form:
+
+        ::
+
+            [C1, C0, x_lte_coeff, predict_x, predict_lte_coeff]
+
+        The derivative may be written as:
+
+        .. math::
+
+            d(x(n+1))/dt = C1 x(n+1) + C0
+
+        `x_lte_coeff` is the coefficient of the Local Truncation Error,
+        `predict_x` is the predicted value for :math:`x` and `predict_lte_coeff`
+        is the LTE coefficient for the prediction.
+
+    :raises ValueError: if the `pv_array` is malformed.
+    """
 
     # our method needs x(n) dx(n)/dt
     if len(pv_array[0]) != 3:
-        return None
+        raise ValueError('trap.get_df got a pv_array of wrong dimensions')
     if pv_array[0][1] is None or pv_array[0][2] is None:
-        return None
+        raise ValueError('trap.get_df got a pv_array that does not contain'
+                         ' required values')
 
     C1 = 2.0 / suggested_step
     C0 = -1.0 * ((2.0 / suggested_step) * pv_array[0][1] + pv_array[0][2])
@@ -111,3 +185,4 @@ def get_df(pv_array, suggested_step, predict=True):
     else:
         predict_x, predict_lte_coeff = (None, None)
     return [C1, C0, x_lte_coeff, predict_x, predict_lte_coeff]
+
