@@ -35,6 +35,8 @@ import operator
 
 import numpy as np
 
+from functools import wraps
+
 from . import printing
 from . import py3compat
 from . import options
@@ -700,6 +702,7 @@ def memoize(f):
     """
     class memodict(collections.OrderedDict):
         __slots__ = ()
+        @wraps(f)
         def __getitem__(self, *key):
             return dict.__getitem__(self, key)
         def __missing__(self, key):
