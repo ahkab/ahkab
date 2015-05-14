@@ -91,6 +91,7 @@ Module reference
    symbolic
    testing
    ticker
+   time_functions
    transient
    trap
    utilities
