@@ -194,7 +194,8 @@ def plot_comparison(x, y1, y2, label1=None, label2=None, fileobj=None):
     # top x
     print('         ', end=' ', file=fileobj)
     for i in range(9):
-        print('%5.3f    ' % unscale(i*10), end=' ', file=fileobj)
+        print(('%5.3f' % unscale(i*10)) + ' '*(10-len('%5.3f' % unscale(i*10))),
+              end='', file=fileobj)
     print(file=fileobj)
     print('          |        ', end=' ', file=fileobj)
     for i in range(1, 9):
@@ -220,7 +221,8 @@ def plot_comparison(x, y1, y2, label1=None, label2=None, fileobj=None):
     print(file=fileobj)
     print('         ', end=' ', file=fileobj)
     for i in range(9):
-        print('%5.3f    ' % unscale(i*10), end=' ', file=fileobj)
+        print(('%5.3f' % unscale(i*10)) + ' '*(10-len('%5.3f' % unscale(i*10))),
+              end='', file=fileobj)
     if label1 or label2:
         print('\n\n   LEGEND:', file=fileobj)
     if label1:
