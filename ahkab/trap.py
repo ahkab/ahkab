@@ -31,6 +31,8 @@ from __future__ import (unicode_literals, absolute_import,
 import numpy as np
 from numpy.linalg import inv
 
+from .py3compat import range_type
+
 order = 2
 
 
@@ -134,7 +136,7 @@ def get_df(pv_array, suggested_step, predict=True):
 
         ::
 
-            [C1, C0, x_lte_coeff, predict_x, predict_lte_coeff]
+            (C1, C0, x_lte_coeff, predict_x, predict_lte_coeff)
 
         The derivative may be written as:
 
@@ -155,34 +157,37 @@ def get_df(pv_array, suggested_step, predict=True):
     if pv_array[0][1] is None or pv_array[0][2] is None:
         raise ValueError('trap.get_df got a pv_array that does not contain'
                          ' required values')
+    if predict and (len(pv_array) < 2 or pv_array[0][1] is None or
+        pv_array[1][1] is None or pv_array[2][1] is None):
+        raise ValueError('trap.get_df got predict=True but pv_array that does'
+                         ' not contain the required values')
 
     C1 = 2.0 / suggested_step
-    C0 = -1.0 * ((2.0 / suggested_step) * pv_array[0][1] + pv_array[0][2])
-    x_lte_coeff = (1.0 / 12) * (suggested_step ** 3)
+    C0 = -1.0 * (2.0 / suggested_step * pv_array[0][1] + pv_array[0][2])
+    x_lte_coeff = 1.0 / 12 * suggested_step ** 3
 
-    if predict and len(pv_array) > 2 and pv_array[0][1] is not None and pv_array[1][1] is not None and \
-            pv_array[2][1] is not None:
-        A = np.mat(np.zeros((len(pv_array[0]), len(pv_array[0]))))
+    if predict and len(pv_array) > 2 and pv_array[0][1] is not None and \
+        pv_array[1][1] is not None and pv_array[2][1] is not None:
+        A = np.zeros((len(pv_array[0]), len(pv_array[0])))
         A[0, :] = 0
         A[:, 0] = 1
-        for row in range(1, A.shape[0]):
-            for col in range(1, A.shape[0]):
-                A[row, col] = (pv_array[row][0] - pv_array[0][0]) ** (col)
+        for row in range_type(1, A.shape[0]):
+            for col in range_type(1, A.shape[0]):
+                A[row, col] = (pv_array[row][0] - pv_array[0][0]) ** col
         Ainv = inv(A)
 
-        predict_x = np.mat(np.zeros(pv_array[0][1].shape))
-        z = np.mat(np.zeros((3, 1)))
-        for var in range(pv_array[0][1].shape[0]):
-
+        predict_x = np.zeros(pv_array[0][1].shape)
+        z = np.zeros((3, 1))
+        for var in range_type(pv_array[0][1].shape[0]):
             for index in range(z.shape[0]):
                 z[index, 0] = pv_array[index][1][var, 0]
-            alpha = Ainv * z
-            predict_x[var, 0] = alpha[2, 0] * (suggested_step ** 2) + \
+            alpha = np.dot(Ainv, z)
+            predict_x[var, 0] = alpha[2, 0] * suggested_step**2 + \
                                 alpha[1, 0] * suggested_step + alpha[0, 0]
-        predict_lte_coeff = (-1.0 / 6.0) * suggested_step * \
+        predict_lte_coeff = -1.0 / 6.0 * suggested_step * \
                             (pv_array[0][0] + suggested_step - pv_array[1][0]) * \
                             (pv_array[0][0] + suggested_step - pv_array[2][0])
     else:
         predict_x, predict_lte_coeff = (None, None)
-    return [C1, C0, x_lte_coeff, predict_x, predict_lte_coeff]
+    return C1, C0, x_lte_coeff, predict_x, predict_lte_coeff
 
