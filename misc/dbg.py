@@ -1,4 +1,4 @@
 import sys
 from ahkab import main, options
 options.cli = True
-main(sys.argv[1], verbose=3)
+main(sys.argv[1], verbose=3, outfile='tmp')
