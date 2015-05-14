@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# test_r2r.py
+# test_r2r_symbolic.py
 # R2r ladder timed test
-# Copyright 2012 Giuseppe Venturini
+# Copyright 2015 Giuseppe Venturini
 #
 # This file is part of the ahkab simulator.
 #
@@ -124,11 +124,10 @@ def _run_test(ref_run=False):
 
 def test():
     """R-2R ladder symbolic speed test"""
-
     # we do not want to execute this on Travis.
-    #if 'TRAVIS' in os.environ:
-    #    # we skip the test. Travis builders are awfully slow
-    #    raise SkipTest
+    if 'TRAVIS' in os.environ:
+        # we skip the test. Travis builders are awfully slow
+        raise SkipTest
 
     csv_file = os.path.join(reference_path, 'r2r_symbolic_ref.csv')
     boxid_file = os.path.join(reference_path, 'r2r_symbolic_ref.boxid')
