@@ -19,8 +19,6 @@
 """
 This module contains several basic time functions.
 
-The user is expected to access this module and instantiate directly its classes.
-
 The classes that are found in module are useful to provide a time-varying
 characteristic to independent sources.
 
