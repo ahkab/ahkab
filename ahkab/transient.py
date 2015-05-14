@@ -182,7 +182,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
     if D is None:
         # if you do more than one tran analysis, output streams should be changed...
         # this needs to be fixed
-        D = generate_D(circ, [mna.shape[0], mna.shape[0]])
+        D = generate_D(circ, (mna.shape[0], mna.shape[0]))
         D = utilities.remove_row_and_col(D)
 
     # setup x0
@@ -326,8 +326,11 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
             implicit_euler.get_df((thebuffer.get_df_vector()[0],), tstep, \
             predict=(use_step_control and iter_n >= start_pred_iter))
         else:
-            [x_coeff, const, x_lte_coeff, prediction, pred_lte_coeff] = \
-            df.get_df(thebuffer.get_df_vector(), tstep, predict=use_step_control)
+            x_coeff, const, x_lte_coeff, prediction, pred_lte_coeff = \
+                df.get_df(thebuffer.get_df_vector(), tstep,
+                          predict=(use_step_control and
+                                   iter_n >= start_pred_iter)
+                         )
 
         if options.transient_prediction_as_x0 and use_step_control and prediction is not None:
             x0 = prediction
