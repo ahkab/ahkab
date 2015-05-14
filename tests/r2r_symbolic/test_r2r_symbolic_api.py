@@ -74,11 +74,13 @@ def check_boxid(filename):
     return get_boxid() == load_boxid(filename)
 
 def _run_test(ref_run=False):
+    MINNODES = 6
     MAXNODES = 14
-    STEP = 2
+    STEP = 1
     times = []
 
-    for circuit_nodes in range(2, MAXNODES, STEP):
+    x = list(range(max((2, MINNODES)), MAXNODES, STEP))
+    for circuit_nodes in x:
         # build the circuit
         mycir = ahkab.Circuit('R2R symbolic test with %d nodes' %
                               circuit_nodes)
@@ -109,7 +111,6 @@ def _run_test(ref_run=False):
         out_th = 1./(2**(circuit_nodes - 1))
         assert .5*abs(out_th - out_test)/(out_th + out_test) < 1e-3
 
-    x = list(range(2, MAXNODES, STEP))
     x = numpy.array(x, dtype=numpy.int64)
     times = numpy.array(times, dtype=numpy.float64)
     if ref_run:
@@ -164,9 +165,9 @@ def test():
 
 def plot_comparison(x, y1, y2, label1=None, label2=None, fileobj=None):
     """Plot by printing histograms to screen
-    
+
     **Parameters:**
-    
+
     x : array-like
         The abscissa values for ``y1`` and ``y2``.
     y1 : array-like
