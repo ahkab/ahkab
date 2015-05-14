@@ -1,12 +1,12 @@
 import ahkab
-from ahkab import circuit, printing, devices, testing
+from ahkab import circuit, printing, testing
 
 cli = False
 
 def assemble():
     RS = 1
     cir = ahkab.circuit.Circuit("Rectifier", filename=None)
-    sinf = ahkab.devices.sin(0, 220, 50.)
+    sinf = ahkab.time_functions.sin(0, 220, 50.)
     cir.add_vsource('V1', 'inar', 'inbr', 1., 0., sinf)
     cir.add_resistor('R0a', 'inar', 'ina', 1.)
     cir.add_resistor('R0b', 'inbr', 'inb', .001)

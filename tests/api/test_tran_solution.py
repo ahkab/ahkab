@@ -23,8 +23,8 @@ import ahkab
 class Test_TRAN_solution:
     def setUp(self):
         ttn = ahkab.Circuit('Twin-T Notch Stopband filter')
-        rect_wave = ahkab.devices.pulse(v1=-1, v2=+1, td=0, tr=10e-6, pw=90e-6,
-                                        tf=10e-6, per=200e-6)
+        rect_wave = ahkab.time_functions.pulse(v1=-1, v2=+1, td=0, tr=10e-6,
+                                               pw=90e-6, tf=10e-6, per=200e-6)
         ttn.add_vsource('V1', 'in', ttn.gnd, dc_value=1, ac_value=1,
                         function=rect_wave)
         # first path

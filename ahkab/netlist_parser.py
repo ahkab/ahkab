@@ -128,15 +128,15 @@ from .transient import specs as tran_spec
 from .pss import specs as pss_spec
 from .pz import specs as pz_specs
 from .symbolic import specs as symbolic_spec
-from .devices import time_fun_specs
-from .devices import sin, pulse, exp
+from .time_functions import time_fun_specs
+from .time_functions import sin, pulse, exp
 
 specs = {}
 for i in dc_spec, ac_spec, tran_spec, pss_spec, symbolic_spec, pz_specs:
     specs.update(i)
 
 time_functions = {}
-for i in  sin, pulse, exp:
+for i in sin, pulse, exp:
     time_functions.update({i.__name__:i})
 
 def parse_circuit(filename, read_netlist_from_stdin=False):

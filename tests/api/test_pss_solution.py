@@ -23,7 +23,7 @@ import ahkab
 class Test_PSS_solution:
     def setUp(self):
         ttn = ahkab.Circuit('PSS Linear circuit')
-        sin_wave = ahkab.devices.sin(vo=0, va=2, td=0, freq=1e6, theta=0, phi=0.)
+        sin_wave = ahkab.time_functions.sin(vo=0, va=2, td=0, freq=1e6, theta=0, phi=0.)
         ttn.add_vsource('VIN', 'in', ttn.gnd, dc_value=5, function=sin_wave)
         ttn.add_resistor('R1', 'in', 'n1', 10e3)
         ttn.add_resistor('R2', 'n1', 'out', 20e3)

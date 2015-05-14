@@ -1,14 +1,14 @@
 import numpy as np
 import ahkab
-from ahkab import ahkab, circuit, printing, devices, testing
+from ahkab import ahkab, circuit, printing, time_functions, testing
 
 cli = False
 
 def test():
     """Test pulse and sin API"""
-    step = devices.pulse(v1=0, v2=1, td=500e-9, tr=1e-12, pw=1, tf=1e-12, per=2)
-    damped_sin = devices.sin(vo=0, va=1, td=500e-9, freq=15e3, theta=5e3, phi=90.)
-    exp = devices.exp(v1=.5, v2=-.05, td1=0, tau1=20e-6, td2=400e-6, tau2=20e-6)
+    step = time_functions.pulse(v1=0, v2=1, td=500e-9, tr=1e-12, pw=1, tf=1e-12, per=2)
+    damped_sin = time_functions.sin(vo=0, va=1, td=500e-9, freq=15e3, theta=5e3, phi=90.)
+    exp = time_functions.exp(v1=.5, v2=-.05, td1=0, tau1=20e-6, td2=400e-6, tau2=20e-6)
 
     mycircuit = circuit.Circuit(title="Butterworth Example circuit", filename=None)
 

@@ -27,7 +27,7 @@ First import the modules and create a new circuit:
 .. code:: python
 
     import ahkab
-    from ahkab import circuit, printing, devices
+    from ahkab import circuit, printing, time_functions
         
     mycircuit = circuit.Circuit(title="Butterworth Example circuit")
 
@@ -37,7 +37,7 @@ reference (gnd):
 .. code:: python
 
     import ahkab
-    from ahkab import circuit, printing, devices
+    from ahkab import circuit, printing, time_functions
     mycircuit = circuit.Circuit(title="Butterworth Example circuit")
 
     gnd = mycircuit.get_ground_node()
@@ -50,7 +50,7 @@ Ordinary nodes can be defined as:
 
     # setup
     import ahkab
-    from ahkab import circuit, printing, devices
+    from ahkab import circuit, printing, time_functions
     mycircuit = circuit.Circuit(title="Butterworth Example circuit")
     # now we can define the nodes
     # 1. using arbitrary strings to describe the nodes
@@ -69,7 +69,7 @@ The passives in example 7.4 can be added as:
 .. code:: python
 
     import ahkab
-    from ahkab import circuit, printing, devices
+    from ahkab import circuit, printing, time_functions
     mycircuit = circuit.Circuit(title="Butterworth Example circuit")
         
     gnd = mycircuit.get_ground_node()
@@ -88,7 +88,7 @@ Next, we want to add the voltage source V1.
 
 .. code:: python
 
-   voltage_step = devices.pulse(v1=0, v2=1, td=500e-9, tr=1e-12, pw=1, tf=1e-12, per=2)
+   voltage_step = time_functions.pulse(v1=0, v2=1, td=500e-9, tr=1e-12, pw=1, tf=1e-12, per=2)
 
 -  Then we add a voltage source named V1 to the circuit, with the
    time-function we have just built:
@@ -101,7 +101,7 @@ Putting all together:
 
 .. code:: python
 
-    voltage_step = devices.pulse(v1=0, v2=1, td=500e-9, tr=1e-12, pw=1, tf=1e-12, per=2)
+    voltage_step = time_functions.pulse(v1=0, v2=1, td=500e-9, tr=1e-12, pw=1, tf=1e-12, per=2)
     mycircuit.add_vsource("V1", n1="n1", n2=gnd, dc_value=5, ac_value=1, function=voltage_step)
 
 We can now check that the circuit is defined as we intended, generating
