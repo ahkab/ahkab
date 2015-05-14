@@ -18,26 +18,34 @@
 # along with ahkab.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+The Square Law Mos Model
+------------------------
+
 This module defines two classes:
 
-- mosq_device
-- mosq_model
+- :class:`mosq_device`, the device
+- :class:`mosq_model`, the model
 
-The Square Law Mos Model
 
-Assuming, :math:`V_{ds} > 0` and a transistor type N in the
+Implementation details
+----------------------
+
+Assuming :math:`V_{ds} > 0` and a transistor type N in the
 following, we have the following regions implemented:
 
 1. No subthreshold conduction.
-   :math:`V_{gs} < V_T`
-   :math:`I_D = 0`
+       - :math:`V_{gs} < V_T`
+       - :math:`I_D = 0`
 2. Ohmic region
-   :math:`V_{GS} > V_T` and :math:`V_{GD} > V_T`
-   :math:`I_D = k_n W/L ((V_{GS}-V_{T})V_{DS} - V_{DS}^2/2)`
+       - :math:`V_{GS} > V_T` and :math:`V_{GD} > V_T`
+       - :math:`I_D = k_n W/L ((V_{GS}-V_{T})V_{DS} - V_{DS}^2/2)`
 3. Saturation region
-   :math:`V_{GS} > V_T` and :math:`V_{DS} > V_{GS} - V_{T}`
-   :math:`V_{GS} < V_{T}`
-   :math:`I_D = 1/2 k_n W/L (V_{GS}-V_T)^2 * [1 + \lambda*(V_{DS}-V_{GS}+V_T)]`
+       - :math:`V_{GS} > V_T` and :math:`V_{DS} > V_{GS} - V_{T}`
+       - :math:`V_{GS} < V_{T}`
+       - :math:`I_D = 1/2 k_n W/L (V_{GS}-V_T)^2 * [1 + \lambda*(V_{DS}-V_{GS}+V_T)]`
+
+Module reference
+----------------
 
 """
 from __future__ import (unicode_literals, absolute_import,
@@ -599,7 +607,24 @@ class mosq_mos_model(object):
 
     @utilities.memoize
     def get_ids(self, device, voltages):
-        """Returns:
+        """Get the drain-source current
+
+        **Parameters:**
+
+        device : object
+            The device object holding the device parameters
+            as attributes.
+        voltages : tuple
+            A tuple containing the voltages applied to the driving ports.
+            In this case, the tuple is ``(vds, vgs, vbs)``.
+
+        **Returns:**
+
+        ids : float
+            The drain-source current
+        """
+        """
+        Returns:
             IDS, the drain-to-source current
         """
         (vds, vgs, vbs) = voltages
@@ -635,7 +660,27 @@ class mosq_mos_model(object):
 
     @utilities.memoize
     def get_gmb(self, device, voltages):
-        """Returns the source-bulk transconductance or d(IDS)/d(VS-VB)."""
+        """Get the bulk-source transconductance
+
+        Mathematically:
+
+        .. math::
+            g_{mb} = \\frac{dI_{DS}}{d(VS-VB)}
+
+        **Parameters:**
+
+        device : object
+            The device object holding the device parameters
+            as attributes.
+        voltages : tuple
+            A tuple containing the voltages applied to the driving ports.
+            In this case, the tuple is ``(vds, vgs, vbs)``.
+
+        **Returns:**
+
+        gmb : float
+            The source-bulk transconductace.
+        """
         (vds, vgs, vbs) = voltages
         debug = False
         svt, skp = self.get_svt_skp(device, debug=False)
@@ -668,7 +713,27 @@ class mosq_mos_model(object):
 
     @utilities.memoize
     def get_gmd(self, device, voltages):
-        """Returns the drain-bulk transconductance or d(IDS)/d(VD-VB)."""
+        """Get the drain-source transconductance
+
+        Mathematically:
+
+        .. math::
+            g_{md} = \\frac{dI_{DS}}{d(VD-VS)}
+
+        **Parameters:**
+
+        device : object
+            The device object holding the device parameters
+            as attributes.
+        voltages : tuple
+            A tuple containing the voltages applied to the driving ports.
+            In this case, the tuple is ``(vds, vgs, vbs)``.
+
+        **Returns:**
+
+        gmb : float
+            The drain-source transconductace.
+        """
         (vds, vgs, vbs) = voltages
         debug = False
         svt, skp = self.get_svt_skp(device, debug=False)
@@ -692,7 +757,29 @@ class mosq_mos_model(object):
 
     @utilities.memoize
     def get_gm(self, device, voltages):
-        """Returns the gate-bulk transconductance or d(IDS)/d(VG-VB)."""
+        """Get the gate-source transconductance
+
+        Mathematically:
+
+        .. math::
+            g_{ms} = \\frac{dI_{DS}}{d(VG-VS)}
+
+        Often this is referred to as just :math:`g_m`.
+
+        **Parameters:**
+
+        device : object
+            The device object holding the device parameters
+            as attributes.
+        voltages : tuple
+            A tuple containing the voltages applied to the driving ports.
+            In this case, the tuple is ``(vds, vgs, vbs)``.
+
+        **Returns:**
+
+        gmb : float
+            The gate-source transconductace.
+        """
         (vds, vgs, vbs) = voltages
         debug = False
         svt, skp = self.get_svt_skp(device, debug=False)
