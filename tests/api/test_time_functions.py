@@ -41,5 +41,21 @@ def test_sffm():
     for ti in t:
         assert np.allclose(f.value(ti), float(FS(ti)), rtol=1e-4)
 
+def test_am():
+    """Test time_functions.am"""
+    sa, fc, fm, oc, td, time = sympy.symbols('sa, fc, fm, oc, td, time')
+    F = sa*(oc + sympy.sin(2*sympy.pi*fm*(time - td)))* \
+        sympy.sin(2*sympy.pi*fc*(time - td)) * \
+        Heaviside(time - td)
+
+    san, fcn, fmn, ocn, tdn = 10., 1., 1e3, 100, 1e-3
+    f = time_functions.am(sa=san, fc=fcn, fm=fmn, oc=ocn, td=tdn)
+    FS = sympy.lambdify(time, sympy.N(F.subs(dict(sa=san, fc=fcn, fm=fmn,
+                                                  oc=ocn, td=tdn))))
+    t = np.linspace(0, 20e-3, 3e3)
+    for ti in t:
+        assert np.allclose(f.value(ti), float(FS(ti)), rtol=1e-4)
+
+
 if __name__ == '__main__':
     test_sffm()

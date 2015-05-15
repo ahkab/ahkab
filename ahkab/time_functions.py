@@ -36,6 +36,7 @@ Classes defined in this module
     sin
     exp
     sffm
+    am
 
 Defining custom time functions
 ------------------------------
@@ -259,6 +260,47 @@ time_fun_specs = {'sin': { #VO VA FREQ TD THETA
                'needed': False,
                'dest': 'td',
                'default': 0.
+               })
+        }, 'am': { #AM(sa oc fm fc [td])
+    'tokens': ({
+               'label': 'sa',
+               'pos': 0,
+               'type': float,
+               'needed': True,
+               'dest': 'sa',
+               'default': None
+               },
+               {
+               'label': 'oc',
+               'pos': 1,
+               'type': float,
+               'needed': True,
+               'dest': 'oc',
+               'default': None
+               },
+               {
+               'label': 'fm',
+               'pos': 2,
+               'type': float,
+               'needed': True,
+               'dest': 'fm',
+               'default': None
+               },
+               {
+               'label': 'fc',
+               'pos': 3,
+               'type': float,
+               'needed': True,
+               'dest': 'fc',
+               'default': None
+               },
+               {
+               'label': 'td',
+               'pos': 4,
+               'type': float,
+               'needed': False,
+               'dest': 'td',
+               'default': None
                })
         }
 }
@@ -522,3 +564,60 @@ class sffm:
     def __str__(self):
         return "type=sffm vo=%g va=%g fc=%g mdi=%g fs=%g td=%g" % \
                 (self.vo, self.va, self.fc, self.mdi, self.fs, self.td)
+
+class am:
+    """AM time function
+
+    .. image:: images/elem/am.svg
+
+    Mathematically, it is described by the equations:
+
+    * :math:`0 \\le t \\le t_D`:
+
+    .. math::
+
+        f(t) = O
+
+    * :math:`t > t_D`
+
+    .. math::
+
+        f(t) = SA \\cdot \\left[OC + \\sin \\left[2\\pi f_m (t - t_D) \\right]
+               \\cdot \\sin \\left[2 \\pi f_c (t - t_D) \\right]
+
+    **Parameters:**
+
+    sa : float
+        Signal amplitude in Volt or Ampere.
+    fc : float
+        Carrier frequency in Hertz.
+    fm : float
+        Modulation frequency in Hertz.
+    oc : float
+        Offset constant, setting the absolute magnitude of the modulation.
+    td : float
+        Time delay before the signal begins, in seconds.
+    """
+    # AM(sa oc fm fc <td>)
+
+    def __init__(self, sa, fc, fm, oc, td):
+        self.sa = sa
+        self.fc = fc
+        self.fm = fm
+        self.oc = oc
+        self.td = td
+        self._type = "V"
+
+    def value(self, time):
+        """Evaluate the AM function at the given time."""
+        if time <= self.td:
+            return 0.
+        else:
+            return self.sa*(self.oc + math.sin(2*math.pi*self.fm*
+                                               (time - self.td)))* \
+                   math.sin(2*math.pi*self.fc*(time - self.td))
+
+    def __str__(self):
+        return "type=am sa=%g oc=%g fm=%g fc=%g td=%g" % \
+                (self.sa, self.oc, self.fm, self.fc, self.td)
+

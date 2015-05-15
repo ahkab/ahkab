@@ -174,7 +174,7 @@ Voltage source
 ``v<string> n1 n2 [type=vdc vdc=float] [type=vac vac=float] [type=....]``
 
 Where the third type (if added) is one of: ``sin``, ``pulse``, ``exp``,
-``sffm``.
+``sffm``, ``am``.
 
 Current source
 ''''''''''''''
@@ -511,7 +511,52 @@ FS         signal frequency                   HZ
 TD         time delay          0.0            s
 =========  ==================  =============  =======
 
+Amplitude Modulation (AM)
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
+An AM waveform.
+
+.. image:: ../images/elem/am.svg
+
+It may be described with any of the following syntaxes:
+
+::
+
+    TYPE=AM <SA> <OC> <FM> <FC> [<TD>]
+
+or
+
+::
+
+    type=am sa=<float> oc=<float> fm=<float> fc=<float> [td=<float>]
+
+
+Mathematically, it is described by the equations:
+
+* :math:`0 \le t \le t_D`:
+
+.. math::
+
+    f(t) = O
+
+* :math:`t > t_D`
+
+.. math::
+
+    f(t) = SA \cdot \left[ OC + \sin \left[ 2\pi f_m (t - t_D) \right] \right]
+           \cdot \sin \left[2 \pi f_c (t - t_D) \right]
+
+**Parameters:**
+
+=========  ====================  =============  =======
+Parameter  Meaning               Default value  Units
+=========  ====================  =============  =======
+SA         amplitude                            V or A
+FC         carrier frequency                    Hz
+FM         modulation frequency                 Hz
+OC         offset constant
+TD         time delay            0.0            s
+=========  ====================  =============  =======
 
 Device models
 """""""""""""

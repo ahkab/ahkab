@@ -129,14 +129,14 @@ from .pss import specs as pss_spec
 from .pz import specs as pz_specs
 from .symbolic import specs as symbolic_spec
 from .time_functions import time_fun_specs
-from .time_functions import sin, pulse, exp, sffm
+from .time_functions import sin, pulse, exp, sffm, am
 
 specs = {}
 for i in dc_spec, ac_spec, tran_spec, pss_spec, symbolic_spec, pz_specs:
     specs.update(i)
 
 time_functions = {}
-for i in sin, pulse, exp, sffm:
+for i in sin, pulse, exp, sffm, am:
     time_functions.update({i.__name__:i})
 
 def parse_circuit(filename, read_netlist_from_stdin=False):
@@ -574,6 +574,8 @@ def parse_elem_vsource(line, circ):
                 param_number = 5
             elif value == 'sffm':
                 param_number = 5
+            elif value == 'am':
+                param_number = 5
             else:
                 raise NetlistParseError("parse_elem_vsource(): unknown signal" +
                                         "type %s" % value)
@@ -660,6 +662,8 @@ def parse_elem_isource(line, circ):
             elif value == 'sin':
                 param_number = 5
             elif value == 'sffm':
+                param_number = 5
+            elif value == 'am':
                 param_number = 5
             else:
                 raise NetlistParseError("parse_elem_isource(): unknown signal type.")
@@ -1166,7 +1170,7 @@ def parse_time_function(ftype, line_elements, stype):
     **Parameters:**
 
     ftype : str
-        One among ``"pulse"``, ``"exp"``, ``"sin"`` or ``"sffm"``.
+        One among ``"pulse"``, ``"exp"``, ``"sin"``, ``"sffm"`` or ``"am"``.
     line_elements : list of strings
         The tokens describing the time function. The list mustn't hold the
         ``"type=<ftype>"`` element
@@ -1174,8 +1178,8 @@ def parse_time_function(ftype, line_elements, stype):
         Set this to "current" for current sources, "voltage" for voltage sources
 
     See :class:`ahkab.time_functions.pulse`, :class:`ahkab.time_functions.sin`,
-    :class:`ahkab.time_functions.exp`, :class:`ahkab.time_functions.sffm` for
-    more.
+    :class:`ahkab.time_functions.exp`, :class:`ahkab.time_functions.sffm` and
+    :class:`ahkab.time_functions.am` for more.
 
     **Returns:**
 
