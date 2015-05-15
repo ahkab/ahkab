@@ -204,7 +204,7 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
                         within_subckt = True
                     elif line_elements[0] == '.ends':
                         if not within_subckt:
-                            raise NetlistParseError("corresponding .subckt not found")
+                            raise NetlistParseError(".ENDS outside of .subckt")
                         within_subckt = False
                         subckts_list_temp.append(current_subckt_temp)
                         current_subckt_temp = []
@@ -268,23 +268,22 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
 def main_netlist_parser(circ, netlist_lines, subckts_dict, models):
     elements = []
     parse_function = {
-        'r': lambda line: parse_elem_resistor(line, circ),
         'c': lambda line: parse_elem_capacitor(line, circ),
-        'l': lambda line: parse_elem_inductor(line, circ),
-        'k': lambda line: parse_elem_inductor_coupling(line, circ, elements),
-        'v': lambda line: parse_elem_vsource(line, circ),
-        'i': lambda line: parse_elem_isource(line, circ),
         'd': lambda line: parse_elem_diode(line, circ, models),
-        'm': lambda line: parse_elem_mos(line, circ, models),
         'e': lambda line: parse_elem_vcvs(line, circ),
-        'g': lambda line: parse_elem_vccs(line, circ),
         'f': lambda line: parse_elem_cccs(line, circ),
+        'g': lambda line: parse_elem_vccs(line, circ),
         'h': lambda line: parse_elem_ccvs(line, circ),
+        'i': lambda line: parse_elem_isource(line, circ),
+        'k': lambda line: parse_elem_inductor_coupling(line, circ, elements),
+        'l': lambda line: parse_elem_inductor(line, circ),
+        'm': lambda line: parse_elem_mos(line, circ, models),
+        'r': lambda line: parse_elem_resistor(line, circ),
         's': lambda line: parse_elem_switch(line, circ, models),
-        'y': lambda line: parse_elem_user_defined(line, circ),
-        'x': lambda line: parse_sub_instance(line, circ, subckts_dict, models)
+        'v': lambda line: parse_elem_vsource(line, circ),
+        'x': lambda line: parse_sub_instance(line, circ, subckts_dict, models),
+        'y': lambda line: parse_elem_user_defined(line, circ)
     }
-
     try:
         for line, line_n in netlist_lines:
             # elements: detect the element type and call the
@@ -294,7 +293,8 @@ def main_netlist_parser(circ, netlist_lines, subckts_dict, models):
             try:
                 elements += parse_function[line[0]](line)
             except KeyError:
-                raise NetlistParseError("unknown element.")
+                raise NetlistParseError("Parser: do not know how to parse" +
+                                        " '%s' elements." % line[0])
     #   Handle errors from individual parse functions
     except NetlistParseError as npe:
         (msg,) = npe.args
@@ -322,8 +322,9 @@ def parse_models(models_lines):
     for line, line_n in models_lines:
         tokens = line.replace("(", "").replace(")", "").split()
         if len(tokens) < 3:
-            raise NetlistParseError(
-                "Syntax error in model declaration on line " + str(line_n) + ".\n\t" + line,)
+            raise NetlistParseError("parse_models(): syntax error in model" +
+                                    " declaration on line " + str(line_n) +
+                                    ".\n\t" + line)
         model_label = tokens[2]
         model_type = tokens[1]
         model_parameters = {}
@@ -348,8 +349,9 @@ def parse_models(models_lines):
         #   model_parameters.update({'name':model_label})
         #   model_iter = switch.iswitch_model(**model_parameters)
         else:
-            raise NetlistParseError(
-                "Unknown model (" + model_type + ") on line " + str(line_n) + ".\n\t" + line,)
+            raise NetlistParseError("parse_models(): Unknown model (" +
+                                    model_type + ") on line " + str(line_n) +
+                                    ".\n\t" + line,)
         models.update({model_label: model_iter})
     return models
 
@@ -373,7 +375,7 @@ def parse_elem_resistor(line, circ):
     """
     line_elements = line.split()
     if len(line_elements) < 4 or (len(line_elements) > 4 and not line_elements[4][0] == "*"):
-        raise NetlistParseError("")
+        raise NetlistParseError("parse_elem_resistor(): malformed line")
 
     ext_n1 = line_elements[1]
     ext_n2 = line_elements[2]
@@ -383,7 +385,7 @@ def parse_elem_resistor(line, circ):
     value = convert_units(line_elements[3])
 
     if value == 0:
-        raise NetlistParseError("ZERO-valued resistors are not allowed.")
+        raise NetlistParseError("parse_elem_resistor(): ZERO-valued resistors are not allowed.")
 
     elem = devices.Resistor(part_id=line_elements[0], n1=n1, n2=n2, value=value)
 
@@ -410,7 +412,7 @@ def parse_elem_capacitor(line, circ):
     if len(line_elements) < 4 or \
        (len(line_elements) > 5 and not line_elements[5][0] == "*" and
         not line_elements[4][0] == "*"):
-        raise NetlistParseError("")
+        raise NetlistParseError("parse_elem_capacitor(): malformed line")
 
     ic = None
     if len(line_elements) == 5 and not line_elements[4][0] == '*':
@@ -418,7 +420,7 @@ def parse_elem_capacitor(line, circ):
         if label == "ic":
             ic = convert_units(value)
         else:
-            raise NetlistParseError("unknown parameter " + label)
+            raise NetlistParseError("parse_elem_capacitor(): unknown parameter " + label)
 
     ext_n1 = line_elements[1]
     ext_n2 = line_elements[2]
@@ -446,16 +448,10 @@ def parse_elem_inductor(line, circ):
 
     elements_list : list
         A list containing a :class:`ahkab.devices.Inductor` element.
-
-    Parameters:
-    line: the line
-    circ: the circuit instance.
-
-    Returns: [inductor_elem]
     """
     line_elements = line.split()
     if len(line_elements) < 4 or (len(line_elements) > 5 and not line_elements[6][0] == "*"):
-        raise NetlistParseError("")
+        raise NetlistParseError("parse_elem_inductor(): malformed line")
 
     ic = None
     if len(line_elements) == 5 and not line_elements[4][0] == '*':
@@ -463,7 +459,7 @@ def parse_elem_inductor(line, circ):
         if label == "ic":
             ic = convert_units(value)
         else:
-            raise NetlistParseError("unknown parameter " + label)
+            raise NetlistParseError("parse_elem_inductor(): unknown parameter " + label)
 
     ext_n1 = line_elements[1]
     ext_n2 = line_elements[2]
@@ -494,7 +490,7 @@ def parse_elem_inductor_coupling(line, circ, elements=[]):
     """
     line_elements = line.split()
     if len(line_elements) < 4 or (len(line_elements) > 4 and not line_elements[5][0] == "*"):
-        raise NetlistParseError("")
+        raise NetlistParseError("parse_elem_inductor_coupling(): malformed line")
 
     part_id = line_elements[0]
     L1 = line_elements[1]
@@ -505,7 +501,7 @@ def parse_elem_inductor_coupling(line, circ, elements=[]):
     except ValueError:
         (label, value) = parse_param_value_from_string(line_elements[3])
         if not label == "k":
-            raise NetlistParseError("unknown parameter " + label)
+            raise NetlistParseError("parse_elem_inductor_coupling(): unknown parameter " + label)
         Kvalue = convert_units(value)
 
     L1elem, L2elem = None, None
@@ -517,8 +513,8 @@ def parse_elem_inductor_coupling(line, circ, elements=[]):
             L2elem = e
 
     if L1elem is None or L2elem is None:
-        error_msg = "One or more coupled inductors for " + \
-                    "%s were not found: %s (found: %s), %s (found: %s)." % \
+        error_msg = "parse_elem_inductor_coupling(): One or more coupled" + \
+                    " inductors for %s were not found: %s (found: %s), %s (found: %s)." % \
                     (part_id, L1, L1elem is not None, L2, L2elem is not None)
         raise NetlistParseError(error_msg)
 
@@ -550,7 +546,7 @@ def parse_elem_vsource(line, circ):
     """
     line_elements = line.split()
     if len(line_elements) < 3:
-        raise NetlistParseError("")
+        raise NetlistParseError("parse_elem_vsource(): malformed line")
 
     dc_value = None
     vac = None
@@ -576,25 +572,32 @@ def parse_elem_vsource(line, circ):
                 param_number = 6
             elif value == 'sin':
                 param_number = 5
+            elif value == 'sffm':
+                param_number = 5
             else:
-                raise NetlistParseError("unknown signal type.")
+                raise NetlistParseError("parse_elem_vsource(): unknown signal" +
+                                        "type %s" % value)
             if param_number and function is None:
-                function = parse_time_function(
-                    value, line_elements[index + 1:index + param_number + 1], "voltage")
+                function = parse_time_function(value,
+                                               line_elements[index + 1:
+                                                             index + param_number
+                                                             + 1],
+                                               "voltage")
                 index = index + param_number
                 # continue
             elif function is not None:
-                raise NetlistParseError("only a time function can be defined.")
+                raise NetlistParseError("parse_elem_vsource(): only a time function can be defined.")
         elif label == 'vdc':
             dc_value = convert_units(value)
         elif label == 'vac':
             vac = convert_units(value)
         else:
-            raise NetlistParseError("")
+            raise NetlistParseError("parse_elem_vsource(): unknown type %s" %
+                                    label)
         index = index + 1
 
     if dc_value == None and function == None:
-        raise NetlistParseError("neither vdc nor a time function are defined.")
+        raise NetlistParseError("parse_elem_vsource(): neither vdc nor a time function are defined.")
 
     # usual
     ext_n1 = line_elements[1]
@@ -630,7 +633,7 @@ def parse_elem_isource(line, circ):
     """
     line_elements = line.split()
     if len(line_elements) < 3:
-        raise NetlistParseError("")
+        raise NetlistParseError("parse_elem_isource(): malformed line")
 
     dc_value = None
     iac = None
@@ -656,24 +659,28 @@ def parse_elem_isource(line, circ):
                 param_number = 6
             elif value == 'sin':
                 param_number = 5
+            elif value == 'sffm':
+                param_number = 5
             else:
-                raise NetlistParseError("unknown signal type.")
+                raise NetlistParseError("parse_elem_isource(): unknown signal type.")
             if param_number and function is None:
-                function = parse_time_function(
-                    value, line_elements[index + 1:index + param_number + 1], "current")
+                function = parse_time_function(value,
+                                               line_elements[index + 1:
+                                                             index + param_number + 1],
+                                               "current")
                 index = index + param_number
             elif function is not None:
-                raise NetlistParseError("only a time function can be defined.")
+                raise NetlistParseError("parse_elem_isource(): only a time function can be defined.")
         elif label == 'idc':
             dc_value = convert_units(value)
         elif label == 'iac':
             iac = convert_units(value)
         else:
-            raise NetlistParseError("")
+            raise NetlistParseError("parse_elem_isource(): unknown type "+label)
         index = index + 1
 
     if dc_value == None and function == None:
-        raise NetlistParseError("neither idc nor a time function are defined.")
+        raise NetlistParseError("parse_elem_isource(): neither idc nor a time function are defined.")
 
     ext_n1 = line_elements[1]
     ext_n2 = line_elements[2]
@@ -742,7 +749,7 @@ def parse_elem_diode(line, circ, models=None):
             else:
                 off = convert_boolean(value)
         else:
-            raise NetlistParseError("unknown parameter " + param)
+            raise NetlistParseError("parse_elem_diode(): unknown parameter " + param)
 
     ext_n1 = line_elements[1]
     ext_n2 = line_elements[2]
@@ -750,7 +757,7 @@ def parse_elem_diode(line, circ, models=None):
     n2 = circ.add_node(ext_n2)
 
     if model_label not in models:
-        raise NetlistParseError("Unknown model id: " + model_label)
+        raise NetlistParseError("parse_elem_diode(): Unknown model id: " + model_label)
     elem = diode.diode(part_id=line_elements[0], n1=n1, n2=n2, model=models[
                        model_label], AREA=Area, ic=ic, off=off)
     return [elem]
@@ -781,7 +788,7 @@ def parse_elem_mos(line, circ, models):
 
     line_elements = line.split()
     if len(line_elements) < 6:
-        raise NetlistParseError("required parameters are missing.")
+        raise NetlistParseError("parse_elem_mos(): required parameters are missing.")
         # print "MX ND NG NS model_id W=xxx L=xxx"
 
     model_label = line_elements[5]
@@ -797,31 +804,24 @@ def parse_elem_mos(line, circ, models):
     for index in range(6, len(line_elements)):
         if line_elements[index][0] == '*':
             break
-
         param, value = parse_param_value_from_string(line_elements[index])
-
-        # if param == 'kp':
-        #   kp = convert_units(value)
         if param == "w":
             w = convert_units(value)
         elif param == "l":
             l = convert_units(value)
-        # elif param == "vt":
-        #   vt = convert_units(value)
         elif param == "m":
             m = convert_units(value)
-        # elif param == "vt":
-        #   n = convert_units(value)
-        # elif param == "type":
-        #   if value != 'n' and value != 'p':
-        #       raise NetlistParseError, "unknown mos type "+value
-        #   mos_type = value
+        elif param == "n":
+           n = convert_units(value)
         else:
-            raise NetlistParseError("unknown parameter " + param)
+            raise NetlistParseError("parse_elem_mos(): unknown parameter " + param)
 
     if (w is None) or (l is None):
-        raise NetlistParseError("required parameter is missing.")
-        # print "MX ND NG NS W=xxx L=xxx <LAMBDA=xxx>"
+        raise NetlistParseError('parse_elem_mos(): required parameter ' +
+                                'w'*(w is None) + ' and '*
+                                (w is None and l is None) + 'l'*(l is None)+
+                                'missing.')
+        # print "MX ND NG NS W=xxx L=xxx <M=xxx> <N=xxx>"
 
     ext_nd = line_elements[1]
     ext_ng = line_elements[2]
@@ -833,10 +833,9 @@ def parse_elem_mos(line, circ, models):
     nb = circ.add_node(ext_nb)
 
     if model_label not in models:
-        raise NetlistParseError("Unknown model id: " + model_label)
+        raise NetlistParseError("parse_elem_mos(): Unknown model ID: " + model_label)
 
     elem = None
-
     if isinstance(models[model_label], ekv.ekv_mos_model):
         elem = ekv.ekv_device(line_elements[0], nd, ng, ns, nb, w, l,
                               models[model_label], m, n)
@@ -844,7 +843,7 @@ def parse_elem_mos(line, circ, models):
         elem = mosq.mosq_device(line_elements[0], nd, ng, ns, nb, w, l,
                                 models[model_label], m, n)
     else:
-        raise NetlistParseError("Unknown MOS model type: " + model_label)
+        raise NetlistParseError("parse_elem_mos(): Unknown MOS model type: " + model_label)
 
     return [elem]
 
@@ -1178,12 +1177,12 @@ def parse_time_function(ftype, line_elements, stype):
     :class:`ahkab.devices.exp` for more.
 
     **Returns:**
-    
+
     time_function : object
         A time-function instance
     """
     if not ftype in time_fun_specs:
-        raise NetlistParseError("Unknown time function: %s" % an_type)
+        raise NetlistParseError("Unknown time function: %s" % ftype)
     prot_params = list(copy.deepcopy(time_fun_specs[ftype]['tokens']))
 
     fun_params = {}
@@ -1479,13 +1478,13 @@ def is_valid_value_param_string(astr):
     """Has the string a form like ``<param_name>=<value>``?
 
     .. note::
-    
+
         No spaces.
 
     **Returns:**
-    
+
     ans : a boolean
-        The answer to the above question. 
+        The answer to the above question.
     """
     work_astr = astr.strip()
     if work_astr.count("=") == 1:
@@ -1497,7 +1496,7 @@ def is_valid_value_param_string(astr):
 
 def convert(astr, rtype, raise_exception=False):
     """Convert a string to a different representation
-    
+
     **Parameters:**
 
     astr : str
@@ -1509,7 +1508,7 @@ def convert(astr, rtype, raise_exception=False):
     raise_exception : boolean, optional
         Set this flag to ``True`` if you wish for this function to raise
         ``ValueError`` if parsing fails.
-    
+
     **Returns:**
 
     ret : object
@@ -1548,7 +1547,7 @@ def parse_param_value_from_string(astr, rtype=float, raise_exception=False):
     raise_exception : boolean, optional
         Set this flag to ``True`` if you wish for this function to raise
         ``ValueError`` if parsing fails.
-    
+
     **Returns:**
 
     ret : object
@@ -1567,7 +1566,7 @@ def parse_param_value_from_string(astr, rtype=float, raise_exception=False):
     Notice that in ``<param>=<value>`` there is no space before or after the equal sign.
 
     **Returns:**
-    
+
     alist : ``[param, value]``
         where ``param`` is a string and ``value`` is parsed as described.
     """
