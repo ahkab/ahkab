@@ -129,14 +129,14 @@ from .pss import specs as pss_spec
 from .pz import specs as pz_specs
 from .symbolic import specs as symbolic_spec
 from .time_functions import time_fun_specs
-from .time_functions import sin, pulse, exp
+from .time_functions import sin, pulse, exp, sffm
 
 specs = {}
 for i in dc_spec, ac_spec, tran_spec, pss_spec, symbolic_spec, pz_specs:
     specs.update(i)
 
 time_functions = {}
-for i in sin, pulse, exp:
+for i in sin, pulse, exp, sffm:
     time_functions.update({i.__name__:i})
 
 def parse_circuit(filename, read_netlist_from_stdin=False):
@@ -1166,15 +1166,16 @@ def parse_time_function(ftype, line_elements, stype):
     **Parameters:**
 
     ftype : str
-        One among ``"pulse"``, ``"exp"`` or ``"sin"``
+        One among ``"pulse"``, ``"exp"``, ``"sin"`` or ``"sffm"``.
     line_elements : list of strings
         The tokens describing the time function. The list mustn't hold the
         ``"type=<ftype>"`` element
     stype : str
         Set this to "current" for current sources, "voltage" for voltage sources
 
-    See :class:`ahkab.devices.pulse`, :class:`ahkab.devices.sin`,
-    :class:`ahkab.devices.exp` for more.
+    See :class:`ahkab.time_functions.pulse`, :class:`ahkab.time_functions.sin`,
+    :class:`ahkab.time_functions.exp`, :class:`ahkab.time_functions.sffm` for
+    more.
 
     **Returns:**
 

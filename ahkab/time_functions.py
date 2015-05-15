@@ -35,6 +35,7 @@ Classes defined in this module
     pulse
     sin
     exp
+    sffm
 
 Defining custom time functions
 ------------------------------
@@ -209,9 +210,58 @@ time_fun_specs = {'sin': { #VO VA FREQ TD THETA
                'needed': True,
                'dest': 'per',
                'default': None
+               })
+        }, 'sffm': { ## SFFM(VO VA FC MDI FS TD)
+    'tokens': ({
+               'label': 'vo',
+               'pos': 0,
+               'type': float,
+               'needed': True,
+               'dest': 'vo',
+               'default': None
                },
-               )
-}}
+               {
+               'label': 'va',
+               'pos': 1,
+               'type': float,
+               'needed': True,
+               'dest': 'va',
+               'default': None
+               },
+               {
+               'label': 'fc',
+               'pos': 2,
+               'type': float,
+               'needed': False,
+               'dest': 'fc',
+               'default': None
+               },
+               {
+               'label': 'mdi',
+               'pos': 3,
+               'type': float,
+               'needed': True,
+               'dest': 'mdi',
+               'default': None
+               },
+               {
+               'label': 'fs',
+               'pos': 4,
+               'type': float,
+               'needed': True,
+               'dest': 'fs',
+               'default': None
+               },
+               {
+               'label': 'td',
+               'pos': 5,
+               'type': float,
+               'needed': False,
+               'dest': 'td',
+               'default': 0.
+               })
+        }
+}
 
 #
 # Functions for time dependent sources  #
@@ -294,7 +344,7 @@ class sin:
 
     .. math::
 
-        f(t) = v_o + v_a \\exp\\left[-(t - t_d)\,\\mathrm{THETA}\\right] \\sin\\left[2 \\pi f (t - t_d) + \\pi \\phi/180\\right]
+        f(t) = v_o + v_a \\exp\\left[-(t - t_d)\,\\theta \\right] \\sin\\left[2 \\pi f (t - t_d) + \\pi \\phi/180\\right]
 
     **Parameters:**
 
@@ -411,3 +461,64 @@ class exp:
             self._type.lower() + "2=" + str(self.v2) + \
             " td1=" + str(self.td1) + " td2=" + str(self.td2) + \
             " tau1=" + str(self.tau1) + " tau2=" + str(self.tau2)
+
+
+class sffm:
+    """Single-Frequency FM time function
+
+    .. image:: images/elem/fm.svg
+
+    Mathematically, it is described by the equations:
+
+    * :math:`0 \\le t \\le t_D`:
+
+    .. math::
+
+        f(t) = V_O
+
+    * :math:`t > t_D`
+
+    .. math::
+
+        f(t) = V_O + V_A \\cdot \\sin \\left[2\\pi f_C (t - t_D) + MDI
+               \\sin \\left[2 \\pi f_S (t - t_D) \\right] \\right]
+
+    **Parameters:**
+
+    vo : float
+        Offset in Volt or Ampere.
+    va : float
+        Amplitude in Volt or Ampere.
+    fc : float
+        Carrier frequency in Hz.
+    mdi : float
+        Modulation index.
+    fs : float
+        Signal frequency in HZ.
+    td : float
+        Time delay before the signal begins, in seconds.
+    """
+    # SFFM(VO VA FC MDI FS)
+
+    def __init__(self, vo, va, fc, mdi, fs, td):
+        self.vo = vo
+        self.va = va
+        self.fc = fc
+        self.mdi = mdi
+        self.fs = fs
+        self.td = td
+        self._type = "V"
+
+    def value(self, time):
+        """Evaluate the SFFM function at the given time."""
+        if time <= self.td:
+            return self.vo
+        else:
+            return self.vo + self.va*math.sin(2*math.pi*self.fc*(time - self.td) +
+                                              self.mdi*math.sin(2*math.pi*self.fs*
+                                                                (time - self.td))
+                                              )
+
+    def __str__(self):
+        return "type=sffm vo=%g va=%g fc=%g mdi=%g fs=%g td=%g" % \
+                (self.vo, self.va, self.fc, self.mdi, self.fs, self.td)

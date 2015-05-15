@@ -1,0 +1,7 @@
+* TEST SFFM
+V1 1 0 type=vdc vdc=0 type=SFFM 0 1M 20K 10 5K
+R1 1 0 1
+I2 2 0 type=idc idc=0 type=SFFM 0 1 20K 10 5K
+R2 2 0 1
+.TRAN .0005M .5M
+*.PLOT TRAN V(1) V(2)

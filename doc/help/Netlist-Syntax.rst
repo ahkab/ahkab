@@ -173,7 +173,8 @@ Voltage source
 
 ``v<string> n1 n2 [type=vdc vdc=float] [type=vac vac=float] [type=....]``
 
-Where the third type (if added) is one of: ``sin``, ``pulse``, ``exp``.
+Where the third type (if added) is one of: ``sin``, ``pulse``, ``exp``,
+``sffm``.
 
 Current source
 ''''''''''''''
@@ -438,6 +439,78 @@ A square wave.
 ::
 
     type=pulse v1=<float> v2=<float> td=<float> tr=<float> tf=<float> pw=<float> per=<float>
+
+or:
+
+::
+
+    PULSE <V1> <V2> <TD> <TR> <TF> <PW> <PER>
+
+
+**Parameters:**
+
+=========  ====================  =============  =======
+Parameter  Meaning               Default value  Units
+=========  ====================  =============  =======
+V1         first value                          V or A
+V2         second value	                        V or A
+TD         delay time            0.0            s
+TR         rise time                            s
+TF         fall time                            s
+PW         pulse width                          s
+PER        periodicity interval                 s
+=========  ====================  =============  =======
+
+
+Single-Frequency Frequency Modulation (SFFM)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A SFFM wave.
+
+.. image:: ../images/elem/fm.svg
+
+It may be described with any of the following syntaxes:
+
+::
+
+    TYPE=sffm <VO> <VA> <FC> <MDI> <FS> [<TD>]
+
+or
+
+::
+
+    type=sffm vo=<float> v=<float> f=<float> md=<float> f=<float> +
+    [td=<float>]
+
+Mathematically, it is described by the equations:
+
+* :math:`0 \le t \le t_D`:
+
+.. math::
+
+    f(t) = V_O
+
+* :math:`t > t_D`
+
+.. math::
+
+    f(t) = V_O + V_A \cdot \sin \left[2\pi f_C (t - t_D) + MDI
+           \sin \left[2 \pi f_S (t - t_D) \right] \right]
+
+
+**Parameters:**
+
+=========  ==================  =============  =======
+Parameter  Meaning             Default value  Units
+=========  ==================  =============  =======
+VO         offset                             V or A
+VA         amplitude                          V or A
+FC         carrier frequency                  Hz
+MDI        modulation index
+FS         signal frequency                   HZ
+TD         time delay          0.0            s
+=========  ==================  =============  =======
+
 
 
 Device models
