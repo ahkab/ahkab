@@ -300,19 +300,14 @@ class sin:
 
     vo : float
         Offset value.
-
     va : float
         Amplitude.
-
     freq : float
         Sine frequency in Hz.
-
     td : float, optional
         time delay before beginning the sinusoidal time variation, in seconds. Defaults to 0.
-
     theta : float optional
         damping factor in 1/s. Defaults to 0 (no damping).
-
     phi : float, optional
         Phase delay in degrees. Defaults to 0 (no phase delay).
     """
@@ -376,19 +371,14 @@ class exp:
 
     v1 : float
         Initial value.
-
     v2 : float
         Pulsed value.
-
     td1 : float
         Rise delay time in seconds.
-
     td2 : float
         Fall delay time in seconds.
-
     tau1 : float
         Rise time constant in seconds.
-
     tau2 : float
         Fall time constant in seconds.
     """
