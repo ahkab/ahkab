@@ -1,9 +1,9 @@
 * AM TEST
-V1 1 0 type=AM 10 1 100 1K 1M
+V1 1 0 type=vdc vdc=0 type=AM 10 1 100 1K 1M
 R1 1 0 1
-V2 2 0 type=AM 2.5 4 100 1K 1M
+V2 2 0 type=vdc vdc=0 type=AM 2.5 4 100 1K 1M
 R2 2 0 1
-I3 3 0 type=AM 10 1 1K 100 1M
+I3 3 0 type=idc idc=0 type=AM 10 1 1K 100 1M
 R3 3 0 1
 .TRAN .01M 20M
 *.plot TRAN v(1) v(2) v(3)
