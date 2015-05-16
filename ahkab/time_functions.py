@@ -325,7 +325,7 @@ time_fun_specs = {'sin': { #VO VA FREQ TD THETA
 # Functions for time dependent sources  #
 #
 
-class pulse:
+class pulse(object):
     """Square wave aka pulse function
 
     .. image:: images/elem/pulse.svg
@@ -385,7 +385,7 @@ class pulse:
             " pw=" + str(self.pw)
 
 
-class sin:
+class sin(object):
     """Sine wave
 
     .. image:: images/elem/sin.svg
@@ -453,7 +453,7 @@ class sin:
             " td=" + str(self.td)
 
 
-class exp:
+class exp(object):
     """Exponential time function
 
     .. image:: images/elem/exp.svg
@@ -527,7 +527,7 @@ class exp:
             " tau1=" + str(self.tau1) + " tau2=" + str(self.tau2)
 
 
-class sffm:
+class sffm(object):
     """Single-Frequency FM time function
 
     .. image:: images/elem/fm.svg
@@ -587,7 +587,7 @@ class sffm:
         return "type=sffm vo=%g va=%g fc=%g mdi=%g fs=%g td=%g" % \
                 (self.vo, self.va, self.fc, self.mdi, self.fs, self.td)
 
-class am:
+class am(object):
     """Amplitude Modulation (AM) time function
 
     .. image:: images/elem/am.svg
