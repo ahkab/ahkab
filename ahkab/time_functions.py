@@ -45,14 +45,30 @@ Defining a custom time function is easy, all you need is:
 
 * An object ``obj`` with a ``__call__(self, time)`` method.
 
+
 The simulator will call ``obj(self, time)`` of the class instance you provide
-at every time step in time-based simulations. It expects to receive as return
-value a ``float``, corresponding to the value of the voltage applied by the
-voltage source, in Volt, if the custom time function was passed to
-:class:`VSource`, or to the value of the current flowing through the current
-source, if the custom time function was passed to :class:`ISource`.
+at every time step in time-based simulations.
+
+In turn, the simulator expects to receive as return
+value a ``float``, corresponding to the value of the time-dependant function at
+the time specified by the ``time`` variable.
+
+If the time-dependant function is used to define the time-dependant
+characteristics of a voltage source (:class:`VSource`), its return value has to
+be expressed in Volt. In the case of a current source (:class:`VSource`) the
+return value is to be expressed in Ampere.
 
 The standard notation applies.
+
+.. note::
+
+    The method ``__call__`` is what Python accesses when the object is called.
+
+.. note::
+
+    The object ``obj`` above may very well be a function. In that case, the
+    function object is already callable and there is no need to define the
+    ``__call__`` method.
 
 Module reference
 ----------------
@@ -402,6 +418,12 @@ class sin:
         damping factor in 1/s. Defaults to 0 (no damping).
     phi : float, optional
         Phase delay in degrees. Defaults to 0 (no phase delay).
+
+    .. note::
+
+        This implementation is consistent with the SPICE simulator, other simulators use
+        different formulae.
+
     """
     # SIN(VO VA FREQ TD THETA)
 
