@@ -96,6 +96,8 @@ def _setup_plot(fig, title, xvu, yvu, log=False, xlog=False, ylog=False):
         Whether to set the y-axis scale to ``log``.
 
     """
+    # set the currently active figure to fig
+    pylab.figure(fig.number)
     # xvar, xunit = xvu
     pylab.title(title.upper())
     ax = pylab.gca()
