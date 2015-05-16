@@ -1,5 +1,5 @@
-Transient simulation example
-============================
+Transient example
+=================
 
 Introduction
 """"""""""""

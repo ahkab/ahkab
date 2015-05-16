@@ -1,5 +1,5 @@
-Pole-Zero simulation example
-============================
+Pole-Zero example
+=================
 
 Giuseppe Venturini, Thu May 7, 2015
 

@@ -1,4 +1,4 @@
-Operating point examples
+Operating Point examples
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Introduction
