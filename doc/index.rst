@@ -31,8 +31,15 @@ General help pages
    help/Command-Line-Help
    help/Netlist-Syntax
 
+Getting started: examples and tutorials
+---------------------------------------
+
+``ahkab`` can be used from Python as a module and from the shell through its
+Command Line Interface (CLI).
+
+
 Simulating from Python
-----------------------
+**********************
 
 .. toctree::
    :maxdepth: 1
@@ -41,8 +48,8 @@ Simulating from Python
    examples/Python_API
    examples/PZ_Example
 
-Examples of simulation from the CLI
------------------------------------
+Simulating from the command line
+********************************
 
 .. toctree::
    :maxdepth: 1
