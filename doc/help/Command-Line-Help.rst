@@ -9,7 +9,7 @@ Several switches are available, to set the input and output files
 and to override some built-in options.
 
 Notice that options set on the command line always take precedence
-on any netlist option or any value set in :module:`ahkab.options`.
+on any netlist option or any value set in :mod:`ahkab.options`.
 
 Usage:
 ------
