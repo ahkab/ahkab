@@ -17,9 +17,11 @@ needed.
    :alt: A basic circuit block
    :align: center
 
-He clicks *Simulate*. The results are surprising to him, something he
-has not taken into account has influenced his simulation and the numbers
-are slightly off.
+He draws the circuit and, without even thinking about it, he clicks *Simulate*.
+
+The results are surprising to him, something he has not taken into account has
+influenced his simulation and the numbers are slightly off. Or maybe the
+schematic was drawn in a rush?
 
 He starts fiddling with the design parameters. Make some transistors
 bigger. Now, make a few others smaller. *Shouldn't this fix it?* - he
@@ -40,10 +42,11 @@ make up for the "secondary" parts that were removed in order to simplify
 the circuit, quantities that make no sense in the physical world.
 
 After going down the road of compulsive circuit simulation, little is
-left of the initial, promising design and our young engineer feels like
-hitting his head against the keyboard of his workstation.
+left of the initial, promising design and our young engineer feels lost,
+frustrated and he's metaphorically about to hitting his head against the
+keyboard of his workstation.
 
-And: where's the fun of doing circuit design this way?
+*Where's the fun of doing circuit design this way?*
 
 In the end
 ''''''''''
@@ -51,13 +54,15 @@ In the end
 We have seen the above before... and that's not how our beloved
 microelectronic work should be.
 
-Circuit simulators are a tool. An insidious one at it, as we may naively
-use them instead of our gray matter, blindly trusting our models or
-giving in to the temptation of manual, broken "optimization" fiddling,
-rather than as a verification tool, area where they truly excel.
+Circuit simulators are just a tool. An insidious one at it, as we may naively
+use them instead of our gray matter, blindly trusting our models or giving in to
+the temptation of manual, broken "optimization" fiddling, rather than as a
+verification tool, area where they truly excel.
 
-It doesn't help much that is often not so straightforward to debug a
-simulation, which brings us to:
+It doesn't help much that often neither it is straightforward to debug a
+simulation, nor it is clear what exactly the simulator is doing.
+
+Which brings us to:
 
 What we try to do here with ``ahkab``
 -------------------------------------
@@ -65,10 +70,9 @@ What we try to do here with ``ahkab``
 The ``ahkab`` circuit simulator is an experiment.
 
 We have no expectation that our proof-of-concept, sometimes buggy, small
-circuit simulation tool will be replacing or stealing users from any of
-the mainstream circuit simulators: they are mainstream for good reasons
-and they very much deserve the praise and money we pay. It would be
-foolish to think otherwise.
+circuit simulation tool will be replacing the mainstream circuit simulators:
+they are mainstream for good reasons and they very much deserve the praise and
+money we pay. It would be foolish to think otherwise.
 
 1. Peek under the hood
 ''''''''''''''''''''''
@@ -85,7 +89,7 @@ while requiring us to sacrifice raw speed, should make it relatively
 easy to see what's going on behind the hood.
 
 And the algorithms are there for you to see, inspect and, if need be,
-correct. Too often scientific papers about software come with no
+correct: too often scientific papers about software come with no
 available implementation or the source is not distributed: with
 ``ahkab`` all code is available under a copy-left license, allowing you
 to benefit of the code, modify it and giving others the same freedom.
@@ -106,3 +110,4 @@ to include your work!*)
 All in all, we hope this little project helps you understand better what
 will goes on in your circuit when you implement it, when you simulate it
 and especially *we wish you have fun while doing so!*
+
