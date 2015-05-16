@@ -39,7 +39,7 @@ def test_sffm():
                                                  td=tdn))))
     t = np.linspace(0, 1e-3, 3e3)
     for ti in t:
-        assert np.allclose(f.value(ti), float(FS(ti)), rtol=1e-4)
+        assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
 
 def test_am():
     """Test time_functions.am"""
@@ -54,7 +54,7 @@ def test_am():
                                                   oc=ocn, td=tdn))))
     t = np.linspace(0, 20e-3, 3e3)
     for ti in t:
-        assert np.allclose(f.value(ti), float(FS(ti)), rtol=1e-4)
+        assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
 
 
 if __name__ == '__main__':

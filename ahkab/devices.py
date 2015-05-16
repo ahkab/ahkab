@@ -564,7 +564,7 @@ class ISource(Component):
             (time == None and self.dc_value is not None):
             return self.dc_value
         else:
-            return self._time_function.value(time)
+            return self._time_function(time)
 
     def get_netlist_elem_line(self, nodes_dict):
         """A netlist line that, parsed, evaluates to the same instance
@@ -692,7 +692,7 @@ class VSource(Component):
                 (time is None and self.dc_value is not None):
             return self.dc_value
         else:
-            return self._time_function.value(time)
+            return self._time_function(time)
 
     def get_netlist_elem_line(self, nodes_dict):
         """A netlist line that, parsed, evaluates to the same instance

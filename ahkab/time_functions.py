@@ -43,9 +43,9 @@ Defining custom time functions
 
 Defining a custom time function is easy, all you need is:
 
-* An object with a ``value(self, time)`` method.
+* An object ``obj`` with a ``__call__(self, time)`` method.
 
-The simulator will call ``value(self, time)`` of the class instance you provide
+The simulator will call ``obj(self, time)`` of the class instance you provide
 at every time step in time-based simulations. It expects to receive as return
 value a ``float``, corresponding to the value of the voltage applied by the
 voltage source, in Volt, if the custom time function was passed to
@@ -346,7 +346,7 @@ class pulse:
         self.pw = pw
         self._type = "V"
 
-    def value(self, time):
+    def __call__(self, time):
         """Evaluate the pulse function at the given time."""
         time = time - self.per * int(time / self.per)
         if time < self.td:
@@ -414,7 +414,7 @@ class sin:
         self.phi = phi
         self._type = "V"
 
-    def value(self, time):
+    def __call__(self, time):
         """Evaluate the sine function at the given time."""
         if time < self.td:
             return self.vo + self.va*math.sin(math.pi*self.phi/180.)
@@ -485,7 +485,7 @@ class exp:
         self.tau2 = tau2
         self._type = "V"
 
-    def value(self, time):
+    def __call__(self, time):
         """Evaluate the exponential function at the given time."""
         if time < self.td1:
             return self.v1
@@ -551,7 +551,7 @@ class sffm:
         self.td = td
         self._type = "V"
 
-    def value(self, time):
+    def __call__(self, time):
         """Evaluate the SFFM function at the given time."""
         if time <= self.td:
             return self.vo
@@ -608,7 +608,7 @@ class am:
         self.td = td
         self._type = "V"
 
-    def value(self, time):
+    def __call__(self, time):
         """Evaluate the AM function at the given time."""
         if time <= self.td:
             return 0.
