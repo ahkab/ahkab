@@ -566,7 +566,7 @@ class sffm:
                 (self.vo, self.va, self.fc, self.mdi, self.fs, self.td)
 
 class am:
-    """AM time function
+    """Amplitude Modulation (AM) time function
 
     .. image:: images/elem/am.svg
 
@@ -583,7 +583,7 @@ class am:
     .. math::
 
         f(t) = SA \\cdot \\left[OC + \\sin \\left[2\\pi f_m (t - t_D) \\right]
-               \\cdot \\sin \\left[2 \\pi f_c (t - t_D) \\right]
+               \\right] \\cdot \\sin \\left[2 \\pi f_c (t - t_D) \\right]
 
     **Parameters:**
 
