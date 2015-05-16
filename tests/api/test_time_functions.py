@@ -56,6 +56,67 @@ def test_am():
     for ti in t:
         assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
 
+def test_sin():
+    """Test time_functions.sin"""
+    vo, va, freq, td, theta, phi, time = sympy.symbols('vo, va, freq, td, ' +
+                                                       'theta, phi, time')
+    F = vo + va*sympy.sin(sympy.pi*phi/180)*Heaviside(td - time) + \
+             va*sympy.sin(2*sympy.pi*freq*(time - td) + sympy.pi*phi/180)* \
+             sympy.exp(-(time - td)*theta)*Heaviside(time - td)
+
+    von, van, freqn, tdn, thetan, phin = 0.1, 3, 20e3, 0.5e-3, 1e2, 50.
+    f = time_functions.sin(vo=von, va=van, freq=freqn, td=tdn, theta=thetan,
+                           phi=phin)
+    FS = sympy.lambdify(time, sympy.N(F.subs(dict(vo=von, va=van, freq=freqn,
+                                                  td=tdn, theta=thetan,
+                                                  phi=phin))))
+    t = np.linspace(0, 1e-3, 3e3)
+    for ti in t:
+        assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
+
+def test_exp():
+    """Test time_functions.exp"""
+    v1, v2, td1, tau1, td2, tau2, time = sympy.symbols('v1, v2, td1, tau1, ' +
+                                                       'td2, tau2, time')
+    F = v1 + (v2 - v1)*(1 - sympy.exp(-(time - td1)/tau1))*Heaviside(time - td1) +\
+             (v1 - v2)*(1 - sympy.exp(-(time - td2)/tau2))*Heaviside(time - td2)
+    v1n, v2n, td1n, tau1n, td2n, tau2n = 0.1, 3, 0.33e-3, 0.2e-3, .66e-3, .11e-3
+    f = time_functions.exp(v1=v1n, v2=v2n, td1=td1n, tau1=tau1n, td2=td2n, tau2=tau2n)
+    FS = sympy.lambdify(time, sympy.N(F.subs(dict(v1=v1n, v2=v2n, td1=td1n,
+                                                  tau1=tau1n, td2=td2n,
+                                                  tau2=tau2n))))
+    t = np.linspace(0, 1e-3, 3e3)
+    for ti in t:
+        assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
+
+def test_pulse():
+    """Test time_functions.pulse"""
+    # as we cannot define a periodic function in sympy, we will only check one
+    # period
+    v1, v2, td, tr, pw, tf, per, time = sympy.symbols('v1, v2, td, tr, pw, ' +
+                                                      'tf, per, time')
+    F = v1*Heaviside(td - time) + \
+        ((v2 - v1)/tr*time + v1 +(v1 - v2)*td/tr)* \
+        Heaviside(time - td)*Heaviside(td + tr - time) + \
+        v2*Heaviside(time - td - tr)*Heaviside(td + tr + pw - time) + \
+        ((v1 - v2)/tf*time + v2 + (-v1*(pw + td + tr) + v2*(pw + td + tr))/tf)* \
+        Heaviside(time - td - tr - pw)*Heaviside(td + tr + pw + tf - time) + \
+        v1*Heaviside(time - td - tr - pw - tf)
+
+    v1n, v2n, tdn, trn, pwn, tfn, pern = (-2, 3, 0.1e-3, 0.05e-3, .5e-3, .01e-3,
+                                         1e-3)
+    f = time_functions.pulse(v1=v1n, v2=v2n, td=tdn, tr=trn, pw=pwn, tf=tfn,
+                             per=pern)
+    FS = sympy.lambdify(time, sympy.N(F.subs(dict(v1=v1n, v2=v2n, td=tdn,
+                                                  tr=trn, pw=pwn, tf=tfn,
+                                                  per=pern))))
+    t = np.linspace(0, 1e-3, 1e3)
+    for ti in t:
+        assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
 
 if __name__ == '__main__':
     test_sffm()
+    test_am()
+    test_sin()
+    test_exp()
+    test_pulse()
