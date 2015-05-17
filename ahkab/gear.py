@@ -152,7 +152,7 @@ def get_df(pv_array, suggested_step, predict=False):
         s.append(suggested_step + pv_array[0][0] - pv_array[index - 1][0])
 
     # build e[k, i]
-    e = np.mat(np.zeros((order + 2, order + 2)))
+    e = np.zeros((order + 2, order + 2))
     for k_index in range(1, order + 2):
         for i_index in range(1, order + 2):
             if i_index == k_index:
@@ -160,14 +160,14 @@ def get_df(pv_array, suggested_step, predict=False):
             else:
                 e[k_index, i_index] = s[i_index] / (s[i_index] - s[k_index])
 
-    alpha = np.mat(np.zeros((1, order + 2)))
+    alpha = np.zeros((1, order + 2))
     for k_index in range(1, order + 2):
         alpha[0, k_index] = 1.0
         for j_index in range(order + 1):
             alpha[0, k_index] = alpha[0, k_index] * e[k_index, j_index + 1]
 
     # build gamma
-    gamma = np.mat(np.zeros((1, order + 1)))
+    gamma = np.zeros((1, order + 1))
     for k_index in range(1, order + 1):
         gamma[0, k_index] = alpha[0, k_index] * \
             ((1.0 / s[order + 1]) - (1.0 / s[k_index]))
@@ -179,7 +179,7 @@ def get_df(pv_array, suggested_step, predict=False):
     # values to be returned
     C1 = gamma[0, 0]
 
-    C0 = np.mat(np.zeros(pv_array[0][1].shape))
+    C0 = np.zeros(pv_array[0][1].shape)
     for index in range(order):
         C0 = C0 + gamma[0, index + 1] * pv_array[index][1]
 
@@ -192,7 +192,7 @@ def get_df(pv_array, suggested_step, predict=False):
         (1.0/factorial(order + 1)) * x_lte_coeff
 
     if predict:
-        predict_x = np.mat(np.zeros(pv_array[0][1].shape))
+        predict_x = np.zeros(pv_array[0][1].shape)
         for index in range(1, order + 2):  # order
             predict_x = predict_x + alpha[0, index] * pv_array[index - 1][1]
 
@@ -205,4 +205,4 @@ def get_df(pv_array, suggested_step, predict=False):
         predict_x = None
         predict_lte_coeff = None
 
-    return [C1, C0, x_lte_coeff, predict_x, predict_lte_coeff]
+    return C1, C0, x_lte_coeff, predict_x, predict_lte_coeff
