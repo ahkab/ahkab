@@ -1,6 +1,49 @@
 <!-- Name: Changelog -->
 #Changelog
 
+## Changelog for v 0.17
+
+Version 0.17 represents the culmination of 15 days of efforts, yet another step
+in the current time-based release scheme.
+
+This release features a new memoization system, AM and FM time functions,
+improved docs and error message. We also got rid of the last instances of
+`np.mat` in the code.
+
+Moreover, as in the previous releases, several commits were devoted to improving
+the documentation: you can find the new, improved documentation online at
+http://ahkab.readthedocs.org/en/latest/
+
+### Features added:
+
+* FEATURES
+
+* Implement a memoization system.
+* Replace `mytime_function.value()` with `mytime_function(time)`.
+* Add AM to the time functions.
+* Add the SFFM time function.
+* `find_vde_index()` now allows for `elem` and `part_id` args.
+* `remove_elem()` now allows `elem` and `part_id` args.
+
+### Backwards incompatible changes:
+
+* the time functions have been moved to their own module, named
+  `time_functions.py`. This means code referring to the `sin`, `pulse` and `exp`
+  functions needs to change from `devices.sin` to `time_functions.sin`.
+* You now need to call `set_results()` to set `pss_solution` data.
+
+### Changes from contributors and pull requests merged:
+
+*None.* 
+
+### Bugs fixed, short list:
+
+BUGFIX: plotting: remember to set the active figure.
+BUGFIX: fix a bug in `circuit.remove_elem()`, add tests.
+BUGFIX: fix a bug in `circuit.find_vde()`, add tests.
+BUGFIX: fix error message in circuit.py.
+BUGFIX: Do not ask for prediction if we don't have enough points.
+
 ## Changelog for v 0.16
 
 Version 0.16 represents the culmination of 1 month of efforts, yet another step

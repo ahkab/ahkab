@@ -9,10 +9,10 @@ The code should be easy to read and modify, the main language is Python
 News!
 -----
 
--  Ahkab v0.16 was released on May 3 2015, including new features, many
+-  Ahkab v0.17 was released on May 17 2015, including new features,
    bugfixes and improved documentation. It is recommended to upgrade.
    Check out `the release
-   notes <https://github.com/ahkab/ahkab/releases/tag/v0.16>`__ for
+   notes <https://github.com/ahkab/ahkab/releases/tag/v0.17>`__ for
    more!
 -  The whole codebase has been going through a (yet incomplete)
    refactoring and documenting effort. The `new documentation is
@@ -205,7 +205,7 @@ and `Rob Crowther <https://github.com/weilawei>`__.
    :target: https://travis-ci.org/ahkab/ahkab
 .. |Coverage Status| image:: https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master
    :target: https://coveralls.io/r/ahkab/ahkab?branch=master
-.. |PyPi version| image:: http://img.shields.io/badge/version-0.16-brightgreen.png
+.. |PyPi version| image:: http://img.shields.io/badge/version-0.17-brightgreen.png
    :target: https://pypi.python.org/pypi/ahkab/
 .. |GPLv2 license| image:: http://img.shields.io/badge/license-GPL%20v2-brightgreen.png
    :target: https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE
