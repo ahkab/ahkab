@@ -25,8 +25,8 @@ characteristic to independent sources.
 Notice that the time functions are not restricted to those provided here, the
 user is welcome to provide his own.
 Implementing a custom time function is easy and common practice, as long as you
-are intefacing to the simulator through Python. Please see the dedicated section
-below.
+are interfacing to the simulator through Python. Please see the dedicated section
+:ref:`define-custom-time-functions` below.
 
 Classes defined in this module
 ------------------------------
@@ -38,37 +38,108 @@ Classes defined in this module
     sffm
     am
 
+Supplying a time function to an independent source
+--------------------------------------------------
+
+Providing a time-dependent characteristic to an independent source is very
+simple and probably best explained with an example.
+
+Let's say we wish to define a sinusoidal voltage source with no offset,
+amplitude 5V and 1kHz frequency.
+
+It is done in two steps:
+
+* first we define the time function with the built-in class
+  :class:`ahkab.time_functions.sin`:
+
+    .. code-block:: python
+
+        sin1k = time_functions.sin(vo=0, va=5, freq=1e3)
+
+* Then we define the voltage source and we assign the time function to it:
+
+    .. code-block:: python
+
+        cir.add_vsource('V1', 'n1', cir.gnd, 1, function=mys)
+
+In the example above, the sine wave is assigned to a voltage source ``'V1'``,
+that gets added to a circuit ``cir`` (not shown).
+
+.. _define-custom-time-functions:
+
 Defining custom time functions
 ------------------------------
 
-Defining a custom time function is easy, all you need is:
+Defining a custom time function is easy, all you need is either:
 
-* An object ``obj`` with a ``__call__(self, time)`` method.
+* A function that takes a ``float`` (the time) and returns the function
+  value,
+* An instance with a ``__call__(self, time)`` method. This solution
+  allows having internal parameters, typically set through the constructor.
 
+In both cases, in time-based simulations, the simulator will call the object at
+every time step, supplying a single parameter, the simulation time (``time`` in
+the following, of type ``float``).
 
-The simulator will call ``obj(self, time)`` of the class instance you provide
-at every time step in time-based simulations.
+In turn, the simulator expects to receive as return value a ``float``,
+corresponding to the value of the time-dependent function at the time specified
+by the ``time`` variable.
 
-In turn, the simulator expects to receive as return
-value a ``float``, corresponding to the value of the time-dependant function at
-the time specified by the ``time`` variable.
-
-If the time-dependant function is used to define the time-dependant
-characteristics of a voltage source (:class:`VSource`), its return value has to
-be expressed in Volt. In the case of a current source (:class:`VSource`) the
-return value is to be expressed in Ampere.
+If the time-dependent function is used to define the characteristics of a
+voltage source (:class:`VSource`), its return value has to be expressed in Volt.
+In the case of a current source (:class:`ISource`), the return value is to be
+expressed in Ampere.
 
 The standard notation applies.
 
-.. note::
+As an example, we'll define a custom time-dependent voltage source, having a
+:math:`\\mathrm{sinc}(ft)` characteristic. In this example, :math:`f` has a
+value of 10kHz.
 
-    The method ``__call__`` is what Python accesses when the object is called.
+First we define the time function, in this case we'll do that through the Python
+``lambda`` construct.
 
-.. note::
+.. code-block:: python
 
-    The object ``obj`` above may very well be a function. In that case, the
-    function object is already callable and there is no need to define the
-    ``__call__`` method.
+    mys = lambda t: 1 if not t else math.sin(math.pi*1e4*t)/(math.pi*1e4*t)
+
+Then, we define the circuit -- a very simple one in this case -- and assign our
+``mys`` function to ``V1``. In the following circuit, we simply apply the
+voltage from ``V1`` to a resistor ``R1``.
+
+.. code-block:: python
+
+    import ahkab
+    cir = ahkab.Circuit('Test custom time functions')
+    cir.add_resistor('R1', 'n1', cir.gnd, 1e3)
+    cir.add_vsource('V1', 'n1', cir.gnd, 1, function=mys)
+    tr = ahkab.new_tran(0, 1e-3, 1e-5, x0=None)
+    r = ahkab.run(cir, tr)['tran']
+
+Plotting ``Vn1`` and the expected result (:math:`\\mathrm{sinc}(ft)`) we
+get:
+
+.. plot::
+
+    import math
+    import numpy as np
+    import pylab
+    import ahkab
+    cir = ahkab.Circuit('Test custom time functions')
+    cir.add_resistor('R1', 'n1', cir.gnd, 1e3)
+    mys = lambda t: 1 if not t else math.sin(math.pi*1e4*t)/(math.pi*1e4*t)
+    cir.add_vsource('V1', 'n1', cir.gnd, 1, function=mys)
+    tr = ahkab.new_tran(0, 1e-3, 1e-5, x0=None)
+    r = ahkab.run(cir, tr)['tran']
+    t = r.get_x()
+    pylab.hold(True)
+    pylab.plot(t, r['vn1'], 'o', ms=3, label='V(n1) (simulation)')
+    npsin1k = np.frompyfunc(mys, 1, 1)
+    pylab.plot(t, npsin1k(t), label='sinc(ft) (theory)')
+    pylab.legend()
+    pylab.xlabel('t [s]')
+    pylab.ylabel('Voltage [V]')
+
 
 Module reference
 ----------------
@@ -454,7 +525,7 @@ class sin(object):
 
 
 class exp(object):
-    """Exponential time function
+    """Exponential wave
 
     .. image:: images/elem/exp.svg
 
@@ -528,7 +599,7 @@ class exp(object):
 
 
 class sffm(object):
-    """Single-Frequency FM time function
+    """Single-Frequency FM (SFFM) waveform
 
     .. image:: images/elem/fm.svg
 
@@ -588,7 +659,7 @@ class sffm(object):
                 (self.vo, self.va, self.fc, self.mdi, self.fs, self.td)
 
 class am(object):
-    """Amplitude Modulation (AM) time function
+    """Amplitude Modulated (AM) waveform
 
     .. image:: images/elem/am.svg
 
