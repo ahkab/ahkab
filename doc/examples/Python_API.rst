@@ -261,4 +261,5 @@ You should see the following output:
     Minimum attenuation in the stop band (6500 Hz - Inf) is 30.2088 dB
 
 `Download the python
-file. <https://raw.github.com/wiki/ahkab/ahkab/script.py>`__
+file. <https://raw.githubusercontent.com/ahkab/ahkab/master/doc/misc/script.py>`__
+
