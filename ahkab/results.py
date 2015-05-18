@@ -473,7 +473,8 @@ class op_solution(solution, _mutable_data):
         fp.flush()
         if filename != 'stdout':
             fp.close()
-        self._add_data(self.x)
+            # save to .op file
+            self._add_data(self.x)
 
     def print_short(self):
         """Print a short, essential representation of the OP results"""
