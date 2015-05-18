@@ -537,8 +537,7 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
                     source_elem = circ[index]
                     break
     if not source_elem:
-        printing.print_general_error("%s was not found." % source[0].part_id)
-        sys.exit(1)
+        raise ValueError(".DC: source %s was not found." % source)
 
     if isinstance(source_elem, devices.VSource):
         initial_value = source_elem.dc_value
