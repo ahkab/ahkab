@@ -50,7 +50,7 @@ Usage
 
 <img src="https://rawgithub.com/ahkab/ahkab/master/doc/images/readme_example/pbf.svg" alt="Example schematic: a 5th order 1kHz band-pass Butterworth filter"/>
 
-``` {.sourceCode .python}
+```python
 from ahkab import new_ac, run
 from ahkab.circuit import Circuit
 from ahkab.plotting import plot_results # calls matplotlib for you
@@ -107,7 +107,7 @@ Experience with running SPICE or related commercial simulators can be very usefu
 
 -   The development happens on the [github repository](https://github.com/ahkab/ahkab),
 -   Mostly on the master branch, with feature branch being created only for special purposes or non-trivial features.
--   Snapshots are released on a (hopefully) regular basis and are available on the [Releases pages, complete with changelog](https://github.com/ahkab/ahkab/releases) and on [PYPI](https://pypi.python.org/pypi/ahkab/)
+-   Snapshots are released on a (hopefully) regular basis and are available on the [Releases pages](https://github.com/ahkab/ahkab/releases), complete with changelog, and on [PYPI](https://pypi.python.org/pypi/ahkab/).
 
 Patches and pull requests are welcome!
 
