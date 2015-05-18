@@ -894,4 +894,6 @@ def _handle_netlist_ics(circ, an_list, ic_list):
                 an['x0'] = _x0s[an['x0']]
             elif an_list.index(an) == 0:
                 raise ValueError(("The x0 '%s' is not available." % an["x0"]) +\
-                                (an['x0'] == 'op')*" Perhaps you forgot to define an .OP?")
+                                 (an['x0'] == 'op' or an['x0'] == 'op+ic')*
+                                 " Perhaps you forgot to define an .OP?")
+
