@@ -467,6 +467,7 @@ class op_solution(solution, _mutable_data):
         for k in sorted(self._op_info.keys()):
             fp.write(printing.table(self._op_info[k], headers=self._op_keys[k][0]))
             fp.write('\n\n')
+        fp.write('Total power dissipation: %g W\n\n' % self.tot_power)
         #for opi in self.op_info:
         #    fp.write(opi)
         #    fp.write("-------------------\n")
