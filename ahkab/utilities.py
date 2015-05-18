@@ -314,17 +314,33 @@ class lin_axis_iterator:
     max : float
         The maximum value, also the end point of the axis.
     num : int
-        The number of samples to generate.
+        The number of samples to generate. In general, this should be greater than 1.
+        A value of 1 is accepted only if ``min == max``, in which case, only one
+        value is returned by the iterator: ``min``. 
 
     Start and end points are always included.
 
     Notice that, differently from numpy's ``linspace()``, the
     values are only computed at access time, and hence the
     memory footprint of the iterator is low.
+
+    :raises ValueError: if the number ``points`` is either negative or does not
+    respect the conditions above.
+
     """
 
     def __init__(self, min, max, points):
-        self.inc = (max - min) / (points - 1)
+        if points < 2 and min != max:
+            raise ValueError('Linear iterator from %d to %d with %d points.'%
+                             (min, max, points))
+        if points < 1:
+            raise ValueError('Linear iterator from %d to %d with %d points.'%
+                             (min, max, points))
+        if points > 1:
+            self.inc = (max - min) / (points - 1)
+        elif points == 1 and max == min:
+            # sometimes, they ask for this. They expect to get back [max]
+            self.inc = 0
         self.max = max
         self.min = min
         self.index = 0
