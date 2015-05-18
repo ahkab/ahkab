@@ -216,7 +216,9 @@ def new_op(guess=None, x0=None, outfile=None, verbose=0):
         if options.cli:
             outfile = 'stdout'
         else:
-            outfile = tempfile.NamedTemporaryFile(suffix='.op', delete=False).name
+            tmpfile = tempfile.NamedTemporaryFile(suffix='.op', delete=False)
+            outfile = tmpfile.name
+            tmpfile.close()
     else:
         outfile += '.op'
     return {'type': 'op', 'guess': guess, 'x0': x0, 'outfile': outfile, 'verbose': verbose}
@@ -277,7 +279,9 @@ def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None
         if options.cli:
             outfile = 'stdout'
         else:
-            outfile = tempfile.NamedTemporaryFile(suffix='.dc', delete=False).name
+            tmpfile = tempfile.NamedTemporaryFile(suffix='.dc', delete=False)
+            outfile = tmpfile.name
+            tmpfile.close()
     else:
         outfile += '.dc'
     return {
@@ -337,7 +341,9 @@ def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP,
         if options.cli:
             outfile = 'stdout'
         else:
-            outfile = tempfile.NamedTemporaryFile(suffix='.tran', delete=False).name
+            tmpfile = tempfile.NamedTemporaryFile(suffix='.tran', delete=False)
+            outfile = tmpfile.name
+            tmpfile.close()
     else:
         outfile += '.tran'
     return {"type": "tran", "tstart": tstart, "tstop": tstop, "tstep": tstep,
@@ -394,7 +400,9 @@ def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile=None, verbose
         if options.cli:
             outfile = 'stdout'
         else:
-            outfile = tempfile.NamedTemporaryFile(suffix='.ac', delete=False).name
+            tmpfile = tempfile.NamedTemporaryFile(suffix='.ac', delete=False)
+            outfile = tmpfile.name
+            tmpfile.close()
     else:
         outfile += '.ac'
     return {
@@ -455,7 +463,9 @@ def new_pss(period, x0=None, points=None, method=options.BFPSS, autonomous=False
         if options.cli:
             outfile = 'stdout'
         else:
-            outfile = tempfile.NamedTemporaryFile(suffix='.'+method.lower(), delete=False).name
+            tmpfile = tempfile.NamedTemporaryFile(suffix='.'+method.lower(), delete=False)
+            outfile = tmpfile.name
+            tmpfile.close()
     else:
         outfile += '.' + method.lower()
     return {
@@ -509,7 +519,9 @@ def new_pz(input_source=None, output_port=None, shift=0.0, MNA=None, outfile=Non
         if options.cli:
             outfile = 'stdout'
         else:
-            outfile = tempfile.NamedTemporaryFile(suffix='.pz', delete=False).name
+            tmpfile = tempfile.NamedTemporaryFile(suffix='.pz', delete=False)
+            outfile = tmpfile.name
+            tmpfile.close()
     else:
         outfile += '.pz'
     return {'type': "pz", 'input_source':input_source, 'x0':x0,
@@ -586,7 +598,9 @@ def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None
         if options.cli:
             outfile = 'stdout'
         else:
-            outfile = tempfile.NamedTemporaryFile(suffix='.symbolic', delete=False).name
+            tmpfile = tempfile.NamedTemporaryFile(suffix='.symbolic', delete=False)
+            outfile = tmpfile.name
+            tmpfile.close()
     else:
         outfile += '.symbolic'
     return {
