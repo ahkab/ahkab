@@ -711,7 +711,7 @@ Parameters:
 - ``src``: the id of the source to be swept (V12, Ibias...).
     Only independent current and voltage sources.
 - ``start`` and ``stop``: sweep start and stop values.
-- type: either ``lin`` or ``log``
+- ``type``: either ``lin`` or ``log``
 - step: sets the value of the source from an iteration :math:`(k)` to the next :math:`(k+1)`:
    - if ``type=log``, :math:`S(k+1) = S(k) \cdot step`
    - if ``type=lin``, :math:`S(k+1) = S(k) + step`
@@ -860,6 +860,170 @@ library is under active development and might have trouble (or take a long time)
 with medium-big or tricky netlists. Improvements are on their way, in the
 meanwhile, consider simplifying complex netlists, if solving is an issue.
 
+Post-processing
+"""""""""""""""
+
+.Plot
+^^^^^
+
+Plot the results from simulation to video.
+
+**General syntax:**
+
+``.plot <simulation_type> [variable1 variable2 ... ]``
+
+Parameters:
+
+- ``simulation_type``: which simulation will have the data plotted. Currently
+  the available options are ``tran``, ``pss``, ``ac`` and ``dc``.
+- ``variable1``, ``variable2``: the signals to be plotted.
+
+They may be:
+
+- a voltage, syntax ``V(<node>)``, to plot the voltage at the specified node,
+  or ``V(<node2>, <node1>)``, to plot the difference of the node
+  voltages. E.g. ``V(in)`` or ``V(2,1)``.
+- a current, syntax ``I(<source name>)``, e.g. ``I(V2)`` or ``I(Vsupply)``
+
+Plotting is possible only if ``matplotlib`` is available.
+
+.Four
+^^^^^
+
+Perform a Fourier analysis over the latest transient data.
+
+**General syntax:**
+
+::
+
+    .FOUR <freq> var1 <var2 var3 ...>
+
+
+The Fourier analysis is performed over the interval which is decided as follows:
+
+* The data should be taken from the end of the simulation, so that if there
+  is any build-up or stabilization process, the Fourier analysis is not
+  affected (or less affected) by it.
+* At least 1 period of the fundamental has to be used.
+* Not more than 50% of the total simulation time should be used, if possible.
+* Respecting the above, as much data as possible should be used, as it leads
+  to more accurate results.
+
+An algorithm selects the data for the Fourier transform from the data from the
+last transient analysis, then the data are re-sampled with a fixed time step,
+using a quadratic interpolation scheme.
+
+A rectangular window is employed and the Fourier components are calculated using
+10 frequency bins, ie :math:`0`, :math:`f`, :math:`2f` :math:`\dots`
+:math:`9f`.
+
+This post-processing function prints its results to the standard output.
+
+**Parameters:**
+
+- ``freq``: the fundamental frequency, in Hz.
+- ``var1``, ``var2`` ... : the signals to execute the FOUR analysis on. Each
+  signal is treated independently.
+
+    They may be:
+
+        - a voltage, syntax ``V(<node>)``, e.g. ``V(in)`` or ``V(2,1)``.
+        - a current, syntax ``I(<source name>)``, e.g. ``I(V2)`` or ``I(Vsupply)``
+
+**Example:**
+
+::
+
+    .FOUR 100K V(n1) I(V2)
+
+
+.FFT
+^^^^
+
+FFT analysis of the time evolution of a variable.
+
+**General syntax:**
+
+::
+
+     .FFT <variable> [START=<float> STOP=<float> NP=<int>
+    + FORMAT=<string> WINDOW=<string> ALFA=<float>
+    + FREQ=<float> FMIN=<float> FMAX=<float>]
+
+
+This post-processing analysis is a more flexible and complete version of the
+.FOUR statement.
+
+The analysis uses a variable, user-selectable amount of time data, re-sampled
+with a fixed time step using quadratic interpolation, with a customizable
+windowing applied.
+
+The time interval is specified through the ``start`` and ``stop``
+parameters, if they are not set, all the available data is used.
+For compatibility, the simulator accepts as synonyms of ``start`` and ``stop``
+the parameters ``from`` and ``to``.
+
+The function behaves differently whether the parameter ``freq`` is specified
+or not:
+
+* If the fundamental frequency ``freq`` (:math:`f` in the following) is
+  specified, the analysis will perform an harmonic analysis, much like a
+  ``.FOUR`` statement, considering only the DC component and the harmonics of
+  :math:`f` from the first up to the 9th (ie :math:`f`, :math:`2f`, :math:`3f`
+  :math:`\dots` :math:`9f`).
+* If ``freq`` is left unspecified, a standard FFT analysis is performed,
+  starting from :math:`f = 0`, to a frequency :math:`f_{max} =
+  1/(2T_{TOT}n_p)`, where :math:`T_{TOT}` is the total length of the
+  considered data in seconds and :math:`n_p` is the number of points in the
+  FTT, set through the ``np`` parameter to this analysis.
+
+The output data is printed to a file having a file name identical to the output
+file as specified with the ``-o`` switch at the invocation of the simulator,
+with an extension ``.lis`` appended.
+
+**Parameters:**
+
+- ``variable``: the identifier of a variable. Eg. ``'V(n1)'`` or ``'I(VS)'``.
+- ``freq``: The fundamental frequency, in Hertz. If it is specified, the output
+  will be limited to the harmonics of this frequency. The Total Harmonic
+  Distortion (THD) evaluation will also be enabled.
+- ``start``: The first time instant to be considered for the transient analysis.
+  If unspecified, it will be the beginning of the transient simulation.
+- ``from``: Alternative specification of the ``start`` parameter.
+- ``stop``: Last time instant to be considered for the FFT analysis. If
+  unspecified, it will be the end time of the transient simulation.
+- ``to``: Alternative specification of the ``stop`` parameter.
+- ``np``: A power of two that specifies how many points should be used when
+  computing the FFT. If it is set to a value that is not a power of 2, it will
+  be rounded up to the nearest power of 2. It defaults to 1024.
+- ``window``: The windowing type. The following values are available:
+
+    * 'RECT' for a rectangular window, equivalent to no window at all.
+    * 'BART', for a Bartlett window.
+    * 'HANN', for a Hanning window.
+    * 'HAMM' for a Hamming window.
+    * 'BLACK' for a Blackman window.
+    * 'HARRIS' for a Blackman-Harris window.
+    * 'GAUSS' for a Gaussian window.
+    * 'KAISER' for a Kaiser-Bessel window.
+
+    The default is the rectangular window.
+- ``alpha``: The :math:`\\sigma` for a Gaussian window or the :math:`beta` for a
+  Kaiser window. Defaults to 3 and is ignored if a window different from
+  Gaussian or Kaiser is selected.
+- ``fmin``: Suppress all data below this frequency, expressed in Hz. The
+  suppressed data is neither returned nor used to compute the THD (if it is
+  computed at all). The DC component is always preserved. Defaults to: return
+  and use all data.
+- ``fmax``: The dual to ``fmin``, discard data above ``fmax`` and also do not
+  use it if computing the THD. Expressed in Hz, defaults to infinity.
+
+**Example:**
+
+::
+
+    .FFT V(n1,n2) NP=1024 START=0.2u STOP=1.5u WINDOW=HANN
+
 Other directives
 """"""""""""""""
 
@@ -932,24 +1096,3 @@ of it it's the same).
 
 They can't be nested and have to be ended by a ``.ends`` directive.
 
-Plot
-^^^^
-
-**General syntax:**
-
-``.plot <simulation_type> [variable1 variable2 ... ]``
-
-Parameters:
-
-- ``simulation_type``: which simulation will have the data plotted. Currently
-  the available options are ``tran``, ``shooting`` and ``dc``.
-- ``variable1``, ``variable2``: the signals to be plotted.
-
-They may be:
-
-- a voltage, syntax ``V(<node>)``, to plot the voltage at the specified node,
-  or ``V(<node2>, <node1>)``, to plot the difference of the node
-  voltages. E.g. ``V(in)`` or ``V(2,1)``.
-- a current, syntax ``I(<source name>)``, e.g. ``I(V2)`` or ``I(Vsupply)``
-
-Plotting is possible only if ``matplotlib`` is available.

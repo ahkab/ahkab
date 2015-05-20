@@ -83,6 +83,7 @@ Module reference
    devices
    diode
    ekv
+   fourier
    gear
    implicit_euler
    mosq
