@@ -59,6 +59,8 @@ Printing analysis results
 =========================
 
 .. autosummary::
+    print_fourier
+    print_spicefft
     print_symbolic_equations
     print_symbolic_results
     print_symbolic_transfer_functions
@@ -321,6 +323,146 @@ def print_symbolic_equations(eq_list):
     print("+--")
     return
 
+def print_fourier(label, f, F, THD, outfile='stdout'):
+    """Print the results of a Fourier postprocess
+
+    **Parameters:**
+
+    label : str, or tuple of str
+        The identifier of a variable. Eg. ``'Vn1'`` or ``'I(VS)'``.
+        If a tuple of two identifiers is provided, it will be interpreted as the
+        difference of the two, in the form ``label[0]-label[1]``.
+    f : ndarray of floats
+        The frequencies, including the DC.
+    F : ndarray of complex data
+        The result of the Fourier transform.
+    THD : float, optional
+        The total harmonic distortion, if ``freq`` was specified in the FFT
+        analysis. Defaults to ``None``.
+    outfile : str, optional
+        The file name to print to. Defaults to ``'stdout'``, for the standard
+        output.
+     """
+    if type(label) in py3compat.string_types:
+        pass
+    elif type(label) == tuple:
+        if len(label) == 1 or (len(label) >= 2 and label[1] is None):
+            label = label[0]
+        else:
+            label = '%s - %s' % (label[0], label[1])
+    if outfile == 'stdout':
+        fp = sys.stdout
+    else:
+        fp = open(outfile, 'w')
+    fp.write('Fourier components of transient response %s\n' % label)
+    DC = np.real_if_close(F[0])
+    fp.write('DC component =  %g\n' % DC)
+    headers = ('#', 'Frequency [Hz]', 'Magnitude', 'Normalized', 'Phase [deg]',
+               'Normalized [deg]')
+    ffttable = []
+    i = np.argmax(np.abs(F))
+    ref_f = f[i]
+    ref_amplitude = np.abs(F)[i]
+    ref_angle = np.angle(F, deg=True)[i]
+    fp.write('Normalization to f = %g Hz, |A| = %g, phase(A) = %g deg\n' %
+             (ref_f, ref_amplitude, ref_angle))
+    for i in range(1, len(F)):
+        ffttable += [[i, f[i], np.abs(F[i]), abs(F[i])/ref_amplitude,
+                      np.angle(F[i], deg=True),
+                      np.angle(F[i], deg=True) - ref_angle]]
+    fp.write(table(ffttable, headers=headers))
+    fp.write('\nTotal harmonic distortion: %g %%\n' % (100*THD))
+    if outfile != 'stdout':
+        fp.close()
+
+def print_spicefft(label, f, F, THD=None, uformat='NORM', window=None,
+                   outfile='stdout'):
+    """Print the results of an FFT postprocess
+
+    **Parameters:**
+
+    label : str, or tuple of string
+        The identifier of a variable. Eg. ``'Vn1'`` or ``'I(VS)'``.
+        If a tuple of two identifiers is provided, it will be interpreted as the
+        difference of the two, in the form ``label[0]-label[1]``.
+    f : ndarray of floats
+        The frequencies, including the DC.
+    F : ndarray of complex data
+        The result of the Fourier transform.
+    THD : float, optional
+        The total harmonic distortion, if ``freq`` was specified in the FFT
+        analysis. Defaults to ``None``.
+    uformat : str, optional
+        The parameter format selects whether normalized or unnormalized
+        magnitudes are printed. It is to be set to 'NORM' (default value) for
+        normalized magnitude, to 'UNORM' for unnormalized.
+    window : str, optional
+        The window employed in the FFT analisys. Defaults to rectangular.
+    outfile : str
+        The file name to print to. Defaults to ``'stdout'``, for the standard
+        output.
+    """
+    if type(label) in py3compat.string_types:
+        pass
+    elif type(label) == tuple:
+        if len(label) == 1 or (len(label) >= 2 and label[1] is None):
+            label = label[0]
+        else:
+            label = '%s - %s' % (label[0], label[1])
+    if uformat.upper() not in ('NORM', 'UNORM'):
+        raise ValueError('fft(): format may be "NORM" or "UNORM", got %s' %
+                         uformat)
+    angle = np.angle(F, deg=True)
+    F = 20*np.log10(abs(F))  # dB
+    if uformat.upper() == 'NORM':
+        i = np.argmax(F)
+        fnorm = f[i]
+        Fnorm = F[i]
+        F -= F.max()
+        unit = 'dBc'
+    else:
+        unit = 'dB'
+    if window is not None:
+        window = window.upper()
+        if window not in (options.RECT_WINDOW, options.BART_WINDOW,
+                               options.HANN_WINDOW, options.HAMM_WINDOW,
+                               options.BLACK_WINDOW, options.HARRIS_WINDOW,
+                               options.GAUSS_WINDOW, options.KAISER_WINDOW):
+            raise ValueError(('fft(): window may be %s, %s, %s, %s, %s, %s, %s'+
+                              ' or %s, got %s') % (options.RECT_WINDOW,
+                                                   options.BART_WINDOW,
+                                                   options.HANN_WINDOW,
+                                                   options.HAMM_WINDOW,
+                                                   options.BLACK_WINDOW,
+                                                   options.HARRIS_WINDOW,
+                                                   options.GAUSS_WINDOW,
+                                                   options.KAISER_WINDOW,
+                                                   window))
+    else:
+        window = options.RECT_WINDOW
+    # set up the output file
+    if outfile == 'stdout':
+        fp = sys.stdout
+    else:
+        fp = open(outfile, 'w')
+    fp.write('FFT components of transient response %s\n' % label)
+    fp.write('Window: %s\n' % options.WINDOWS_NAMES[window.upper()])
+    fp.write('Start Frequency: %g Hz\n' % f[1])
+    fp.write('Stop Frequency: %g Hz\n' % f[-1])
+    if uformat.upper() == 'NORM':
+        fp.write(('Normalization to carrier at %g Hz: '% fnorm) +
+                 ('magnitude %g dB\n' % Fnorm))
+    fp.write(('DC component: mag = %g ' + unit + '\n') % F[0])
+    headers = ('#', 'Frequency [Hz]', 'Magnitude ['+unit+']', 'Phase [deg]')
+    ffttable = []
+    for i in range(1, len(F)):
+        ffttable += [[i, f[i], F[i], angle[i]]]
+    fp.write(table(ffttable, headers=headers))
+    fp.write('\n')
+    if THD is not None:
+        fp.write('Total harmonic distortion: %g %%\n' % (100*THD))
+    if outfile != 'stdout':
+        fp.close()
 
 def print_result_check(badvars, verbose=2):
     """Prints out the results of an OP check

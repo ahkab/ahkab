@@ -187,3 +187,18 @@ plotting_rcParams['axes.labelsize'] = 11
 plotting_rcParams['xtick.labelsize'] = 11
 plotting_rcParams['ytick.labelsize'] = 11
 plotting_rcParams['legend.fontsize'] = 11
+
+# Windows
+RECT_WINDOW = 'RECT'
+BART_WINDOW = 'BART'
+HANN_WINDOW = 'HANN'
+HAMM_WINDOW = 'HAMM'
+BLACK_WINDOW = 'BLACK'
+HARRIS_WINDOW = 'HARRIS'
+GAUSS_WINDOW = 'GAUSS'
+KAISER_WINDOW = 'KAISER'
+WINDOWS_NAMES = dict(RECT='RECTANGULAR', BART='BARTLETT',
+                     HANN='HANNING', HAMM='HAMMING',
+                     BLACK='BLACKMAN-HARRIS', HARRIS='HARRIS',
+                     GAUSS='GAUSSIAN', KAISER='KAISER')
+

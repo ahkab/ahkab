@@ -161,6 +161,9 @@ from . import options
 from . import constants
 from . import utilities
 
+# post-processing
+from . import fourier
+
 # data display
 from . import plotting
 from . import printing
@@ -700,7 +703,7 @@ def new_x0(circ, icdict):
     - ``{'V(n1)':2.3, 'V(n2)':0.45, ...}``
     - ``{'I(L1)':1.03e-3, I(V4):2.3e-6, ...}``
 
-    .. note:: 
+    .. note::
         This simulator uses the normal convention, also known as the
         `Passive sign convention
         <https://en.wikipedia.org/wiki/Passive_sign_convention>`_.
@@ -775,18 +778,38 @@ def process_postproc(postproc_list, title, results, outfilename):
     outfilename: string
         if the plots are saved to disk, this is the filename without extension
     """
-    index = 0
-    if outfilename == 'stdout':
-        printing.print_warning(
-            "Plotting and printing the results to stdout are incompatible options. Plotting skipped.")
-        return
+    show_plots = False
+    skip_plots = False
     for postproc in postproc_list:
-        plotting.plot_results(title, postproc["l2l1"], results[
-                              postproc["analysis"]], "%s-%d.%s" % (outfilename, index, options.plotting_outtype))
-        index = index + 1
-    if len(postproc_list) and options.plotting_show_plots:
+        if postproc['type'] == "plot" and outfilename == 'stdout':
+            skip_plots = True
+            printing.print_warning("Plotting and printing the results to " +
+                                   "stdout are incompatible options. " +
+                                   "Plotting skipped.")
+            break
+    for index, postproc in enumerate(postproc_list):
+        if postproc['type'] == "plot" and not skip_plots:
+            plotting.plot_results(title, postproc["l2l1"],
+                                  results[postproc["analysis"]],
+                                  "%s-%d.%s" % (outfilename, index,
+                                                options.plotting_outtype))
+            show_plots = True
+        elif postproc['type'] == "four":
+            for v in postproc['variables']:
+                f, F, THD = fourier.fourier(v, results['tran'],
+                                            postproc['fund'])
+                printing.print_fourier(v, f, F, THD, outfile='stdout')
+        elif postproc['type'] == "fft":
+            postproc.pop('type') # get rid of spurious entry
+            f, F, THD = fourier.spicefft(tran_results=results['tran'],
+                                         **postproc)
+            printing.print_spicefft(postproc['label'], f, F, THD,
+                                    uformat=postproc['uformat'],
+                                    window=postproc['window'],
+                                    outfile=outfilename +
+                                    '.lis'*(outfilename!='stdout'))
+    if show_plots and options.plotting_show_plots:
         plotting.show_plots()
-    return None
 
 analysis = {'op': dc_analysis.op_analysis, 'dc': dc_analysis.dc_analysis,
             'tran': transient.transient_analysis, 'ac': ac.ac_analysis,

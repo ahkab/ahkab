@@ -131,6 +131,8 @@ from .symbolic import specs as symbolic_spec
 from .time_functions import time_fun_specs
 from .time_functions import sin, pulse, exp, sffm, am
 
+from .fourier import specs as fft_specs
+
 specs = {}
 for i in dc_spec, ac_spec, tran_spec, pss_spec, symbolic_spec, pz_specs:
     specs.update(i)
@@ -214,6 +216,10 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
                     elif line_elements[0] == ".end":
                         break
                     elif line_elements[0] == ".plot":
+                        postproc.append((line, line_n))
+                    elif line_elements[0] == '.four':
+                        postproc.append((line, line_n))
+                    elif line_elements[0] == '.fft':
                         postproc.append((line, line_n))
                     elif line_elements[0] == ".model":
                         model_directives.append((line, line_n))
@@ -1316,10 +1322,9 @@ def parse_postproc(circ, postproc_direc):
                         plot_postproc["analysis"] == "ac" or
                         plot_postproc["analysis"] == "dc"
                         ):
-                    printing.print_general_error(
-                        "Plotting is unsupported for analysis type " +
-                        plot_postproc["analysis"]
-                    )
+                    printing.print_general_error("Plotting is unsupported for" +
+                                                 "analysis type " +
+                                                 plot_postproc["analysis"])
 
                 graph_labels = ""
                 for glabel in line_elements[2:]:
@@ -1342,8 +1347,61 @@ def parse_postproc(circ, postproc_direc):
                     l2l1 = l2l1ac
                 plot_postproc["l2l1"] = l2l1
                 postproc_list.append(plot_postproc)
+            # fourier
+            elif line_elements[0] == ".four":
+                if type(convert_units(line_elements[1])) is not float:
+                    raise NetlistParseError('postprocessing(): fourier' +
+                                            ' fundamental \'%s\'?' %
+                                            line_elements[1])
+                fpv = {'type':'four',
+                       'fund':convert_units(line_elements[1])}
+                variables = []
+                for le in line_elements[2:]:
+                    if le[0] == '*':
+                        break
+                    variables += [plotting._split_netlist_label(le)[0]]
+                fpv.update({'variables':tuple(variables)})
+                postproc_list.append(fpv)
+            elif line_elements[0] == '.fft':
+                fpv = {'type': 'fft'}
+                params = list(copy.deepcopy(fft_specs['fft']['tokens']))
+                for i in range(len(line_elements[1:])):
+                    token = line_elements[i + 1]
+                    if token[0] == "*":
+                        break
+                    if is_valid_value_param_string(token):
+                        label, value = token.split('=')
+                    else:
+                        label, value = None, token
+                    assigned = False
+                    for t in params:
+                        if (label is None and t['pos'] == i) or label == t['label']:
+                            fpv.update({t['dest']: convert(value, t['type'])})
+                            assigned = True
+                            break
+                    if assigned:
+                        params.pop(params.index(t))
+                        continue
+                    else:
+                        raise NetlistParseError("Unknown .%s parameter: pos %d (%s=)%s" % \
+                                                 (fpv[type].upper(), i, label, value))
+                # is there anything required which is missing?
+                missing = []
+                for t in params:
+                    if t['needed']:
+                        missing.append(t['label'])
+                if len(missing):
+                    raise NetlistParseError("Required parameters are missing: %s" %
+                                            (" ".join(line_elements)))
+                # load defaults for unsupplied parameters
+                for t in params:
+                    fpv.update({t['dest']: t['default']})
+                fpv.update({'label':
+                            tuple(plotting._split_netlist_label(fpv['label'])[0])})
+                postproc_list.append(fpv)
             else:
-                raise NetlistParseError("Unknown postproc directive.")
+                raise NetlistParseError("Unknown postproc directive %s." %
+                                        line_elements[0])
         except NetlistParseError as npe:
             (msg,) = npe.args
             if len(msg):

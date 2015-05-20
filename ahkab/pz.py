@@ -179,6 +179,9 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
             output_port = plotting._split_netlist_label(output_port)[0] 
             output_port = [o[1:] for o in output_port]
             output_port = [o.lower() for o in output_port]
+            if len(output_port) == 1:
+                # we refer to the ground implicitely
+                output_port += ['0']
         if np.isscalar(output_port):
             output_port = (output_port, mc.gnd)
         if (type(output_port) == tuple or type(output_port) == list) \
