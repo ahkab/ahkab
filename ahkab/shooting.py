@@ -39,7 +39,7 @@ from . import devices
 
 
 def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=False,
-             mna=None, Tf=None, D=None, outfile='stdout', vector_norm=lambda v: max(abs(v)), verbose=3):
+             matrices=None, outfile='stdout', vector_norm=lambda v: max(abs(v)), verbose=3):
     """Performs a periodic steady state analysis based on the algorithm described in:
 
         Brambilla, A.; D'Amore, D., "Method for steady-state simulation of
@@ -69,26 +69,32 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
     - Implicit Euler is used as DF.
 
     **Parameters:**
-    
+
     circ : Circuit instance
         The circuit description class.
     period : float
         The period of the solution.
-    mna, D, Tf : ndarrays, optional
-        The MNA-formulation matrices. They are not compulsory, they will be
-        computed if they're set to ``None``.
-    step : float
+    step : float, optional
         The time step between consecutive points.
-    points : int
-        The number of points to be used.
+        If not set, it will be computed from ``period`` and ``points``.
+    points : int, optional
+        The number of points to be used. If not set, it will be computed from
+        ``period`` and ``step``.
     autonomous : bool, optional
-        This parameter has to be False, autonomous circuits are not supported.
+        This parameter has to be ``False``, autonomous circuits are not
+        currently supported.
+    matrices : dict, optional
+        A dictionary that may have as keys 'MNA', 'N' and 'D', with entries set
+        to the corresponding MNA-formulation matrices, in case they have been
+        already computed and the user wishes to save time by reusing them.
+        Defaults to ``None`` (recompute).
     outfile : string, optional
-        The output filename. The default is to output to stdout.
+        The output filename. Please use ``stdout`` (the default) to print to the
+        standard output.
     verbose : boolean, optional
         Verbosity switch (0-6). It is set to zero (print errors only)
-        if ``datafilename == 'stdout'``.
-    
+        if ``outfile`` == 'stdout'``, as not to corrupt the data.
+
     Notice that ``step`` and ``points`` are mutually exclusive options:
 
     - if ``step`` is specified, the number of points will be automatically determined.
@@ -104,39 +110,46 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
     if outfile == "stdout":
         verbose = 0
 
-    printing.print_info_line(
-        ("Starting periodic steady state analysis:", 3), verbose)
+    printing.print_info_line(("Starting periodic steady state analysis:", 3),
+                             verbose)
     printing.print_info_line(("Method: shooting", 3), verbose)
 
     if isinstance(x0, results.op_solution):
         x0 = x0.asarray()
-    if mna is None or Tf is None:
+    if (matrices is None or type(matrices) != dict or 'MNA' not in matrices or
+        'Tf' not in matrices):
         mna, Tf = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
         mna = utilities.remove_row_and_col(mna)
         Tf = utilities.remove_row(Tf, rrow=0)
-    elif not mna.shape[0] == Tf.shape[0]:
-        printing.print_general_error(
-            "mna matrix and N vector have different number of rows.")
-        sys.exit(0)
+    elif not matrices['MNA'].shape[0] == matrices['Tf'].shape[0]:
+        raise ValueError("MNA matrix and N vector have different number of" +
+                         " rows.")
+    else:
+        mna, TF = matrices['MNA'], matrices['Tf']
 
-    if D is None:
+    if matrices is None or not 'D' in matrices or matrices['D'] is None:
         D = transient.generate_D(circ, [mna.shape[0], mna.shape[0]])
         D = utilities.remove_row_and_col(D)
-    elif not mna.shape == D.shape:
-        printing.print_general_error(
-            "mna matrix and D matrix have different sizes.")
-        sys.exit(0)
+    elif not mna.shape == matrices['D'].shape:
+        raise ValueError("MNA matrix and D matrix have different sizes.")
+    else:
+        D = matrices['D']
 
-    (points, step) = utilities.check_step_and_points(step, points, period)
+    points, step = utilities.check_step_and_points(step, points, period)
 
     n_of_var = mna.shape[0]
     locked_nodes = circ.get_locked_nodes()
 
-    printing.print_info_line(
-        ("Starting transient analysis for algorithm init: tstop=%g, tstep=%g... " % (10 * points * step, step), 3), verbose, print_nl=False)
-    xtran = transient.transient_analysis(
-        circ=circ, tstart=0, tstep=step, tstop=10 * points * step, method="TRAP", x0=None, mna=mna, N=Tf,
-        D=D, use_step_control=False, outfile=outfile + ".tran", return_req_dict={"points": points}, verbose=0)
+    printing.print_info_line(("Starting TRAN analysis for algorithm init: " +
+                              ("stop=%g, step=%g... " % (10*points*step, step)),
+                              3), verbose, print_nl=False)
+    xtran = transient.transient_analysis(circ=circ, tstart=0, tstep=step,
+                                         tstop=10*points*step, method="TRAP",
+                                         x0=None, mna=mna, N=Tf, D=D,
+                                         use_step_control=False,
+                                         outfile=outfile+".tran",
+                                         return_req_dict={"points": points},
+                                         verbose=0)
     if xtran is None:
         print("failed.")
         return None
@@ -153,8 +166,10 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
     # This contains the time invariant part, Tf. The time variable component,
     # Tt, is always the same, since the time interval is the same this holds all
     # time-dependent sources (both V/I).
-    Tf = Tf.squeeze() # silly numpy sum array of size 6,1 with array of size 6
-                      # get array of size 6,6
+
+    # silly numpy sum array of size 6,1 with array of size 6
+    # get array of size 6,6
+    Tf = Tf.squeeze()
     Tass_static_vector = _build_Tass_static_vector(circ, Tf, points, step, tick,
                                                    n_of_var, verbose)
 
@@ -178,11 +193,11 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
             MAass_variable, Tass_variable = _get_variable_MAass_and_Tass(circ,
                     x[index], xn_minus_1, mna, D, step, n_of_var)
             MAass_variable_vector.append(MAass_variable + MAass_static)
-            Tass_variable_vector.append(
-                Tass_variable + Tass_static_vector[index])
+            Tass_variable_vector.append(Tass_variable +
+                                        Tass_static_vector[index])
 
-        dxN = _compute_dxN(circ, MAass_variable_vector, MBass,
-                          Tass_variable_vector, n_of_var, points, verbose=verbose)
+        dxN = _compute_dxN(MAass_variable_vector, MBass, Tass_variable_vector,
+                           n_of_var, points)
         td = dc_analysis.get_td(dxN.reshape(-1, 1), locked_nodes, n=-1)
         x[points - 1] = td * dxN + x[points - 1]
 
@@ -191,15 +206,17 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
                 dxi_minus_1 = dxN
             else:
                 dxi_minus_1 = dx[index - 1]
-            dx.append(
-                _compute_dx(MAass_variable_vector[index], MBass, Tass_variable_vector[index], dxi_minus_1))
-            td = dc_analysis.get_td(dx[index].reshape(-1, 1), locked_nodes, n=-1)
-            x[index] = td * dx[index] + x[index]
+            dx.append(_compute_dx(MAass_variable_vector[index], MBass,
+                      Tass_variable_vector[index], dxi_minus_1))
+            td = dc_analysis.get_td(dx[index].reshape(-1, 1), locked_nodes,
+                                    n=-1)
+            x[index] = td*dx[index] + x[index]
         dx.append(dxN)
 
-        if (_vector_norm_wrapper(dx, vector_norm) < min(options.ver, options.ier) * _vector_norm_wrapper(x, vector_norm) + min(options.vea, options.iea)):  # \
-        # and (dc_analysis.vector_norm(residuo) <
-        # options.er*dc_analysis.vector_norm(x) + options.ea):
+        if (_vector_norm_wrapper(dx, vector_norm) < min(options.ver, options.ier) * _vector_norm_wrapper(x, vector_norm) +
+            min(options.vea, options.iea)):
+            # and (dc_analysis.vector_norm(residuo) <
+            # options.er*dc_analysis.vector_norm(x) + options.ea):
             if conv_counter == 3:
                 converged = True
                 break
@@ -213,8 +230,9 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
             tick.step()
 
         if options.shooting_max_nr_iter and iteration == options.shooting_max_nr_iter:
-            printing.print_general_error(
-                "Hitted SHOOTING_MAX_NR_ITER (" + str(options.shooting_max_nr_iter) + "), iteration halted.")
+            printing.print_general_error("Hitted SHOOTING_MAX_NR_ITER (" +
+                                         str(options.shooting_max_nr_iter) +
+                                         "), iteration halted.")
             converged = False
             break
         else:
@@ -262,24 +280,24 @@ def _build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3)
     tick.reset()
     tick.display(verbose > 2)
     for index in range(0, points):
-            Tt = numpy.zeros((n_of_var,))
-            v_eq = 0
-            time = index * step
-            for elem in circ:
-                    if (isinstance(elem, devices.VSource) or isinstance(elem, devices.ISource)) and elem.is_timedependent:
-                        if isinstance(elem, devices.VSource):
-                                Tt[nv - 1 + v_eq] = -1.0 * elem.V(time)
-                        elif isinstance(elem, devices.ISource):
-                                if elem.n1:
-                                        Tt[elem.n1 - 1] = \
-                                            Tt[elem.n1 - 1] + elem.I(time)
-                                if elem.n2:
-                                        Tt[elem.n2 - 1] = \
-                                            Tt[elem.n2 - 1] - elem.I(time)
-                    if circuit.is_elem_voltage_defined(elem):
-                            v_eq = v_eq + 1
-            tick.step()
-            Tass_vector.append(Tf + Tt)
+        Tt = numpy.zeros((n_of_var,))
+        v_eq = 0
+        time = index * step
+        for elem in circ:
+            if (isinstance(elem, devices.VSource)
+                or isinstance(elem, devices.ISource)) and elem.is_timedependent:
+
+                if isinstance(elem, devices.VSource):
+                    Tt[nv - 1 + v_eq] = -1.0 * elem.V(time)
+                elif isinstance(elem, devices.ISource):
+                    if elem.n1:
+                        Tt[elem.n1 - 1] = Tt[elem.n1 - 1] + elem.I(time)
+                    if elem.n2:
+                        Tt[elem.n2 - 1] = Tt[elem.n2 - 1] - elem.I(time)
+            if circuit.is_elem_voltage_defined(elem):
+                v_eq = v_eq + 1
+        tick.step()
+        Tass_vector.append(Tf + Tt)
     tick.hide(verbose > 2)
     printing.print_info_line(("done.", 5), verbose)
 
@@ -314,28 +332,28 @@ def _get_variable_MAass_and_Tass(circ, xi, xi_minus_1, M, D, step, n_of_var):
                     if n1:
                         if ports[pindex][0]:
                             J[n1 - 1, ports[pindex][0] - 1] = \
-                                J[n1 - 1, ports[pindex][0] - 1] + elem.g(
-                                    index, v_ports, pindex)
+                                J[n1 - 1, ports[pindex][0] - 1] + \
+                                elem.g(index, v_ports, pindex)
                         if ports[pindex][1]:
-                            J[n1 - 1, ports[pindex][1] - 1] =\
-                                J[n1 - 1, ports[pindex][1] - 1] - 1.0 * elem.g(
-                                    index, v_ports, pindex)
+                            J[n1 - 1, ports[pindex][1] - 1] = \
+                                J[n1 - 1, ports[pindex][1] - 1] - \
+                                elem.g(index, v_ports, pindex)
                     if n2:
                         if ports[pindex][0]:
                             J[n2 - 1, ports[pindex][0] - 1] = \
-                                J[n2 - 1, ports[pindex][0] - 1] - 1.0 * elem.g(
-                                    index, v_ports, pindex)
+                                J[n2 - 1, ports[pindex][0] - 1] - \
+                                elem.g(index, v_ports, pindex)
                         if ports[pindex][1]:
-                            J[n2 - 1, ports[pindex][1] - 1] =\
-                                J[n2 - 1, ports[pindex][1] - 1] + elem.g(
-                                    index, v_ports, pindex)
+                            J[n2 - 1, ports[pindex][1] - 1] = \
+                                J[n2 - 1, ports[pindex][1] - 1] + \
+                                elem.g(index, v_ports, pindex)
 
     Tass = Tass + np.dot(D*C1, xi) + np.dot(M, xi) + np.dot(D * C0, xi_minus_1)
 
-    return (J, Tass)
+    return J, Tass
 
 
-def _compute_dxN(circ, MAass_vector, MBass, Tass_vector, n_of_var, points, verbose=3):
+def _compute_dxN(MAass_vector, MBass, Tass_vector, n_of_var, points):
     temp_mat1 = np.eye(n_of_var)
     for index in range(points):
         temp_mat1 = -np.linalg.solve(MAass_vector[index], np.dot(MBass, temp_mat1))
