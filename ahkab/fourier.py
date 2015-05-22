@@ -27,8 +27,6 @@ Module reference
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
-import sys
-
 import numpy as np
 import numpy.fft as fft
 
@@ -398,30 +396,13 @@ def spicefft(label, tran_results, freq=None, **args):
     idata = InterpolatedUnivariateSpline(tran_results.get_x(),
                                          data, k=2)
     window = {options.RECT_WINDOW: lambda x: 1.,
-              options.BART_WINDOW: lambda x: bartlett(x),
-              options.HANN_WINDOW: lambda x: hann(x),
-              options.HAMM_WINDOW: lambda x: hamming(x),
-              options.BLACK_WINDOW: lambda x: blackman(x),
-              options.HARRIS_WINDOW: lambda x: blackmanharris(x),
+              options.BART_WINDOW: bartlett,
+              options.HANN_WINDOW: hann,
+              options.HAMM_WINDOW: hamming,
+              options.BLACK_WINDOW: blackman,
+              options.HARRIS_WINDOW: blackmanharris,
               options.GAUSS_WINDOW: lambda x: gaussian(x, std=alpha),
               options.KAISER_WINDOW: lambda x: kaiser(x, beta=alpha)}
-    #if window_type == options.RECT_WINDOW:
-    #    #window = np.ones(len(t))
-    #    window = 1 # same
-    #elif window_type == options.BART_WINDOW:
-    #    window = bartlett(len(t))
-    #elif window_type == options.HANN_WINDOW:
-    #    window = hann(len(t))
-    #elif window_type == options.HAMM_WINDOW:
-    #    window = hamming(len(t))
-    #elif window_type == options.BLACK_WINDOW:
-    #    window = blackman(len(t))
-    #elif window_type == options.HARRIS_WINDOW:
-    #    window = blackmanharris(len(t))
-    #elif window_type == options.GAUSS_WINDOW:
-    #    window = gaussian(len(t), std=alpha)
-    #elif window_type == options.KAISER_WINDOW:
-    #    window = kaiser(len(t), beta=alpha)
     f = fft.fftfreq(len(t), sampling)
     f = f[:len(f)/2]
     F = fft.rfft(idata(t)*window[window_type](len(t)))[:-1]
