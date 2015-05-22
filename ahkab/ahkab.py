@@ -61,7 +61,7 @@ The first, assuming your netlist defines some simulation would be to run it:
 * you may call ``ahkab`` from the command line. The command line interface is
   described in :doc:`help/Command-Line-Help`.
 * you may call :func:`main` directly from Python. Running the simulation through
-  :func:`main` method allows to process the result in Python.
+  :func:`main` function allows to process the result in Python.
 
 Alternatively, you may parse the netlist through
 :func:`ahkab.netlist_parser.parse_circuit`, which will return the circuit
@@ -78,7 +78,7 @@ How to create a simulation object
 
 Next, you need to have a simulation object you would like to run.
 
-The following methods are available to quickly create a simulation object:
+The following functions are available to quickly create a simulation object:
 
 .. autosummary::
     new_ac
@@ -91,6 +91,22 @@ The following methods are available to quickly create a simulation object:
 
 Click on one of the above hyperlinks to be taken to the corresponding
 documentation section.
+
+.. note::
+
+    The functions above allow you to specify an output file. This is due to two
+    main reasons:
+
+    * Saving to a file allows you to keep a copy of the simulation results,
+      which you can then inspect at a later time.
+    * Simulation results may take an uncomfortably large amount of memory. The
+      approach we take is that we save everything to file, and only load the
+      data to memory when the user actually accesses it.
+
+    In order for the latter to work when no output file is specified, ``ahkab``
+    stores the simulation data in a temporary file provided by your OS. When the
+    user exits the Python interpreter (or IPython or debugger), the file is
+    removed.
 
 .. _run-it:
 
@@ -130,9 +146,12 @@ All methods in alphabetical order
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
+import atexit
+import copy
+import os
 import sys
 import tempfile
-import copy
+
 from optparse import OptionParser
 
 import numpy as np
@@ -222,6 +241,7 @@ def new_op(guess=None, x0=None, outfile=None, verbose=0):
             tmpfile = tempfile.NamedTemporaryFile(suffix='.op', delete=False)
             outfile = tmpfile.name
             tmpfile.close()
+            atexit.register(os.remove, outfile)
     else:
         outfile += '.op'
     return {'type': 'op', 'guess': guess, 'x0': x0, 'outfile': outfile, 'verbose': verbose}
@@ -285,6 +305,7 @@ def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None
             tmpfile = tempfile.NamedTemporaryFile(suffix='.dc', delete=False)
             outfile = tmpfile.name
             tmpfile.close()
+            atexit.register(os.remove, outfile)
     else:
         outfile += '.dc'
     return {
@@ -347,6 +368,7 @@ def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP,
             tmpfile = tempfile.NamedTemporaryFile(suffix='.tran', delete=False)
             outfile = tmpfile.name
             tmpfile.close()
+            atexit.register(os.remove, outfile)
     else:
         outfile += '.tran'
     return {"type": "tran", "tstart": tstart, "tstop": tstop, "tstep": tstep,
@@ -406,6 +428,7 @@ def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile=None, verbose
             tmpfile = tempfile.NamedTemporaryFile(suffix='.ac', delete=False)
             outfile = tmpfile.name
             tmpfile.close()
+            atexit.register(os.remove, outfile)
     else:
         outfile += '.ac'
     return {
@@ -469,6 +492,7 @@ def new_pss(period, x0=None, points=None, method=options.BFPSS, autonomous=False
             tmpfile = tempfile.NamedTemporaryFile(suffix='.'+method.lower(), delete=False)
             outfile = tmpfile.name
             tmpfile.close()
+            atexit.register(os.remove, outfile)
     else:
         outfile += '.' + method.lower()
     return {
@@ -525,6 +549,7 @@ def new_pz(input_source=None, output_port=None, shift=0.0, MNA=None, outfile=Non
             tmpfile = tempfile.NamedTemporaryFile(suffix='.pz', delete=False)
             outfile = tmpfile.name
             tmpfile.close()
+            atexit.register(os.remove, outfile)
     else:
         outfile += '.pz'
     return {'type': "pz", 'input_source':input_source, 'x0':x0,
@@ -604,6 +629,7 @@ def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None
             tmpfile = tempfile.NamedTemporaryFile(suffix='.symbolic', delete=False)
             outfile = tmpfile.name
             tmpfile.close()
+            atexit.register(os.remove, outfile)
     else:
         outfile += '.symbolic'
     return {
