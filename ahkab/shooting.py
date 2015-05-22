@@ -22,7 +22,6 @@
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
-import sys
 import numpy as np
 import numpy.linalg
 
@@ -118,6 +117,7 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
         x0 = x0.asarray()
     if (matrices is None or type(matrices) != dict or 'MNA' not in matrices or
         'Tf' not in matrices):
+        # recalculate
         mna, Tf = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
         mna = utilities.remove_row_and_col(mna)
         Tf = utilities.remove_row(Tf, rrow=0)
@@ -125,9 +125,9 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
         raise ValueError("MNA matrix and N vector have different number of" +
                          " rows.")
     else:
-        mna, TF = matrices['MNA'], matrices['Tf']
+        mna, Tf = matrices['MNA'], matrices['Tf']
 
-    if matrices is None or not 'D' in matrices or matrices['D'] is None:
+    if matrices is None or 'D' not in matrices or matrices['D'] is None:
         D = transient.generate_D(circ, [mna.shape[0], mna.shape[0]])
         D = utilities.remove_row_and_col(D)
     elif not mna.shape == matrices['D'].shape:
@@ -213,8 +213,8 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
             x[index] = td*dx[index] + x[index]
         dx.append(dxN)
 
-        if (_vector_norm_wrapper(dx, vector_norm) < min(options.ver, options.ier) * _vector_norm_wrapper(x, vector_norm) +
-            min(options.vea, options.iea)):
+        if (_vector_norm_wrapper(dx, vector_norm) < min(options.ver, options.ier) *
+                _vector_norm_wrapper(x, vector_norm) + min(options.vea, options.iea)):
             # and (dc_analysis.vector_norm(residuo) <
             # options.er*dc_analysis.vector_norm(x) + options.ea):
             if conv_counter == 3:
@@ -284,9 +284,9 @@ def _build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3)
         v_eq = 0
         time = index * step
         for elem in circ:
-            if (isinstance(elem, devices.VSource)
-                or isinstance(elem, devices.ISource)) and elem.is_timedependent:
-
+            if (isinstance(elem, devices.VSource) or
+                isinstance(elem, devices.ISource)) and elem.is_timedependent:
+                # time dependent source
                 if isinstance(elem, devices.VSource):
                     Tt[nv - 1 + v_eq] = -1.0 * elem.V(time)
                 elif isinstance(elem, devices.ISource):
