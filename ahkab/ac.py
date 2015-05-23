@@ -102,8 +102,6 @@ Module reference
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
-import sys
-
 import numpy as np
 
 from . import (circuit, dc_analysis, devices, options, printing, results,
@@ -292,7 +290,7 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
 
     x = x0
     for omega in omega_iter:
-        (x, _, solved, n_iter) = dc_analysis.dc_solve(
+        x, _, solved, _ = dc_analysis.dc_solve(
             mna=(mna + np.multiply(j * omega, AC) + J),
             Ndc = Nac,
             Ntran = 0,
