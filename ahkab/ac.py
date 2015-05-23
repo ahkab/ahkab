@@ -207,9 +207,9 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
     if points < 2:
         printing.print_general_error("AC analysis has number of points < 2")
         sys.exit(1)
-    if sweep_type == options.ac_log_step or sweep_type is None:
+    if sweep_type.upper() == options.ac_log_step or sweep_type is None:
         omega_iter = utilities.log_axis_iterator(start, stop, points)
-    elif sweep_type == options.ac_lin_step:
+    elif sweep_type.upper() == options.ac_lin_step:
         omega_iter = utilities.lin_axis_iterator(start, stop, points)
     else:
         printing.print_general_error("Unknown sweep type.")
