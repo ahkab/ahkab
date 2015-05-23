@@ -123,7 +123,7 @@ Indices and tables
    :target: https://travis-ci.org/ahkab/ahkab
 .. |Coverage Status| image:: https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master
    :target: https://coveralls.io/r/ahkab/ahkab?branch=master
-.. |PyPi version| image:: http://img.shields.io/badge/version-0.16-brightgreen.png
+.. |PyPi version| image:: http://img.shields.io/badge/version-0.17-brightgreen.png
    :target: https://pypi.python.org/pypi/ahkab/
 .. |GPLv2 license| image:: http://img.shields.io/badge/license-GPL%20v2-brightgreen.png
    :target: https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE
