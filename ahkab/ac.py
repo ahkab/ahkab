@@ -192,6 +192,10 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
 
     ACresult : AC solution
         The AC analysis results.
+
+    :raises ValueError: if the parameters are out of their valid range.
+
+    :raises RuntimeError: if the circuit is non-linear and can't be linearized.
     """
 
     if outfile == 'stdout':
@@ -199,21 +203,17 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
 
     # check step/start/stop parameters
     if start == 0:
-        printing.print_general_error("AC analysis has start frequency = 0")
-        sys.exit(5)
+        raise ValueError("AC analysis has start frequency = 0")
     if start > stop:
-        printing.print_general_error("AC analysis has start > stop")
-        sys.exit(1)
+        raise ValueError("AC analysis has start > stop")
     if points < 2:
-        printing.print_general_error("AC analysis has number of points < 2")
-        sys.exit(1)
+        raise ValueError("AC analysis has number of points < 2")
     if sweep_type.upper() == options.ac_log_step or sweep_type is None:
         omega_iter = utilities.log_axis_iterator(start, stop, points)
     elif sweep_type.upper() == options.ac_lin_step:
         omega_iter = utilities.lin_axis_iterator(start, stop, points)
     else:
-        printing.print_general_error("Unknown sweep type.")
-        sys.exit(1)
+        raise ValueError("Unknown sweep type %s" % sweep_type)
 
     tmpstr = "Vea =", options.vea, "Ver =", options.ver, "Iea =", options.iea, "Ier =", \
         options.ier, "max_ac_nr_iter =", options.ac_max_nr_iter
@@ -251,10 +251,8 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
                 x0 = dc_analysis.op_analysis(circ, verbose=0)
                 if x0 is None:  # still! Then op_analysis has failed!
                     printing.print_info_line(("failed.", 3), verbose)
-                    printing.print_general_error("OP analysis failed, no " +
-                                                 "linearization point " +
-                                                 "available. Quitting.")
-                    sys.exit(3)
+                    raise RuntimeError("OP analysis failed, no " +
+                                       "linearization point available.")
                 else:
                     printing.print_info_line(("done.", 3), verbose)
             printing.print_info_line(
