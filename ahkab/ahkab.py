@@ -220,7 +220,9 @@ def new_op(guess=None, x0=None, outfile=None, verbose=0):
         the filename of the output file where the results will be written.
         ``.opinfo`` is automatically added at the end to prevent different
         analyses from overwriting each-other's results.
-        If unset or set to None, defaults to ``stdout``.
+        If unset or set to None, defaults to ``stdout``, if the simulator was
+        called from the command line, otherwise, if the simulator is run from an
+        interactive session, a temporary file will be used to store the data.
 
     verbose : int, optional
         the verbosity level, from 0 (silent, default) to 6 (debug).
@@ -286,7 +288,10 @@ def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None
         the filename of the output file where the results will be written.
         '.dc' is automatically added at the end to prevent different
         analyses from overwriting each-other's results.
-        If unset or set to None, defaults to ``stdout``.
+        If unset or set to ``None``, defaults to ``stdout``, if the simulator
+        was called from the command line, otherwise, if the simulator is run
+        from an interactive session, a temporary file will be used to store the
+        data.
 
     verbose : int, optional
         the verbosity level, from 0 (silent, default) to 6 (debug).
@@ -349,7 +354,10 @@ def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP,
         the filename of the output file where the results will be written.
         '.tran' is automatically added at the end to prevent different
         analyses from overwriting each-other's results.
-        If unset or set to None, defaults to ``stdout``.
+        If unset or set to ``None``, defaults to ``stdout``, if the simulator
+        was called from the command line, otherwise, if the simulator is run
+        from an interactive session, a temporary file will be used to store the
+        data.
 
     verbose : int, optional
         the verbosity level, from 0 (silent, default) to 6 (debug).
@@ -409,7 +417,10 @@ def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile=None, verbose
         the filename of the output file where the results will be written.
         '.ac' is automatically added at the end to prevent different
         analyses from overwriting each-other's results.
-        If unset or set to None, defaults to ``stdout``.
+        If unset or set to ``None``, defaults to ``stdout``, if the simulator
+        was called from the command line, otherwise, if the simulator is run
+        from an interactive session, a temporary file will be used to store the
+        data.
 
     verbose : int, optional
         the verbosity level, from 0 (silent, default) to 6 (debug).
@@ -473,7 +484,10 @@ def new_pss(period, x0=None, points=None, method=options.BFPSS, autonomous=False
         The filename of the output file where the results will be written.
         '.tran' is automatically added at the end to prevent different
         analyses from overwriting each-other's results.
-        If unset defaults to ``stdout``.
+        If unset or set to ``None``, defaults to ``stdout``, if the simulator
+        was called from the command line, otherwise, if the simulator is run
+        from an interactive session, a temporary file will be used to store the
+        data.
 
     verbose : int, optional
         The verbosity level, from 0 (silent, default) to 6 (debug).
@@ -528,7 +542,10 @@ def new_pz(input_source=None, output_port=None, shift=0.0, MNA=None, outfile=Non
         The filename of the output file where the results will be written.
         '.pz' is automatically added at the end to prevent different
         analyses from overwriting each-other's results.
-        If unset defaults to ``stdout``.
+        If unset or set to ``None``, defaults to ``stdout``, if the simulator
+        was called from the command line, otherwise, if the simulator is run
+        from an interactive session, a temporary file will be used to store the
+        data.
 
     x0 : ``numpy`` array or str, optional
         the optional linearization point. If set to a string, it must be
@@ -610,7 +627,10 @@ def new_symbolic(source=None, ac_enable=True, r0s=False, subs=None, outfile=None
         The filename of the output file where the results will be written.
         '.symbolic' is automatically added at the end to prevent different
         analyses from overwriting each-other's results.
-        If unset, it defaults to ``stdout``.
+        If unset or set to ``None``, defaults to ``stdout``, if the simulator
+        was called from the command line, otherwise, if the simulator is run
+        from an interactive session, a temporary file will be used to store the
+        data.
 
     verbose : int, optional
         The verbosity level, from 0 (silent, default) to 6 (debug).
@@ -867,6 +887,7 @@ def main(filename, outfile="stdout", verbose=3):
     - Direct Current (DC): ``.dc``
     - Operating Point (OP): ``.opinfo``
     - Periodic Steady State (PSS): ``.pss``
+    - Pole-zero Analysis (PZ): ``.pz``
     - TRANsient (TRAN): ``.tran``
     - Symbolic: ``.symbolic``
 
