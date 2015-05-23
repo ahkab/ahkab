@@ -36,7 +36,7 @@ The interface allows for accessing the values as::
 
 
     >>> ac_sol.keys()
-    ['w', 'Vn1', 'Vn2', 'I(V1)', 'I(L1)', 'I(L2)']
+    ['f', 'Vn1', 'Vn2', 'I(V1)', 'I(L1)', 'I(L2)']
 
 Where ``ac_sol`` is a generic example instance of :class:`ac_solution`.
 
@@ -47,7 +47,7 @@ Checking with the ``in`` construct::
 
 Access any variable in the solution object::
 
-    >>> ac_sol['w']
+    >>> ac_sol['f']
     array([ 6098.38572827,  6102.08394991,  6105.78441425,  6109.48712265,
             6113.19207648,  6116.89927708,  6120.60872583,  6124.32042408,
 
@@ -66,7 +66,7 @@ swept variable, when it is available::
 
 
     >>> ac_sol.get_xlabel()
-    'w'
+    'f'
     >>> ac_sol.get_x()
     array([ 6098.38572827,  6102.08394991,  6105.78441425,  6109.48712265,
             6113.19207648,  6116.89927708,  6120.60872583,  6124.32042408,
@@ -562,9 +562,9 @@ class ac_solution(solution, _mutable_data):
     circ : circuit instance
         the circuit instance of the simulated circuit
     start : float
-       the AC sweep angular frequency start value, in rad/sec.
+       the AC sweep frequency start value, in Hz.
     stop : float
-       the AC sweep angular frequency stop value, in rad/sec.
+       the AC sweep frequency stop value, in Hz.
     points : int
        the AC sweep total points.
     stype : str
@@ -582,8 +582,8 @@ class ac_solution(solution, _mutable_data):
         self.stype = stype
         self.ostart, self.ostop, self.opoints = start, stop, points
 
-        self.variables += ["w"]
-        self.units.update({"w": "rad/s"})
+        self.variables += ["f"]
+        self.units.update({"f": "Hz"})
         self.csv_headers = [self.variables[0]]
 
         nv_1 = circ.get_nodes_number() - 1 # numero di soluzioni di tensione (al netto del ref)
@@ -616,14 +616,14 @@ class ac_solution(solution, _mutable_data):
                           self.ostart, self.ostop, self.opoints, self.timestamp,
                           self.filename)
 
-    def add_line(self, omega, x):
-        omega = np.array([[omega]])
+    def add_line(self, frequency, x):
+        frequency = np.array([[frequency]])
         xsplit = np.zeros((x.shape[0]*2, 1))
         for i in range(x.shape[0]):
             xsplit[2*i, 0] = np.abs(x[i, 0])
             xsplit[2*i+1, 0] = np.angle(x[i, 0], deg=options.ac_phase_in_deg)
 
-        data = np.concatenate((omega, xsplit), axis=0)
+        data = np.concatenate((frequency, xsplit), axis=0)
         self._add_data(data)
 
     def get_x(self):
@@ -668,7 +668,7 @@ class ac_solution(solution, _mutable_data):
     # Access as a dictionary BY VARIABLE NAME:
     def __getitem__(self, name):
         """Get a specific variable, as from a dictionary."""
-        if name.upper() != 'W':
+        if name.upper() != 'F':
             headers = ['|%s|' % name, 'arg(%s)' % name]
         else:
             headers = [name]

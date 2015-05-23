@@ -9,6 +9,6 @@ l1 5 0 10u
 c1 5 0 10u
 
 .op
-.ac start=50k stop=5e5 nsteps=1000
+.ac start=7957.747 stop=79577.471 nsteps=1000
 .symbolic
 .plot ac |v(5)|

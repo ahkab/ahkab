@@ -37,8 +37,8 @@ def test():
 
     op_analysis = ahkab.new_op(outfile='hvsource_api', verbose=6)
     symb_analysis = ahkab.new_symbolic(outfile='hvsource_api', verbose=6)
-    ac_analysis = ahkab.new_ac(outfile='hvsource_api', start=50e3, stop=500e3,
-                               points=1000, verbose=6)
+    ac_analysis = ahkab.new_ac(outfile='hvsource_api', start=7957.747,
+                               stop=79577.471, points=1000, verbose=6)
 
     testbench = testing.APITest('hvsource', mycircuit, 
                                 [op_analysis, symb_analysis, ac_analysis],

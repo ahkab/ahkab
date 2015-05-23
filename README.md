@@ -73,7 +73,7 @@ cir.add_inductor('L5', 'n6', 'n7', 0.245894)
 cir.add_resistor('R2', 'n8', cir.gnd, 50.)
 
 # Define the analysis
-ac1 = new_ac(2.*np.pi*.97e3, 2.*np.pi*1.03e3, 1e2, x0=None)
+ac1 = new_ac(.97e3, 1.03e3, 1e2, x0=None)
 
 # run it
 res = run(cir, ac1)

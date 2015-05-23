@@ -766,6 +766,12 @@ AC analysis (.AC)
 
 **General syntax:**
 
+Either:
+
+``.AC <lin/log> <npoints> <start> <stop>``
+
+or:
+
 ``.AC start=<float> stop=<float> nsteps=<integer> sweep_type=<lin/log>``
 
 Performs an AC analysis.
@@ -775,13 +781,19 @@ needed to linearize the circuit.
 
 The sweep type is by default (and currently unchangeable) logarithmic.
 
-Parameters:
+**Parameters:**
 
-* ``start``: the starting *angular* *frequency* of the sweep.
-* ``stop``: the final angular frequency.
+* ``start``: the starting frequency of the sweep, in Hz.
+* ``stop``: the final angular frequency, in Hz.
 * ``nsteps``: the number of steps to be executed.
 * ``sweep_type``: a parameter that can be set to ``LOG`` or ``LIN``
   (the default), selecting a logarithmic or a linear frequency sweep.
+
+**Examples:**
+
+``.ac lin 1 320 320``
+
+``.ac sweep_type=lin start=320 stop=320 nsteps=1``
 
 Periodic Steady State (.PSS)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

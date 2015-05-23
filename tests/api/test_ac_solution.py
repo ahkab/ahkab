@@ -50,15 +50,15 @@ class Test_AC_solution:
         # solution methods
         assert len(r) == len(r.variables)
         assert len(r) == len(list(r.keys()))
-        assert r.has_key('w')
-        assert 'w' in r
+        assert r.has_key('f')
+        assert 'f' in r
         assert not 'bogus' in r
         #get method
         assert r.get('sd', 'No such key') == 'No such key'
         assert r.get('VN1').any()
         # axis endpoints
-        assert r['w'][0] == 10000000
-        assert np.allclose(r['w'][-1], 10000000000)
+        assert r['f'][0] == 10000000
+        assert np.allclose(r['f'][-1], 10000000000)
         # data shape
         assert r.asarray().shape == (8, 100)
         # data

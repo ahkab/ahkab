@@ -116,8 +116,16 @@ specs = {'ac': {'tokens': ({
                            'default': options.ac_log_step
                            },
                           {
-                           'label': 'start',
+                           'label': 'nsteps',
                            'pos': 1,
+                           'type': float,
+                           'needed': True,
+                           'dest': 'points',
+                           'default': None
+                          },
+                          {
+                           'label': 'start',
+                           'pos': 2,
                            'type': float,
                            'needed': True,
                            'dest': 'start',
@@ -125,18 +133,10 @@ specs = {'ac': {'tokens': ({
                           },
                           {
                            'label': 'stop',
-                           'pos': 2,
-                           'type': float,
-                           'needed': True,
-                           'dest': 'stop',
-                           'default': None
-                          },
-                          {
-                           'label': 'nsteps',
                            'pos': 3,
                            'type': float,
                            'needed': True,
-                           'dest': 'points',
+                           'dest': 'stop',
                            'default': None
                           })
                }
@@ -154,14 +154,14 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
         The circuit to be simulated.
 
     start : float
-        The start angular frequency for the AC analysis, in rad/s.
+        The start frequency for the AC analysis, in Hz.
 
     points : float,
         The number of points to be used to discretize the
         ``[start, stop]`` interval.
 
     stop : float
-        The stop angular frequency, in rad/s.
+        The stop frequency, in Hz.
 
     sweep_type : string, optional
         Either ``options.ac_log_step`` (ie ``'LOG'``) or ``options.ac_lin_step``
@@ -204,12 +204,12 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
         raise ValueError("AC analysis has start frequency = 0")
     if start > stop:
         raise ValueError("AC analysis has start > stop")
-    if points < 2:
-        raise ValueError("AC analysis has number of points < 2")
+    if points < 2 and not start == stop:
+        raise ValueError("AC analysis has number of points < 2 & start != stop")
     if sweep_type.upper() == options.ac_log_step or sweep_type is None:
-        omega_iter = utilities.log_axis_iterator(start, stop, points)
+        omega_iter = utilities.log_axis_iterator(2*np.pi*start, 2*np.pi*stop, points)
     elif sweep_type.upper() == options.ac_lin_step:
-        omega_iter = utilities.lin_axis_iterator(start, stop, points)
+        omega_iter = utilities.lin_axis_iterator(2*np.pi*start, 2*np.pi*stop, points)
     else:
         raise ValueError("Unknown sweep type %s" % sweep_type)
 
@@ -306,7 +306,7 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
         if solved:
             iter_n = iter_n + 1
             # hooray!
-            sol.add_line(omega, x)
+            sol.add_line(omega/np.pi/2, x)
         else:
             break
 

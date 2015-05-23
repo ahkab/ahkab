@@ -224,7 +224,7 @@ def plot_results(title, y2y1_list, results, outfilename=None):
         yvu += [(line_label, units)]
         gdata.append((data2 - data1, line_label))
 
-    if xlabel == 'w':
+    if xlabel == 'f':
         xlog = True
     else:
         xlog = False
