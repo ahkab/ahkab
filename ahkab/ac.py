@@ -284,7 +284,6 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
                               stype=sweep_type, op=x0, outfile=outfile)
 
     # setup the initial values to start the iteration:
-    nv = circ.get_nodes_number()
     j = np.complex('j')
 
     Gmin_matrix = dc_analysis.build_gmin_matrix(
@@ -295,7 +294,7 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
 
     x = x0
     for omega in omega_iter:
-        (x, error, solved, n_iter) = dc_analysis.dc_solve(
+        (x, _, solved, n_iter) = dc_analysis.dc_solve(
             mna=(mna + np.multiply(j * omega, AC) + J),
             Ndc = Nac,
             Ntran = 0,
