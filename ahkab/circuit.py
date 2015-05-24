@@ -164,8 +164,7 @@ class Circuit(list):
         return s[:-1]
 
     def create_node(self, name):
-        """Creates a new node, adds it to the circuit and returns it to the user
-        (to be used for subsequent declaration of elements, for example).
+        """Creates a new circuit node
 
         If there is a node in the circuit with the same name, ValueError is
         raised.
