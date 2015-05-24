@@ -177,15 +177,21 @@ class Circuit(list):
         **Returns:**
 
         node : string
-            the _unique_ identifier of the node.
+            the _unique_ identifier of the node, to be used for subsequent
+            element declarations, for example.
 
         :raises ValueError: if a new node with the given id cannot be created,
           for example because a node with the same name already exists in the
           circuit. The only exception is the ground node, which has the
           reserved id ``'0'``, and for which this method won't raise any
           exception.
+        :raises TypeError: if the parameter ``name`` is not of "text" type (what
+          that means exactly depends on which version of Python you are using.)
 
         """
+        if type(name) not in py3compat.string_types:
+            raise TypeError("The node %s should have been of text type" %
+                            name)
         got_ref = 0 in self.nodes_dict
         if name not in self.nodes_dict:
             if name == '0':
@@ -223,10 +229,18 @@ class Circuit(list):
 
         **Returns:**
 
-        int_node : int
-            the internal node id assigned to the node.
+        ext_name : string
+            the _unique_ identifier of the node, to be used for subsequent
+            element declarations, for example.
 
+        :raises TypeError: if the parameter ``ext_name`` is not of "text" type
+          (what that means exactly depends on which version of Python you are
+          using.)
         """
+        # must be text (str unicode...)
+        if type(ext_name) not in py3compat.string_types:
+            raise TypeError("The node %s should have been of text type" %
+                            ext_name)
         # test: do we already have it in the dictionary?
         if ext_name not in self.nodes_dict:
             if ext_name == '0':
@@ -237,10 +251,10 @@ class Circuit(list):
             self.nodes_dict.update({int_node:ext_name})
             self.nodes_dict.update({ext_name:int_node})
         else:
-            int_node = self.nodes_dict[ext_name]
-        return int_node
+            pass
+        return ext_name
 
-    def generate_internal_only_node_label(self):
+    def new_internal_node(self):
         """Generate implicit internal nodes.
 
         Some devices are made of a group of other devices, connected by
@@ -248,11 +262,8 @@ class Circuit(list):
         simulator treats specially, hiding them from the user if not
         explicitly asked about them.
 
-        This method generates the external names for such nodes.
-
-        .. note::
-
-            They are *NOT* added to the circuit during their creation.
+        This method generates the external names for such nodes and inserts them
+        in the circuit.
 
         **Returns:**
 
@@ -262,6 +273,7 @@ class Circuit(list):
 
         ext_node = "INT" + str(self.internal_nodes)
         self.internal_nodes = self.internal_nodes + 1
+        self.create_node(ext_node)
         return ext_node
 
     def get_nodes_number(self):
@@ -280,7 +292,13 @@ class Circuit(list):
 
         chk : boolean
             The result of the check.
+
+        :raises TypeError: if the supplied node is not an ``int``. Typically
+          this happens when the method is called with an *external* name.
         """
+        if type(int_node) is not int:
+            raise TypeError('Expecting an INTERNAL node of type int, got %s.' %
+                            type(int_node))
         return self.nodes_dict[int_node].find("INT") > -1
 
     def is_nonlinear(self):
