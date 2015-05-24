@@ -28,6 +28,7 @@ from __future__ import (unicode_literals, absolute_import,
 import ahkab
 import copy
 
+from nose.tools import raises
 
 def test_remove_elem_linear():
     """Test circuit.remove_elem with linear elem"""
@@ -102,7 +103,100 @@ def test_find_vde():
         e = c.find_vde(nnodes - 1 + c.find_vde_index(pi))
         assert e.part_id.lower() == pi.lower()
 
+@raises(ValueError)
+def test_create_node1():
+    """Test create_node() rejecting doubles"""
+    cir = ahkab.Circuit('Circuit test')
+    n1 = cir.create_node('n1')
+    cir.add_capacitor('C1', 'n1', 'n2', 1e-6)
+    cir.create_node('n1')
+
+@raises(TypeError)
+def test_create_node2():
+    """Test create_node() rejecting nodes of wrong types"""
+    cir = ahkab.Circuit('Circuit test')
+    n1 = cir.create_node(1)
+
+@raises(TypeError)
+def test_add_node1():
+    """Test add_node() rejecting nodes of wrong types"""
+    cir = ahkab.Circuit('Circuit test')
+    n1 = cir.add_node(1)
+
+def test_add_node2():
+    """Check the return value of add_node()"""
+    cir = ahkab.Circuit('Circuit test')
+    assert 'n1' == cir.add_node('n1')
+
+def test_add_node3():
+    """Check add_node() correctly adding nodes 1/2"""
+    cir = ahkab.Circuit('Circuit test')
+    n1 = cir.add_node('n1')
+    assert n1 in cir.nodes_dict
+
+def test_add_node4():
+    """Check add_node() correctly adding nodes 2/2"""
+    cir = ahkab.Circuit('Circuit test')
+    n1 = cir.add_node('n1')
+    assert cir.nodes_dict[n1] in cir.nodes_dict
+
+def test_create_node3():
+    """Check create_node() correctly adding nodes 1/2"""
+    cir = ahkab.Circuit('Circuit test')
+    n1 = cir.create_node('n1')
+    assert n1 in cir.nodes_dict
+
+def test_add_node4():
+    """Check create_node() correctly adding nodes 2/2"""
+    cir = ahkab.Circuit('Circuit test')
+    n1 = cir.create_node('n1')
+    assert cir.nodes_dict[n1] in cir.nodes_dict
+
+def test_create_node5():
+    """Check the return value of create_node()"""
+    cir = ahkab.Circuit('Circuit test')
+    assert 'n1' == cir.add_node('n1')
+
+@raises(TypeError)
+def test_new_internal_node1():
+    """Check the internal nodes exceptions"""
+    cir = ahkab.Circuit('Circuit test')
+    n = cir.new_internal_node()
+    assert cir.is_int_node_internal_only(n)
+
+def test_new_internal_node2():
+    """Check the internal nodes"""
+    cir = ahkab.Circuit('Circuit test')
+    n = cir.new_internal_node()
+    assert cir.is_int_node_internal_only(cir.nodes_dict[n])
+
+def test_get_nodes_number():
+    """Test get_nodes_number()"""
+    cir = ahkab.Circuit('Circuit test')
+    n1 = cir.create_node('n1')
+    n2 = cir.create_node('n2')
+    n3 = cir.create_node('n3')
+    n4 = cir.create_node('n4')
+    n5 = cir.create_node('n5')
+    n1 = cir.add_node('n1')
+    gnd = cir.create_node('0')
+    assert cir.get_nodes_number() == 6
+    #assert cir.nodes_dict[n1] in cir.nodes_dict
+    assert cir.get_nodes_number() == int(len(cir.nodes_dict)/2)
+
 if __name__ == '__main__':
     test_remove_elem_linear()
     test_find_vde()
     test_find_vde_index()
+    test_create_node1()
+    test_create_node2()
+    test_add_node1()
+    test_add_node2()
+    test_add_node3()
+    test_add_node4()
+    test_create_node3()
+    test_add_node4()
+    test_create_node5()
+    test_new_internal_node1()
+    test_new_internal_node2()
+    test_get_nodes_number()
