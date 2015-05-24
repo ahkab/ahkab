@@ -126,7 +126,8 @@ def test_add_node1():
 def test_add_node2():
     """Check the return value of add_node()"""
     cir = ahkab.Circuit('Circuit test')
-    assert 'n1' == cir.add_node('n1')
+    cir.add_node('n1')
+    assert cir.nodes_dict['n1'] == cir.add_node('n1')
 
 def test_add_node3():
     """Check add_node() correctly adding nodes 1/2"""
@@ -155,7 +156,7 @@ def test_add_node4():
 def test_create_node5():
     """Check the return value of create_node()"""
     cir = ahkab.Circuit('Circuit test')
-    assert 'n1' == cir.add_node('n1')
+    assert 'n1' == cir.create_node('n1')
 
 @raises(TypeError)
 def test_new_internal_node1():

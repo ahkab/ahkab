@@ -229,9 +229,8 @@ class Circuit(list):
 
         **Returns:**
 
-        ext_name : string
-            the _unique_ identifier of the node, to be used for subsequent
-            element declarations, for example.
+        int_name : string
+            the *unique* *internal* ciecuit identifier of the node.
 
         :raises TypeError: if the parameter ``ext_name`` is not of "text" type
           (what that means exactly depends on which version of Python you are
@@ -251,8 +250,8 @@ class Circuit(list):
             self.nodes_dict.update({int_node:ext_name})
             self.nodes_dict.update({ext_name:int_node})
         else:
-            pass
-        return ext_name
+            int_node = self.nodes_dict[ext_name]
+        return int_node
 
     def new_internal_node(self):
         """Generate implicit internal nodes.
