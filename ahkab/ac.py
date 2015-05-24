@@ -438,6 +438,6 @@ def _generate_J(xop, circ, reduced_mna_size):
     Tlin = np.zeros((reduced_mna_size, 1))
     for elem in circ:
         if elem.is_nonlinear:
-            dc_analysis.update_J_and_Tx(J, Tlin, xop, elem, time=None)
+            dc_analysis._update_J_and_Tx(J, Tlin, xop, elem, time=None)
     # del Tlin # not needed! **DC**!
     return J
