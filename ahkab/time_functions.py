@@ -435,6 +435,8 @@ class pulse(object):
 
     def __call__(self, time):
         """Evaluate the pulse function at the given time."""
+        if time is None:
+            time = 0
         time = time - self.per * int(time / self.per)
         if time < self.td:
             return self.v1
@@ -509,6 +511,8 @@ class sin(object):
 
     def __call__(self, time):
         """Evaluate the sine function at the given time."""
+        if time is None:
+            time = 0
         if time < self.td:
             return self.vo + self.va*math.sin(math.pi*self.phi/180.)
         else:
@@ -580,6 +584,8 @@ class exp(object):
 
     def __call__(self, time):
         """Evaluate the exponential function at the given time."""
+        if time is None:
+            time = 0
         if time < self.td1:
             return self.v1
         elif time < self.td2:
@@ -646,6 +652,8 @@ class sffm(object):
 
     def __call__(self, time):
         """Evaluate the SFFM function at the given time."""
+        if time is None:
+            time = 0
         if time <= self.td:
             return self.vo
         else:
@@ -703,6 +711,8 @@ class am(object):
 
     def __call__(self, time):
         """Evaluate the AM function at the given time."""
+        if time is None:
+            time = 0
         if time <= self.td:
             return 0.
         else:
