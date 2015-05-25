@@ -96,7 +96,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
         * if ``step`` is specified, the number of points will be
           automatically determined.
         * if ``points`` is set, the step will be automatically determined.
-        * if none of them is set, ``options.shooting_default_points`` will
+        * if none of them is set, ``options.bfpss_default_points`` will
           be used as value for ``points`` and ``step`` computed accordingly.
 
     **Returns:**
@@ -130,7 +130,7 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
         raise ValueError
 
     (points, step) = utilities.check_step_and_points(step, points, period,
-                                           options.shooting_default_points)
+                                           options.bfpss_default_points)
 
     n_of_var = mna.shape[0]
     locked_nodes = circ.get_locked_nodes()
@@ -253,9 +253,10 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
             break
         tick.step()
 
-        if options.shooting_max_nr_iter and iteration == options.shooting_max_nr_iter:
-            printing.print_general_error(
-                "Hitted SHOOTING_MAX_NR_ITER (" + str(options.shooting_max_nr_iter) + "), iteration halted.")
+        if options.bfpss_max_nr_iter and iteration == options.bfpss_max_nr_iter:
+            printing.print_general_error("Hit BFPSS_MAX_NR_ITER (" +
+                                         str(options.bfpss_max_nr_iter) +
+                                         "), iteration halted.")
             converged = False
             break
         else:

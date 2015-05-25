@@ -115,6 +115,9 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
 
     if isinstance(x0, results.op_solution):
         x0 = x0.asarray()
+
+    # Do we have MNA T D or do we need to build them
+    # MNA & T
     if (matrices is None or type(matrices) != dict or 'MNA' not in matrices or
         'Tf' not in matrices):
         # recalculate
@@ -126,7 +129,7 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
                          " rows.")
     else:
         mna, Tf = matrices['MNA'], matrices['Tf']
-
+    # D
     if matrices is None or 'D' not in matrices or matrices['D'] is None:
         D = transient.generate_D(circ, [mna.shape[0], mna.shape[0]])
         D = utilities.remove_row_and_col(D)
@@ -135,7 +138,8 @@ def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=
     else:
         D = matrices['D']
 
-    points, step = utilities.check_step_and_points(step, points, period)
+    points, step = utilities.check_step_and_points(step, points, period,
+                                                   options.shooting_default_points)
 
     n_of_var = mna.shape[0]
     locked_nodes = circ.get_locked_nodes()

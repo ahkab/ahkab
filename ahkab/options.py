@@ -141,6 +141,12 @@ shooting_default_points = 100
 #: Maximum number of NR iterations for shooting analyses.
 shooting_max_nr_iter = 10000
 
+# bfpss
+#: Default number of points for a BFPSS analysis.
+bfpss_default_points = 100
+#: Maximum number of NR iterations for BFPSS analyses.
+bfpss_max_nr_iter = 10000
+
 # symbolic
 #: Enable the manual solver:
 #: solve the circuit equations one at a time as you might do "manually".
