@@ -143,10 +143,6 @@ from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
 import numpy as np
-import math
-
-from . import constants
-from . import printing
 
 class Component(object):
 
@@ -560,8 +556,8 @@ class ISource(Component):
             A positive currents flows in a element into the positive node and
             out of the negative node
         """
-        if not self.is_timedependent or (self._time_function == None) or \
-            (time == None and self.dc_value is not None):
+        if not self.is_timedependent or (self._time_function is None) or \
+            (time is None and self.dc_value is not None):
             return self.dc_value
         else:
             return self._time_function(time)
@@ -687,8 +683,8 @@ class VSource(Component):
             The voltage, in Volt.
         """
 
-        if not self.is_timedependent or \
-            (self._time_function is None) or \
+        if (not self.is_timedependent or\
+            self._time_function is None) or \
                 (time is None and self.dc_value is not None):
             return self.dc_value
         else:
