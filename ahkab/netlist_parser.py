@@ -126,6 +126,7 @@ from .dc_analysis import specs as dc_spec
 from .ac import specs as ac_spec
 from .transient import specs as tran_spec
 from .pss import specs as pss_spec
+from .py3compat import StringIO
 from .pz import specs as pz_specs
 from .symbolic import specs as symbolic_spec
 from .time_functions import time_fun_specs
@@ -161,7 +162,10 @@ def parse_circuit(filename, read_netlist_from_stdin=False):
     if not read_netlist_from_stdin:
         ffile = open(filename, "r")
     else:
-        ffile = sys.stdin
+        buf = ""
+        for aline in sys.stdin:
+            buf += aline + "\n"
+        ffile = StringIO(buf)
 
     file_list = [(ffile, "unknown", not read_netlist_from_stdin)]
     netlist_wd = os.path.split(filename)[0]
