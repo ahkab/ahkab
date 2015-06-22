@@ -114,9 +114,39 @@ def test_pulse():
     for ti in t:
         assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
 
+def test_pwl():
+    """Test time_functions.pwl"""
+    # we define a pulse shape, with repeat and we check that it matches with
+    # its sympy implementation
+    # as we cannot define a periodic function in sympy, we will use a small hack
+    v1, v2, td, tr, pw, tf, per, time = sympy.symbols('v1, v2, td, tr, pw, ' +
+                                                      'tf, per, time')
+    F = v1*Heaviside(td - time) + \
+        ((v2 - v1)/tr*time + v1 +(v1 - v2)*td/tr)* \
+        Heaviside(time - td)*Heaviside(td + tr - time) + \
+        v2*Heaviside(time - td - tr)*Heaviside(td + tr + pw - time) + \
+        ((v1 - v2)/tf*time + v2 + (-v1*(pw + td + tr) + v2*(pw + td + tr))/tf)* \
+        Heaviside(time - td - tr - pw)*Heaviside(td + tr + pw + tf - time) + \
+        v1*Heaviside(time - td - tr - pw - tf)
+
+    v1n, v2n, tdn, trn, pwn, tfn, pern = (-2, 3, 0.1e-3, 0.05e-3, .5e-3, .01e-3,
+                                         1e-3)
+    x = [0., 0.05e-3, 0.55e-3, 0.56e-3, 1e-3]
+    y = [-2, 3, 3, -2, -2]
+    f = time_functions.pwl(x, y, repeat=True, td=0.1e-3, repeat_time=1e-3)
+    FS = sympy.lambdify(time, sympy.N(F.subs(dict(v1=v1n, v2=v2n, td=tdn,
+                                                  tr=trn, pw=pwn, tf=tfn,
+                                                  per=pern))))
+    t = np.linspace(0, 1e-3, 1e3)
+    for ti in t:
+        assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
+    for ti in t:
+        assert np.allclose(f(ti+1e-3), float(FS(ti)), rtol=1e-4)
+
 if __name__ == '__main__':
     test_sffm()
     test_am()
     test_sin()
     test_exp()
     test_pulse()
+    test_pwl()

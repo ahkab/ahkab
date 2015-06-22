@@ -33,6 +33,7 @@ Classes defined in this module
 
 .. autosummary::
     pulse
+    pwl
     sin
     exp
     sffm
@@ -149,6 +150,8 @@ from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
 import math
+
+from scipy.interpolate import InterpolatedUnivariateSpline
 
 time_fun_specs = {'sin': { #VO VA FREQ TD THETA
     'tokens': ({
@@ -723,4 +726,74 @@ class am(object):
     def __str__(self):
         return "type=am sa=%g oc=%g fm=%g fc=%g td=%g" % \
                 (self.sa, self.oc, self.fm, self.fc, self.td)
+
+class pwl(object):
+    """Piece-Wise Linear (PWL) waveform
+
+    .. image:: images/elem/pwl.svg
+
+    A piece-wise linear waveform is defined by a sequence of points
+    :math:`(x_i, y_i)`.
+
+    Please supply the abscissa values :math:`\\{x\\}_i` in the vector
+    ``x``, the ordinate values :math:`\\{y\\}_i` in the vector ``y``,
+    separately.
+
+
+    **Parameters:**
+
+    x : sequence-like
+        The abscissa values of the interpolation points.
+    y : sequence-like
+        The ordinate values of the interpolation points.
+    repeat : boolean, optional
+        Whether the waveform should be repeated after its end. If set to
+        ``True``, ``repeat_time`` also needs to be set to define when the
+        repetition begins. Defaults to ``False``.
+    repeat_time : float, optional
+        In case the waveform is set to be repeated, setting the ``repeat`` flag
+        above, the parameter, defined in seconds, set the first time instant at
+        which the waveform repetition happens.
+    td : float, optional
+        Time delay before the signal begins, in seconds. Defaults to zero.
+    """
+
+    def __init__(self, x, y, repeat=False, repeat_time=0, td=0):
+        self.x = x
+        self.y = y
+        self.repeat = repeat
+        self.repeat_time = repeat_time
+        if self.repeat_time == max(x):
+            self.repeat_time = 0
+        self.td = td
+        self._type = "V"
+        self._f = InterpolatedUnivariateSpline(self.x, self.y, k=1)
+
+    def __call__(self, time):
+        """Evaluate the PWL function at the given time."""
+        time = self._normalize_time(time)
+        return self._f(time)
+
+    def _normalize_time(self, time):
+        if time is None:
+            time = 0
+        if time <= self.td:
+            time = 0
+        elif time > self.td:
+            time = time - self.td
+            if self.repeat:
+                if time > max(self.x):
+                    time = (time - max(self.x)) % \
+                           (max(self.x) - self.repeat_time) + \
+                           self.repeat_time
+                else:
+                    pass
+        return time
+
+    def __str__(self):
+        tv = " "
+        for x, y in zip(self.x, self.y):
+            tv += "%g %g "
+        return "type=pwl" + tv + ("sa=%g oc=%g fm=%g fc=%g td=%g" %
+                                  (self.sa, self.oc, self.fm, self.fc, self.td))
 
