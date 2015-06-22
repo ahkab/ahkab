@@ -85,7 +85,7 @@ specs = {'symbolic': {'tokens': ({
 #: the Laplace variable
 s = sympy.Symbol('s', complex=True)
 
-enabled_assumptions = {'real':False, 'positive':False, 'complex':True}
+enabled_assumptions = {'real':True, 'positive':True, 'complex':True}
 
 # When the MNA analysis is formulated in terms of conductances, we need
 # to:
