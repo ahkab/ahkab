@@ -387,6 +387,7 @@ import numpy as np
 import sympy
 
 from scipy.interpolate import InterpolatedUnivariateSpline
+from sympy.parsing.sympy_parser import parse_expr
 
 from nose.tools import ok_, nottest
 from nose.plugins.skip import SkipTest
@@ -621,7 +622,10 @@ class NetlistTest(unittest.TestCase):
                     if isinstance(res[k], dict): # hence ref[k] will be a dict too
                         self._check(res[k], ref[k])
                     elif isinstance(ref[k], sympy.Basic) and isinstance(res[k], sympy.Basic):
-                        assert (res[k] == ref[k]) or (sympy.simplify(ref[k] - res[k]) == 0)
+                        # get rid of assumptions. Evaluate only expression
+                        rf = parse_expr(str(ref[k]))
+                        rs = parse_expr(str(res[k]))
+                        assert (rs == rf) or (sympy.simplify(rf/rs) == 1)
                     else:
                         assert res[k] == ref[k]
 
@@ -850,7 +854,10 @@ class APITest(unittest.TestCase):
                     if isinstance(res[k], dict): # hence ref[k] will be a dict too
                         self._check(res[k], ref[k])
                     elif isinstance(ref[k], sympy.Basic) and isinstance(res[k], sympy.Basic):
-                        assert (res[k] == ref[k]) or (sympy.simplify(ref[k]/res[k]) == 1)
+                        # get rid of assumptions. Evaluate only expression
+                        rf = parse_expr(str(ref[k]))
+                        rs = parse_expr(str(res[k]))
+                        assert (rs == rf) or (sympy.simplify(rf/rs) == 1)
                     else:
                         assert res[k] == ref[k]
 
