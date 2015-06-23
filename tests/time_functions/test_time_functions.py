@@ -29,7 +29,7 @@ def test():
     ac_analysis = ahkab.new_ac(start=1e3, stop=1e5, points=100, outfile='time_functions')
     tran_analysis = ahkab.new_tran(tstart=0, tstop=1.2e-3, tstep=1e-6, x0=None, outfile='time_functions')
 
-    testbench = testing.APITest('time_functions', mycircuit, 
+    testbench = testing.APITest('time_functions', mycircuit,
                                 [op_analysis, ac_analysis, tran_analysis],
                                 skip_on_travis=True, er=1e-3, ea=1e-5)
     testbench.setUp()
