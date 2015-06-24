@@ -138,10 +138,14 @@ def test_pwl():
                                                   tr=trn, pw=pwn, tf=tfn,
                                                   per=pern))))
     t = np.linspace(0, 1e-3, 1e3)
+    # first period
     for ti in t:
         assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
+    # second period
     for ti in t:
         assert np.allclose(f(ti+1e-3), float(FS(ti)), rtol=1e-4)
+    # check str() does not choke
+    print(str(f))
 
 if __name__ == '__main__':
     test_sffm()

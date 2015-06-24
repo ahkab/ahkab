@@ -756,6 +756,42 @@ class pwl(object):
         which the waveform repetition happens.
     td : float, optional
         Time delay before the signal begins, in seconds. Defaults to zero.
+
+    **Example:**
+
+    The following code::
+
+        import ahkab
+        import numpy as np
+        import pylab as plt
+        # vs = (x1, y1, x2, y2, x3, y3 ...)
+        vs = (60e-9, 0, 120e-9, 0, 130e-9, 5, 170e-9, 5, 180e-9, 0)
+        x, y = vs[::2], vs[1::2]
+        fun = ahkab.time_functions.pwl(x, y, repeat=1, repeat_time=60e-9, td=0)
+        myg = np.frompyfunc(fun, 1, 1)
+        t = np.linspace(0, 5e-7, 2000)
+        plt.plot(t, myg(t), lw=3)
+        plt.xlabel('Time [s]'); plt.ylabel('Arbitrary units []')
+
+
+    Produces:
+
+    .. plot::
+
+        import ahkab
+        import numpy as np
+        import pylab as plt
+        vs = (60e-9, 0, 120e-9, 0, 130e-9, 5, 170e-9, 5, 180e-9, 0)
+        x, y = vs[::2], vs[1::2]
+        fun = ahkab.time_functions.pwl(x, y, repeat=1, repeat_time=60e-9, td=0)
+        myg = np.frompyfunc(fun, 1, 1)
+        t = np.linspace(0, 5e-7, 2000)
+        plt.figure(figsize=(6, 3)); plt.grid()
+        plt.plot(t, myg(t), lw=3)
+        plt.xlabel('Time [s]'); plt.ylabel('Arbitrary units []')
+        plt.tight_layout()
+
+
     """
 
     def __init__(self, x, y, repeat=False, repeat_time=0, td=0):
