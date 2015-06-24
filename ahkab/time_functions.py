@@ -827,9 +827,14 @@ class pwl(object):
         return time
 
     def __str__(self):
+        pwl_str = "type=pwl"
         tv = " "
         for x, y in zip(self.x, self.y):
             tv += "%g %g "
-        return "type=pwl" + tv + ("sa=%g oc=%g fm=%g fc=%g td=%g" %
-                                  (self.sa, self.oc, self.fm, self.fc, self.td))
+        pwl_str += tv
+        if self.td:
+            pwl_str += "td=%g " % self.td
+        if self.repeat:
+            pwl_str = "R=1 RPT=%g " % self.repeat_time
+        return pwl_str[:-1]
 
