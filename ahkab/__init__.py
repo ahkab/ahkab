@@ -21,20 +21,21 @@
 """ ahkab is an easy electronic circuit simulator.
 """
 
+from __future__ import print_function
+
+import os
+
 # Package testing can be done remotely, without display. This would make
 # matplotlib fail (and, sometimes, the test as well).
 # If we check for $DISPLAY, that makes us probably lose in portability,
 # because does Windows have the DISPLAY env variable defined?
-from __future__ import print_function
-import os
-
 try:
     import matplotlib
-    if os.system('python -c "import matplotlib.pyplot as plt;plt.figure()" > ' + 
-                 '/dev/null 2>&1'):
+    if os.system('python -c "import matplotlib.pyplot as plt;plt.figure()"'):
+        # no display, use a display-less backend
         matplotlib.use('Agg')
 except ImportError:
-    # plotting will complain about this.
+    # plotting.py will complain about this later on.
     pass
 
 from .ahkab import new_op, new_dc, new_tran, new_ac, new_pss, new_pz
