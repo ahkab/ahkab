@@ -122,10 +122,12 @@ def open_utf8(filename):
     fp : codecs.UTF8Writer object
         The wrapped file pointer.
     """
-    fp = open(filename, 'w')
     if py3compat.PY2:
+        fp = open(filename, 'w')
         UTF8Writer = codecs.getwriter('utf8')
         fp = UTF8Writer(fp)
+    else:
+        fp = open(filename, 'w', encoding='UTF-8')
     return fp
 
 def print_analysis(an):

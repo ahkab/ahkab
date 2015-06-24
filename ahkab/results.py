@@ -466,8 +466,7 @@ class op_solution(solution, _mutable_data):
         fp.write("========================\n\n")
         for k in sorted(self._op_info.keys()):
             t = printing.table(self._op_info[k], headers=self._op_keys[k][0])
-            fp.write(t.encode('utf-8').decode('utf-8'))
-            fp.write('\n\n')
+            fp.write(t + '\n\n')
         fp.write('Total power dissipation: %g W\n\n' % self.tot_power)
         fp.flush()
         if filename != 'stdout':
