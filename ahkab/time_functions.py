@@ -835,6 +835,6 @@ class pwl(object):
         if self.td:
             pwl_str += "td=%g " % self.td
         if self.repeat:
-            pwl_str = "R=1 RPT=%g " % self.repeat_time
+            pwl_str = "RPT=%g " % self.repeat_time
         return pwl_str[:-1]
 
