@@ -1,6 +1,47 @@
 <!-- Name: Changelog -->
 #Changelog
 
+Version 0.18 represents the culmination of almost two months of efforts, yet
+another step in the current time-based release scheme.
+
+This release features support for the Fourier (.FOUR) and Fast Fourier Transform
+directives (.FFT). Piece-wise linear functions are also now supported in Python,
+with extra features like a repeat directory to enable periodicity.
+
+Moreover, as in the previous releases, several commits were devoted to improving
+the documentation: you can find the new, improved documentation online at
+http://ahkab.readthedocs.org/en/latest/
+
+### Features added:
+
+* FEATURES
+
+* Add .FOUR and .FFT support
+* Add PWL waveforms (available from python only)
+
+### Backwards incompatible changes:
+
+* AC analyses are from now defined in Hz (compliant with SPICE). This also means
+  that there is no omega (accessed through 'w') in the results set, it is now
+  replaced by a frequency vector, expressed in Hz and accessed as 'f'.
+
+User code can be usually easily fixed substituting ``2*pi*r[w]`` with ``r[f]``
+or the like. Sorry for any trouble this creates.
+
+### Changes from contributors and pull requests merged:
+
+*None.* 
+
+### Bugs fixed, short list:
+
+BUGFIX: Fix opening of files in system that do not default to utf-8
+BUGFIX: Suppress error message on Windows
+BUGFIX: Use all assumptions, fix #32
+BUGFIX: fix reading the netlist from stdin
+BUGFIX: Use different options for SH and BFPSS
+BUGFIX: no DC value -> return t=0
+BUGFIX: convert to uppercase before comparison
+
 ## Changelog for v 0.17
 
 Version 0.17 represents the culmination of 15 days of efforts, yet another step
