@@ -30,7 +30,7 @@ import scipy.sparse
 
 from . import circuit
 from . import dc_analysis
-from . import devices
+from . import components
 from . import implicit_euler
 from . import options
 from . import printing
@@ -382,11 +382,11 @@ def _build_Tt(circ, points, step, tick, n_of_var, verbose=3):
         v_eq = 0
         time = index * step
         for elem in circ:
-            if (isinstance(elem, devices.VSource) or isinstance(elem, devices.ISource)) and elem.is_timedependent:
-                if isinstance(elem, devices.VSource):
+            if (isinstance(elem, components.sources.VSource) or isinstance(elem, components.sources.ISource)) and elem.is_timedependent:
+                if isinstance(elem, components.sources.VSource):
                     Tt[index * n_of_var + nv - 1 + v_eq, 0] = - \
                         1.0 * elem.V(time)
-                elif isinstance(elem, devices.ISource):
+                elif isinstance(elem, components.sources.ISource):
                     if elem.n1:
                         Tt[index * n_of_var + elem.n1 - 1, 0] = \
                             Tt[index * n_of_var + elem.n1 - 1, 0] + \

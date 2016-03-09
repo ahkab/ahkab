@@ -104,7 +104,7 @@ from __future__ import (unicode_literals, absolute_import,
 
 import numpy as np
 
-from . import (circuit, dc_analysis, devices, options, printing, results,
+from . import (circuit, dc_analysis, components, options, printing, results,
                utilities)
 
 specs = {'ac': {'tokens': ({
@@ -341,16 +341,16 @@ def _generate_AC(circ, shape):
     nv = circ.get_nodes_number()  # - 1
     i_eq = 0  # each time we find a vsource or vcvs or ccvs, we'll add one to this.
     for elem in circ:
-        if circuit.is_elem_voltage_defined(elem) and not isinstance(elem, devices.Inductor):
+        if circuit.is_elem_voltage_defined(elem) and not isinstance(elem, components.Inductor):
             i_eq = i_eq + 1
-        elif isinstance(elem, devices.Capacitor):
+        elif isinstance(elem, components.Capacitor):
             n1 = elem.n1
             n2 = elem.n2
             AC[n1, n1] = AC[n1, n1] + elem.value
             AC[n1, n2] = AC[n1, n2] - elem.value
             AC[n2, n2] = AC[n2, n2] + elem.value
             AC[n2, n1] = AC[n2, n1] - elem.value
-        elif isinstance(elem, devices.Inductor):
+        elif isinstance(elem, components.Inductor):
             AC[nv + i_eq, nv + i_eq] = -1 * elem.value
             if len(elem.coupling_devices):
                 for cd in elem.coupling_devices:
@@ -396,7 +396,7 @@ def _generate_Nac(circ):
     j = np.complex('j')
     # process `ISource`s
     for elem in circ:
-        if isinstance(elem, devices.ISource) and elem.abs_ac is not None:
+        if isinstance(elem, components.sources.ISource) and elem.abs_ac is not None:
             # convenzione normale!
             Nac[elem.n1, 0] = Nac[elem.n1, 0] + \
                 elem.abs_ac * np.exp(j * elem.arg_ac)
@@ -409,7 +409,7 @@ def _generate_Nac(circ):
         if circuit.is_elem_voltage_defined(elem):
             index = Nac.shape[0]
             Nac = utilities.expand_matrix(Nac, add_a_row=True, add_a_col=False)
-            if isinstance(elem, devices.VSource) and elem.abs_ac is not None:
+            if isinstance(elem, components.sources.VSource) and elem.abs_ac is not None:
                 Nac[index, 0] = -1.0 * elem.abs_ac * np.exp(j * elem.arg_ac)
     return Nac
 

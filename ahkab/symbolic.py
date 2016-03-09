@@ -45,7 +45,7 @@ import sympy
 from sympy.matrices import zeros as smzeros
 
 from . import circuit
-from . import devices
+from . import components
 from . import ekv
 from . import mosq
 from . import diode
@@ -367,7 +367,7 @@ def generate_mna_and_N(circ, opts, ac=False, subs=None, verbose=3):
     subs_g = {}
 
     for elem in circ:
-        if isinstance(elem, devices.Resistor):
+        if isinstance(elem, components.Resistor):
             # we use conductances instead of 1/R because there is a significant
             # overhead handling many 1/R terms in sympy.
             if elem.is_symbolic:
@@ -389,7 +389,7 @@ def generate_mna_and_N(circ, opts, ac=False, subs=None, verbose=3):
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - G
             mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - G
             mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + G
-        elif isinstance(elem, devices.Capacitor):
+        elif isinstance(elem, components.Capacitor):
             if ac:
                 if elem.is_symbolic:
                     capa = _symbol_factory(
@@ -404,9 +404,9 @@ def generate_mna_and_N(circ, opts, ac=False, subs=None, verbose=3):
                 mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - s * capa
             else:
                 pass
-        elif isinstance(elem, devices.Inductor):
+        elif isinstance(elem, components.Inductor):
             pass
-        elif isinstance(elem, devices.GISource):
+        elif isinstance(elem, components.sources.GISource):
             if elem.is_symbolic:
                 alpha = _symbol_factory(elem.part_id.upper(), real=True)
                 if alpha in subs:  # instant substitution
@@ -417,7 +417,7 @@ def generate_mna_and_N(circ, opts, ac=False, subs=None, verbose=3):
             mna[elem.n1, elem.sn2] = mna[elem.n1, elem.sn2] - alpha
             mna[elem.n2, elem.sn1] = mna[elem.n2, elem.sn1] - alpha
             mna[elem.n2, elem.sn2] = mna[elem.n2, elem.sn2] + alpha
-        elif isinstance(elem, devices.ISource):
+        elif isinstance(elem, components.sources.ISource):
             if elem.is_symbolic:
                 IDC = _symbol_factory(elem.part_id.upper())
                 if IDC in subs:  # instant substitution
@@ -451,10 +451,10 @@ def generate_mna_and_N(circ, opts, ac=False, subs=None, verbose=3):
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - gd
             mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - gd
             mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + gd
-        elif isinstance(elem, devices.FISource):
+        elif isinstance(elem, components.sources.FISource):
             # These are added after all VDEs have been accounted for
             pass
-        elif isinstance(elem, devices.InductorCoupling):
+        elif isinstance(elem, components.InductorCoupling):
             pass
             # this is taken care of within the inductors
         elif circuit.is_elem_voltage_defined(elem):
@@ -476,7 +476,7 @@ def generate_mna_and_N(circ, opts, ac=False, subs=None, verbose=3):
             # KVL
             mna[index, elem.n1] = +1
             mna[index, elem.n2] = -1
-            if isinstance(elem, devices.VSource):
+            if isinstance(elem, components.sources.VSource):
                 if elem.is_symbolic:
                     VDC = _symbol_factory(elem.part_id.upper())
                     if VDC in subs:  # instant substitution
@@ -484,7 +484,7 @@ def generate_mna_and_N(circ, opts, ac=False, subs=None, verbose=3):
                 else:
                     VDC = elem.dc_value
                 N[index, 0] = -VDC
-            elif isinstance(elem, devices.EVSource):
+            elif isinstance(elem, components.sources.EVSource):
                 if elem.is_symbolic:
                     alpha = _symbol_factory(elem.part_id.upper(), real=True)
                     if alpha in subs:  # instant substitution
@@ -493,7 +493,7 @@ def generate_mna_and_N(circ, opts, ac=False, subs=None, verbose=3):
                     alpha = elem.alpha
                 mna[index, elem.sn1] = -alpha
                 mna[index, elem.sn2] = +alpha
-            elif isinstance(elem, devices.HVSource):
+            elif isinstance(elem, components.sources.HVSource):
                 if elem.is_symbolic:
                     alpha = _symbol_factory(elem.part_id.upper(), real=True)
                     if alpha in subs:  # instant substitution
@@ -502,7 +502,7 @@ def generate_mna_and_N(circ, opts, ac=False, subs=None, verbose=3):
                     alpha = elem.alpha
                 source_index = circ.find_vde_index(elem.source_id)
                 mna[index, n_of_nodes + source_index] = +alpha
-            elif isinstance(elem, devices.Inductor):
+            elif isinstance(elem, components.Inductor):
                 if ac:
                     if elem.is_symbolic:
                         L = _symbol_factory(
@@ -522,7 +522,7 @@ def generate_mna_and_N(circ, opts, ac=False, subs=None, verbose=3):
                                            elem.__class__)
 
     for elem in circ:
-        if ac and isinstance(elem, devices.Inductor):
+        if ac and isinstance(elem, components.Inductor):
             # find its index to know which column corresponds to its
             # current
             this_index = circ.find_vde_index(elem.part_id, verbose=0)
@@ -543,7 +543,7 @@ def generate_mna_and_N(circ, opts, ac=False, subs=None, verbose=3):
                 # add the term.
                 mna[pre_vde + this_index,
                     pre_vde + other_index] += -s * M
-        elif isinstance(elem, devices.FISource):
+        elif isinstance(elem, components.sources.FISource):
             source_current_index = circ.find_vde_index(elem.source_id, verbose=0)
             if elem.is_symbolic:
                 F = _symbol_factory(elem.part_id, real=True)

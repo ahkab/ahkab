@@ -34,7 +34,7 @@ from . import circuit
 from . import printing
 from . import utilities
 from . import results
-from . import devices
+from . import components
 
 
 def shooting_analysis(circ, period, step=None, x0=None, points=None, autonomous=False,
@@ -288,12 +288,12 @@ def _build_Tass_static_vector(circ, Tf, points, step, tick, n_of_var, verbose=3)
         v_eq = 0
         time = index * step
         for elem in circ:
-            if (isinstance(elem, devices.VSource) or
-                isinstance(elem, devices.ISource)) and elem.is_timedependent:
+            if (isinstance(elem, components.sources.VSource) or
+                isinstance(elem, components.sources.ISource)) and elem.is_timedependent:
                 # time dependent source
-                if isinstance(elem, devices.VSource):
+                if isinstance(elem, components.sources.VSource):
                     Tt[nv - 1 + v_eq] = -1.0 * elem.V(time)
-                elif isinstance(elem, devices.ISource):
+                elif isinstance(elem, components.sources.ISource):
                     if elem.n1:
                         Tt[elem.n1 - 1] = Tt[elem.n1 - 1] + elem.I(time)
                     if elem.n2:

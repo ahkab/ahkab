@@ -122,7 +122,7 @@ from __future__ import (unicode_literals, absolute_import,
 import copy
 import math
 
-from . import devices
+from . import components
 from . import diode
 from . import ekv
 from . import mosq
@@ -494,7 +494,7 @@ class Circuit(list):
         if value == 0:
             raise CircuitError("ZERO-valued resistors are not allowed.")
 
-        elem = devices.Resistor(part_id=part_id, n1=n1, n2=n2, value=value)
+        elem = components.Resistor(part_id=part_id, n1=n1, n2=n2, value=value)
         self.append(elem)
 
     def add_capacitor(self, part_id, n1, n2, value, ic=None):
@@ -532,7 +532,7 @@ class Circuit(list):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
 
-        elem = devices.Capacitor(part_id=part_id, n1=n1, n2=n2, value=value, ic=ic)
+        elem = components.Capacitor(part_id=part_id, n1=n1, n2=n2, value=value, ic=ic)
 
         self.append(elem)
 
@@ -569,7 +569,7 @@ class Circuit(list):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
 
-        elem = devices.Inductor(part_id=part_id, n1=n1, n2=n2, value=value, ic=ic)
+        elem = components.Inductor(part_id=part_id, n1=n1, n2=n2, value=value, ic=ic)
 
         self.append(elem)
 
@@ -593,9 +593,9 @@ class Circuit(list):
         L1elem, L2elem = None, None
 
         for e in self:
-            if isinstance(e, devices.Inductor) and (L1 == e.part_id):
+            if isinstance(e, components.Inductor) and (L1 == e.part_id):
                 L1elem = e
-            elif isinstance(e, devices.Inductor) and (L2 == e.part_id):
+            elif isinstance(e, components.Inductor) and (L2 == e.part_id):
                 L2elem = e
 
         if L1elem is None or L2elem is None:
@@ -605,7 +605,7 @@ class Circuit(list):
 
         M = math.sqrt(L1elem.value * L2elem.value) * value
 
-        elem = devices.InductorCoupling(part_id=part_id, L1=L1, L2=L2, K=value, M=M)
+        elem = components.InductorCoupling(part_id=part_id, L1=L1, L2=L2, K=value, M=M)
         L1elem.coupling_devices.append(elem)
         L2elem.coupling_devices.append(elem)
 
@@ -632,7 +632,7 @@ class Circuit(list):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
 
-        elem = devices.VSource(part_id=part_id, n1=n1, n2=n2, dc_value=dc_value,
+        elem = components.sources.VSource(part_id=part_id, n1=n1, n2=n2, dc_value=dc_value,
                                ac_value=ac_value)
 
         if function is not None:
@@ -662,7 +662,7 @@ class Circuit(list):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
 
-        elem = devices.ISource(part_id=part_id, n1=n1, n2=n2, dc_value=dc_value,
+        elem = components.sources.ISource(part_id=part_id, n1=n1, n2=n2, dc_value=dc_value,
                                ac_value=ac_value)
 
         if function is not None:
@@ -788,7 +788,7 @@ class Circuit(list):
 
         .. seealso::
 
-            :class:`ahkab.devices.FISource`
+            :class:`ahkab.components.sources.FISource`
 
         """
         # Add the nodes, this is SAFE: if a node is already known to the circuit,
@@ -796,7 +796,7 @@ class Circuit(list):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
         # instantiate the element
-        elem = devices.FISource(part_id=part_id, n1=n1, n2=n2,
+        elem = components.sources.FISource(part_id=part_id, n1=n1, n2=n2,
                                 source_id=source_id, value=value)
         # add it!
         self.append(elem)
@@ -827,8 +827,8 @@ class Circuit(list):
 
         .. seealso::
 
-            :class:`ahkab.devices.EVSource`,
-            :class:`ahkab.devices.FISource`
+            :class:`ahkab.components.sources.EVSource`,
+            :class:`ahkab.components.sources.FISource`
 
         """
         # Add the nodes, this is SAFE: if a node is already known to the circuit,
@@ -836,7 +836,7 @@ class Circuit(list):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
         # instantiate the element
-        elem = devices.HVSource(part_id=part_id, n1=n1, n2=n2,
+        elem = components.sources.HVSource(part_id=part_id, n1=n1, n2=n2,
                                 source_id=source_id, value=value)
         # add it!
         self.append(elem)
@@ -871,7 +871,7 @@ class Circuit(list):
         sn1 = self.add_node(sn1)
         sn2 = self.add_node(sn2)
 
-        elem = devices.EVSource(part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2,
+        elem = components.sources.EVSource(part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2,
                                 value=value)
 
         self.append(elem)
@@ -909,7 +909,7 @@ class Circuit(list):
         sn1 = self.add_node(sn1)
         sn2 = self.add_node(sn2)
 
-        elem = devices.GISource(part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2,
+        elem = components.sources.GISource(part_id=part_id, n1=n1, n2=n2, sn1=sn1, sn2=sn2,
                                 value=value)
 
         self.append(elem)
@@ -1161,8 +1161,8 @@ def is_elem_voltage_defined(elem):
         ``True`` if ``elem`` is a voltage source, an inductor, a voltage-controlled
         voltage source or a current-controlled voltage source. ``False`` otherwise.
     """
-    if isinstance(elem, devices.VSource) or isinstance(elem, devices.EVSource) or \
-        isinstance(elem, devices.HVSource) or isinstance(elem, devices.Inductor) \
+    if isinstance(elem, components.sources.VSource) or isinstance(elem, components.sources.EVSource) or \
+        isinstance(elem, components.sources.HVSource) or isinstance(elem, components.Inductor) \
             or (hasattr(elem, "is_voltage_defined") and elem.is_voltage_defined):
         return True
     else:

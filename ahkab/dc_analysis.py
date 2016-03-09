@@ -48,7 +48,7 @@ import numpy.linalg
 import scipy.sparse
 import scipy.sparse.linalg
 
-from . import devices
+from . import components
 from . import diode
 from . import constants
 from . import ticker
@@ -223,10 +223,10 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None,
     v_eq = 0
     if not skip_Tt:
         for elem in circ:
-            if (isinstance(elem, devices.VSource) or isinstance(elem, devices.ISource)) and elem.is_timedependent:
-                if isinstance(elem, devices.VSource):
+            if (isinstance(elem, components.sources.VSource) or isinstance(elem, components.sources.ISource)) and elem.is_timedependent:
+                if isinstance(elem, components.sources.VSource):
                     Tt[nv - 1 + v_eq, 0] = -1 * elem.V(time)
-                elif isinstance(elem, devices.ISource):
+                elif isinstance(elem, components.sources.ISource):
                     if elem.n1:
                         Tt[elem.n1 - 1, 0] = Tt[elem.n1 - 1, 0] + elem.I(time)
                     if elem.n2:
@@ -529,17 +529,17 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
     for index in range(len(circ)):
         if circ[index].part_id.lower() == elem_descr:
             if elem_type == 'v':
-                if isinstance(circ[index], devices.VSource):
+                if isinstance(circ[index], components.sources.VSource):
                     source_elem = circ[index]
                     break
             if elem_type == 'i':
-                if isinstance(circ[index], devices.ISource):
+                if isinstance(circ[index], components.sources.ISource):
                     source_elem = circ[index]
                     break
     if not source_elem:
         raise ValueError(".DC: source %s was not found." % source)
 
-    if isinstance(source_elem, devices.VSource):
+    if isinstance(source_elem, components.sources.VSource):
         initial_value = source_elem.dc_value
     else:
         initial_value = source_elem.dc_value
@@ -562,7 +562,7 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
     index = 0
     for sweep_value in dc_iter:
         index = index + 1
-        if isinstance(source_elem, devices.VSource):
+        if isinstance(source_elem, components.sources.VSource):
             source_elem.dc_value = sweep_value
         else:
             source_elem.dc_value = sweep_value
@@ -587,7 +587,7 @@ def dc_analysis(circ, start, stop, step, source, sweep_type='LINEAR', guess=True
         printing.print_info_line(("done", 3), verbose)
 
     # clean up
-    if isinstance(source_elem, devices.VSource):
+    if isinstance(source_elem, components.sources.VSource):
         source_elem.dc_value = initial_value
     else:
         source_elem.dc_value = initial_value
@@ -989,31 +989,31 @@ def generate_mna_and_N(circ, verbose=3):
     for elem in circ:
         if elem.is_nonlinear:
             continue
-        elif isinstance(elem, devices.Resistor):
+        elif isinstance(elem, components.Resistor):
             mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + elem.g
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - elem.g
             mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - elem.g
             mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + elem.g
-        elif isinstance(elem, devices.Capacitor):
+        elif isinstance(elem, components.Capacitor):
             pass  # In a capacitor I(V) = 0
-        elif isinstance(elem, devices.GISource):
+        elif isinstance(elem, components.sources.GISource):
             mna[elem.n1, elem.sn1] = mna[elem.n1, elem.sn1] + elem.alpha
             mna[elem.n1, elem.sn2] = mna[elem.n1, elem.sn2] - elem.alpha
             mna[elem.n2, elem.sn1] = mna[elem.n2, elem.sn1] - elem.alpha
             mna[elem.n2, elem.sn2] = mna[elem.n2, elem.sn2] + elem.alpha
-        elif isinstance(elem, devices.ISource):
+        elif isinstance(elem, components.sources.ISource):
             if not elem.is_timedependent:  # convenzione normale!
                 N[elem.n1, 0] = N[elem.n1, 0] + elem.I()
                 N[elem.n2, 0] = N[elem.n2, 0] - elem.I()
             else:
                 pass  # vengono aggiunti volta per volta
-        elif isinstance(elem, devices.InductorCoupling):
+        elif isinstance(elem, components.InductorCoupling):
             pass
             # this is taken care of within the inductors
         elif circuit.is_elem_voltage_defined(elem):
             pass
             # we'll add its lines afterwards
-        elif isinstance(elem, devices.FISource):
+        elif isinstance(elem, components.sources.FISource):
             # we add these last, they depend on voltage sources
             # to sense the current
             pass
@@ -1034,19 +1034,19 @@ def generate_mna_and_N(circ, verbose=3):
             # KVL
             mna[index, elem.n1] = +1.0
             mna[index, elem.n2] = -1.0
-            if isinstance(elem, devices.VSource) and not elem.is_timedependent:
+            if isinstance(elem, components.sources.VSource) and not elem.is_timedependent:
                 # corretto, se e' def una parte tempo-variabile ci pensa
                 # mdn_solver a scegliere quella giusta da usare.
                 N[index, 0] = -1.0 * elem.V()
-            elif isinstance(elem, devices.VSource) and elem.is_timedependent:
+            elif isinstance(elem, components.sources.VSource) and elem.is_timedependent:
                 pass  # taken care step by step
-            elif isinstance(elem, devices.EVSource):
+            elif isinstance(elem, components.sources.EVSource):
                 mna[index, elem.sn1] = -1.0 * elem.alpha
                 mna[index, elem.sn2] = +1.0 * elem.alpha
-            elif isinstance(elem, devices.Inductor):
+            elif isinstance(elem, components.Inductor):
                 # N[index,0] = 0 pass, it's already zero
                 pass
-            elif isinstance(elem, devices.HVSource):
+            elif isinstance(elem, components.sources.HVSource):
                 index_source = circ.find_vde_index(elem.source_id)
                 mna[index, n_of_nodes+index_source] = 1.0 * elem.alpha
             else:
@@ -1056,7 +1056,7 @@ def generate_mna_and_N(circ, verbose=3):
 
     # iterate again for devices that depend on voltage-defined ones.
     for elem in circ:
-        if isinstance(elem, devices.FISource):
+        if isinstance(elem, components.sources.FISource):
             local_i_index = circ.find_vde_index(elem.source_id, verbose=0)
             mna[elem.n1, n_of_nodes + local_i_index] = mna[elem.n1, n_of_nodes + local_i_index] + elem.alpha
             mna[elem.n2, n_of_nodes + local_i_index] = mna[elem.n2, n_of_nodes + local_i_index] - elem.alpha
@@ -1170,13 +1170,13 @@ def modify_x0_for_ic(circ, x0):
 
     # setup voltages this may _not_ work properly
     for elem in circ:
-        if isinstance(elem, devices.Capacitor) and elem.ic or \
+        if isinstance(elem, components.Capacitor) and elem.ic or \
                 isinstance(elem, diode.diode) and elem.ic:
             x0[elem.n1 - 1, 0] = x0[elem.n2 - 1, 0] + elem.ic
 
     # setup the currents
     for elem in voltage_defined_elements:
-        if isinstance(elem, devices.Inductor) and elem.ic:
+        if isinstance(elem, components.Inductor) and elem.ic:
             x0[nv - 1 + voltage_defined_elements.index(elem), 0] = elem.ic
 
     if return_obj:
