@@ -33,6 +33,7 @@ This module contains a diode element and its model class.
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
+from math import e as E, isinf, sqrt
 import numpy as np
 
 from scipy.optimize import newton
@@ -241,35 +242,36 @@ class diode(object):
         if self.off:
             ret += " OFF=1"
         return ret
-
-
-IS_DEFAULT = 1e-14  # A
-N_DEFAULT = 1.0
-ISR_DEFAULT = 0.0  # A
-NR_DEFAULT = 2.0
-RS_DEFAULT = 0.0  # ohm
-CJ0_DEFAULT = 0.0
-M_DEFAULT = .5
-VJ_DEFAULT = .7
-FC_DEFAULT = .5
-CP_DEFAULT = .0
-TT_DEFAULT = .0
-BV_DEFAULT = float('inf')
-IBV_DEFAULT = 1e-3
-KF_DEFAULT = .0
-AF_DEFAULT = 1.
-FFE_DEFAULT = 1.
-TEMP_DEFAULT = 26.85
-XTI_DEFAULT = 3.0
-EG_DEFAULT = 1.11
-TBV_DEFAULT = 0.0
-TRS_DEFAULT = 0.0
-TTT1_DEFAULT = 0.0
-TTT2_DEFAULT = 0.0
-TM1_DEFAULT = 0.0
-TM2_DEFAULT = 0.0
+        
+IS_DEFAULT = 1e-14  # saturation current A
+N_DEFAULT = 1.0 # forvard branch ideality factor
+NBV_DEFAULT = 1.0 # breakdown ideality factor
+ISR_DEFAULT = 0.0  # recombination current parameter A
+NR_DEFAULT = 2.0 # emission coefficient for Isr
+RS_DEFAULT = 0.0  # series resistance ohm
+CJ0_DEFAULT = 0.0 # zero bias junction capacitance
+M_DEFAULT = .5 # grading coefficient
+VJ_DEFAULT = .7 # junction built-in potential
+FC_DEFAULT = .5 # forward bias depletion capacitance coefficient
+CP_DEFAULT = .0 # linear capacitance F
+TT_DEFAULT = .0 # transit time s
+BV_DEFAULT = float('inf') # reverse breakdown voltage
+IBV_DEFAULT = 1e-3 # reverse breakdown current IBV=-I(-BV)
+IKF_DEFAULT = float('inf') # high-injection knee current A
+KF_DEFAULT = .0 # flicker noise coefficient
+AF_DEFAULT = 1. # flicker noise exponent
+FFE_DEFAULT = 1. # flicker noise frequency exponent
+TEMP_DEFAULT = 26.85 # temperature
+XTI_DEFAULT = 3.0 # saturation current exponent
+EG_DEFAULT = 1.11 # band gap
+TBV_DEFAULT = 0.0 # BV linear temperature coefficient 1/◦C
+TRS_DEFAULT = 0.0 # RS linear temperature coefficient 1/◦C
+TTT1_DEFAULT = 0.0 # TT linear temperature coefficient
+TTT2_DEFAULT = 0.0 # TT quadratic temperature coefficient
+TM1_DEFAULT = 0.0 # M linear temperature coefficient
+TM2_DEFAULT = 0.0 # M quadratic temperature coefficient
 T_DEFAULT = utilities.Celsius2Kelvin(26.85)
-AREA_DEFAULT = 1.0
+AREA_DEFAULT = 1.0 # area
 
 class diode_model(object):
     """A diode model implementing the `Shockley diode equation
@@ -297,14 +299,15 @@ class diode_model(object):
     or to the source file ``diode.py`` file for the other parameters.
 
     """
-    def __init__(self, name, IS=None, N=None, ISR=None, NR=None, RS=None,
+    def __init__(self, name, IS=None, N=None, NBV=None, ISR=None, NR=None, RS=None,
                  CJ0=None, M=None, VJ=None, FC=None, CP=None, TT=None,
-                 BV=None, IBV=None, KF=None, AF=None, FFE=None, TEMP=None,
+                 BV=None, IBV=None, IKF=None, KF=None, AF=None, FFE=None, TEMP=None,
                  XTI=None, EG=None, TBV=None, TRS=None, TTT1=None, TTT2=None,
-                 TM1=None, TM2=None):
+                 TM1=None, TM2=None, material=constants.si):
         self.name = name
         self.IS = float(IS) if IS is not None else IS_DEFAULT
         self.N = float(N) if N is not None else N_DEFAULT
+        self.NBV = float(NBV) if NBV is not None else NBV_DEFAULT
         self.ISR = float(ISR) if ISR is not None else ISR_DEFAULT
         self.NR = float(NR) if NR is not None else NR_DEFAULT
         self.RS = float(RS) if RS is not None else RS_DEFAULT
@@ -316,6 +319,7 @@ class diode_model(object):
         self.TT = float(TT) if TT is not None else TT_DEFAULT
         self.BV = float(BV) if BV is not None else BV_DEFAULT
         self.IBV = float(IBV) if IBV is not None else IBV_DEFAULT
+        self.IKF = float(IKF) if IKF is not None else IKF_DEFAULT
         self.KF = float(KF) if KF is not None else KF_DEFAULT
         self.AF = float(AF) if AF is not None else AF_DEFAULT
         self.FFE = float(FFE) if FFE is not None else FFE_DEFAULT
@@ -332,6 +336,7 @@ class diode_model(object):
         self.T = T_DEFAULT
         self.last_vd = None
         self.VT = constants.Vth(self.T)
+        self.material=material
 
     def print_model(self):
         strm = ".model diode %s IS=%g N=%g ISR=%g NR=%g RS=%g CJ0=%g M=%g " + \
@@ -380,18 +385,26 @@ class diode_model(object):
         return np.exp(x) if x < 70 else np.exp(70) + 10 * x
 
     def _get_i(self, v):
-        i = self.IS * (self._safe_exp(v/(self.N * self.VT)) - 1) \
-            + self.ISR * (self._safe_exp(v/(self.NR * self.VT)) - 1)
-        return i
+        i_fwd= self.IS * (self._safe_exp(v/(self.N * self.VT)) - 1)
+        i_rec= self.ISR* (self._safe_exp(v/(self.NR * self.VT)) - 1)
+        i_rev=-self.IS * (self._safe_exp(-(v+self.BV)/(self.NBV *self.VT)) - 1)
+        k_inj = 1
+        if (not isinf(self.IKF)) and (self.IKF>0) and (i_fwd>0):
+            k_inj = sqrt(self.IKF/(self.IKF+i_fwd))
+        
+        return k_inj*i_fwd+i_rec+i_rev
 
     @utilities.memoize
     def get_gm(self, op_index, ports_v, port_index, dev):
         if dev.T != self.T:
             self.set_temperature(dev.T)
+        v=ports_v[0]
         gm = self.IS / (self.N * self.VT) *\
-            self._safe_exp(ports_v[0] / (self.N * self.VT)) +\
+            self._safe_exp(v / (self.N * self.VT)) +\
+            -self.IS/self.VT * (self._safe_exp(-(v+self.BV)/self.VT)) +\
             self.ISR / (self.NR * self.VT) *\
-            self._safe_exp(ports_v[0] / (self.NR * self.VT))
+            self._safe_exp(v / (self.NR * self.VT))
+        
         if self.RS != 0.0:
             gm = 1. / (self.RS + 1. / (gm + 1e-3*options.gmin))
         return dev.AREA * gm
@@ -401,9 +414,9 @@ class diode_model(object):
 
     def set_temperature(self, T):
         T = float(T)
-        self.EG = constants.si.Eg(T)
+        self.EG = self.material.Eg(T) if self.material!=None else self.EG
         self.IS = self.IS*(T/self.T)**(self.XTI/self.N)* \
-                  np.exp(-constants.e*constants.si.Eg(300)/\
+                  np.exp(-constants.e*(self.material.Eg(constants.Tref) if self.material!=None else self.EG)/\
                          (self.N*constants.k*T)*
                          (1 - T/self.T))
         self.BV = self.BV - self.TBV*(T - self.T)
