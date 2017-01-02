@@ -52,7 +52,7 @@ from . import options
 from . import circuit
 from . import printing
 from . import utilities
-from . import devices
+from . import components
 from . import results
 
 # differentiation methods, add them here
@@ -525,16 +525,16 @@ def generate_D(circ, shape):
     nv = circ.get_nodes_number()# - 1
     i_eq = 0 #each time we find a vsource or vcvs or ccvs, we'll add one to this.
     for elem in circ:
-        if circuit.is_elem_voltage_defined(elem) and not isinstance(elem, devices.Inductor):
+        if circuit.is_elem_voltage_defined(elem) and not isinstance(elem, components.Inductor):
             i_eq = i_eq + 1
-        elif isinstance(elem, devices.Capacitor):
+        elif isinstance(elem, components.Capacitor):
             n1 = elem.n1
             n2 = elem.n2
             D[n1, n1] = D[n1, n1] + elem.value
             D[n1, n2] = D[n1, n2] - elem.value
             D[n2, n2] = D[n2, n2] + elem.value
             D[n2, n1] = D[n2, n1] - elem.value
-        elif isinstance(elem, devices.Inductor):
+        elif isinstance(elem, components.Inductor):
             D[ nv + i_eq, nv + i_eq ] = -1 * elem.value
             # Mutual inductors (coupled inductors)
             # need to add a -M dI/dt where I is the current in the OTHER inductor.

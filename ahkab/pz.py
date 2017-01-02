@@ -63,8 +63,8 @@ import copy
 import numpy as np
 
 from . import circuit
-from . import dc_analysis 
-from . import devices
+from . import dc_analysis
+from . import components
 from . import transient
 from . import plotting
 from . import printing
@@ -222,15 +222,15 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
     for e1 in mc:
         if circuit.is_elem_voltage_defined(e1):
             vde1 += 1
-        if isinstance(e1, devices.Capacitor):
+        if isinstance(e1, components.Capacitor):
             MC[e1.n1 - 1, 0] += 1. if e1.n1 > 0 else 0.
             MC[e1.n2 - 1, 0] -= 1. if e1.n2 > 0 else 0.
-        elif isinstance(e1, devices.Inductor):
+        elif isinstance(e1, components.Inductor):
             MC[nodes_m1 + vde1] += -1.
         elif calc_zeros and e1.part_id == input_source:
-            if isinstance(e1, devices.VSource):
+            if isinstance(e1, components.sources.VSource):
                 MC[nodes_m1 + vde1] += -1.
-            elif isinstance(e1, devices.ISource):
+            elif isinstance(e1, components.sources.ISource):
                 MC[e1.n1 - 1, 0] += 1. if e1.n1 > 0 else 0.
                 MC[e1.n2 - 1, 0] -= 1. if e1.n2 > 0 else 0.
             else:
@@ -243,13 +243,13 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
         for e2 in mc:
             if circuit.is_elem_voltage_defined(e2):
                 vde2 += 1
-            if isinstance(e2, devices.Capacitor):
+            if isinstance(e2, components.Capacitor):
                 v = 0
                 if e2.n1:
                     v += TV[e2.n1 - 1, 0]
                 if e2.n2:
                     v -= TV[e2.n2 - 1, 0]
-            elif isinstance(e2, devices.Inductor):
+            elif isinstance(e2, components.Inductor):
                 v = TV[nodes_m1 + vde2, 0]                
             else:
                 continue
@@ -288,10 +288,10 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
         for e1 in mc:
             if circuit.is_elem_voltage_defined(e1):
                 vde1 += 1
-            if isinstance(e1, devices.Capacitor):
+            if isinstance(e1, components.Capacitor):
                 MC[e1.n1 - 1, 0] += 1. if e1.n1 > 0 else 0.
                 MC[e1.n2 - 1, 0] -= 1. if e1.n2 > 0 else 0.
-            elif isinstance(e1, devices.Inductor):
+            elif isinstance(e1, components.Inductor):
                 MC[nodes_m1 + vde1, 0] += -1.
             else:
                 continue

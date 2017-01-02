@@ -111,7 +111,7 @@ import os
 
 from . import circuit
 from . import dc_analysis
-from . import devices
+from . import components
 from . import diode
 from . import mosq
 from . import ekv
@@ -380,7 +380,7 @@ def parse_elem_resistor(line, circ):
     **Returns:**
 
     elements_list : list
-        A list containing a :class:`ahkab.devices.Resistor` element.
+        A list containing a :class:`ahkab.components.Resistor` element.
 
     """
     line_elements = line.split()
@@ -397,7 +397,7 @@ def parse_elem_resistor(line, circ):
     if value == 0:
         raise NetlistParseError("parse_elem_resistor(): ZERO-valued resistors are not allowed.")
 
-    elem = devices.Resistor(part_id=line_elements[0], n1=n1, n2=n2, value=value)
+    elem = components.Resistor(part_id=line_elements[0], n1=n1, n2=n2, value=value)
 
     return [elem]
 
@@ -416,7 +416,7 @@ def parse_elem_capacitor(line, circ):
     **Returns:**
 
     elements_list : list
-        A list containing a :class:`ahkab.devices.Capacitor` element.
+        A list containing a :class:`ahkab.components.Capacitor` element.
     """
     line_elements = line.split()
     if len(line_elements) < 4 or \
@@ -437,7 +437,7 @@ def parse_elem_capacitor(line, circ):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
 
-    elem = devices.Capacitor(part_id=line_elements[0], n1=n1, n2=n2,
+    elem = components.Capacitor(part_id=line_elements[0], n1=n1, n2=n2,
                              value=convert_units(line_elements[3]), ic=ic)
 
     return [elem]
@@ -457,7 +457,7 @@ def parse_elem_inductor(line, circ):
     **Returns:**
 
     elements_list : list
-        A list containing a :class:`ahkab.devices.Inductor` element.
+        A list containing a :class:`ahkab.components.Inductor` element.
     """
     line_elements = line.split()
     if len(line_elements) < 4 or (len(line_elements) > 5 and not line_elements[6][0] == "*"):
@@ -476,7 +476,7 @@ def parse_elem_inductor(line, circ):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
 
-    elem = devices.Inductor(part_id=line_elements[0], n1=n1, n2=n2,
+    elem = components.Inductor(part_id=line_elements[0], n1=n1, n2=n2,
                             value=convert_units(line_elements[3]), ic=ic)
 
     return [elem]
@@ -496,7 +496,7 @@ def parse_elem_inductor_coupling(line, circ, elements=[]):
     **Returns:**
 
     elements_list : list
-        A list containing a :class:`ahkab.devices.InductorCoupling` element.
+        A list containing a :class:`ahkab.components.InductorCoupling` element.
     """
     line_elements = line.split()
     if len(line_elements) < 4 or (len(line_elements) > 4 and not line_elements[5][0] == "*"):
@@ -517,9 +517,9 @@ def parse_elem_inductor_coupling(line, circ, elements=[]):
     L1elem, L2elem = None, None
 
     for e in elements:
-        if isinstance(e, devices.Inductor) and L1 == e.part_id:
+        if isinstance(e, components.Inductor) and L1 == e.part_id:
             L1elem = e
-        elif isinstance(e, devices.Inductor) and L2 == e.part_id:
+        elif isinstance(e, components.Inductor) and L2 == e.part_id:
             L2elem = e
 
     if L1elem is None or L2elem is None:
@@ -530,7 +530,7 @@ def parse_elem_inductor_coupling(line, circ, elements=[]):
 
     M = math.sqrt(L1elem.value * L2elem.value) * Kvalue
 
-    elem = devices.InductorCoupling(part_id=part_id, L1=L1, L2=L2, K=Kvalue,
+    elem = components.InductorCoupling(part_id=part_id, L1=L1, L2=L2, K=Kvalue,
                                     M=M)
     L1elem.coupling_devices.append(elem)
     L2elem.coupling_devices.append(elem)
@@ -552,7 +552,7 @@ def parse_elem_vsource(line, circ):
     **Returns:**
 
     elements_list : list
-        A list containing a :class:`ahkab.devices.VSource` element.
+        A list containing a :class:`ahkab.components.sources.VSource` element.
     """
     line_elements = line.split()
     if len(line_elements) < 3:
@@ -617,7 +617,7 @@ def parse_elem_vsource(line, circ):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
 
-    elem = devices.VSource(part_id=line_elements[0], n1=n1, n2=n2,
+    elem = components.sources.VSource(part_id=line_elements[0], n1=n1, n2=n2,
                            dc_value=dc_value, ac_value=vac)
 
     if function is not None:
@@ -641,7 +641,7 @@ def parse_elem_isource(line, circ):
     **Returns:**
 
     elements_list : list
-        A list containing a :class:`ahkab.devices.ISource` element.
+        A list containing a :class:`ahkab.components.sources.ISource` element.
     """
     line_elements = line.split()
     if len(line_elements) < 3:
@@ -701,7 +701,7 @@ def parse_elem_isource(line, circ):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
 
-    elem = devices.ISource(part_id=line_elements[0], n1=n1, n2=n2,
+    elem = components.sources.ISource(part_id=line_elements[0], n1=n1, n2=n2,
                            dc_value=dc_value, ac_value=iac)
 
     if function is not None:
@@ -877,7 +877,7 @@ def parse_elem_vcvs(line, circ):
     **Returns:**
 
     elements_list : list
-        A list containing a :class:`ahkab.devices.EVSource` element.
+        A list containing a :class:`ahkab.components.sources.EVSource` element.
     """
     line_elements = line.split()
     if len(line_elements) < 6 or (len(line_elements) > 6 and not line_elements[6][0] == "*"):
@@ -892,7 +892,7 @@ def parse_elem_vcvs(line, circ):
     sn1 = circ.add_node(ext_sn1)
     sn2 = circ.add_node(ext_sn2)
 
-    elem = devices.EVSource(part_id=line_elements[0], n1=n1, n2=n2, sn1=sn1,
+    elem = components.sources.EVSource(part_id=line_elements[0], n1=n1, n2=n2, sn1=sn1,
                             sn2=sn2, value=convert_units(line_elements[5]))
 
     return [elem]
@@ -920,7 +920,7 @@ def parse_elem_ccvs(line, circ):
     **Returns:**
 
     elements_list : list
-        A list containing a :class:`ahkab.devices.HVSource` element.
+        A list containing a :class:`ahkab.components.sources.HVSource` element.
     """
     #  0    1  2  3     4
     line_elements = line.split()
@@ -933,7 +933,7 @@ def parse_elem_ccvs(line, circ):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
 
-    elem = devices.HVSource(part_id=line_elements[0], n1=n1, n2=n2,
+    elem = components.sources.HVSource(part_id=line_elements[0], n1=n1, n2=n2,
                             source_id=line_elements[3],
                             value=convert_units(line_elements[4]))
 
@@ -961,7 +961,7 @@ def parse_elem_vccs(line, circ):
     **Returns:**
 
     elements_list : list
-        A list containing a :class:`ahkab.devices.GISource` element.
+        A list containing a :class:`ahkab.components.sources.GISource` element.
     """
     line_elements = line.split()
     if len(line_elements) < 6 or (len(line_elements) > 6
@@ -977,7 +977,7 @@ def parse_elem_vccs(line, circ):
     sn1 = circ.add_node(ext_sn1)
     sn2 = circ.add_node(ext_sn2)
 
-    elem = devices.GISource(part_id=line_elements[0], n1=n1, n2=n2, sn1=sn1,
+    elem = components.sources.GISource(part_id=line_elements[0], n1=n1, n2=n2, sn1=sn1,
                             sn2=sn2, value=convert_units(line_elements[5]))
 
     return [elem]
@@ -1002,7 +1002,7 @@ def parse_elem_cccs(line, circ):
     **Returns:**
 
     elements_list : list
-        A list containing a :class:`ahkab.devices.FISource` element.
+        A list containing a :class:`ahkab.components.sources.FISource` element.
     """
 
     line_elements = line.split()
@@ -1016,7 +1016,7 @@ def parse_elem_cccs(line, circ):
     n1 = circ.add_node(ext_n1)
     n2 = circ.add_node(ext_n2)
 
-    elem = devices.FISource(part_id=line_elements[0], n1=n1, n2=n2,
+    elem = components.sources.FISource(part_id=line_elements[0], n1=n1, n2=n2,
                             source_id=source_id,
                             value=convert_units(line_elements[4]))
 
@@ -1106,7 +1106,7 @@ def parse_elem_user_defined(line, circ):
     **Returns:**
 
     elements_list : list
-        A list containing a :class:`ahkab.devices.HVSource` element.
+        A list containing a :class:`ahkab.components.sources.HVSource` element.
 
     Parameters:
     line: the line

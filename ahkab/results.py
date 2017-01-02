@@ -104,7 +104,7 @@ import re
 import numpy as np
 
 from . import circuit
-from . import devices
+from . import components
 from . import printing
 from . import options
 from . import constants
@@ -386,7 +386,7 @@ class op_solution(solution, _mutable_data):
                     op_info.update({elem.part_id.upper():opi})
                     op_keys.update({elem.part_id.upper():[[]]})
 
-            if isinstance(elem, devices.GISource):
+            if isinstance(elem, components.sources.GISource):
                 v = 0
                 v = v + x[elem.n1-1] if elem.n1 != 0 else v
                 v = v - x[elem.n2-1] if elem.n2 != 0 else v
@@ -394,24 +394,24 @@ class op_solution(solution, _mutable_data):
                 vs = vs + x[elem.n1-1] if elem.sn1 != 0 else vs
                 vs = vs - x[elem.n2-1] if elem.sn2 != 0 else vs
                 tot_power = tot_power - v*vs*elem.alpha
-            elif isinstance(elem, devices.ISource):
+            elif isinstance(elem, components.sources.ISource):
                 v = 0
                 v = v + x[elem.n1-1] if elem.n1 != 0 else v
                 v = v - x[elem.n2-1] if elem.n2 != 0 else v
                 tot_power = tot_power - v*elem.I()
-            elif isinstance(elem, devices.VSource) or \
-                 isinstance(elem, devices.EVSource):
+            elif isinstance(elem, components.sources.VSource) or \
+                 isinstance(elem, components.sources.EVSource):
                 v = 0
                 v = v + x[elem.n1-1] if elem.n1 != 0 else v
                 v = v - x[elem.n2-1] if elem.n2 != 0 else v
                 tot_power = tot_power - v*x[nv_1 + i_index, 0]
                 i_index = i_index + 1
-            elif isinstance(elem, devices.FISource):
+            elif isinstance(elem, components.sources.FISource):
                 local_i_index = 0
                 found_source = False
                 for e in circ:
                     if circuit.is_elem_voltage_defined(e):
-                        if isinstance(e, devices.VSource) and e.part_id.lower() == elem.source_id.lower():
+                        if isinstance(e, components.sources.VSource) and e.part_id.lower() == elem.source_id.lower():
                             found_source = True
                             break
                         else:
@@ -423,7 +423,7 @@ class op_solution(solution, _mutable_data):
                 v = v + x[elem.n1 - 1] if elem.n1 != 0 else v
                 v = v - x[elem.n2 - 1] if elem.n2 != 0 else v
                 tot_power = tot_power - v * elem.alpha * x[nv_1 + local_i_index, 0]
-            elif isinstance(elem, devices.HVSource):
+            elif isinstance(elem, components.sources.HVSource):
                 try:
                     local_i_index = circ.find_vde_index(elem.source_id)
                 except ValueError:
