@@ -232,7 +232,6 @@ def plot_results(title, y2y1_list, results, outfilename=None):
     ms = 7./(1. + max(np.log(len(x)/100.), 0))
     ms = ms if ms > 2 else 0.
 
-    pylab.hold(True)
     ymax, ymin = None, None
     for y, label in gdata:
         [line] = pylab.plot(
@@ -245,7 +244,6 @@ def plot_results(title, y2y1_list, results, outfilename=None):
     pylab.xlim((x.min(), x.max()))
     pylab.ylim((ymin - (ymax - ymin) * .01, ymax + (ymax - ymin) * .01))
     pylab.grid(True)
-    pylab.hold(False)
     pylab.legend()
 
     if outfilename is not None and options.plotting_outtype is not None:
