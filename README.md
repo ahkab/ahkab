@@ -5,13 +5,14 @@
 
 The code should be easy to read and modify, the main language is Python -- 2 or 3 -- and it is platform-independent.
 
-News!
+News
 -----
 
+-   It's with a heavy heart that I write that @ggventurini passed away on September 15th, 2015, at the age of thirty-two. He will be remembered fondly as a friendly and helpful engineer, always excited about his work at CERN and his numerous labors to improve the accessibility of tools for science, research, and development. 
 -   Ahkab v0.18 was released on July 12 2015, including new features, bugfixes and improved documentation. It is recommended to upgrade. Check out [the release notes](https://github.com/ahkab/ahkab/releases/tag/v0.18) for more!
 -   The whole codebase has been going through a (yet incomplete) refactoring and documenting effort. The [new documentation is available on RTD](http://ahkab.readthedocs.org/en/latest/).
 
-My resources are limited these days, so the much-needed work is proceeding slowly, albeit hopefully steadily. If you are interested and you would like to contribute to refactoring or documenting a particular feature, it would be very welcome.
+If you are interested in the project or the technology, have an issue with an example, or you would like to contribute by requesting, refactoring or documenting a particular feature, please reach out to us on GitHub!
 
 [![Build Status](https://travis-ci.org/ahkab/ahkab.png?branch=master)](https://travis-ci.org/ahkab/ahkab) [![Coverage Status](https://coveralls.io/repos/ahkab/ahkab/badge.png?branch=master)](https://coveralls.io/r/ahkab/ahkab?branch=master) [![PyPi version](http://img.shields.io/badge/version-0.18-brightgreen.png)](https://pypi.python.org/pypi/ahkab/) [![GPLv2 license](http://img.shields.io/badge/license-GPL%20v2-brightgreen.png)](https://raw.githubusercontent.com/ahkab/ahkab/master/LICENSE)
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.19967.svg)](http://dx.doi.org/10.5281/zenodo.19967)
@@ -113,13 +114,15 @@ Patches and pull requests are welcome!
 
 ### How this project was born
 
-This project was born when I was an enthusistic undergrad, apparently with plenty of free time, attending "Simulazione Circuitale" (*Circuit Simulation*) taught by [Prof. A. Brambilla](http://brambilla.dei.polimi.it/) back in Italy at the Polytechnic University of Milan.
+Writes @ggventurini:
 
-I am grateful to prof. Brambilla for teaching one of the most interesting courses of my university years. -GV
+"This project was born when I was an enthusistic undergrad, apparently with plenty of free time, attending "Simulazione Circuitale" (*Circuit Simulation*) taught by [Prof. A. Brambilla](http://brambilla.dei.polimi.it/) back in Italy at the Polytechnic University of Milan.
+
+I am grateful to prof. Brambilla for teaching one of the most interesting courses of my university years. -GV"
 
 ### Bugs and patches
 
-Does it work? Bugs? Do you have patches? Did you run some noteworthy simulation? Let me know! Feedback is very welcome, my [email address](http://tinymailto.com/5310) is available after a captcha.
+Does it work? Bugs? Do you have patches? Did you run some noteworthy simulation? Let us know on GitHub! You can also reach the maintainer at @itdaniher @gmail.com, he's happy to talk about Python.
 
 ### Support the development with a donation
 
@@ -133,7 +136,8 @@ or
 
 ### Credits
 
-**Authors:** [Giuseppe Venturini](https://github.com/ggventurini), with contributions from [Ian Daniher](https://github.com/itdaniher) and [Rob Crowther](https://github.com/weilawei).
+**Maintainer:** [Ian Daniher](https://github.com/itdaniher)
+**Authors:** [Giuseppe Venturini](https://github.com/ggventurini), with contributions from [Ian Daniher](https://github.com/itdaniher), [Rob Crowther](https://github.com/weilawei), and [KOLANICH](https://github.com/KOLANICH).
 
 **Code:** the module `py3compat.py` is (c) 2013 - the Jinja team.
 
