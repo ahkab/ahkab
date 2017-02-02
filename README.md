@@ -136,8 +136,9 @@ or
 
 ### Credits
 
-**Maintainer:** [Ian Daniher](https://github.com/itdaniher)
 **Authors:** [Giuseppe Venturini](https://github.com/ggventurini), with contributions from [Ian Daniher](https://github.com/itdaniher), [Rob Crowther](https://github.com/weilawei), and [KOLANICH](https://github.com/KOLANICH).
+
+**Maintainer:** [Ian Daniher](https://github.com/itdaniher)
 
 **Code:** the module `py3compat.py` is (c) 2013 - the Jinja team.
 
