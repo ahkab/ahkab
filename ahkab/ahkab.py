@@ -682,7 +682,7 @@ def run(circ, an_list=None):
     circ : circuit instance
         The circuit to be simulated.
 
-    an_queue : list, optional
+    an_list : list, optional
         the list of analyses to be performed. If unset, it defaults to those
         queued with ``queue``.
 
