@@ -22,7 +22,7 @@ import numpy as np
 import sympy
 
 from sympy.functions.special.delta_functions import Heaviside
-
+from sympy import pi, sin, exp
 from ahkab import time_functions
 
 def test_sffm():
