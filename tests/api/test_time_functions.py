@@ -36,7 +36,7 @@ def test_sffm():
     f = time_functions.sffm(vo=von, va=van, fc=fcn, mdi=mdin, fs=fsn, td=tdn)
     FS = sympy.lambdify(time, sympy.N(F.subs(dict(vo=von, va=van, fc=fcn,
                                                  mdi=mdin, fs=fsn,
-                                                 td=tdn))), modules={'Heaviside':Heaviside})
+                                                 td=tdn))), modules=locals())
     t = np.linspace(0, 1e-3, 3e3)
     for ti in t:
         assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
@@ -51,7 +51,7 @@ def test_am():
     san, fcn, fmn, ocn, tdn = 10., 1., 1e3, 100, 1e-3
     f = time_functions.am(sa=san, fc=fcn, fm=fmn, oc=ocn, td=tdn)
     FS = sympy.lambdify(time, sympy.N(F.subs(dict(sa=san, fc=fcn, fm=fmn,
-                                                  oc=ocn, td=tdn))), modules={'Heaviside': Heaviside})
+                                                  oc=ocn, td=tdn))), modules=locals())
     t = np.linspace(0, 20e-3, 3e3)
     for ti in t:
         assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
@@ -69,7 +69,7 @@ def test_sin():
                            phi=phin)
     FS = sympy.lambdify(time, sympy.N(F.subs(dict(vo=von, va=van, freq=freqn,
                                                   td=tdn, theta=thetan,
-                                                  phi=phin))), modules={'Heaviside':Heaviside})
+                                                  phi=phin))), modules=locals())
     t = np.linspace(0, 1e-3, 3e3)
     for ti in t:
         assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
@@ -84,7 +84,7 @@ def test_exp():
     f = time_functions.exp(v1=v1n, v2=v2n, td1=td1n, tau1=tau1n, td2=td2n, tau2=tau2n)
     FS = sympy.lambdify(time, sympy.N(F.subs(dict(v1=v1n, v2=v2n, td1=td1n,
                                                   tau1=tau1n, td2=td2n,
-                                                  tau2=tau2n))), modules={'Heaviside':Heaviside})
+                                                  tau2=tau2n))), modules=locals())
     t = np.linspace(0, 1e-3, 3e3)
     for ti in t:
         assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
@@ -109,7 +109,7 @@ def test_pulse():
                              per=pern)
     FS = sympy.lambdify(time, sympy.N(F.subs(dict(v1=v1n, v2=v2n, td=tdn,
                                                   tr=trn, pw=pwn, tf=tfn,
-                                                  per=pern))), modules = {'Heaviside':Heaviside})
+                                                  per=pern))), modules = locals())
     t = np.linspace(0, 1e-3, 1e3)
     for ti in t:
         assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
@@ -136,7 +136,7 @@ def test_pwl():
     f = time_functions.pwl(x, y, repeat=True, td=0.1e-3, repeat_time=1e-3)
     FS = sympy.lambdify(time, sympy.N(F.subs(dict(v1=v1n, v2=v2n, td=tdn,
                                                   tr=trn, pw=pwn, tf=tfn,
-                                                  per=pern))), modules={'Heaviside':Heaviside})
+                                                  per=pern))), modules=locals())
     t = np.linspace(0, 1e-3, 1e3)
     # first period
     for ti in t:
