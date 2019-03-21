@@ -1,6 +1,6 @@
 import numpy as np
 import ahkab
-from ahkab import ahkab, circuit, printing, devices, testing
+from ahkab import ahkab, circuit, printing, testing
 
 cli = False
 
@@ -40,7 +40,7 @@ def test():
     ac_analysis = ahkab.new_ac(outfile='hvsource_api', start=7957.747,
                                stop=79577.471, points=1000, verbose=6)
 
-    testbench = testing.APITest('hvsource', mycircuit, 
+    testbench = testing.APITest('hvsource', mycircuit,
                                 [op_analysis, symb_analysis, ac_analysis],
                                 skip_on_travis=False, er=1e-3, ea=1e-5)
     testbench.setUp()

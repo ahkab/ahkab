@@ -1,6 +1,6 @@
 import numpy as np
 import ahkab
-from ahkab import ahkab, circuit, printing, devices, testing
+from ahkab import ahkab, circuit, printing, testing
 
 cli = False
 
@@ -32,7 +32,7 @@ def test():
     op_analysis = ahkab.new_op(outfile='fisource_api', verbose=6)
     symb_analysis = ahkab.new_symbolic(outfile='fisource_api', verbose=6)
 
-    testbench = testing.APITest('fisource', mycircuit, 
+    testbench = testing.APITest('fisource', mycircuit,
                                 [op_analysis, symb_analysis],
                                 skip_on_travis=False, er=1e-3, ea=1e-5)
     testbench.setUp()

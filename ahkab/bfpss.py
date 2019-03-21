@@ -158,10 +158,10 @@ def bfpss(circ, period, step=None, points=None, autonomous=False, x0=None,
     nv_1 = circ.get_nodes_number() - 1
     ni = n_of_var - nv_1
     for i in range(points):
-        nv_indices += (i * mna.shape[0] * np.ones(nv_1) + \
-                      np.arange(nv_1)).tolist()
-        ni_indices += (i * mna.shape[0] * np.ones(ni) + \
-                      np.arange(nv_1, n_of_var)).tolist()
+        nv_indices += (int(i * mna.shape[0] * np.ones(nv_1) + \
+                      np.arange(nv_1))).tolist()
+        ni_indices += (int(i * mna.shape[0] * np.ones(ni) + \
+                      np.arange(nv_1, n_of_var))).tolist()
 
     converged = False
 

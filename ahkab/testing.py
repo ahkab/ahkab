@@ -273,7 +273,7 @@ Below is a typical test script file:
 ::
 
     import ahkab
-    from ahkab import ahkab, circuit, printing, devices, testing
+    from ahkab import ahkab, circuit, printing, testing
 
     cli = False
 

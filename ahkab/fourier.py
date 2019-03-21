@@ -204,9 +204,9 @@ def fourier(label, tran_results, fund):
     sampling = 1./(2*10*fund)
     t = np.linspace(start, stop, (stop-start)//sampling, endpoint=False)
     idata = InterpolatedUnivariateSpline(tran_results.get_x(), data, k=2)
-    f = fft.fftfreq(len(t), sampling)[::nperiods]
-    F = fft.rfft(idata(t))[:-1:nperiods]
-    f = f[:len(f)/2]
+    f = fft.fftfreq(len(t), sampling)[::int(nperiods)]
+    F = fft.rfft(idata(t))[:-1:int(nperiods)]
+    f = f[:len(f)//2]
     THD = np.sqrt(sum(abs(F[2:])**2))/abs(F[1])
     return f, F, THD
 
@@ -264,7 +264,7 @@ def spicefft(label, tran_results, freq=None, **args):
     np : integer
         A power of two that specifies how many points should be used when
         computing the FFT. If it is set to a value that is not a power of 2, it
-        will be rounded up to the nearest power of 2. It defaults to 1024. 
+        will be rounded up to the nearest power of 2. It defaults to 1024.
     window : str, optional
         The windowing type. The following values are available:
 
@@ -404,7 +404,7 @@ def spicefft(label, tran_results, freq=None, **args):
               options.GAUSS_WINDOW: lambda x: gaussian(x, std=alpha),
               options.KAISER_WINDOW: lambda x: kaiser(x, beta=alpha)}
     f = fft.fftfreq(len(t), sampling)
-    f = f[:len(f)/2]
+    f = f[:len(f)//2]
     F = fft.rfft(idata(t)*window[window_type](len(t)))[:-1]
     if freq:
         # downsample
