@@ -33,13 +33,16 @@ from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
 import re
+import os
 import numpy as np
 
 from . import printing
 from . import options
 from . import py3compat
-
 try:
+    import matplotlib
+    if os.environ.get('DISPLAY') == ':99':
+        matplotlib.use('Agg')
     import pylab
 except ImportError:
     # no matplotlib on a platform that supports it
@@ -76,7 +79,7 @@ def _split_netlist_label(labels_string):
 
 
 def _setup_plot(fig, title, xvu, yvu, log=False, xlog=False, ylog=False):
-    """Setup the figure for plotting. 
+    """Setup the figure for plotting.
 
     **Parameters:**
 
@@ -137,7 +140,7 @@ def _setup_plot(fig, title, xvu, yvu, log=False, xlog=False, ylog=False):
 def save_figure(filename, fig=None):
     """Apply the figure options for saving and then save the supplied
     figure to ``filename``.
-    
+
     The format of the output figure is set by ``options.plotting_outtype``.
 
     **Parameters:**
@@ -148,7 +151,7 @@ def save_figure(filename, fig=None):
         The figure to be saved.
 
     **Returns:**
-    
+
     ``None``.
     """
     if fig is None:
@@ -180,8 +183,8 @@ def plot_results(title, y2y1_list, results, outfilename=None):
         The plot title
     y2y1_list : list
         A list of tuples. Each tuple has to be in the format ``(y2, y1)``.
-        Each member of the tuple has to be a valid identifier. You can 
-        check the possible voltage and current identifiers in the 
+        Each member of the tuple has to be a valid identifier. You can
+        check the possible voltage and current identifiers in the
         result set calling ``res.keys()``, where ``res`` is a solution
         object.
     result : solution object or derivate
