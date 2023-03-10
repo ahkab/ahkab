@@ -81,7 +81,9 @@ res = run(cir, ac1)
 
 # plot the results
 plot_results('5th order 1kHz Butterworth filter', [('|Vn8|',"")], res['ac'],
-             outfilename='bpf_transfer_fn.png')
+             outfilename='bpf_transfer_fn.png') # AttributeError: module 'pylab' has no attribute 'hold' will occur if you matplotlib version >= 3.0,you may delete it
+#show plot
+show_plots()
 ```
 
 <img src="https://rawgithub.com/ahkab/ahkab/master/doc/images/readme_example/bpf_results.svg" alt="Example: AC simulation results"/>
