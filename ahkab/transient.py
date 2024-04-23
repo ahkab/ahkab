@@ -335,10 +335,12 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
             x0 = prediction
         elif x is not None:
             x0 = x
+        """
         for elem in circ:
             if isinstance(elem,components.Memristor):
                 g_new = elem.EulerForward(tstep, )
                 elem.g = g_new
+        """
         x1, error, solved, n_iter = dc_analysis.dc_solve(
                                                      mna=(mna + np.multiply(x_coeff, D)),
                                                      Ndc=N,  Ntran=np.dot(D, const), circ=circ,
