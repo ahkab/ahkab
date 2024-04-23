@@ -117,7 +117,6 @@ specs = {'tran':{'tokens':({
                }
            }
 
-
 def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_method, use_step_control=True, x0=None,
                        mna=None, N=None, D=None, outfile="stdout", return_req_dict=None, verbose=3):
     """Performs a transient analysis of the circuit described by circ.
@@ -336,7 +335,10 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
             x0 = prediction
         elif x is not None:
             x0 = x
-
+        for elem in circ:
+            if isinstance(elem,components.Memristor):
+                g_new = elem.EulerForward(tstep, )
+                elem.g = g_new
         x1, error, solved, n_iter = dc_analysis.dc_solve(
                                                      mna=(mna + np.multiply(x_coeff, D)),
                                                      Ndc=N,  Ntran=np.dot(D, const), circ=circ,
