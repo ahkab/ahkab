@@ -335,12 +335,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
             x0 = prediction
         elif x is not None:
             x0 = x
-        """
-        for elem in circ:
-            if isinstance(elem,components.Memristor):
-                g_new = elem.EulerForward(tstep, )
-                elem.g = g_new
-        """
+        
         x1, error, solved, n_iter = dc_analysis.dc_solve(
                                                      mna=(mna + np.multiply(x_coeff, D)),
                                                      Ndc=N,  Ntran=np.dot(D, const), circ=circ,
@@ -350,6 +345,16 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
                                                      MAXIT=options.transient_max_nr_iter,
                                                      verbose=0
                                                      )
+        for elem in circ:
+            if isinstance(elem,components.Memristor):
+                port = (elem.n1, elem.n2)
+                tempv = 0
+                if port[0]:
+                    tempv = x1[port[0]-1]
+                if port[1]:
+                    tempv = tempv - x[port[1]-1]
+                g_new = elem.EulerForward(tstep, tempv)
+                elem.g = g_new
 
         if solved:
             old_step = tstep #we will modify it, if we're using step control otherwise it's the same
