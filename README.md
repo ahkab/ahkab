@@ -1,5 +1,8 @@
 <img src="https://rawgithub.com/ahkab/ahkab/master/doc/images/logo_small.png" alt="Monkeying around" style="width: 80px;"/> ahkab
 =================================================================================================================================
+Updated to be compatible with python3.12 and beyond, and scipy 1.x.
+Original description:
+=================================================================================================================================
 
 **a SPICE-like electronic circuit simulator written in Python**
 

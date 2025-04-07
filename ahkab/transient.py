@@ -41,7 +41,7 @@ from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
 import sys
-import imp
+import importlib
 
 import numpy as np
 
@@ -648,7 +648,7 @@ class dfbuffer:
         return complete_matrix
 
 def import_custom_df_module(method, print_out):
-    """Imports a module that implements differentiation formula through imp.load_module
+    """Imports a module that implements differentiation formula through importlib.load_module
     Parameters:
     method: a string, the name of the df method module
     print_out: print to stdout some verbose messages
@@ -657,7 +657,7 @@ def import_custom_df_module(method, print_out):
     The df module or None if the module is not found.
     """
     try:
-        df = imp.load_module(imp.find_module(method.lower()))
+        df = importlib.load_module(importlib.find_module(method.lower()))
         if print_out:
             print("Custom df module "+method.lower()+" loaded.")
     except:

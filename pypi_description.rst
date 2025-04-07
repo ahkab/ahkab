@@ -1,5 +1,7 @@
 ahkab
 =====
+Updated to be compatible with python3.12 and beyond, and scipy 1.x
+=====
 
 **a SPICE-like electronic circuit simulator written in Python**
 

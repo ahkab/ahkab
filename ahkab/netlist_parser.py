@@ -104,7 +104,7 @@ from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
 import sys
-import imp
+import importlib
 import math
 import copy
 import os
@@ -1140,8 +1140,8 @@ def parse_elem_user_defined(line, circ):
         module = circuit.user_defined_modules_dict[module_name]
     else:
         try:
-            fp, pathname, description = imp.find_module(module_name)
-            module = imp.load_module(module_name, fp, pathname, description)
+            fp, pathname, description = importlib.find_module(module_name)
+            module = importlib.load_module(module_name, fp, pathname, description)
         except ImportError:
             raise NetlistParseError("module " + module_name + " not found.")
         circuit.user_defined_modules_dict.update({module_name: module})

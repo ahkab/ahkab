@@ -1,6 +1,9 @@
 <!-- Name: Changelog -->
 #Changelog
 
+Updated to be compatible with python3.12 and beyond, and scipy 1.x.
+Original changelog:
+
 Version 0.18 represents the culmination of almost two months of efforts, yet
 another step in the current time-based release scheme.
 
