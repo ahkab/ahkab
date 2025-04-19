@@ -8,6 +8,7 @@ The code should be easy to read and modify, the main language is Python -- 2 or 
 News
 -----
 
+-   In order to allow the continued use of Akhab with modern versions of Python, I have updated the API calls.
 -   It's with a heavy heart that I write that @ggventurini passed away on September 15th, 2015, at the age of thirty-two. He will be remembered fondly as a friendly and helpful engineer, always excited about his work at CERN and his numerous labors to improve the accessibility of tools for science, research, and development. 
 -   Ahkab v0.18 was released on July 12 2015, including new features, bugfixes and improved documentation. It is recommended to upgrade. Check out [the release notes](https://github.com/ahkab/ahkab/releases/tag/v0.18) for more!
 -   The whole codebase has been going through a (yet incomplete) refactoring and documenting effort. The [new documentation is available on RTD](http://ahkab.readthedocs.org/en/latest/).

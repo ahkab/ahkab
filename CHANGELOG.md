@@ -1,5 +1,12 @@
 <!-- Name: Changelog -->
-#Changelog
+# Changelog
+
+## Sckzor's Changes
+
+I have moderized the Python API calls to allow Akhab to continue to function
+with modern python interpreters.
+
+## Changelog for v 0.18
 
 Version 0.18 represents the culmination of almost two months of efforts, yet
 another step in the current time-based release scheme.

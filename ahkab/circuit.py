@@ -119,6 +119,9 @@ Reference
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
+import importlib
+import importlib.util
+
 import copy
 import math
 
@@ -982,8 +985,8 @@ class Circuit(list):
         if module_name in circuit.user_defined_modules_dict:
             module = circuit.user_defined_modules_dict[module_name]
         else:
-            fp, pathname, description = imp.find_module(module_name)
-            module = imp.load_module(module_name, fp, pathname, description)
+            fp, pathname, description = importlib.util.find_spec(module_name)
+            module = importlib.import_module(module_name, fp, pathname, description)
             circuit.user_defined_modules_dict.update({module_name: module})
 
         elem_class = getattr(module, label)
