@@ -125,7 +125,7 @@ class switch_device:
 
         op : op solution
             The OP where the drive ports are used.
-
+            
         **Returns:**
 
         pts : tuple of tuples of ports nodes, as: ``(port0, port1, port2 ... )``

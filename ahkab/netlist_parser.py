@@ -104,7 +104,7 @@ from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
 import sys
-import imp
+import importlib as imp
 import math
 import copy
 import os

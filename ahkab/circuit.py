@@ -495,6 +495,42 @@ class Circuit(list):
             raise CircuitError("ZERO-valued resistors are not allowed.")
 
         elem = components.Resistor(part_id=part_id, n1=n1, n2=n2, value=value)
+        # print(elem)
+        self.append(elem)
+
+    def add_mysistor(self, part_id, n1, n2, value, rho_b, length_channel, radius_base, pressure, delta_rho, has_converged=False):
+        """Adds a memristor to the circuit.
+
+        The resistor instance is added to the circuit elements
+        and connected to the provided nodes. If the nodes are not
+        found in the circuit, they are created and added as well.
+
+        **Parameters:**
+
+        part_id : string
+            the resistor part_id (eg "R1"). The first letter is replaced by an R
+
+        n1, n2 : string
+            the nodes to which the resistor is connected.
+
+        value : float,
+            The resistance between ``n1`` and ``n2`` in Ohm.
+
+        .. seealso::
+
+            :func:`add_resistor`, :func:`add_capacitor`,
+            :func:`add_inductor`, :func:`add_vsource`, :func:`add_isource`,
+            :func:`add_diode`, :func:`add_mos`, :func:`add_vcvs`, :func:`add_vccs`,
+            :func:`add_cccs`, :func:`add_user_defined`, :func:`remove_elem`
+
+        """
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
+
+        if value == 0:
+            raise CircuitError("ZERO-valued resistors are not allowed.")
+
+        elem = components.Mysistor(part_id=part_id, n1=n1, n2=n2, value=value, rho_b=rho_b, length_channel=length_channel, radius_base=radius_base, pressure=pressure, delta_rho=delta_rho, has_converged=has_converged)
         self.append(elem)
 
     def add_capacitor(self, part_id, n1, n2, value, ic=None):
@@ -709,7 +745,6 @@ class Circuit(list):
                            model_label], AREA=Area, T=T, ic=ic, off=off)
         self.append(elem)
 
-
     def add_mos(self, part_id, nd, ng, ns, nb, w, l, model_label, models=None,
                 m=1, n=1):
         """Adds a mosfet to the circuit (also takes care that the nodes
@@ -761,7 +796,6 @@ class Circuit(list):
             raise Exception("Unknown model type for " + model_label)
 
         self.append(elem)
-
 
     def add_cccs(self, part_id, n1, n2, source_id, value):
         """Adds a current-controlled current source (CCCS) to the circuit
@@ -875,7 +909,6 @@ class Circuit(list):
                                 value=value)
 
         self.append(elem)
-
 
     def add_vccs(self, part_id, n1, n2, sn1, sn2, value):
         """Adds a voltage-controlled current source (VCCS) to the circuit

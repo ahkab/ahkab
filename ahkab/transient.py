@@ -41,9 +41,10 @@ from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
 import sys
-import imp
+import importlib as imp
 
 import numpy as np
+import scipy.integrate as integrate
 
 from . import dc_analysis
 from . import implicit_euler
@@ -117,9 +118,190 @@ specs = {'tran':{'tokens':({
                }
            }
 
+def sigmoid(potential):
+    a=-3
+    b=0
+    c=1
+    d=3
+    return a / (1 + np.exp(-c*(potential-b))) + d
+
+# Integrand in the definition of average concentration
+
+def integrand1(x,  mysistor):
+
+    radius_x = mysistor.radius_base - (x*mysistor.delta_radius)/mysistor.length_channel
+
+    integrand = (x*mysistor.radius_tip)/(radius_x*(mysistor.length_channel))
+
+    return integrand
+
+def integrand2(x,  mysistor, peclet_number):
+
+    integrand=0
+
+    if np.abs(peclet_number)>=1e-7:
+
+        radius_x = mysistor.radius_base - (x*mysistor.delta_radius)/mysistor.length_channel
+
+        integrand2num = np.exp(peclet_number*(x/mysistor.length_channel)*((mysistor.radius_tip)**2/(mysistor.radius_base*radius_x))) - 1
+        
+        integrand2den = np.exp(peclet_number*mysistor.radius_tip/mysistor.radius_base) - 1
+
+        integrand = integrand2num/integrand2den
+
+    return integrand 
+
+def integrand3(x,  mysistor):
+
+    integrand=0
+    
+    radius_x = mysistor.radius_base - (x*mysistor.delta_radius)/mysistor.length_channel
+
+    integrand = (x/mysistor.length_channel)*(1-x/mysistor.length_channel)*(mysistor.radius_tip/radius_x)**2
+
+    return integrand 
+
+# Compute integral and give the value of g/g_0 = \rho_s (=average concentration)
+
+def functional_form(x):
+    return (np.sin(1.1*x+1))/3
+
+def g_force_through(x, x0, y0):
+    raw = functional_form(x)
+    adjustment = y0 - functional_form(x0)
+    return raw + adjustment
+
+def g_infinity_func(potential, pressure, concentration, mysistor, change_func=False): 
+    
+    # if change_func:
+    #     print(change_func)
+    # if change_func and mysistor.part_id=='M1':
+    #     potential = 2*1.0004030286316947 - potential
+    
+    length_channel = mysistor.length_channel
+    dx=length_channel/1000
+    
+    density_inhomo = mysistor.density_inhomo_over_potential*potential
+
+    peclet_number = mysistor.peclet_over_q * (mysistor.q_potential*potential + mysistor.q_pressure*pressure)
+    # print(mysistor.q_pressure, pressure, mysistor.q_pressure*pressure)
+
+    integral2 = integrate.quad(integrand2, 0, length_channel, args=(mysistor,peclet_number,), points=length_channel/dx)[0]/length_channel
+
+    if np.abs(peclet_number) < 1e-9*(mysistor.radius_base/mysistor.radius_tip)**2:
+
+        integral3 = integrate.quad(integrand3, 0, length_channel, args=(mysistor,), points=length_channel/dx)[0]/length_channel
+
+        g_infty = 1 - (concentration/mysistor.rho_b)*integral2 + (density_inhomo/(4*mysistor.rho_b))*integral3
+        
+    else:
+
+        delta_g = density_inhomo/(2*mysistor.rho_b*peclet_number)
+
+        integral1 = integrate.quad(integrand1, 0, length_channel, args=(mysistor,), points=length_channel/dx)[0]/length_channel
+            
+        g_infty = 1 + delta_g*integral1 - (concentration/mysistor.rho_b + delta_g)*integral2
+
+    if change_func and mysistor.part_id=='M1':
+        
+        # g_infty = 2*(12.394654281291412)/mysistor.g_0 - g_infty
+        g_infty = g_force_through(potential, 1, (12.394654281291412)/mysistor.g_0)
+        
+    return g_infty
+
+def length_sigmoid(elem, potential):
+    a=0.5
+    b=0
+    c=1
+    # d=elem.initial_length
+    d=1
+    return a / (1 + np.exp(-c*(potential-b))) + d
+
+def update_memristors(circ, tstep, x, change_func=False, varying_length=False):
+
+    for i, elem in enumerate(circ):
+
+        if isinstance(elem, components.Mysistor):
+            # print('element', elem.part_id)
+
+            conductance = 1/elem.value
+
+            port = (elem.n1, elem.n2)
+            tempv = 0
+            if port[0]:
+                tempv = x[port[0]-1]
+            if port[1]:
+                tempv = tempv - x[port[1]-1]
+            potential_drop = tempv[0]
+            # print(potential_drop)
+
+            if varying_length:
+                update_length = length_sigmoid(elem, potential_drop)
+                circ[i].length_channel = circ[i].initial_length*update_length
+                circ[i].init_derived_param()
+            elem = circ[i]
+
+            # pressure_drop = 0
+            pressure_drop = elem.pressure
+            concentration_drop = elem.delta_rho
+            # print(pressure_drop)
+
+            # g_infinity = sigmoid(potential_drop)*elem.g_0
+
+            g_infinity = g_infinity_func(potential_drop, pressure_drop, concentration_drop, elem, change_func)*elem.g_0
+            # print(elem.g_0, g_infinity, potential_drop)
+
+
+            if elem.has_converged:
+                increment = 0
+            else:
+                if np.abs(g_infinity - conductance) < 1e-10:
+                    elem.has_converged = True  # Set the flag to indicate convergence
+                    increment = 0
+                else:
+                    # print(g_infinity, conductance, g_infinity - conductance, elem.tau, (g_infinity - conductance) / elem.tau, tstep, (g_infinity - conductance) / elem.tau * tstep)
+                    increment = (g_infinity - conductance) / elem.tau * tstep
+
+            conductance += increment  
+            # print(increment)
+
+            elem.value=1/conductance
+
+    return
+
+def update_res_vec(circ, vec):
+    
+    line_to_add = []
+    
+    for elem in circ:
+
+        if isinstance(elem, components.Mysistor): 
+            
+            line_to_add.append(elem.value)
+            
+    vec.append(line_to_add)
+    # print(line_to_add[0])
+    
+    return vec
+
+def update_len_vec(circ, vec):
+
+    line_to_add = []
+    
+    for elem in circ:
+
+        if isinstance(elem, components.Mysistor): 
+            # print(elem.length_channel)
+            
+            line_to_add.append(elem.length_channel)
+            
+    vec.append(line_to_add)
+    return vec
 
 def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_method, use_step_control=True, x0=None,
-                       mna=None, N=None, D=None, outfile="stdout", return_req_dict=None, verbose=3):
+                       mna=None, N=None, D=None, outfile="stdout", return_req_dict=None, verbose=3, conductances=False, change_func=False, varying_len=False):
+    
+
     """Performs a transient analysis of the circuit described by circ.
 
     Parameters:
@@ -136,6 +318,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
     verbose: verbosity level from 0 (silent) to 6 (very verbose).
 
     """
+
     if outfile == "stdout":
         verbose = 0
     _debug = False
@@ -197,6 +380,8 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
         else:
             opsol =  results.op_solution(x=x0, error=np.zeros((mna.shape[0], 1)), circ=circ, outfile=None)
         printing.print_info_line(("Using the supplied op as x(t=%g)." % (tstart,), 5), verbose)
+
+    dc_analysis.modify_x0_for_ic(circ, x0)
 
     if verbose > 4:
         print("x0:")
@@ -260,6 +445,7 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
     thebuffer.add((tstart, x0, None)) #setup the first values
     printing.print_info_line(("done.", 5), verbose) #FIXME
 
+
     #setup the output buffer
     if return_req_dict:
         output_buffer = dfbuffer(length=return_req_dict["points"], width=1)
@@ -320,7 +506,21 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
     printing.print_info_line(("Solving... ", 3), verbose, print_nl=False)
     tick = ticker.ticker(increments_for_step=1)
     tick.display(verbose > 1)
+    
+    resistances_vec = []
+    length_vec = []
+
     while time < tstop:
+
+        (mna, N) = dc_analysis.generate_mna_and_N(circ, verbose=verbose)
+        mna = utilities.remove_row_and_col(mna)
+        N = utilities.remove_row(N, rrow=0)
+
+        D = generate_D(circ, (mna.shape[0], mna.shape[0]))
+        D = utilities.remove_row_and_col(D)
+
+        Gmin_matrix = dc_analysis.build_gmin_matrix(circ, options.gmin, mna.shape[0], verbose)
+
         if iter_n < first_iterations_number:
             x_coeff, const, x_lte_coeff, prediction, pred_lte_coeff = \
             implicit_euler.get_df((thebuffer.get_df_vector()[0],), tstep, \
@@ -331,12 +531,13 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
                           predict=(use_step_control and
                                    iter_n >= start_pred_iter)
                          )
+        
 
         if options.transient_prediction_as_x0 and use_step_control and prediction is not None:
             x0 = prediction
         elif x is not None:
             x0 = x
-
+        
         x1, error, solved, n_iter = dc_analysis.dc_solve(
                                                      mna=(mna + np.multiply(x_coeff, D)),
                                                      Ndc=N,  Ntran=np.dot(D, const), circ=circ,
@@ -346,10 +547,12 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
                                                      MAXIT=options.transient_max_nr_iter,
                                                      verbose=0
                                                      )
-
+        
         if solved:
+            
             old_step = tstep #we will modify it, if we're using step control otherwise it's the same
             # step control (yeah)
+
             if use_step_control:
                 if x_lte_coeff is not None and pred_lte_coeff is not None and prediction is not None:
                     # this is the Local Truncation Error :)
@@ -382,10 +585,20 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
             # if we get here, either aposteriori_step_control is
             # disabled, or it's enabled and the error is small
             # enough. Anyway, the result is GOOD, STORE IT.
+
+            length_vec = update_len_vec(circ, length_vec)
+            resistances_vec = update_res_vec(circ, resistances_vec)
+            if varying_len:
+                update_memristors(circ, tstep, x1, change_func, varying_length=True)
+            else:
+                update_memristors(circ, tstep, x1, change_func)
+
             time = time + old_step
             x = x1
+            # print('onex', x)
             iter_n = iter_n + 1
             sol.add_line(time, x)
+            # print(sol)
 
             dxdt = np.multiply(x_coeff, x) + const
             thebuffer.add((time, x, dxdt))
@@ -418,14 +631,19 @@ def transient_analysis(circ, tstart, tstep, tstop, method=options.default_tran_m
         printing.print_info_line(("Average time step: %g" % ((tstop - tstart)/iter_n,), 3), verbose)
 
         if output_buffer:
+
             ret_value = output_buffer.get_as_matrix()
         else:
+
             ret_value = sol
+
     else:
         print("failed.")
         ret_value =  None
+        
 
-    return ret_value
+    return ret_value, resistances_vec, length_vec
+
 
 def check_step(tstep, time, tstop, HMAX):
     """Checks the step for several common issues and corrects them.

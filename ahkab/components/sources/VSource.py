@@ -142,7 +142,7 @@ class VSource(Component):
         op_info : list of floats
             The values corresponding to ``op_keys``.
         """
-        vn1n2 = float(ports_v[0][0])
+        vn1n2 = float(ports_v[0][0].item())
         power = self.V() * current
         op_keys = ['Part ID', "V(n1,n2) [V]", "I(n1->n2) [A]", "P [W]"]
         op_info = [self.part_id.upper(), self.V(), current, power]

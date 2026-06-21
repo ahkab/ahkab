@@ -31,7 +31,7 @@ import numpy as np
 import numpy.fft as fft
 
 from scipy.interpolate import InterpolatedUnivariateSpline
-from scipy.signal import (bartlett, hann, hamming, blackman,
+from scipy.signal.windows import (bartlett, hann, hamming, blackman,
                           blackmanharris, gaussian, kaiser)
 
 from . import options

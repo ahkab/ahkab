@@ -206,6 +206,8 @@ def get_headers(filename):
         if line[0] == '#':
             line = line[1:]
     headers = line.split(SEPARATOR)
+    _close_fp(fp, filename)
+
     return headers
 
 

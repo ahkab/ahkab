@@ -60,6 +60,10 @@ class Capacitor(Component):
 
     def d(self, v, time=0):
         return self.value
+    
+    def new_nodes(self, n1, n2):
+        self.n1 = n1
+        self.n2 = n2
 
     def get_op_info(self, ports_v):
         """Information regarding the Operating Point (OP)

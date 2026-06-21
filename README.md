@@ -1,3 +1,30 @@
+# Iontronic Memristor Extension for ahkab
+
+This repository is a fork of ahkab that introduces an iontronic memristor model inspired by:
+
+T. M. Kamsma et al.,
+*Brain-inspired computing with fluidic iontronic nanochannels*.
+
+The extension was developed for the work:
+
+M. Conte et al.,
+*Multimodal Training in Reconfigurable Brain-Inspired Iontronic Networks*.
+
+The original ahkab documentation remains valid unless otherwise noted.
+
+## Installation
+
+pip install .
+
+## Additional Features
+
+- Iontronic memristor element (Mysistor in components)
+- Support for multimodal training studies
+
+---
+
+# Original ahkab README
+
 <img src="https://rawgithub.com/ahkab/ahkab/master/doc/images/logo_small.png" alt="Monkeying around" style="width: 80px;"/> ahkab
 =================================================================================================================================
 

@@ -84,9 +84,9 @@ class Resistor(Component):
         op_info : list of floats
             The values corresponding to ``op_keys``.
         """
-        vn1n2 = float(ports_v[0][0])
-        in1n2 = float(ports_v[0][0]/self.value)
-        power = float(ports_v[0][0] ** 2 / self.value)
+        vn1n2 = float(ports_v[0][0].item())
+        in1n2 = float((ports_v[0][0] / self.value).item())
+        power = float((ports_v[0][0] ** 2 / self.value).item())
         op_keys = ['Part ID', u"R [\u2126]", "V(n1,n2) [V]", "I(n1->n2) [A]", "P [W]"]
         op_info = [self.part_id.upper(), self.value, vn1n2, in1n2, power]
         return op_keys, op_info

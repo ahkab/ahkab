@@ -203,6 +203,7 @@ def dc_solve(mna, Ndc, circ, Ntran=None, Gmin=None, x0=None, time=None,
     tot_iterations : int
         Total number of NR iterations run.
     """
+
     if MAXIT == None:
         MAXIT = options.dc_max_nr_iter
     if locked_nodes is None:
@@ -994,6 +995,11 @@ def generate_mna_and_N(circ, verbose=3):
             mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - elem.g
             mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - elem.g
             mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + elem.g
+        elif isinstance(elem, components.Mysistor):
+            mna[elem.n1, elem.n1] = mna[elem.n1, elem.n1] + elem.g
+            mna[elem.n1, elem.n2] = mna[elem.n1, elem.n2] - elem.g
+            mna[elem.n2, elem.n1] = mna[elem.n2, elem.n1] - elem.g
+            mna[elem.n2, elem.n2] = mna[elem.n2, elem.n2] + elem.g
         elif isinstance(elem, components.Capacitor):
             pass  # In a capacitor I(V) = 0
         elif isinstance(elem, components.sources.GISource):
@@ -1036,7 +1042,7 @@ def generate_mna_and_N(circ, verbose=3):
             mna[index, elem.n2] = -1.0
             if isinstance(elem, components.sources.VSource) and not elem.is_timedependent:
                 # corretto, se e' def una parte tempo-variabile ci pensa
-                # mdn_solver a scegliere quella giusta da usare.
+                # mdn_solver a scegliere quella giusta da usare.]
                 N[index, 0] = -1.0 * elem.V()
             elif isinstance(elem, components.sources.VSource) and elem.is_timedependent:
                 pass  # taken care step by step

@@ -143,6 +143,7 @@ All methods in alphabetical order
 
 """
 
+
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
@@ -320,7 +321,8 @@ def new_dc(start, stop, points, source, sweep_type='LINEAR', guess=True, x0=None
 
 
 def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP,
-        use_step_control=True, outfile=None, verbose=0):
+        use_step_control=True, outfile=None, verbose=0, conductances=False, change_func=False, varying_len=False):
+
     """Assembles a TRAN analysis and returns the analysis object.
 
     The analysis itself can be run with ``ahkab.run(...)``
@@ -381,7 +383,8 @@ def new_tran(tstart, tstop, tstep, x0='op', method=transient.TRAP,
         outfile += '.tran'
     return {"type": "tran", "tstart": tstart, "tstop": tstop, "tstep": tstep,
             "method": method, "use_step_control": use_step_control, 'x0': x0,
-            'outfile': outfile, 'verbose': verbose}
+            'outfile': outfile, 'verbose': verbose, 'conductances': conductances, 
+            'change_func': change_func, 'varying_len': varying_len}
 
 
 def new_ac(start, stop, points, x0='op', sweep_type='LOG', outfile=None, verbose=0):
@@ -675,6 +678,7 @@ def queue(*analysis):
 
 
 def run(circ, an_list=None):
+
     """Run analyses on a circuit.
 
     **Parameters:**
@@ -705,19 +709,33 @@ def run(circ, an_list=None):
             an_list = [an_list] # run(mycircuit, op1)
 
     while len(an_list):
-        an_item = an_list.pop(0)
+
+        an_item = an_list.pop(0) 
+
         an_type = an_item.pop('type')
+
         if 'x0' in an_item and isinstance(an_item['x0'], text_type):
             printing.print_warning("%s has x0 set to %s, unavailable. Using 'None'." %
                                    (an_type.upper(), an_item['x0']))
             an_item['x0'] = None
-        r = analysis[an_type](circ, **an_item)
+
+        if an_type == 'tran':
+            r, res_vec, len_vec = analysis[an_type](circ, **an_item)  
+        else:
+            r = analysis[an_type](circ, **an_item)  
+            res_vec = []
+            len_vec = []
+
+        # print(vars(circ[0]))
+
         results.update({an_type: r})
+        
         if an_type == 'op':
             _x0s.update({'op': r})
             _x0s.update({'op+ic': icmodified_x0(circ, r)})
             _handle_netlist_ics(circ, an_list, ic_list=[])
-    return results
+    
+    return results, res_vec, len_vec
 
 
 def new_x0(circ, icdict):
