@@ -85,7 +85,7 @@ from __future__ import (unicode_literals, absolute_import,
 import numpy as np
 import sys
 
-from scipy.misc import factorial
+from scipy.special import factorial
 
 from . import printing
 
