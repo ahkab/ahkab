@@ -21,7 +21,7 @@ import numpy as np
 import ahkab
 
 class Test_PSS_solution:
-    def setUp(self):
+    def setup_method(self, method):
         ttn = ahkab.Circuit('PSS Linear circuit')
         sin_wave = ahkab.time_functions.sin(vo=0, va=2, td=0, freq=1e6, theta=0, phi=0.)
         ttn.add_vsource('VIN', 'in', ttn.gnd, dc_value=5, function=sin_wave)

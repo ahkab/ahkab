@@ -22,7 +22,7 @@ import ahkab
 
 
 class TestCID:
-    def setUp(self):
+    def setup_method(self, method):
         self.a = ahkab.results.case_insensitive_dict()
         self.a.update({'a':1, 'b':2})
         self.a.update({'c':3})

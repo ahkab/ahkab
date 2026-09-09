@@ -37,7 +37,7 @@ def test_sffm():
     FS = sympy.lambdify(time, sympy.N(F.subs(dict(vo=von, va=van, fc=fcn,
                                                  mdi=mdin, fs=fsn,
                                                  td=tdn))))
-    t = np.linspace(0, 1e-3, 3e3)
+    t = np.linspace(0, 1e-3, int(3e3))
     for ti in t:
         assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
 
@@ -52,7 +52,7 @@ def test_am():
     f = time_functions.am(sa=san, fc=fcn, fm=fmn, oc=ocn, td=tdn)
     FS = sympy.lambdify(time, sympy.N(F.subs(dict(sa=san, fc=fcn, fm=fmn,
                                                   oc=ocn, td=tdn))))
-    t = np.linspace(0, 20e-3, 3e3)
+    t = np.linspace(0, 20e-3, int(3e3))
     for ti in t:
         assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
 
@@ -70,7 +70,7 @@ def test_sin():
     FS = sympy.lambdify(time, sympy.N(F.subs(dict(vo=von, va=van, freq=freqn,
                                                   td=tdn, theta=thetan,
                                                   phi=phin))))
-    t = np.linspace(0, 1e-3, 3e3)
+    t = np.linspace(0, 1e-3, int(3e3))
     for ti in t:
         assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
 
@@ -85,7 +85,7 @@ def test_exp():
     FS = sympy.lambdify(time, sympy.N(F.subs(dict(v1=v1n, v2=v2n, td1=td1n,
                                                   tau1=tau1n, td2=td2n,
                                                   tau2=tau2n))))
-    t = np.linspace(0, 1e-3, 3e3)
+    t = np.linspace(0, 1e-3, int(3e3))
     for ti in t:
         assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
 
@@ -110,7 +110,7 @@ def test_pulse():
     FS = sympy.lambdify(time, sympy.N(F.subs(dict(v1=v1n, v2=v2n, td=tdn,
                                                   tr=trn, pw=pwn, tf=tfn,
                                                   per=pern))))
-    t = np.linspace(0, 1e-3, 1e3)
+    t = np.linspace(0, 1e-3, int(1e3))
     for ti in t:
         assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)
 
@@ -137,7 +137,7 @@ def test_pwl():
     FS = sympy.lambdify(time, sympy.N(F.subs(dict(v1=v1n, v2=v2n, td=tdn,
                                                   tr=trn, pw=pwn, tf=tfn,
                                                   per=pern))))
-    t = np.linspace(0, 1e-3, 1e3)
+    t = np.linspace(0, 1e-3, int(1e3))
     # first period
     for ti in t:
         assert np.allclose(f(ti), float(FS(ti)), rtol=1e-4)

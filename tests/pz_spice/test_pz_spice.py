@@ -6,7 +6,7 @@ import sys
 import os
 import numpy as np
 
-from nose.plugins.skip import SkipTest
+from unittest import SkipTest
 
 from ahkab import main
 

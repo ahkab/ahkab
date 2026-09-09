@@ -1,6 +1,6 @@
 import numpy as np
 import ahkab
-from ahkab import ahkab, circuit, printing, devices, testing
+from ahkab import ahkab, circuit, printing, testing
 
 cli = False
 
