@@ -83,7 +83,7 @@ class Test_OP_solution:
         values = set()
         for k, v in r:
             keys |= {k}
-            values |= {float(v)}
+            values |= {float(np.asarray(v).flat[0])}
         assert keys == set(r.keys())
         assert values == set(r.values())
 

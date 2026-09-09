@@ -56,7 +56,7 @@ class Test_PSS_solution:
         assert r.units['ViN'] == 'V'
         # asarray()
         assert r.asarray().shape == (8, 60)
-        assert np.alltrue(r.asarray()[0, :] == r.get_x())
+        assert np.all(r.asarray()[0, :] == r.get_x())
         # dictionary access with bogus cells
         try:
             r['sd']

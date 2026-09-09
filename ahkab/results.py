@@ -654,7 +654,7 @@ class ac_solution(solution, _mutable_data):
         for i in range(len(headers)):
             if headers[i].upper() == self.variables[0].upper():
                 if cplx_data is None:
-                    cplx_data = np.array(data[i, :].reshape((1, -1)), dtype=np.complex_)
+                    cplx_data = np.array(data[i, :].reshape((1, -1)), dtype=np.complex128)
                 else:
                     cplx_data = np.vstack((cplx_data, data[i, :].reshape((1, -1))))
             else:
@@ -667,7 +667,7 @@ class ac_solution(solution, _mutable_data):
                     if cplx_data is None:
                         cplx_data = np.array(data[i, :]*
                                              np.exp(1j*data[ip,:]).reshape((1, -1)),
-                                             dtype=np.complex_)
+                                             dtype=np.complex128)
                     else:
                         cplx_data = np.vstack((cplx_data,
                                                (data[i, :]*
@@ -1203,7 +1203,7 @@ class pz_solution(solution, _mutable_data):
                 self.csv_headers.append("Im(%s)" % self.variables[i])
 
             # save in Re/Im form
-            sdata = data.reshape(-1).view(np.float_).reshape((-1, 1))
+            sdata = data.reshape(-1).view(np.float64).reshape((-1, 1))
             self._add_data(sdata)
 
             # store local data too:

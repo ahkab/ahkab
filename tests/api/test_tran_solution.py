@@ -51,7 +51,7 @@ class Test_TRAN_solution:
         # x-axis tests
         # the x0 is NOT added to the results.
         # hence no t=0
-        assert np.alltrue(r.get_x() == np.array(list(ahkab.utilities.lin_axis_iterator(5e-6, 50e-6, 10))))
+        assert np.all(r.get_x() == np.array(list(ahkab.utilities.lin_axis_iterator(5e-6, 50e-6, 10))))
         assert r.get_xlabel() == 'T'
         assert (r.get_x() == r['T']).all()
         # solution methods
