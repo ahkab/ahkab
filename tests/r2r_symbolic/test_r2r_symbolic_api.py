@@ -25,7 +25,7 @@ import uuid
 import base64
 import numpy
 
-from nose.plugins.skip import SkipTest
+from unittest import SkipTest
 
 import ahkab
 from ahkab import py3compat
