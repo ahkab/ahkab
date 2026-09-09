@@ -28,7 +28,7 @@ from __future__ import (unicode_literals, absolute_import,
 import ahkab
 import copy
 
-from nose.tools import raises
+from ahkab.testing import raises
 
 def test_remove_elem_linear():
     """Test circuit.remove_elem with linear elem"""

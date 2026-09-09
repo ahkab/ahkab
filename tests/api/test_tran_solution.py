@@ -21,7 +21,7 @@ import numpy as np
 import ahkab
 
 class Test_TRAN_solution:
-    def setUp(self):
+    def setup_method(self, method):
         ttn = ahkab.Circuit('Twin-T Notch Stopband filter')
         rect_wave = ahkab.time_functions.pulse(v1=-1, v2=+1, td=0, tr=10e-6,
                                                pw=90e-6, tf=10e-6, per=200e-6)
@@ -51,7 +51,7 @@ class Test_TRAN_solution:
         # x-axis tests
         # the x0 is NOT added to the results.
         # hence no t=0
-        assert np.alltrue(r.get_x() == np.array(list(ahkab.utilities.lin_axis_iterator(5e-6, 50e-6, 10))))
+        assert np.all(r.get_x() == np.array(list(ahkab.utilities.lin_axis_iterator(5e-6, 50e-6, 10))))
         assert r.get_xlabel() == 'T'
         assert (r.get_x() == r['T']).all()
         # solution methods

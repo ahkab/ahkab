@@ -26,7 +26,7 @@ from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
 import os, os.path
-from nose.tools import raises
+from ahkab.testing import raises
 
 import ahkab
 from ahkab import utilities
