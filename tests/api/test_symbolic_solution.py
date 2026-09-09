@@ -22,7 +22,7 @@ import numpy as np
 import ahkab
 
 class Test_symbolic_solution(object):
-    def setUp(self):
+    def setup_method(self, method):
         ttn = ahkab.Circuit('Twin-T Notch Stopband filter')
         ttn.add_vsource('V1', 'in', ttn.gnd, dc_value=1)
         # first path

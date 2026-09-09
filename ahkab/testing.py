@@ -373,6 +373,7 @@ from __future__ import (unicode_literals, absolute_import,
 
 import time
 import os
+import re
 import sys
 import pickle
 import unittest
@@ -389,8 +390,70 @@ import sympy
 from scipy.interpolate import InterpolatedUnivariateSpline
 from sympy.parsing.sympy_parser import parse_expr
 
-from nose.tools import ok_, nottest
-from nose.plugins.skip import SkipTest
+from unittest import SkipTest
+
+
+def ok_(expr, msg=None):
+    """Assert that ``expr`` is true. Replaces ``nose.tools.ok_``."""
+    if not expr:
+        raise AssertionError(msg)
+
+
+def nottest(func):
+    """Mark ``func`` as not a test. Replaces ``nose.tools.nottest``."""
+    func.__test__ = False
+    return func
+
+
+def raises(*exceptions):
+    """Fail unless the decorated callable raises one of ``exceptions``.
+
+    Replaces ``nose.tools.raises``.
+    """
+    import functools
+
+    def decorate(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                func(*args, **kwargs)
+            except exceptions:
+                return
+            raise AssertionError(
+                '%s() did not raise one of %s' %
+                (func.__name__, ', '.join(e.__name__ for e in exceptions)))
+        return wrapper
+    return decorate
+
+
+def _symbolic_equal(rf, rs):
+    """True if the two expressions are mathematically equal.
+
+    Compares by difference rather than by ratio. The old ratio test broke on
+    two counts: SymPy no longer treats ``Float(1.0) == 1`` as true, and a
+    ratio is undefined when either side is zero.
+    """
+    if rs == rf:
+        return True
+    if sympy.simplify(rf - rs) == 0:
+        return True
+    if rs == 0 or rf == 0:
+        return False
+    return bool(abs(sympy.simplify(rf / rs) - 1) < 1e-12)
+
+
+def _parse_symbolic(expr):
+    """Parse ``expr`` treating every identifier in it as a plain symbol.
+
+    Circuit element names are arbitrary identifiers, and some collide with
+    names SymPy binds to its own objects -- an op-amp called ``E1`` collides
+    with the exponential integral ``E1``, so ``E1**3`` raises a TypeError.
+    Binding every name to a Symbol keeps the comparison in the domain the
+    symbolic solver actually produces: rational functions of circuit symbols.
+    """
+    names = set(re.findall(r'[A-Za-z_][A-Za-z_0-9]*', str(expr)))
+    local_dict = {n: sympy.Symbol(n) for n in names}
+    return parse_expr(str(expr), local_dict=local_dict)
 
 from . import csvlib
 from . import options
@@ -623,9 +686,9 @@ class NetlistTest(unittest.TestCase):
                         self._check(res[k], ref[k])
                     elif isinstance(ref[k], sympy.Basic) and isinstance(res[k], sympy.Basic):
                         # get rid of assumptions. Evaluate only expression
-                        rf = parse_expr(str(ref[k]))
-                        rs = parse_expr(str(res[k]))
-                        assert (rs == rf) or (sympy.simplify(rf/rs) == 1)
+                        rf = _parse_symbolic(ref[k])
+                        rs = _parse_symbolic(res[k])
+                        assert _symbolic_equal(rf, rs)
                     else:
                         assert res[k] == ref[k]
 
@@ -855,9 +918,9 @@ class APITest(unittest.TestCase):
                         self._check(res[k], ref[k])
                     elif isinstance(ref[k], sympy.Basic) and isinstance(res[k], sympy.Basic):
                         # get rid of assumptions. Evaluate only expression
-                        rf = parse_expr(str(ref[k]))
-                        rs = parse_expr(str(res[k]))
-                        assert (rs == rf) or (sympy.simplify(rf/rs) == 1)
+                        rf = _parse_symbolic(ref[k])
+                        rs = _parse_symbolic(res[k])
+                        assert _symbolic_equal(rf, rs)
                     else:
                         assert res[k] == ref[k]
 

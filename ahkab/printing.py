@@ -92,7 +92,6 @@ from __future__ import (unicode_literals, absolute_import,
 
 import contextlib
 import sys
-import os
 
 import tabulate as _tabulate
 import numpy as np
@@ -105,6 +104,17 @@ if py3compat.PY2:
     if not py3compat.IPYTHON:
         UTF8Writer = codecs.getwriter('utf8')
         sys.stdout = UTF8Writer(sys.stdout)
+elif not py3compat.IPYTHON:
+    # On Python 3 stdout carries the locale's preferred encoding, which on
+    # Windows is typically cp1252 and cannot represent the ohm sign printed
+    # in the operating point tables. Ask for UTF-8 explicitly, the same way
+    # open_utf8() does for files.
+    try:
+        sys.stdout.reconfigure(encoding='UTF-8')
+    except (AttributeError, ValueError):
+        # Not a reconfigurable stream, eg. one replaced by a test runner.
+        # Leave it alone; the check at the end of this module warns.
+        pass
 
 def open_utf8(filename):
     """Get a file handle wrapped in a UTF-8 writer
@@ -532,9 +542,29 @@ def printoptions(*args, **kwargs):
     yield
     np.set_printoptions(**original)
 
-locale = os.getenv('LANG')
-if not locale:
-    print_warning('Locale appears not set! please export LANG="en_US.UTF-8" or'
-                  ' equivalent, ')
-    print_warning('or ahkab\'s unicode support is broken.')
+def stdout_handles_unicode():
+    """Check whether ``sys.stdout`` can encode the symbols ahkab prints
+
+    The operating point tables carry the ohm sign, which the single-byte
+    encodings that some platforms still default to cannot represent.
+
+    **Returns:**
+
+    ok : boolean
+        ``True`` if the symbols can be printed, ``False`` otherwise.
+    """
+    encoding = getattr(sys.stdout, 'encoding', None)
+    if not encoding:
+        return True
+    try:
+        u'\u2126'.encode(encoding)
+    except (UnicodeEncodeError, LookupError):
+        return False
+    return True
+
+if not stdout_handles_unicode():
+    print_warning('Standard output is encoded as %s, which cannot represent'
+                  ' ahkab\'s symbols.' % sys.stdout.encoding)
+    print_warning('Set PYTHONUTF8=1 or export LANG="en_US.UTF-8" or'
+                  ' equivalent.')
 

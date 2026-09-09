@@ -23,7 +23,7 @@ import numpy as np
 import ahkab
 
 class Test_OP_solution:
-    def setUp(self):
+    def setup_method(self, method):
         ######### CIRCUIT ##############
         ttn = ahkab.Circuit('Twin-T Notch Stopband filter')
         ttn.add_vsource('V1', 'in', ttn.gnd, dc_value=1, ac_value=1)
@@ -83,7 +83,7 @@ class Test_OP_solution:
         values = set()
         for k, v in r:
             keys |= {k}
-            values |= {float(v)}
+            values |= {float(np.asarray(v).flat[0])}
         assert keys == set(r.keys())
         assert values == set(r.values())
 

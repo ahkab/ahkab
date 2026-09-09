@@ -32,7 +32,7 @@ import matplotlib
 matplotlib.use('Agg')
 import pylab
 
-from nose.plugins.skip import SkipTest
+from unittest import SkipTest
 
 stand_alone_exec = False
 REGRESSION_TIME = 3 #s - if the test takes 3s additional time it's considered

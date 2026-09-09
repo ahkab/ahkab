@@ -21,7 +21,7 @@ from __future__ import print_function, division, unicode_literals
 import numpy as np
 import ahkab
 
-from nose import SkipTest
+from unittest import SkipTest
 from ahkab import py3compat
 
 def test_pz_solution():

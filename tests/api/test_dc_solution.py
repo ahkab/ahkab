@@ -21,7 +21,7 @@ import numpy as np
 import ahkab
 
 class Test_DC_Solution:
-    def setUp(self):
+    def setup_method(self, method):
         ttn = ahkab.Circuit('Twin-T Notch Stopband filter')
         ttn.add_vsource('V1', 'in', ttn.gnd, dc_value=1, ac_value=1)
         # first path
@@ -47,7 +47,7 @@ class Test_DC_Solution:
         assert r.get_xlabel() == 'V1'
         assert r.units['V1'] == 'V'
         # and its values?
-        assert np.alltrue(r.get_x() == np.array(list(ahkab.utilities.lin_axis_iterator(-5, 5, 100))))
+        assert np.all(r.get_x() == np.array(list(ahkab.utilities.lin_axis_iterator(-5, 5, 100))))
         assert r['V1'][0] == -5
         assert np.allclose(r['V1'][-1], 5)
         assert (r.get_x() == r['V1']).all()

@@ -32,7 +32,7 @@ import matplotlib
 matplotlib.use('Agg')
 import pylab
 
-from nose.plugins.skip import SkipTest
+from unittest import SkipTest
 
 stand_alone_exec = False
 REGRESSION_TIME = 3 #s - if the test takes 3s additional time it's considered
@@ -52,7 +52,7 @@ else:
 # current execution happen on the same box
 def get_boxid():
     mac = hex(uuid.getnode())
-    return base64.b64encode(hashlib.sha512(mac).hexdigest())
+    return base64.b64encode(hashlib.sha512(mac.encode('utf-8')).hexdigest().encode('utf-8'))
 
 def check_boxid(mat_file):
     return scipy.io.loadmat(mat_file)['boxid']
