@@ -280,7 +280,7 @@ def ac_analysis(circ, start, points, stop, sweep_type=None,
                               stype=sweep_type, op=x0, outfile=outfile)
 
     # setup the initial values to start the iteration:
-    j = np.complex('j')
+    j = complex('j')
 
     Gmin_matrix = dc_analysis.build_gmin_matrix(
         circ, options.gmin, mna.shape[0], verbose)
@@ -393,7 +393,7 @@ def _generate_Nac(circ):
     """
     n_of_nodes = circ.get_nodes_number()
     Nac = np.zeros((n_of_nodes, 1), dtype=complex)
-    j = np.complex('j')
+    j = complex('j')
     # process `ISource`s
     for elem in circ:
         if isinstance(elem, components.sources.ISource) and elem.abs_ac is not None:
