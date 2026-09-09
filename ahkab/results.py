@@ -242,6 +242,18 @@ class solution(object):
             self.iter_index += 1
         return nxt
 
+def _as_scalar(value):
+    """Return ``value`` as a Python float.
+
+    Node voltages are sliced out of the solution column vector ``x``, so they
+    arrive as one-element arrays, while a grounded port contributes a plain
+    integer zero. Mixing the two produces a ragged sequence, which NumPy has
+    refused to convert since 1.24. Flattening every port voltage to a scalar
+    here keeps the drive-port vectors homogeneous.
+    """
+    return float(np.asarray(value).flat[0])
+
+
 class op_solution(solution, _mutable_data):
     """OP results
 
@@ -358,7 +370,7 @@ class op_solution(solution, _mutable_data):
                                 tempv = x[port[0]-1]
                             if port[1]:
                                 tempv = tempv - x[port[1]-1]
-                            ports_v.append(tempv)
+                            ports_v.append(_as_scalar(tempv))
                     ports_v_v.append(ports_v)
                 else:
                     port = (elem.n1, elem.n2)
@@ -367,7 +379,7 @@ class op_solution(solution, _mutable_data):
                         tempv = x[port[0]-1]
                     if port[1]:
                         tempv = tempv - x[port[1]-1]
-                    ports_v_v = ((tempv,),)
+                    ports_v_v = ((_as_scalar(tempv),),)
                 if circuit.is_elem_voltage_defined(elem):
                     i = circ.find_vde_index(elem.part_id)
                     nv_1 = circ.get_nodes_number() - 1
@@ -436,7 +448,7 @@ class op_solution(solution, _mutable_data):
                 i_index = i_index + 1
 
         #op_info.append("TOTAL POWER: %e W\n" % (tot_power,))
-        return op_keys, op_info, tot_power
+        return op_keys, op_info, _as_scalar(tot_power)
 
     def write_to_file(self, filename=None):
         if filename is None and self.filename is None:

@@ -251,7 +251,7 @@ class mosq_device(object):
         """
         if self.opdict is None:
             self.opdict = {}
-        if not (self.opdict['state'] == ports_v[0]).all() or 'gmd' not in self.opdict \
+        if not np.array_equal(self.opdict['state'], ports_v[0]) or 'gmd' not in self.opdict \
             or 'gm' not in self.opdict or 'gmb' not in self.opdict \
             or 'Ids' not in self.opdict or 'SAT' not in self.opdict:
 
@@ -379,7 +379,7 @@ class mosq_device(object):
                           (0, 0, 0, 0)), dtype=np.float64)
         if CS == -1:
             stamp = self.mosq_model.T1*stamp*self.mosq_model.T2
-        if (self.opdict['state'] != ports_v[0]).any():
+        if not np.array_equal(self.opdict['state'], ports_v[0]):
             self.opdict = {'state':ports_v[0]}
         self.opdict.update({'gmd': stamp[0, 0]})
         self.opdict.update({'gm': stamp[0, 1]})
