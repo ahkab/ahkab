@@ -335,8 +335,8 @@ def calculate_singularities(mc, input_source=None, output_port=None, MNA=None,
             zeros = []
     else:
         zeros = []
-    poles = np.array([a for a in poles if np.abs(a) < options.pz_max], dtype=np.complex_)
-    zeros = np.array([a for a in zeros if np.abs(a) < options.pz_max], dtype=np.complex_)
+    poles = np.array([a for a in poles if np.abs(a) < options.pz_max], dtype=np.complex128)
+    zeros = np.array([a for a in zeros if np.abs(a) < options.pz_max], dtype=np.complex128)
     poles = np.sort_complex(poles)
     zeros = np.sort_complex(zeros)
     res = results.pz_solution(mc, poles, zeros, outfile)

@@ -31,8 +31,6 @@ import numpy as np
 import numpy.fft as fft
 
 from scipy.interpolate import InterpolatedUnivariateSpline
-from scipy.signal import (bartlett, hann, hamming, blackman,
-                          blackmanharris, gaussian, kaiser)
 
 from . import options
 from . import py3compat
@@ -196,17 +194,17 @@ def fourier(label, tran_results, fund):
     for i in range(1, 10, 2):
         ps += [(tran_results.tstop - tran_results.tstart) // (i/fund)]
     ps = [i for i in ps if i > 0]
-    nperiods = ps[int(np.ceil(len(ps)-1))]
+    nperiods = int(ps[int(np.ceil(len(ps)-1))])
     # setup start & stop accordingly
     start = tran_results.tstop - nperiods/fund
     stop = tran_results.tstop
     # 10 points, remember?
     sampling = 1./(2*10*fund)
-    t = np.linspace(start, stop, (stop-start)//sampling, endpoint=False)
+    t = np.linspace(start, stop, int((stop-start)//sampling), endpoint=False)
     idata = InterpolatedUnivariateSpline(tran_results.get_x(), data, k=2)
     f = fft.fftfreq(len(t), sampling)[::nperiods]
     F = fft.rfft(idata(t))[:-1:nperiods]
-    f = f[:len(f)/2]
+    f = f[:len(f)//2]
     THD = np.sqrt(sum(abs(F[2:])**2))/abs(F[1])
     return f, F, THD
 
@@ -327,6 +325,10 @@ def spicefft(label, tran_results, freq=None, **args):
         pylab.legend()
 
     """
+    # Imported here rather than at the top: scipy.signal is slow to import
+    # and only this function needs it.
+    from scipy.signal.windows import (bartlett, hann, hamming, blackman,
+                                      blackmanharris, gaussian, kaiser)
     if type(label) in py3compat.string_types:
         data = tran_results[label]
     elif type(label) == tuple:
@@ -388,7 +390,7 @@ def spicefft(label, tran_results, freq=None, **args):
         # of periods
         start = stop - nperiods/freq
         sampling = 1./(2*freq*nperiods)
-        t = np.linspace(start, stop, ((stop-start)//sampling + 1),
+        t = np.linspace(start, stop, int((stop-start)//sampling + 1),
                         endpoint=False)
     else:
         sampling = (stop-start)/np2
@@ -404,7 +406,7 @@ def spicefft(label, tran_results, freq=None, **args):
               options.GAUSS_WINDOW: lambda x: gaussian(x, std=alpha),
               options.KAISER_WINDOW: lambda x: kaiser(x, beta=alpha)}
     f = fft.fftfreq(len(t), sampling)
-    f = f[:len(f)/2]
+    f = f[:len(f)//2]
     F = fft.rfft(idata(t)*window[window_type](len(t)))[:-1]
     if freq:
         # downsample

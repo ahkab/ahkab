@@ -156,7 +156,6 @@ from optparse import OptionParser
 
 import numpy as np
 import scipy as sp
-import sympy
 import tabulate
 try:
     import matplotlib
@@ -863,6 +862,15 @@ analysis = {'op': dc_analysis.op_analysis, 'dc': dc_analysis.dc_analysis,
             'temp': set_temperature, 'pz':pz.calculate_singularities}
 
 
+def _sympy_version():
+    """The installed SymPy version, found without importing SymPy."""
+    try:
+        from importlib.metadata import version
+        return version('sympy')
+    except Exception:
+        return 'unknown'
+
+
 def main(filename, outfile="stdout", verbose=3):
     """Method to call ahkab from a Python script with a netlist file.
 
@@ -902,7 +910,7 @@ def main(filename, outfile="stdout", verbose=3):
         ("  Python %s" % (sys.version.split('\n')[0],), 6), verbose)
     printing.print_info_line(("  Numpy %s" % (np.__version__), 6), verbose)
     printing.print_info_line(("  Scipy %s" % (sp.__version__), 6), verbose)
-    printing.print_info_line(("  Sympy %s" % (sympy.__version__), 6), verbose)
+    printing.print_info_line(("  Sympy %s" % (_sympy_version()), 6), verbose)
     printing.print_info_line(("  Tabulate %s" % (tabulate.__version__), 6), verbose)
     if plotting_available:
         printing.print_info_line(("  Matplotlib %s" % (matplotlib.__version__),

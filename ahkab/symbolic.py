@@ -41,8 +41,9 @@ Reference
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
-import sympy
-from sympy.matrices import zeros as smzeros
+# sympy is imported inside the functions that need it, not here: importing
+# it takes longer than the rest of ahkab put together, and netlist_parser
+# imports this module for its specs on every run, symbolic or not.
 
 from . import circuit
 from . import components
@@ -82,8 +83,21 @@ specs = {'symbolic': {'tokens': ({
                      }
         }
 
-#: the Laplace variable
-s = sympy.Symbol('s', complex=True)
+def _laplace_variable():
+    """Return the Laplace variable ``s``.
+
+    SymPy caches symbols, so every call returns the same object.
+    """
+    import sympy
+    return sympy.Symbol('s', complex=True)
+
+def __getattr__(name):
+    # ``s`` used to be created at import time. It is now created on
+    # first use, so that importing ahkab does not import sympy; this
+    # keeps ``ahkab.symbolic.s`` working for code that reads it.
+    if name == 's':
+        return _laplace_variable()
+    raise AttributeError("module %r has no attribute %r" % (__name__, name))
 
 enabled_assumptions = {'real':True, 'positive':True, 'complex':True}
 
@@ -139,6 +153,7 @@ def symbolic_analysis(circ, source=None, ac_enable=True, r0s=False, subs=None,
         ``None`` object.
 
     """
+    import sympy
     if subs is None:
         subs = {}  # no subs by default
     else:
@@ -236,6 +251,8 @@ def calculate_gains(sol, xin, optimize=True):
         ``'zeros'``.
 
     """
+    import sympy
+    s = _laplace_variable()
     gains = {}
     for key, value in sol.items():
         tf = {}
@@ -262,6 +279,7 @@ def get_variables(circ):
     vars : sympy matrix, shape (n, 1)
         The variables in a column vector.
     """
+    from sympy.matrices import zeros as smzeros
     # numero di soluzioni di tensione (al netto del ref)
     nv_1 = circ.get_nodes_number() - 1
 
@@ -361,6 +379,8 @@ def generate_mna_and_N(circ, opts, ac=False, subs=None, verbose=3):
         * beefing up your machine with extra RAM and extra computing power,
         * being patient.
     """
+    from sympy.matrices import zeros as smzeros
+    s = _laplace_variable()
     n_of_nodes = circ.get_nodes_number()
     mna = smzeros(n_of_nodes)
     N = smzeros(n_of_nodes, 1)
@@ -561,6 +581,8 @@ def generate_mna_and_N(circ, opts, ac=False, subs=None, verbose=3):
 
 
 def _expand_matrix(mat, add_a_row=False, add_a_col=False):
+    import sympy
+    from sympy.matrices import zeros as smzeros
     if add_a_row:
         row = smzeros(1, mat.shape[1])
         mat = mat.row_insert(mat.shape[0], row)
@@ -573,6 +595,8 @@ def _expand_matrix(mat, add_a_row=False, add_a_col=False):
 def get_roots(expr):
     """Given the transfer function ``expr``, returns ``poles, zeros``.
     """
+    import sympy
+    s = _laplace_variable()
     num, den = sympy.fraction(expr)
     return sympy.solve(den, s), sympy.solve(num, s)
 
@@ -622,6 +646,7 @@ def _parse_substitutions(sdict):
     return subs
 
 def _symbol_factory(name, **options):
+    import sympy
     filtered_options = {}
     for i in options:
         if options[i] and enabled_assumptions[i]:
