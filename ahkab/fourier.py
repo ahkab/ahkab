@@ -31,8 +31,6 @@ import numpy as np
 import numpy.fft as fft
 
 from scipy.interpolate import InterpolatedUnivariateSpline
-from scipy.signal.windows import (bartlett, hann, hamming, blackman,
-                          blackmanharris, gaussian, kaiser)
 
 from . import options
 from . import py3compat
@@ -327,6 +325,10 @@ def spicefft(label, tran_results, freq=None, **args):
         pylab.legend()
 
     """
+    # Imported here rather than at the top: scipy.signal is slow to import
+    # and only this function needs it.
+    from scipy.signal.windows import (bartlett, hann, hamming, blackman,
+                                      blackmanharris, gaussian, kaiser)
     if type(label) in py3compat.string_types:
         data = tran_results[label]
     elif type(label) == tuple:
